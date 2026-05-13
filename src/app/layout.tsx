@@ -6,7 +6,6 @@ import { Toaster } from "@/components/ui/sonner";
 import { StructuredData } from "@/components/seo/structured-data";
 import { AuthGuard } from "@/components/auth/auth-guard";
 import { CookieConsent } from "@/components/cookie-consent";
-import { PostHogProvider } from "@/components/posthog-provider";
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -31,14 +30,7 @@ export const metadata: Metadata = {
     description: "Connect specialized AI to manage and resolve your customer conversations with business precision.",
     url: "https://flowter.ai",
     siteName: "Flowter",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "Flowter Dashboard Preview",
-      },
-    ],
+      images: [],
     locale: "en_US",
     type: "website",
   },
@@ -46,7 +38,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Flowter | Automated Business Communication",
     description: "Connect specialized AI to manage and resolve your customer conversations with business precision.",
-    images: ["/og-image.png"],
+    images: [],
   },
   alternates: {
     canonical: "https://flowter.ai",
@@ -73,14 +65,12 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} ${lora.variable} font-sans antialiased`}>
         <ThemeProvider>
-          <PostHogProvider>
           <AuthGuard>
             <StructuredData />
             {children}
             <Toaster />
             <CookieConsent />
           </AuthGuard>
-          </PostHogProvider>
         </ThemeProvider>
       </body>
     </html>

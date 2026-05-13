@@ -135,7 +135,6 @@ supabase/functions/
 ├── gowa-webhook/             # WhatsApp inbound webhook
 ├── gowa-cleanup/             # Session cleanup on device removal
 ├── tool-executor/            # Tool execution (calendar, etc.)
-├── ingestion-worker/         # Knowledge base document processing
 ├── ingest-document/          # Single doc ingestion
 ├── ingest-url/               # URL content ingestion
 └── crm-export/               # CRM data export
