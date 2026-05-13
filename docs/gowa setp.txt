@@ -1,0 +1,609 @@
+# FlowCore — GoWA (Go WhatsApp API) Integration Specification
+> Version: 2.0 | For: AI Coding Agent | This is your ONLY source of truth for GoWA.
+> 
+> ⚠️ UPDATE v2.0: Webhook now goes to Supabase Edge Function (`gowa-webhook`), NOT the Next.js API route.
+> See `supabase/functions/gowa-webhook/index.ts` for the webhook handler.
+> The old `src/app/api/webhooks/whatsapp/route.ts` has been removed.
+> 
+> GoWA env vars (Railway):
+> ```
+> APP_WEBHOOK=https://[project-ref].supabase.co/functions/v1/gowa-webhook
+> APP_WEBHOOK_SECRET=<match GOWA_WEBHOOK_SECRET in Supabase Edge Function secrets>
+> APP_WEBHOOK_EVENTS=message,message.ack
+> ```
+> Supabase Edge Function secret:
+> ```
+> GOWA_WEBHOOK_SECRET=flowcoresecret2026
+> ```
+
+---
+
+## WHAT IS GOWA
+
+GoWA (Go WhatsApp Web Multidevice) is a self-hosted WhatsApp REST API built in Go.
+It is NOT the official WhatsApp Business API (Meta). It is an unofficial bridge that runs
+WhatsApp Web under the hood through a library called `whatsmeow`.
+
+**For FlowCore, GoWA serves as the bridge between:**
+```
+User's WhatsApp phone → GoWA Server → FlowCore Webhook → AI Agent → GoWA Server → User's WhatsApp
+```
+
+GoWA is deployed separately (Railway or Docker) and communicates with your Next.js app
+via REST API calls (outgoing messages) and Webhooks (incoming messages).
+
+---
+
+## GOWA IN FLOWCORE — FULL PICTURE
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        GOWA SERVER                          │
+│  (Deployed on Railway, port 3000)                           │
+│                                                             │
+│  - Holds the WhatsApp session (QR code scanned once)        │
+│  - Receives all incoming WhatsApp messages                  │
+│  - Sends outgoing WhatsApp messages via REST                │
+│  - Forwards all events to your webhook URL                  │
+└─────────────────┬───────────────────────┬───────────────────┘
+                  │ Webhook POST           │ REST API calls
+                  ▼                       ▲
+┌─────────────────────────────────────────────────────────────┐
+│         SUPABASE EDGE FUNCTION (gowa-webhook)               │
+│  /functions/v1/gowa-webhook                                 │
+│                                                             │
+│  - HMAC signature verification                              │
+│  - Workspace lookup via gowa_sessions table                 │
+│  - Contact upsert + session management                      │
+│  - Triggers agent-orchestrator (fire & forget)              │
+└─────────────────┬───────────────────────────────────────────┘
+                  │ supabase.functions.invoke("agent-orchestrator")
+                  ▼
+┌─────────────────────────────────────────────────────────────┐
+│              SUPABASE EDGE FUNCTION (agent-orchestrator)    │
+│                                                             │
+│  - Groq AI dispatch (llama-3.3-70b-versatile)              │
+│  - Tool-calling loop                                        │
+│  - Sends reply via GoWA REST API                            │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## PART 1 — GOWA SERVER SETUP
+
+### Deployment (Railway)
+
+Deploy GoWA as a Docker container on Railway:
+
+```yaml
+# docker-compose.yml for local dev / Railway reference
+services:
+  gowa:
+    image: aldinokemal2104/go-whatsapp-web-multidevice
+    container_name: gowa
+    restart: always
+    ports:
+      - "3000:3000"
+    volumes:
+      - gowa_storage:/app/storages
+    environment:
+      - APP_BASIC_AUTH=admin:YOUR_STRONG_PASSWORD
+      - APP_PORT=3000
+      - APP_DEBUG=false
+      - APP_OS=Chrome
+      - APP_ACCOUNT_VALIDATION=false
+      - APP_WEBHOOK=https://YOUR_NEXTJS_APP.railway.app/api/webhooks/whatsapp
+      - APP_WEBHOOK_SECRET=YOUR_WEBHOOK_SECRET_KEY
+      - APP_WEBHOOK_EVENTS=message,message.ack
+volumes:
+  gowa_storage:
+```
+
+### Environment Variables (store in Railway / .env.local)
+
+```env
+GOWA_BASE_URL=https://your-gowa-instance.railway.app
+GOWA_BASIC_AUTH_USER=admin
+GOWA_BASIC_AUTH_PASS=your_strong_password
+GOWA_WEBHOOK_SECRET=your_webhook_hmac_secret
+```
+
+### Session Setup (One-time)
+
+After deployment, visit `https://your-gowa-instance.railway.app` in browser.
+Log in with basic auth credentials → scan QR code with the business WhatsApp number.
+This session is persistent in the `gowa_storage` volume. Do NOT re-scan unless session breaks.
+
+---
+
+## PART 2 — INCOMING MESSAGES (Webhook)
+
+### How It Works
+
+Every time a user sends a WhatsApp message to your business number, GoWA:
+1. Captures the message internally
+2. Sends a HTTP POST to your configured `APP_WEBHOOK` URL
+3. Includes HMAC-SHA256 signature in the header for verification
+
+### Webhook URL
+
+```
+POST https://[project-ref].supabase.co/functions/v1/gowa-webhook
+```
+
+File: `supabase/functions/gowa-webhook/index.ts`
+
+### Webhook Security — HMAC Verification (MANDATORY)
+
+Implemented in Edge Function using Web Crypto API (`crypto.subtle.verify`).
+
+**RULE: If HMAC verification fails → return 401 immediately. Do NOT process the message.**
+
+### Incoming Webhook Payload Structure (GoWA v8)
+
+```typescript
+// GoWA v8 webhook payload format
+interface GoWAWebhookPayloadV8 {
+  event: 'message' | 'message.ack' | 'message.revoked' | 'presence' | 'connected' | 'disconnected'
+  device_id: string             // GoWA device UUID (matches gowa_sessions.gowa_session_id)
+  payload?: {                   // v8 format
+    from: string                // "919876543210@s.whatsapp.net"
+    chat_id: string             // Same as from
+    body: string                // Message text
+    pushName: string            // Sender's display name
+    id: string                  // Unique message ID
+    isGroup: boolean
+    type: string
+    from_name?: string          // Alternative to pushName
+  }
+}
+
+// Legacy format (still handled for backward compat)
+interface GoWAWebhookPayloadLegacy {
+  event: string
+  session?: string              // Legacy session identifier
+  data?: GoWAMessageData        // Legacy data format
+}
+
+type GoWAMessageType =
+  | 'conversation'              // Plain text message → PROCESS
+  | 'extendedTextMessage'       // Text with link preview → PROCESS (use body)
+  | 'imageMessage'              // Image → HANDLE AS MEDIA (see X7)
+  | 'audioMessage'              // Voice note → HANDLE AS MEDIA (see X7)
+  | 'videoMessage'              // Video → HANDLE AS MEDIA (see X7)
+  | 'documentMessage'           // File/PDF → HANDLE AS MEDIA (see X7)
+  | 'stickerMessage'            // Sticker → IGNORE
+  | 'reactionMessage'           // Reaction emoji → IGNORE
+  | 'liveLocationMessage'       // Live location → IGNORE
+```
+
+### Phone Number Extraction
+
+GoWA sends phone numbers in this format: `"919876543210@s.whatsapp.net"`
+
+```typescript
+function extractPhone(from: string): string {
+  // Remove @s.whatsapp.net suffix → returns "919876543210"
+  return from.replace('@s.whatsapp.net', '').replace('@g.us', '')
+}
+```
+
+**RULE: Always use the cleaned phone number (without suffix) as the identifier in your DB.**
+
+### Full Webhook Handler Implementation (Edge Function)
+
+Implemented in `supabase/functions/gowa-webhook/index.ts`.
+
+**Critical rules:**
+1. Always return 200 to GoWA within 5 seconds or GoWA will retry
+2. Run AI processing asynchronously via `EdgeRuntime.waitUntil()`
+3. HMAC verification uses `crypto.subtle.verify` (Web Crypto API)
+4. End-to-end flow: GoWA → Edge Function → store message → invoke agent-orchestrator → AI reply
+
+---
+
+## PART 3 — OUTGOING MESSAGES (Sending to Users)
+
+### GoWA Client Setup
+
+```typescript
+// /lib/gowa.ts
+
+const GOWA_BASE_URL = process.env.GOWA_BASE_URL!
+const GOWA_AUTH = Buffer.from(
+  `${process.env.GOWA_BASIC_AUTH_USER}:${process.env.GOWA_BASIC_AUTH_PASS}`
+).toString('base64')
+
+const gowaHeaders = {
+  'Content-Type': 'application/json',
+  'Authorization': `Basic ${GOWA_AUTH}`
+}
+```
+
+### Send Text Message (PRIMARY — use this for all AI responses)
+
+```typescript
+// GoWA endpoint: POST /send/message/text
+
+interface SendTextPayload {
+  phone: string    // "919876543210" — NO @s.whatsapp.net suffix
+  message: string  // The text to send
+}
+
+async function sendWhatsAppText(phone: string, message: string): Promise<void> {
+  const response = await fetch(`${GOWA_BASE_URL}/send/message/text`, {
+    method: 'POST',
+    headers: gowaHeaders,
+    body: JSON.stringify({ phone, message })
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(`GoWA send failed: ${error.message}`)
+  }
+}
+```
+
+### Send Image (use for confirmation cards, if needed in v2)
+
+```typescript
+// GoWA endpoint: POST /send/message/image
+// Send image via URL — GoWA fetches and sends it
+
+async function sendWhatsAppImage(
+  phone: string,
+  imageUrl: string,
+  caption: string
+): Promise<void> {
+  await fetch(`${GOWA_BASE_URL}/send/message/image`, {
+    method: 'POST',
+    headers: gowaHeaders,
+    body: JSON.stringify({ phone, image_url: imageUrl, caption })
+  })
+}
+```
+
+### Send Link Preview (use for sharing booking confirmation page)
+
+```typescript
+// GoWA endpoint: POST /send/message/link
+
+async function sendWhatsAppLink(
+  phone: string,
+  link: string,
+  caption: string
+): Promise<void> {
+  await fetch(`${GOWA_BASE_URL}/send/message/link`, {
+    method: 'POST',
+    headers: gowaHeaders,
+    body: JSON.stringify({ phone, link, caption })
+  })
+}
+```
+
+---
+
+## PART 4 — MESSAGE EVENTS AND WHAT TO DO WITH EACH
+
+This table defines EXACTLY how to handle every GoWA event type:
+
+| Event Type | Message Type | Action | Notes |
+|---|---|---|---|
+| `message` | `conversation` | ✅ PROCESS → AI pipeline | Main happy path |
+| `message` | `extendedTextMessage` | ✅ PROCESS → AI pipeline | Contains link, use `body` field |
+| `message` | `imageMessage` | 🔀 MEDIA HANDLER → escalate | See Circumstance X7 in spec |
+| `message` | `audioMessage` | 🔀 MEDIA HANDLER → escalate | Voice notes |
+| `message` | `videoMessage` | 🔀 MEDIA HANDLER → escalate | Videos |
+| `message` | `documentMessage` | 🔀 MEDIA HANDLER → escalate | PDFs, files |
+| `message` | `stickerMessage` | ❌ IGNORE | Don't respond |
+| `message` | `reactionMessage` | ❌ IGNORE | Emoji reactions |
+| `message.ack` | any | ❌ IGNORE | Read receipts |
+| `presence` | any | ❌ IGNORE | Typing indicators |
+| `message.revoked` | any | 📝 LOG ONLY | Message was deleted |
+| `message` (isGroup: true) | any | ❌ IGNORE | Never respond to groups |
+
+---
+
+## PART 5 — GOWA USAGE IN FLOWCORE FEATURES
+
+### Feature: AI Employee Response
+
+```
+Trigger: User sends text on WhatsApp
+GoWA does: POST to /api/webhooks/whatsapp
+FlowCore does: Run AI pipeline → call sendWhatsAppText()
+GoWA does: Delivers message to user's WhatsApp
+```
+
+### Feature: Appointment Confirmation
+
+```
+Trigger: Sara (booking agent) has a slot confirmed
+FlowCore does: call sendWhatsAppText() with confirmation details
+Format:
+  "✅ Confirmed! Your appointment:
+   📅 Tuesday, April 29
+   ⏰ 2:00 PM
+   Reply CANCEL if you need to reschedule."
+```
+
+### Feature: Appointment Reminder (24hrs before)
+
+```
+Trigger: Cron job runs every hour, checks appointments table
+  WHERE appointment_time BETWEEN NOW() AND NOW() + INTERVAL '25 hours'
+  AND reminder_sent = false
+FlowCore does: call sendWhatsAppText() with reminder
+GoWA does: Delivers reminder to user
+DB: Set reminder_sent = true on appointment record
+```
+
+### Feature: Escalation Notification
+
+```
+Trigger: escalation_request tool is called
+FlowCore does: 
+  1. Log to escalation_logs table
+  2. Notify human rep via sendWhatsAppText() to BUSINESS owner number
+  3. Tell user a human is coming
+Format to business owner:
+  "🚨 Escalation Alert
+   Customer: [Name] ([phone])
+   Reason: [type]
+   Message: [last user message]
+   Session: [link to dashboard]"
+```
+
+### Feature: Lead Capture Acknowledgement
+
+```
+Trigger: capture_lead tool succeeds
+FlowCore does: NO message to user (silent)
+  Only internal: write to Supabase contacts + Google Sheet
+```
+
+### Feature: Off-Hours Auto-Reply
+
+```
+Trigger: Webhook received outside business_hours in settings table
+FlowCore does:
+  1. Check current IST time vs business_hours
+  2. If off-hours → sendWhatsAppText() with off-hours message
+  3. capture_lead silently
+  4. DO NOT run AI pipeline
+```
+
+---
+
+## PART 6 — PHONE NUMBER RULES
+
+```typescript
+// ALWAYS use this formatter before any GoWA API call
+function formatPhoneForGoWA(phone: string): string {
+  // Remove all non-digits
+  let cleaned = phone.replace(/\D/g, '')
+
+  // If Indian number without country code (10 digits starting with 6-9)
+  if (cleaned.length === 10 && /^[6-9]/.test(cleaned)) {
+    cleaned = '91' + cleaned
+  }
+
+  // Remove any @s.whatsapp.net if present
+  cleaned = cleaned.replace('@s.whatsapp.net', '')
+
+  return cleaned // Returns: "919876543210"
+}
+
+// ALWAYS use this formatter when storing in DB
+function formatPhoneForDB(gowaPhone: string): string {
+  return gowaPhone
+    .replace('@s.whatsapp.net', '')
+    .replace('@g.us', '')
+  // Returns: "919876543210"
+}
+```
+
+**Rules:**
+- GoWA API expects phone WITHOUT the `@s.whatsapp.net` suffix
+- DB stores phone WITHOUT the `@s.whatsapp.net` suffix  
+- Webhook payload sends phone WITH the `@s.whatsapp.net` suffix → strip it immediately
+
+---
+
+## PART 7 — RATE LIMITS AND ANTI-BAN RULES
+
+GoWA uses WhatsApp Web under the hood. WhatsApp can ban numbers for spammy behavior.
+These rules are MANDATORY to protect the business's WhatsApp number:
+
+```typescript
+const GOWA_SEND_RULES = {
+  // Never send more than 1 message per second to the same number
+  minDelayBetweenMessages: 1000, // ms
+
+  // Never send more than 20 messages per hour total (across all users)
+  // This is conservative — adjust only after testing
+  maxMessagesPerHour: 20,
+
+  // Never send the exact same text twice in a row to same number
+  // Add variation or personalization
+  avoidDuplicateMessages: true,
+
+  // Never send bulk messages to multiple users simultaneously
+  // Queue them with delays
+  bulkSendDelay: 2000 // ms between each number in bulk
+}
+```
+
+```typescript
+// Message queue implementation for bulk sends (reminders, follow-ups)
+async function sendBulkMessages(messages: BulkMessage[]): Promise<void> {
+  for (const msg of messages) {
+    await sendWhatsAppText(msg.phone, msg.text)
+    await new Promise(resolve => setTimeout(resolve, GOWA_SEND_RULES.bulkSendDelay))
+  }
+}
+```
+
+---
+
+## PART 8 — ERROR HANDLING FOR GOWA
+
+```typescript
+// All GoWA API calls must use this wrapper
+async function gowaApiCall<T>(
+  endpoint: string,
+  payload: object
+): Promise<T> {
+  try {
+    const response = await fetch(`${GOWA_BASE_URL}${endpoint}`, {
+      method: 'POST',
+      headers: gowaHeaders,
+      body: JSON.stringify(payload),
+      // Timeout after 8 seconds
+      signal: AbortSignal.timeout(8000)
+    })
+
+    if (response.status === 429) {
+      // Rate limited — queue for retry
+      await queueMessageForRetry(payload)
+      throw new Error('GOWA_RATE_LIMITED')
+    }
+
+    if (response.status === 500) {
+      // GoWA server error — WhatsApp session may be disconnected
+      await alertSessionDisconnected()
+      throw new Error('GOWA_SERVER_ERROR')
+    }
+
+    if (!response.ok) {
+      throw new Error(`GOWA_HTTP_${response.status}`)
+    }
+
+    return response.json()
+  } catch (error) {
+    if (error.name === 'TimeoutError') {
+      throw new Error('GOWA_TIMEOUT')
+    }
+    throw error
+  }
+}
+```
+
+### GoWA Error Types and Recovery
+
+| Error | Meaning | Action |
+|---|---|---|
+| `GOWA_RATE_LIMITED` (429) | Too many messages | Queue + retry after 60s |
+| `GOWA_SERVER_ERROR` (500) | Session disconnected | Alert admin, pause sends |
+| `GOWA_TIMEOUT` | GoWA unreachable | Retry once after 5s, then alert |
+| `GOWA_HTTP_401` | Wrong basic auth | Check env vars immediately |
+| `GOWA_HTTP_400` | Bad phone format | Log + skip, don't retry |
+
+---
+
+## PART 9 — SESSION HEALTH CHECK
+
+GoWA's WhatsApp session can disconnect (phone offline, WhatsApp update, etc.).
+Implement a health check that runs every 5 minutes:
+
+```typescript
+// GoWA endpoint: GET /user
+// Returns 200 if session active, 500 if disconnected
+
+async function checkGoWASessionHealth(): Promise<boolean> {
+  try {
+    const response = await fetch(`${GOWA_BASE_URL}/user`, {
+      headers: { 'Authorization': `Basic ${GOWA_AUTH}` }
+    })
+    return response.ok
+  } catch {
+    return false
+  }
+}
+
+// In a cron job or middleware:
+// If health check fails → pause all outgoing messages
+// Log to escalation_logs with type: 'gowa_disconnected'
+// Alert admin via email (Supabase edge function or Resend)
+```
+
+---
+
+## PART 10 — WHAT GOWA DOES NOT DO (HARD LIMITS)
+
+These are things GoWA CANNOT do. Do NOT attempt to implement them:
+
+1. ❌ **Cannot run GoWA and MCP simultaneously** — it's one or the other per instance
+2. ❌ **Cannot send to WhatsApp Business API (Meta) numbers** — different protocol
+3. ❌ **Cannot create WhatsApp groups** programmatically
+4. ❌ **Cannot send bulk broadcast messages** — violates WhatsApp ToS, leads to ban
+5. ❌ **Cannot process voice notes** — audio transcription is out of scope for v1
+6. ❌ **Cannot guarantee message delivery** — WhatsApp may drop messages silently
+7. ❌ **Cannot use WhatsApp templates** — that requires official Meta Business API
+8. ❌ **Cannot run multiple WhatsApp numbers** on one GoWA instance without multi-account setup
+
+---
+
+## PART 11 — KEY FILES FOR GOWA
+
+```
+/lib/gowa.ts                          ← GoWA client (send functions + error wrapper)
+/app/actions/whatsapp.ts              ← Server actions (message processing, queue, health)
+/app/actions/gowa.ts                  ← Server actions (QR init, disconnect)
+/app/api/gowa/init/route.ts           ← QR login initiation
+/app/api/gowa/status/route.ts         ← Device status + auto-sync DB session
+/app/api/gowa/logout/route.ts         ← Logout + delete GoWA devices
+/supabase/functions/gowa-webhook/     ← Webhook Edge Function (INCOMING MESSAGES)
+/supabase/functions/agent-orchestrator/ ← AI orchestration Edge Function
+```
+
+---
+
+## PART 12 — ENVIRONMENT VARIABLES CHECKLIST
+
+Before writing any GoWA code, confirm these are set:
+
+```env
+# GoWA Connection
+GOWA_BASE_URL=                  # e.g. https://gowa.railway.app
+GOWA_API_KEY=                   # user:pass → Base64 encoded
+
+# Webhook Security — MUST match GoWA Railway's APP_WEBHOOK_SECRET
+GOWA_WEBHOOK_SECRET=            # Must match Railway APP_WEBHOOK_SECRET
+
+# GoWA Railway env vars (set in Railway dashboard, NOT in .env.local):
+# APP_WEBHOOK=https://[project-ref].supabase.co/functions/v1/gowa-webhook
+# APP_WEBHOOK_SECRET=<same as GOWA_WEBHOOK_SECRET>
+# APP_WEBHOOK_EVENTS=message,message.ack
+```
+
+---
+
+## CODING AGENT RULES FOR GOWA
+
+1. ❌ Never call GoWA API endpoints that aren't listed in this document
+2. ❌ Never send a message to a user without going through `gowaApiCall()` wrapper
+3. ❌ Never process group messages (`isGroup: true`)
+4. ❌ Never skip HMAC verification on incoming webhooks
+5. ❌ Never return a non-200 response to GoWA webhook unless it's truly unauthorized
+6. ❌ Never store phone numbers with `@s.whatsapp.net` suffix in the DB
+7. ✅ Always return 200 to GoWA webhook FIRST, then process async
+8. ✅ Always use `formatPhoneForGoWA()` before any send call
+9. ✅ Always implement rate limiting delays for bulk sends
+10. ✅ Always implement the session health check cron
+
+---
+
+*FlowCore GoWA Integration Specification v1.0*
+
+
+Assembled comprehensive GoWA integration specification for coding agentAssembled comprehensive GoWA integration specification for coding agentFull GoWA spec ready for your coding agent. Here's what's covered across the 12 parts:
+The core flow in one line:
+User WhatsApp → GoWA server → your webhook → AI agent → GoWA REST API → back to user
+The most important things your agent must get right:
+1. Return 200 first, process async. GoWA retries the webhook if it doesn't get a 200 within 5 seconds. If your AI takes 4 seconds to think and you wait, GoWA will fire the webhook again and you'll process the same message twice.
+2. HMAC verification is mandatory. GoWA sends webhooks with an HMAC header using sha256 as the default key secret. Kilo If you skip this check, anyone can POST fake messages to your webhook.
+3. Phone number format matters. GoWA sends 919876543210@s.whatsapp.net in the webhook but expects 919876543210 (no suffix) when you send messages back. Strip the suffix immediately on receive.
+4. Anti-ban rules are real. GoWA is unofficial and not affiliated with WhatsApp Kilo, meaning WhatsApp can ban the number if it detects bot-like behavior. The 1-second delay between messages and no bulk broadcasts are non-negotiable.
+5. GoWA has one hard limitation — it can only run MCP or REST API, not both simultaneously Kilo — so FlowCore uses it in REST mode only

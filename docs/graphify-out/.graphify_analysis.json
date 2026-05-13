@@ -1,0 +1,58 @@
+{
+  "communities": {
+    "0": [
+      "arch_agent_orchestrator",
+      "pattern_wait_until",
+      "tech_gowa"
+    ],
+    "1": [
+      "conduit_aesthetic",
+      "flowcore_ai"
+    ],
+    "2": [
+      "arch_server_actions"
+    ],
+    "3": [
+      "arch_api_routes"
+    ],
+    "4": [
+      "db_hnsw_index"
+    ],
+    "5": [
+      "safety_pin_logic"
+    ],
+    "6": [
+      "ui_insights_dashboard"
+    ],
+    "7": [
+      "ui_agent_selection"
+    ],
+    "8": [
+      "ui_escalation_center"
+    ],
+    "9": [
+      "ui_context_sidebar"
+    ]
+  },
+  "cohesion": {
+    "0": 0.67,
+    "1": 1.0,
+    "2": 1.0,
+    "3": 1.0,
+    "4": 1.0,
+    "5": 1.0,
+    "6": 1.0,
+    "7": 1.0,
+    "8": 1.0,
+    "9": 1.0
+  },
+  "gods": [],
+  "surprises": [],
+  "questions": [
+    {
+      "type": "no_signal",
+      "question": null,
+      "why": "Not enough signal to generate questions. This usually means the corpus has no AMBIGUOUS edges, no bridge Agents, no INFERRED relationships, and all communities are tightly cohesive. Add more files or run with --mode deep to extract richer edges."
+    }
+  ]
+}

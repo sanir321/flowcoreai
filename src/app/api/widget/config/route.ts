@@ -1,0 +1,68 @@
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+import { z } from "zod";
+import { rateLimit } from "@/lib/rate-limit";
+
+export const runtime = "edge";
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+const ConfigQuerySchema = z.object({
+  id: z.string().uuid(),
+});
+
+export async function GET(req: NextRequest) {
+  try {
+    const ip = req.headers.get("x-forwarded-for") || "127.0.0.1";
+    const { success: isAllowed } = await rateLimit(ip, 60, 60);
+    if (!isAllowed) {
+      return new Response("Too many requests", { status: 429 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const result = ConfigQuerySchema.safeParse({ id: searchParams.get("id") });
+    
+    if (!result.success) {
+      return new Response("Invalid workspace ID", { status: 400 });
+    }
+
+    const workspaceId = result.data.id;
+
+    // 1. Fetch Widget Config
+    const { data: config } = await supabaseAdmin
+      .from("widget_config")
+      .select("*")
+      .eq("workspace_id", workspaceId)
+      .single();
+
+    // 2. Fetch primary agent for name/avatar
+    const { data: agent } = await supabaseAdmin
+      .from("workspace_agents")
+      .select("config")
+      .eq("workspace_id", workspaceId)
+      .eq("agent_type", "customer_support")
+      .single();
+
+    const responseData = {
+      agent_name: (agent?.config as any)?.name || "Support AI",
+      accent_color: config?.accent_color || "#f9510b",
+      greeting: config?.greeting || "Hi! How can I help you today?",
+      theme: config?.theme || "dark",
+      avatar_url: config?.avatar_url || null,
+    };
+
+    return NextResponse.json(responseData, {
+      headers: {
+        "Cache-Control": "public, max-age=300",
+        "Access-Control-Allow-Origin": "*", // Required: widget embedded on external domains
+      },
+    });
+
+  } catch (error: any) {
+    console.error("Widget Config Error:", error);
+    return new Response("Failed to load widget configuration", { status: 500 });
+  }
+}

@@ -1,0 +1,149 @@
+"use server"
+
+import { createClient } from "@/lib/supabase/server"
+import { SendManualReplySchema, ResolveEscalationSchema, TakeOverSessionSchema } from "@/lib/schemas"
+import { revalidatePath } from "next/cache"
+import { sendTextMessage } from "@/lib/gowa"
+import { ActionResponse } from "./workspace"
+
+export async function takeOverSession(input: unknown): Promise<ActionResponse<{ success: true }>> {
+  try {
+    const result = TakeOverSessionSchema.safeParse(input)
+    if (!result.success) return { data: null, error: result.error.issues[0]?.message || "Invalid input" }
+
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { data: null, error: "Unauthorized" }
+
+    const { session_id } = result.data
+
+    const { error } = await supabase
+      .from("conversation_sessions")
+      .update({ status: 'escalated' })
+      .eq("id", session_id)
+
+    if (error) return { data: null, error: error.message }
+
+    revalidatePath("/inbox")
+    return { data: { success: true }, error: null }
+  } catch (err) {
+    console.error(err)
+    return { data: null, error: err instanceof Error ? err.message : "Failed to take over session" }
+  }
+}
+
+export async function sendManualReply(input: unknown): Promise<ActionResponse<any>> {
+  try {
+    const result = SendManualReplySchema.safeParse(input)
+    if (!result.success) return { data: null, error: result.error.issues[0]?.message || "Invalid input" }
+
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { data: null, error: "Unauthorized" }
+
+    const workspaceId = user.app_metadata.workspace_id
+    const { session_id, content } = result.data
+
+    // Fetch session details
+    const { data: session } = await supabase
+      .from("conversation_sessions")
+      .select("*, contacts!inner(phone)")
+      .eq("id", session_id)
+      .single()
+
+    if (!session) return { data: null, error: "Session not found" }
+
+    // Insert outbound message
+    const { data: message, error: msgError } = await supabase
+      .from("messages")
+      .insert({
+        workspace_id: workspaceId,
+        session_id,
+        content,
+        role: 'agent',
+        direction: 'outbound',
+        metadata: { manual_reply: true, operator_id: user.id }
+      })
+      .select()
+      .single()
+
+    if (msgError) return { data: null, error: msgError.message }
+
+    // Update session metadata
+    await supabase
+      .from("conversation_sessions")
+      .update({ 
+        last_message_at: new Date().toISOString(),
+        last_message_preview: content.substring(0, 100)
+      })
+      .eq("id", session_id)
+
+    // If WhatsApp, dispatch via GoWA
+    if (session.channel === 'whatsapp' && (session.contacts as any)?.phone) {
+       try {
+          // Fetch the workspace-specific device ID
+          const { data: gSession } = await supabase
+            .from("gowa_sessions")
+            .select("gowa_session_id")
+            .eq("workspace_id", workspaceId)
+            .maybeSingle()
+          
+          if (gSession?.gowa_session_id) {
+            await sendTextMessage(gSession.gowa_session_id, (session.contacts as any).phone, content)
+          } else {
+            console.error("No GoWA session found for workspace", workspaceId)
+          }
+       } catch (e) {
+          console.error("GoWA dispatch failed:", e)
+          return { data: null, error: "Failed to dispatch WhatsApp message. Internal GoWA error." }
+       }
+    }
+
+    revalidatePath("/inbox")
+    return { data: message, error: null }
+  } catch (err) {
+    console.error(err)
+    return { data: null, error: err instanceof Error ? err.message : "Failed to send message" }
+  }
+}
+
+export async function resolveEscalation(input: unknown): Promise<ActionResponse<{ success: true }>> {
+  try {
+    const result = ResolveEscalationSchema.safeParse(input)
+    if (!result.success) return { data: null, error: result.error.issues[0]?.message || "Invalid input" }
+
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { data: null, error: "Unauthorized" }
+
+    const { escalation_id, notes } = result.data
+
+    // 1. Resolve the log
+    const { data: log, error: logError } = await supabase
+      .from("escalation_logs")
+      .update({
+        status: 'resolved',
+        resolved_at: new Date().toISOString(),
+        resolved_by: user.id,
+        notes
+      })
+      .eq("id", escalation_id)
+      .select()
+      .single()
+
+    if (logError) return { data: null, error: logError.message }
+
+    // 2. Set session back to active
+    await supabase
+      .from("conversation_sessions")
+      .update({ status: 'active' })
+      .eq("id", log.session_id)
+
+    revalidatePath("/inbox")
+    revalidatePath("/agent-hub/escalations")
+    return { data: { success: true }, error: null }
+  } catch (err) {
+    console.error(err)
+    return { data: null, error: err instanceof Error ? err.message : "Failed to resolve escalation" }
+  }
+}

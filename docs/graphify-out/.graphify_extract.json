@@ -1,0 +1,89 @@
+{
+  "Agents": [
+    {
+      "id": "flowcore_ai",
+      "label": "FlowCore AI",
+      "file_type": "document"
+    },
+    {
+      "id": "arch_server_actions",
+      "label": "Server Actions Mutation Architecture",
+      "file_type": "document"
+    },
+    {
+      "id": "arch_api_routes",
+      "label": "API Routes for External Calls",
+      "file_type": "document"
+    },
+    {
+      "id": "tech_gowa",
+      "label": "GoWA (WhatsApp Service)",
+      "file_type": "document"
+    },
+    {
+      "id": "arch_agent_orchestrator",
+      "label": "Agent Orchestrator Pipeline",
+      "file_type": "document"
+    },
+    {
+      "id": "pattern_wait_until",
+      "label": "EdgeRuntime.waitUntil Pattern",
+      "file_type": "document"
+    },
+    {
+      "id": "db_hnsw_index",
+      "label": "HNSW Vector Index",
+      "file_type": "document"
+    },
+    {
+      "id": "safety_pin_logic",
+      "label": "Danger Zone Safety PIN",
+      "file_type": "document"
+    },
+    {
+      "id": "conduit_aesthetic",
+      "label": "Premium Burgundy Aesthetic",
+      "file_type": "document"
+    },
+    {
+      "id": "ui_insights_dashboard",
+      "label": "Insights Dashboard",
+      "file_type": "image"
+    },
+    {
+      "id": "ui_agent_selection",
+      "label": "Agent Selection Carousel",
+      "file_type": "image"
+    },
+    {
+      "id": "ui_escalation_center",
+      "label": "Escalation Center",
+      "file_type": "image"
+    },
+    {
+      "id": "ui_context_sidebar",
+      "label": "Customer Context Sidebar",
+      "file_type": "image"
+    }
+  ],
+  "edges": [
+    {
+      "source": "arch_agent_orchestrator",
+      "target": "tech_gowa",
+      "relation": "uses"
+    },
+    {
+      "source": "arch_agent_orchestrator",
+      "target": "pattern_wait_until",
+      "relation": "conceptually_related_to"
+    },
+    {
+      "source": "flowcore_ai",
+      "target": "conduit_aesthetic",
+      "relation": "references"
+    }
+  ],
+  "hyperedges": [],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

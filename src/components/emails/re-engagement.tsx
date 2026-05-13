@@ -1,0 +1,80 @@
+import {
+  Body,
+  Button,
+  Container,
+  Head,
+  Heading,
+  Hr,
+  Html,
+  Preview,
+  Section,
+  Text,
+  Tailwind,
+} from "@react-email/components";
+import * as React from "react";
+
+interface ReEngagementEmailProps {
+  username: string;
+  loginUrl: string;
+}
+
+export const ReEngagementEmail = ({
+  username = "there",
+  loginUrl = "https://flowcore.ai/login",
+}: ReEngagementEmailProps) => {
+  const previewText = `We miss you, ${username}!`;
+
+  return (
+    <Html>
+      <Head />
+      <Preview>{previewText}</Preview>
+      <Tailwind
+        config={{
+          theme: {
+            extend: {
+              colors: {
+                brand: "#c65f39",
+              },
+            },
+          },
+        }}
+      >
+        <Body className="bg-white my-auto mx-auto font-sans px-2">
+          <Container className="border border-solid border-[#eaeaea] rounded-xl my-[40px] mx-auto p-[20px] max-w-[465px]">
+            <Section className="mt-[32px]">
+              <div style={{ marginBottom: '36px' }}>
+                <span style={{ fontSize: '20px', fontWeight: 800, color: '#111827', letterSpacing: '-0.5px', fontFamily: "'Inter', 'Helvetica Neue', Arial, sans-serif" }}>flowcore</span>
+              </div>
+            </Section>
+            <Heading className="text-black text-[24px] font-bold p-0 my-[30px] mx-0">
+              We miss you!
+            </Heading>
+            <Text className="text-black text-[14px] leading-[24px]">
+              Hi {username},
+            </Text>
+            <Text className="text-black text-[14px] leading-[24px]">
+              It's been a while since we saw you on FlowCore. We've made several improvements to our AI orchestration that we think you'll love!
+            </Text>
+            <Text className="text-black text-[14px] leading-[24px]">
+              Why not jump back in and see how your WhatsApp automation is doing?
+            </Text>
+            <Section className="text-center mt-[32px] mb-[32px]">
+              <Button
+                className="bg-brand rounded-lg text-white text-[12px] font-semibold no-underline text-center px-5 py-3"
+                href={loginUrl}
+              >
+                Return to Dashboard
+              </Button>
+            </Section>
+            <Hr className="border border-solid border-[#eaeaea] my-[26px] mx-0 w-full" />
+            <Text className="text-[#666666] text-[12px] leading-[24px]">
+              FlowCore Automation Team
+            </Text>
+          </Container>
+        </Body>
+      </Tailwind>
+    </Html>
+  );
+};
+
+export default ReEngagementEmail;

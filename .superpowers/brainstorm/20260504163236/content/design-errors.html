@@ -1,0 +1,27 @@
+<h2>Compliance Layer Design</h2>
+<p class="subtitle">Section 3: Error Handling & Testing</p>
+
+<div class="section">
+  <h3>Error Handling</h3>
+  <ul>
+    <li><b>Window Expired:</b> If >24h, we will create an entry in <code>escalation_logs</code> with <code>trigger_type: 'wa_window_expired'</code>. This alerts the user that they need to reply manually.</li>
+    <li><b>GoWA Timeout:</b> If the GoWA server is down during presence/message sending, we log a warning but don't crash the orchestrator, ensuring the DB record of the AI response is still saved.</li>
+  </ul>
+</div>
+
+<div class="section">
+  <h3>Testing Strategy</h3>
+  <div class="mockup">
+    <div class="mockup-body">
+      <ol style="font-size: 13px;">
+        <li><b>Unit Test:</b> Verify the 24h window calculation logic with mock timestamps.</li>
+        <li><b>Integration Test:</b> Mock the GoWA API and verify that <code>/send/presence</code> is called <i>before</i> <code>/send/message</code>.</li>
+        <li><b>Manual Test:</b> Send a message from a real phone and watch the "typing..." indicator.</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <p><b>This concludes the design phase.</b> Once you approve this, I will write the formal spec and we can move to implementation.</p>
+</div>

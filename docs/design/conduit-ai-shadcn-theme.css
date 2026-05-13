@@ -1,0 +1,19 @@
+/* shadcn/ui Theme — extracted from https://conduit.ai/ */
+/* Paste into your globals.css */
+
+@layer base {
+  :root {
+    --background: 0 0% 2%;
+    --foreground: 0 0% 0%;
+    --primary: 16 55% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 29 100% 43%;
+    --secondary-foreground: 0 0% 100%;
+    --accent: 0 100% 94%;
+    --accent-foreground: 0 0% 0%;
+    --muted: 0 0% 20%;
+    --muted-foreground: 30 6% 6%;
+    --border: 0 0% 75%;
+    --radius: 8px;
+  }
+}

@@ -1,0 +1,35 @@
+<h2>Compliance Layer Design</h2>
+<p class="subtitle">Section 1: Architecture & Data Flow</p>
+
+<div class="section">
+  <h3>Centralized Dispatch Strategy</h3>
+  <p>To ensure consistency across the platform, we will move all WhatsApp compliance logic into the <b>Agent Orchestrator</b>. This ensures that whether a message is triggered by a webhook or a manual action, it follows the same safety rules.</p>
+</div>
+
+<div class="mockup">
+  <div class="mockup-header">New Logic Flow</div>
+  <div class="mockup-body">
+    <ol style="font-size: 13px; line-height: 1.6;">
+      <li><b>Start:</b> Orchestrator receives request.</li>
+      <li><b>Check:</b> Is it a WhatsApp channel?</li>
+      <li><b>Verify:</b> Is <code>last_customer_message_at</code> < 24 hours ago?
+        <ul>
+          <li>If NO: Log "WA_WINDOW_EXPIRED" and <b>Abort</b>.</li>
+        </ul>
+      </li>
+      <li><b>Process:</b> Run AI to generate response.</li>
+      <li><b>Dispatch Cycle:</b> For each message part:
+        <ul>
+          <li>Send <code>presence: composing</code> to GoWA.</li>
+          <li>Wait <code>(length * 35ms)</code>.</li>
+          <li>Send <code>message</code> to GoWA.</li>
+          <li>Send <code>presence: paused</code> to GoWA.</li>
+        </ul>
+      </li>
+    </ol>
+  </div>
+</div>
+
+<div class="section">
+  <p><b>Does this centralized approach look correct to you?</b> This avoids having duplicate logic in the Webhook.</p>
+</div>

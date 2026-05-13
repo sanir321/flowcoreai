@@ -1,0 +1,13 @@
+﻿@text
+# Visual Polish and Compliance Implementation
+
+## Visual Polish
+- Add .glass-neural CSS effects to existing UI components
+- Add spring-based animations for transitions
+- Do NOT change the layout, color scheme, fonts, or add dark mode
+
+## Compliance Layer
+- Enforce 24-hour response window logic for WhatsApp messages
+- Add artificial typing delays at 35ms per character before sending messages
+- This is to prevent Meta/WhatsApp bans
+@
