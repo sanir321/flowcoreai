@@ -100,6 +100,10 @@ Open [http://localhost:3000](http://localhost:3000).
 supabase functions deploy agent-orchestrator
 supabase functions deploy gowa-webhook
 supabase functions deploy gowa-cleanup
+supabase functions deploy tool-executor
+supabase functions deploy ingest-document
+supabase functions deploy ingest-url
+supabase functions deploy crm-export
 ```
 
 ## Project Structure
