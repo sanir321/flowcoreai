@@ -10,7 +10,7 @@
 | **Frontend** | Next.js 15 (App Router, TypeScript strict) | Vercel |
 | **Backend** | Supabase (PostgreSQL, Auth, Storage) | Supabase Cloud |
 | **AI Execution** | `llama-3.3-70b-versatile` (Groq) | Groq Cloud |
-| **Embeddings** | `all-MiniLM-L6-v2` | HuggingFace Inference API |
+| **Embeddings** | `gte-small` | Supabase.ai.Session (built-in) |
 | **WhatsApp Bridge** | GoWA (Multi-device) | Railway |
 | **Integrations** | Google Calendar & Google Sheets | Google Cloud Platform |
 
@@ -28,7 +28,7 @@
 - **Persona**: Controlled via `workspace_agents` config.
 
 ### 🔢 Vector Embeddings
-- **Model**: HuggingFace `all-MiniLM-L6-v2` (384 dimensions, padded to 1536)
+- **Model**: `gte-small` via `Supabase.ai.Session` (384 dimensions)
 - **Role**: Vectorizes Knowledge Base chunks during upload for similarity search.
 - **Engine**: PostgreSQL `pgvector` with HNSW index.
 
@@ -55,4 +55,4 @@
 | `GOWA_BASE_URL` | Railway URL for WhatsApp bridge |
 | `GROQ_API_KEY` | Authentication for Groq AI |
 | `GOOGLE_CLIENT_ID` | OAuth credentials for Google Workspace |
-| `HUGGINGFACE_API_KEY` | Authentication for HuggingFace Inference API |
+| `HUGGINGFACE_API_KEY` | Deprecated — embeddings now use Supabase.ai.Session |

@@ -31,11 +31,7 @@ Deno.serve(async (req) => {
     if (!response.ok) throw new Error(`Failed to fetch URL: ${response.statusText}`)
     
     const html = await response.text()
-    const text = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, ' ')
-                     .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, ' ')
-                     .replace(/<[^>]*>?/gm, ' ')
-                     .replace(/\s+/g, ' ')
-                     .trim()
+    const text = convertHtmlToText(html)
 
     if (text.length < 10) throw new Error("No meaningful content found on the page.")
 
@@ -115,6 +111,114 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
   }
 })
+
+function convertHtmlToText(html: string): string {
+  let text = html
+
+  // Remove script and style blocks
+  text = text.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+  text = text.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+  text = text.replace(/<svg\b[^<]*(?:(?!<\/svg>)<[^<]*)*<\/svg>/gi, '')
+  text = text.replace(/<noscript\b[^<]*(?:(?!<\/noscript>)<[^<]*)*<\/noscript>/gi, '')
+
+  // Remove common noise elements (nav, footer, header, sidebar, etc.)
+  text = text.replace(/<nav\b[^<]*(?:(?!<\/nav>)<[^<]*)*<\/nav>/gi, '')
+  text = text.replace(/<footer\b[^<]*(?:(?!<\/footer>)<[^<]*)*<\/footer>/gi, '')
+  text = text.replace(/<header\b[^<]*(?:(?!<\/header>)<[^<]*)*<\/header>/gi, '')
+  text = text.replace(/<aside\b[^<]*(?:(?!<\/aside>)<[^<]*)*<\/aside>/gi, '')
+  text = text.replace(/<form\b[^<]*(?:(?!<\/form>)<[^<]*)*<\/form>/gi, '')
+
+  // Convert structural elements to markdown-like markers
+  // Headings: add # prefix and newlines
+  text = text.replace(/<h1[^>]*>/gi, '# ')
+  text = text.replace(/<\/h1>/gi, '\n\n')
+  text = text.replace(/<h2[^>]*>/gi, '## ')
+  text = text.replace(/<\/h2>/gi, '\n\n')
+  text = text.replace(/<h3[^>]*>/gi, '### ')
+  text = text.replace(/<\/h3>/gi, '\n\n')
+  text = text.replace(/<h4[^>]*>/gi, '#### ')
+  text = text.replace(/<\/h4>/gi, '\n\n')
+  text = text.replace(/<h5[^>]*>/gi, '##### ')
+  text = text.replace(/<\/h5>/gi, '\n\n')
+  text = text.replace(/<h6[^>]*>/gi, '###### ')
+  text = text.replace(/<\/h6>/gi, '\n\n')
+
+  // List items: bullet points
+  text = text.replace(/<li[^>]*>/gi, '\n- ')
+  text = text.replace(/<\/li>/gi, '')
+
+  // Ordered list items
+  text = text.replace(/<ol[^>]*>/gi, '\n')
+  text = text.replace(/<\/ol>/gi, '\n')
+
+  // Unordered list
+  text = text.replace(/<ul[^>]*>/gi, '\n')
+  text = text.replace(/<\/ul>/gi, '\n')
+
+  // Links: [text](url)
+  text = text.replace(/<a\s+(?:[^>]*?\s+)?href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi, '[$2]($1)')
+  text = text.replace(/<a\s+(?:[^>]*?\s+)?href='([^']*)'[^>]*>([\s\S]*?)<\/a>/gi, '[$2]($1)')
+
+  // Bold/strong
+  text = text.replace(/<(?:strong|b)\b[^>]*>/gi, '**')
+  text = text.replace(/<\/(?:strong|b)>/gi, '**')
+
+  // Italic/emphasis
+  text = text.replace(/<(?:em|i)\b[^>]*>/gi, '*')
+  text = text.replace(/<\/(?:em|i)>/gi, '*')
+
+  // Inline code
+  text = text.replace(/<code[^>]*>/gi, '`')
+  text = text.replace(/<\/code>/gi, '`')
+
+  // Block code
+  text = text.replace(/<pre[^>]*>/gi, '\n```\n')
+  text = text.replace(/<\/pre>/gi, '\n```\n')
+
+  // Tables: extract cells with pipe separators
+  text = text.replace(/<table[^>]*>/gi, '\n')
+  text = text.replace(/<\/table>/gi, '\n')
+  text = text.replace(/<tr[^>]*>/gi, '\n')
+  text = text.replace(/<\/tr>/gi, '')
+  text = text.replace(/<th[^>]*>/gi, '| ')
+  text = text.replace(/<\/th>/gi, ' ')
+  text = text.replace(/<td[^>]*>/gi, '| ')
+  text = text.replace(/<\/td>/gi, ' ')
+
+  // Line breaks
+  text = text.replace(/<br\s*\/?>/gi, '\n')
+  text = text.replace(/<\/p>/gi, '\n\n')
+  text = text.replace(/<\/div>/gi, '\n')
+  text = text.replace(/<\/li>/gi, '')
+  text = text.replace(/<\/dd>/gi, '\n')
+  text = text.replace(/<\/dt>/gi, '\n')
+  text = text.replace(/<\/hgroup>/gi, '\n')
+
+  // Horizontal rules
+  text = text.replace(/<hr\s*\/?>/gi, '\n---\n')
+
+  // Strip any remaining HTML tags
+  text = text.replace(/<[^>]*>?/g, '')
+
+  // Decode common HTML entities
+  text = text.replace(/&amp;/g, '&')
+  text = text.replace(/&lt;/g, '<')
+  text = text.replace(/&gt;/g, '>')
+  text = text.replace(/&quot;/g, '"')
+  text = text.replace(/&#39;/g, "'")
+  text = text.replace(/&nbsp;/g, ' ')
+  text = text.replace(/&#x27;/g, "'")
+  text = text.replace(/&#x60;/g, '`')
+  text = text.replace(/&#x2F;/g, '/')
+
+  // Clean up excessive whitespace
+  text = text.replace(/\n{3,}/g, '\n\n')
+  text = text.replace(/[ \t]+/g, ' ')
+  text = text.replace(/^\s+|\s+$/gm, '')
+  text = text.replace(/^[ \t]+\n/gm, '')
+
+  return text.trim()
+}
 
 function splitIntoChunks(text: string, maxSize: number): string[] {
   const sentences = text.match(/[^.!?]+[.!?]+/g) || [text]

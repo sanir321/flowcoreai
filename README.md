@@ -8,17 +8,17 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-38B2AC?logo=tailwind-css)](https://tailwindcss.com)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql)](https://postgresql.org)
 
-Flowter unifies WhatsApp, webchat, email, Telegram, and Slack into a single AI-powered inbox. Messages are routed through a multi-agent orchestration engine powered by Groq AI, with real-time presence, typing indicators, and smart agent handoff.
+Flowter unifies WhatsApp and webchat into a single AI-powered inbox. Messages are routed through a multi-agent orchestration engine powered by Groq AI, with real-time presence, typing indicators, and smart agent handoff.
 
 ## Features
 
-- **Multi-channel inbox** — WhatsApp (GoWA), Telegram, Slack, Gmail, Webchat
+- **Multi-channel inbox** — WhatsApp (GoWA) + Webchat
 - **AI orchestration** — Multi-agent supervisor + specialist handoff (max 2 handoffs)
 - **Live typing indicators** — Powered by Supabase Broadcast
 - **Active connections** — Real-time presence via Supabase Presence
 - **CEO analyst** — Business intelligence chat with structured insights
 - **Appointment booking** — Calendar sync with Google Calendar
-- **Knowledge base** — Semantic search with pgvector + HuggingFace embeddings
+- **Knowledge base** — Semantic search with pgvector + Supabase.ai embeddings
 - **Contact management** — Unified customer profiles across channels
 - **Analytics** — PostHog event tracking and insights
 - **Legal compliance** — GDPR, cookie consent, data export/deletion, DPA
@@ -29,7 +29,7 @@ Flowter unifies WhatsApp, webchat, email, Telegram, and Slack into a single AI-p
 Channel → Webhook/Poller → DB Trigger → Queue → Edge Function → Groq AI → Outbound → Channel
 ```
 
-- Messages enter via webhooks (Telegram, Slack, GoWA), pollers (Gmail OAuth2), or direct API (webchat)
+- Messages enter via webhooks (GoWA) or direct API (webchat)
 - Supabase triggers enqueue messages into `message_processing_queue`
 - `agent-orchestrator` Edge Function claims items with `SKIP LOCKED`, routes through AI
 - Response dispatched back through channel-specific outbound logic
@@ -42,7 +42,7 @@ Channel → Webhook/Poller → DB Trigger → Queue → Edge Function → Groq A
 | Frontend | Next.js 15 (App Router) + Tailwind CSS 4 + Framer Motion |
 | Backend | Supabase (PostgreSQL 17 + Auth + Realtime) |
 | AI | Groq (llama-3.3-70b-versatile, temp 0.3, max 300 tokens) |
-| Embeddings | HuggingFace all-MiniLM-L6-v2 (384d, pgvector) |
+| Embeddings | Supabase.ai.Session('gte-small') (384d, pgvector) |
 | WhatsApp | GoWA (go-whatsapp-web-multidevice, self-hosted) |
 | Email | Nodemailer (SMTP, Gmail app password) |
 | Analytics | PostHog (self-hosted or cloud) |
@@ -52,9 +52,6 @@ Channel → Webhook/Poller → DB Trigger → Queue → Edge Function → Groq A
 | Channel | Direction | Integration |
 |---------|-----------|-------------|
 | WhatsApp | Bidirectional | GoWA webhook + REST API |
-| Telegram | Bidirectional | Bot API webhook |
-| Slack | Bidirectional | Events API webhook |
-| Gmail | Inbound | OAuth2 polling (historyId) |
 | Webchat | Bidirectional | Embedded widget REST API |
 
 ## Getting Started
