@@ -16,7 +16,25 @@ export async function middleware(request: NextRequest) {
 
   const url = request.nextUrl.clone()
 
+  const publicRoutes = ["/", "/login", "/faq", "/changelog", "/legal", "/auth/callback"]
+  const isPublicRoute = publicRoutes.some(route =>
+    route === "/" ? url.pathname === "/" : url.pathname.startsWith(route)
+  )
+
+  const dashboardRoutes = [
+    "/inbox", "/agent-hub", "/knowledge", "/contacts",
+    "/settings", "/insights",
+  ]
+  const isDashboardRoute = dashboardRoutes.some((route) =>
+    url.pathname.startsWith(route)
+  )
+  const isOnboardingRoute = url.pathname.startsWith("/onboarding")
+
   let supabaseResponse = NextResponse.next({ request })
+
+  if (isPublicRoute && !isDashboardRoute && !isOnboardingRoute) {
+    return applySecurityHeaders(supabaseResponse)
+  }
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || "",
@@ -42,19 +60,6 @@ export async function middleware(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser()
-
-  const dashboardRoutes = [
-    "/inbox",
-    "/agent-hub",
-    "/knowledge",
-    "/contacts",
-    "/settings",
-    "/insights",
-  ]
-  const isDashboardRoute = dashboardRoutes.some((route) =>
-    url.pathname.startsWith(route)
-  )
-  const isOnboardingRoute = url.pathname.startsWith("/onboarding")
 
   if (isDashboardRoute || isOnboardingRoute) {
     if (!user) {
@@ -95,18 +100,20 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Security headers
-  const securityHeaders = {
+  return applySecurityHeaders(supabaseResponse)
+}
+
+function applySecurityHeaders(response: NextResponse): NextResponse {
+  const headers = {
     "X-Frame-Options": "DENY",
     "X-Content-Type-Options": "nosniff",
     "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
     "Referrer-Policy": "strict-origin-when-cross-origin",
   };
-  Object.entries(securityHeaders).forEach(([key, value]) => {
-    supabaseResponse.headers.set(key, value);
+  Object.entries(headers).forEach(([key, value]) => {
+    response.headers.set(key, value);
   });
-
-  return supabaseResponse
+  return response
 }
 
 export const config = {
