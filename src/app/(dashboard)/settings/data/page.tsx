@@ -4,7 +4,7 @@ import { useState } from "react"
 import { motion } from "framer-motion"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Loader2, Download, Trash2, ShieldCheck, ExternalLink } from "lucide-react"
+import { Loader2, Download, Trash2, ShieldCheck, ExternalLink, FileSpreadsheet } from "lucide-react"
 import { toast } from "sonner"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -80,6 +80,27 @@ export default function DataPrivacyPage() {
               {isExporting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Download className="h-4 w-4 mr-2" />}
               Export Data
             </Button>
+          </div>
+        </div>
+      </Card>
+
+      <Card className="p-6 space-y-6">
+        <div className="flex items-start gap-4">
+          <div className="h-10 w-10 rounded-lg bg-emerald-50 flex items-center justify-center shrink-0">
+            <FileSpreadsheet className="h-5 w-5 text-emerald-600" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-semibold text-gray-900">Export Contacts as CSV</h3>
+            <p className="text-sm text-gray-500 mt-1">
+              Download all your contacts as a CSV file for use in Excel, Google Sheets, or other tools.
+            </p>
+            <a
+              href="/api/user/export-contacts"
+              className="inline-flex items-center mt-4 px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition-colors"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Download CSV
+            </a>
           </div>
         </div>
       </Card>
