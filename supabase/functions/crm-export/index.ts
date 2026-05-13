@@ -8,10 +8,8 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // In a production cron, we might iterate over all workspaces with Google integration
     const { workspace_id } = await req.json()
 
-    // 1. Fetch Google Tokens
     const { data: tokens, error: tokenError } = await supabase
       .from('google_oauth_tokens')
       .select('*')
@@ -19,20 +17,52 @@ Deno.serve(async (req) => {
       .single()
 
     if (tokenError || !tokens) throw new Error('No Google integration found')
+    if (!tokens.sheet_id) throw new Error('Google Sheet ID not configured in integration')
 
-    // 2. Fetch recent leads (contacts with tags or specific criteria)
-    const { data: leads, error: leadError } = await supabase
+    const { data: contacts, error: leadError } = await supabase
       .from('contacts')
       .select('*')
       .eq('workspace_id', workspace_id)
       .not('email', 'is', null)
+      .is('deleted_at', null)
 
     if (leadError) throw leadError
 
-    // 3. Push to Google Sheets (Placeholder)
+    const accessToken = tokens.access_token
+    const sheetId = tokens.sheet_id
+    const sheetRange = tokens.sheet_range ?? 'Sheet1!A:Z'
+
+    const headersList = [
+      'Name', 'Email', 'Phone', 'Channel', 'Tags', 'Last Contacted', 'Created At'
+    ]
+
+    await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${sheetRange}:append?valueInputOption=USER_ENTERED`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          values: [
+            headersList,
+            ...contacts.map((c: Record<string, any>) => [
+              c.name ?? '',
+              c.email ?? '',
+              c.phone ?? '',
+              c.channel ?? '',
+              Array.isArray(c.tags) ? c.tags.join(', ') : (c.tags ?? ''),
+              c.last_contacted_at ?? '',
+              c.created_at ?? '',
+            ]),
+          ],
+        }),
+      }
+    )
 
     return new Response(
-      JSON.stringify({ success: true, exported: leads.length }),
+      JSON.stringify({ success: true, exported: contacts.length }),
       { headers: { 'Content-Type': 'application/json' } }
     )
 
