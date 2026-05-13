@@ -1,5 +1,8 @@
 import type { Metadata } from "next"
+import { getSiteUrl } from "@/lib/site"
 import Link from "next/link"
+
+const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
   title: "Changelog",
@@ -7,9 +10,9 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Changelog - Flowter",
     description: "Release history and product updates.",
-    url: "https://flowter.ai/changelog",
+    url: `${siteUrl}/changelog`,
   },
-  alternates: { canonical: "https://flowter.ai/changelog" },
+  alternates: { canonical: `${siteUrl}/changelog` },
 }
 
 const changes = [

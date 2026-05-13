@@ -1,11 +1,14 @@
 import type { Metadata } from "next"
+import { getSiteUrl } from "@/lib/site"
 import { LegalPage } from "@/components/legal/legal-page"
+
+const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
   title: "Data Processing Agreement",
   description: "Flowter's Data Processing Agreement (DPA) governing how we process customer data as a processor under DPDP Act 2023.",
-  openGraph: { title: "DPA - Flowter", url: "https://flowter.ai/legal/dpa" },
-  alternates: { canonical: "https://flowter.ai/legal/dpa" },
+  openGraph: { title: "DPA - Flowter", url: `${siteUrl}/legal/dpa` },
+  alternates: { canonical: `${siteUrl}/legal/dpa` },
 }
 
 const content = `## 1. Parties

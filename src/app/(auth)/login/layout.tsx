@@ -1,4 +1,7 @@
 import type { Metadata } from "next"
+import { getSiteUrl } from "@/lib/site"
+
+const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
   title: "Sign In",
@@ -6,9 +9,9 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Sign In - Flowter",
     description: "Sign in to Flowter with email OTP.",
-    url: "https://flowter.ai/login",
+    url: `${siteUrl}/login`,
   },
-  alternates: { canonical: "https://flowter.ai/login" },
+  alternates: { canonical: `${siteUrl}/login` },
 }
 
 export default function LoginLayout({ children }: { children: React.ReactNode }) {

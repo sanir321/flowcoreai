@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { StructuredData } from "@/components/seo/structured-data";
 import { AuthGuard } from "@/components/auth/auth-guard";
 import { CookieConsent } from "@/components/cookie-consent";
+import { getSiteUrl, siteName, siteDescription } from "@/lib/site";
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -19,19 +20,21 @@ const lora = Lora({
   display: "swap",
 });
 
+const siteUrl = getSiteUrl()
+
 export const metadata: Metadata = {
-  metadataBase: new URL('https://flowter.ai'),
+  metadataBase: new URL(siteUrl),
   title: {
     default: "Flowter | Automated Business Communication & AI Service Assistants",
     template: "%s | Flowter",
   },
-  description: "FlowCore is the orchestration layer for automated business communication. Connect specialized AI assistants to manage WhatsApp, Google Sheets, and Calendar with business precision.",
+  description: siteDescription,
   keywords: ["AI customer service", "WhatsApp automation", "business AI assistants", "FlowCore", "automated communication", "AI orchestration"],
   authors: [{ name: "FlowCore Systems" }],
   openGraph: {
     title: "Flowter | Automated Business Communication",
-    description: "Connect specialized AI to manage and resolve your customer conversations with business precision.",
-    url: "https://flowter.ai",
+    description: siteDescription,
+    url: siteUrl,
     siteName: "Flowter",
       images: [],
     locale: "en_US",
@@ -40,11 +43,11 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Flowter | Automated Business Communication",
-    description: "Connect specialized AI to manage and resolve your customer conversations with business precision.",
+    description: siteDescription,
     images: [],
   },
   alternates: {
-    canonical: "https://flowter.ai",
+    canonical: siteUrl,
   },
   robots: {
     index: true,

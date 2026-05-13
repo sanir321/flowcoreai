@@ -1,11 +1,14 @@
 import type { Metadata } from "next"
+import { getSiteUrl } from "@/lib/site"
 import { LegalPage } from "@/components/legal/legal-page"
+
+const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
   title: "Terms & Conditions",
   description: "Flowter's terms and conditions governing the use of our AI customer service platform and services.",
-  openGraph: { title: "Terms & Conditions - Flowter", url: "https://flowter.ai/legal/terms" },
-  alternates: { canonical: "https://flowter.ai/legal/terms" },
+  openGraph: { title: "Terms & Conditions - Flowter", url: `${siteUrl}/legal/terms` },
+  alternates: { canonical: `${siteUrl}/legal/terms` },
 }
 
 const content = `## 1. Acceptance of Terms

@@ -1,11 +1,14 @@
 import type { Metadata } from "next"
+import { getSiteUrl } from "@/lib/site"
 import { LegalPage } from "@/components/legal/legal-page"
+
+const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
   title: "Data Deletion & Export",
   description: "How to request data deletion or export from Flowter in compliance with DPDP Act 2023 and GDPR.",
-  openGraph: { title: "Data Deletion - Flowter", url: "https://flowter.ai/legal/data-deletion" },
-  alternates: { canonical: "https://flowter.ai/legal/data-deletion" },
+  openGraph: { title: "Data Deletion - Flowter", url: `${siteUrl}/legal/data-deletion` },
+  alternates: { canonical: `${siteUrl}/legal/data-deletion` },
 }
 
 const content = `## 1. Your Right to Deletion

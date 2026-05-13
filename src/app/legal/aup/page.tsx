@@ -1,11 +1,14 @@
 import type { Metadata } from "next"
+import { getSiteUrl } from "@/lib/site"
 import { LegalPage } from "@/components/legal/legal-page"
+
+const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
   title: "Acceptable Use Policy",
   description: "Flowter's Acceptable Use Policy (AUP) defining prohibited activities and proper use of our AI platform.",
-  openGraph: { title: "AUP - Flowter", url: "https://flowter.ai/legal/aup" },
-  alternates: { canonical: "https://flowter.ai/legal/aup" },
+  openGraph: { title: "AUP - Flowter", url: `${siteUrl}/legal/aup` },
+  alternates: { canonical: `${siteUrl}/legal/aup` },
 }
 
 const content = `## 1. Purpose

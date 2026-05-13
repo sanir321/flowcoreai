@@ -1,11 +1,14 @@
 import type { Metadata } from "next"
+import { getSiteUrl } from "@/lib/site"
 import { LegalPage } from "@/components/legal/legal-page"
+
+const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
   description: "Flowter's privacy policy explains how we collect, use, store, and protect your data in compliance with DPDP Act 2023 and IT Act 2000.",
-  openGraph: { title: "Privacy Policy - Flowter", url: "https://flowter.ai/legal/privacy-policy" },
-  alternates: { canonical: "https://flowter.ai/legal/privacy-policy" },
+  openGraph: { title: "Privacy Policy - Flowter", url: `${siteUrl}/legal/privacy-policy` },
+  alternates: { canonical: `${siteUrl}/legal/privacy-policy` },
 }
 
 const content = `## 1. Introduction

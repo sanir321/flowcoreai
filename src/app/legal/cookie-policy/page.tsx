@@ -1,11 +1,14 @@
 import type { Metadata } from "next"
+import { getSiteUrl } from "@/lib/site"
 import { LegalPage } from "@/components/legal/legal-page"
+
+const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
   title: "Cookie Policy",
   description: "Flowter's cookie policy explains how we use essential cookies for authentication and preferences.",
-  openGraph: { title: "Cookie Policy - Flowter", url: "https://flowter.ai/legal/cookie-policy" },
-  alternates: { canonical: "https://flowter.ai/legal/cookie-policy" },
+  openGraph: { title: "Cookie Policy - Flowter", url: `${siteUrl}/legal/cookie-policy` },
+  alternates: { canonical: `${siteUrl}/legal/cookie-policy` },
 }
 
 const content = `## 1. What Are Cookies

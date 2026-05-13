@@ -1,12 +1,15 @@
 import Script from "next/script"
+import { getSiteUrl, siteName } from "@/lib/site"
 
 export function StructuredData() {
+  const siteUrl = getSiteUrl()
+
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
     "name": "FlowCore Systems",
-    "url": "https://flowter.ai",
-    "logo": "https://flowter.ai/icon.svg",
+    "url": siteUrl,
+    "logo": `${siteUrl}/icon.svg`,
     "description": "AI-powered customer service orchestration platform for WhatsApp and webchat.",
     "contactPoint": {
       "@type": "ContactPoint",
@@ -32,10 +35,10 @@ export function StructuredData() {
     "@context": "https://schema.org",
     "@type": "WebSite",
     "name": "Flowter",
-    "url": "https://flowter.ai",
+    "url": siteUrl,
     "potentialAction": {
       "@type": "SearchAction",
-      "target": "https://flowter.ai/search?q={search_term_string}",
+      "target": `${siteUrl}/search?q={search_term_string}`,
       "query-input": "required name=search_term_string"
     }
   }
