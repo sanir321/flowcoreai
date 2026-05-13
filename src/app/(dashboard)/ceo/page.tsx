@@ -63,7 +63,7 @@ const dotVariants = {
       duration: 0.8,
       repeat: Infinity,
       delay: i * 0.2,
-      ease: "easeInOut"
+      ease: "easeInOut" as const
     }
   })
 }
@@ -179,7 +179,7 @@ const StructuredContent = ({ content }: { content: string }) => {
       elements.push(
         <div key={i} className="flex items-start gap-3 text-sm text-gray-700 my-1.5">
           <span className="h-6 w-6 rounded-full bg-[#c65f39]/10 text-[#c65f39] text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">{numberedMatch[1]}</span>
-          <span className="pt-0.5">{renderBold(numberedMatch[2])}</span>
+          <span className="pt-0.5">{renderBold(numberedMatch[2] ?? "")}</span>
         </div>
       )
       return

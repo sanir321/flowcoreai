@@ -45,6 +45,7 @@ export async function POST() {
         supabase.from("appointments").delete().eq("workspace_id", workspaceId),
         supabase.from("escalation_logs").delete().eq("workspace_id", workspaceId),
         supabase.from("billing_transactions").delete().eq("workspace_id", workspaceId),
+        // @ts-expect-error - agent_traces not in Supabase types but table exists
         supabase.from("agent_traces").delete().eq("workspace_id", workspaceId),
         supabase.from("workspace_notifications").delete().eq("workspace_id", workspaceId),
         supabase.from("workspaces").delete().eq("id", workspaceId),
