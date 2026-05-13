@@ -1,4 +1,12 @@
+import type { Metadata } from "next"
 import { LegalPage } from "@/components/legal/legal-page"
+
+export const metadata: Metadata = {
+  title: "Cookie Policy",
+  description: "Flowter's cookie policy explains how we use essential cookies for authentication and preferences.",
+  openGraph: { title: "Cookie Policy - Flowter", url: "https://flowter.ai/legal/cookie-policy" },
+  alternates: { canonical: "https://flowter.ai/legal/cookie-policy" },
+}
 
 const content = `## 1. What Are Cookies
 

@@ -1,4 +1,12 @@
+import type { Metadata } from "next"
 import { LegalPage } from "@/components/legal/legal-page"
+
+export const metadata: Metadata = {
+  title: "Terms & Conditions",
+  description: "Flowter's terms and conditions governing the use of our AI customer service platform and services.",
+  openGraph: { title: "Terms & Conditions - Flowter", url: "https://flowter.ai/legal/terms" },
+  alternates: { canonical: "https://flowter.ai/legal/terms" },
+}
 
 const content = `## 1. Acceptance of Terms
 

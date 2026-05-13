@@ -1,4 +1,12 @@
+import type { Metadata } from "next"
 import { LegalPage } from "@/components/legal/legal-page"
+
+export const metadata: Metadata = {
+  title: "Data Processing Agreement",
+  description: "Flowter's Data Processing Agreement (DPA) governing how we process customer data as a processor under DPDP Act 2023.",
+  openGraph: { title: "DPA - Flowter", url: "https://flowter.ai/legal/dpa" },
+  alternates: { canonical: "https://flowter.ai/legal/dpa" },
+}
 
 const content = `## 1. Parties
 

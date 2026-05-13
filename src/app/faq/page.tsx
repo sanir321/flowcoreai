@@ -1,4 +1,16 @@
+import type { Metadata } from "next"
 import Link from "next/link"
+
+export const metadata: Metadata = {
+  title: "Frequently Asked Questions",
+  description: "Answers to common questions about Flowter's AI customer service platform, WhatsApp integration, pricing, and features.",
+  openGraph: {
+    title: "FAQ - Flowter",
+    description: "Answers to common questions about Flowter's AI customer service platform.",
+    url: "https://flowter.ai/faq",
+  },
+  alternates: { canonical: "https://flowter.ai/faq" },
+}
 
 const faqs = [
   {

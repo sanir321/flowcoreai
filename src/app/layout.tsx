@@ -21,7 +21,10 @@ const lora = Lora({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://flowter.ai'),
-  title: "Flowter | Automated Business Communication & AI Service Assistants",
+  title: {
+    default: "Flowter | Automated Business Communication & AI Service Assistants",
+    template: "%s | Flowter",
+  },
   description: "FlowCore is the orchestration layer for automated business communication. Connect specialized AI assistants to manage WhatsApp, Google Sheets, and Calendar with business precision.",
   keywords: ["AI customer service", "WhatsApp automation", "business AI assistants", "FlowCore", "automated communication", "AI orchestration"],
   authors: [{ name: "FlowCore Systems" }],

@@ -1,4 +1,16 @@
+import type { Metadata } from "next"
 import Link from "next/link"
+
+export const metadata: Metadata = {
+  title: "Changelog",
+  description: "Release history and product updates for Flowter's AI customer service orchestration platform.",
+  openGraph: {
+    title: "Changelog - Flowter",
+    description: "Release history and product updates.",
+    url: "https://flowter.ai/changelog",
+  },
+  alternates: { canonical: "https://flowter.ai/changelog" },
+}
 
 const changes = [
   {

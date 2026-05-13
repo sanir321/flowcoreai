@@ -1,4 +1,12 @@
+import type { Metadata } from "next"
 import { LegalPage } from "@/components/legal/legal-page"
+
+export const metadata: Metadata = {
+  title: "Refund Policy",
+  description: "Flowter's refund and cancellation policy for our AI customer service platform subscriptions.",
+  openGraph: { title: "Refund Policy - Flowter", url: "https://flowter.ai/legal/refund-policy" },
+  alternates: { canonical: "https://flowter.ai/legal/refund-policy" },
+}
 
 const content = `## 1. Overview
 
