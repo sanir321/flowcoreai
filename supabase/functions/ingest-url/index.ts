@@ -41,7 +41,7 @@ Deno.serve(async (req) => {
 
     // 2. Chunking
     await supabase.from('kb_sources').update({ error_message: 'Analyzing and chunking content...' }).eq('id', source_id)
-    const chunks = text.match(/.{1,1000}/g) || []
+    const chunks = splitIntoChunks(text, 1000)
 
     // 3. Generate Embeddings via Local Model
     const chunksToInsert = []
@@ -115,3 +115,19 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
   }
 })
+
+function splitIntoChunks(text: string, maxSize: number): string[] {
+  const sentences = text.match(/[^.!?]+[.!?]+/g) || [text]
+  const chunks: string[] = []
+  let current = ""
+  for (const sentence of sentences) {
+    if ((current + sentence).length > maxSize && current.length > 0) {
+      chunks.push(current.trim())
+      current = sentence
+    } else {
+      current += sentence
+    }
+  }
+  if (current.trim()) chunks.push(current.trim())
+  return chunks.length > 0 ? chunks : [text.slice(0, maxSize)]
+}
