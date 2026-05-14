@@ -1,26 +1,37 @@
-<meta name="google-site-verification" content="SxmdSGeyyW2UFS1-YFJ6M1bB1fJHNXDJD-ZtKkkeRJg" />
+I have a Next.js 14 app hosted on Vercel using Supabase Auth with Google OAuth. 
+The sign-in flow completes on Supabase's side (logs show /authorize and /callback 
+completing) but the app hangs after redirect. 
 
-Sitemap could not be read" means Google can fetch the URL but the XML is invalid or has an issue.
-The most likely cause — your middleware is redirecting /sitemap.xml to /login because it treats all routes as protected.
+Please audit the following and report ALL issues found:
 
-Fix — Exclude sitemap from auth middleware
-Open your middleware.ts file and make sure these paths are public:
-tsexport const config = {
-  matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|.*\\.png$).*)',
-  ],
-}
-Or if you have a manual auth check:
-tsconst publicPaths = ['/', '/login', '/signup', '/sitemap.xml', '/robots.txt']
+1. **Auth Callback Route** (`app/auth/callback/route.ts`)
+   - Is exchangeCodeForSession being called correctly?
+   - Is the redirect URL hardcoded to localhost anywhere?
+   - Any missing error handling?
 
-if (publicPaths.includes(pathname)) {
-  return NextResponse.next()
-}
+2. **Middleware** (`middleware.ts`)
+   - Is /auth/callback being blocked or intercepted?
+   - Is the matcher pattern excluding auth routes properly?
+   - Any infinite redirect loops possible?
 
-Quick test:
+3. **Environment Variables**
+   - Search entire codebase for any hardcoded localhost:3000 URLs
+   - Check if NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are 
+     used correctly everywhere
+   - Any places where env vars might be undefined in production?
 
-Open an incognito window
-Go to https://flowter-bay.vercel.app/sitemap.xml
-Does it show the XML, or does it redirect to login?
+4. **Supabase Client Setup**
+   - Check createRouteHandlerClient, createServerComponentClient, 
+     createClientComponentClient usage
+   - Any client being created incorrectly for server vs client components?
 
-If it redirects → the middleware fix above will solve it. Tell me what happens.
+5. **Dashboard/Protected Route** (`app/dashboard/page.tsx` or similar)
+   - Is there a slow or broken DB query running on first load after login?
+   - Any missing user/tenant record creation after first OAuth login?
+   - RLS policies that might block the newly logged-in user?
+
+6. **package.json**
+   - Check @supabase/auth-helpers-nextjs version — anything below 0.8.0 has 
+     known OAuth bugs
+
+Report each issue with: file path, line number, what's wrong, and exact fix.
