@@ -28,13 +28,12 @@ export async function GET() {
         .eq("workspace_id", workspaceId)
         .maybeSingle() as any)
 
-    // Find GoWA device by name to match workspace
-    let gowaConnected: boolean | "qr_pending" = false
+    // Check GoWA devices — try matching by name first, then ID, then fallback to any logged_in device
+    let gowaConnected = false
     let gowaJid = ""
     let gowaDisplay = ""
     let gowaDeviceId = ""
     const deviceName = `FlowCore_${workspaceId}`
-    let matchedDevice: any = null
     try {
       const resp = await fetch(`${GOWA_BASE_URL}/devices`, {
         headers: { "Authorization": `Basic ${GOWA_AUTH}` },
@@ -42,30 +41,39 @@ export async function GET() {
       })
       if (resp.ok) {
         const data = await resp.json()
-        matchedDevice = (data.results || []).find((d: any) => d.name === deviceName)
-        if (matchedDevice?.state === "logged_in" && matchedDevice?.jid) {
+        const devices: any[] = data.results || []
+
+        // 1. Match by device name (new flow)
+        const named = devices.find(d => d.name === deviceName)
+        // 2. Match by stored session ID (if DB has one)
+        const byId = session?.gowa_session_id
+          ? devices.find(d => d.id === session.gowa_session_id)
+          : null
+        // 3. Fallback: any logged_in device
+        const anyLoggedIn = devices.find(d => d.state === "logged_in" && d.jid)
+
+        const candidate = named || byId || anyLoggedIn
+        if (candidate?.state === "logged_in" && candidate?.jid) {
           gowaConnected = true
-          gowaJid = matchedDevice.jid
-          gowaDisplay = matchedDevice.display_name || ""
-          gowaDeviceId = matchedDevice.id || ""
-        } else if (matchedDevice?.state === "connected") {
-          gowaConnected = "qr_pending"
+          gowaJid = candidate.jid
+          gowaDisplay = candidate.display_name || ""
+          gowaDeviceId = candidate.id || ""
         }
       }
     } catch {}
 
-    // Update DB if device is connected on GoWA but not yet in DB
-    if (gowaConnected === true && gowaJid && session?.status !== "connected") {
+    // Auto-update DB if device is connected on GoWA but DB is stale
+    if (gowaConnected && gowaJid && session?.status !== "connected") {
       await (supabase
         .from("gowa_sessions")
-        .update({
-          status: "connected",
+        .upsert({
+          workspace_id: workspaceId,
+          gowa_session_id: gowaDeviceId,
           phone_jid: gowaJid,
           display_name: gowaDisplay,
-          gowa_session_id: gowaDeviceId || session?.gowa_session_id,
+          status: "connected",
           updated_at: new Date().toISOString(),
-        })
-        .eq("workspace_id", workspaceId) as any)
+        }) as any)
       return NextResponse.json({
         status: "connected",
         phone: gowaJid,
@@ -74,15 +82,13 @@ export async function GET() {
       })
     }
 
-    if (!session && !gowaConnected) {
-      return NextResponse.json({ status: "disconnected" })
-    }
-
-    const status = session?.status || (gowaConnected === true ? "connected" : "disconnected")
+    const status = session?.status || (gowaConnected ? "connected" : "disconnected")
+    const activePhone = session?.phone_jid || (gowaConnected ? gowaJid : null)
+    const activeName = session?.display_name || (gowaConnected ? gowaDisplay : null)
     return NextResponse.json({
       status,
-      phone: session?.phone_jid || null,
-      name: session?.display_name || null,
+      phone: activePhone,
+      name: activeName,
       message: session?.error_message || null,
     })
 
