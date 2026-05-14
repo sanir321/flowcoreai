@@ -201,7 +201,7 @@ export async function getDevices(): Promise<any[]> {
 /**
  * Initialize QR Login Session
  */
-export async function initiateQRLogin(workspaceId: string): Promise<{ qr_code: string }> {
+export async function initiateQRLogin(workspaceId: string): Promise<{ qr_code: string; device_id: string }> {
   // 1. Try to find an existing device
   const allDevices = await getDevices();
   let device = allDevices.find(d => d.name === `FlowCore_${workspaceId}`);
@@ -222,8 +222,12 @@ export async function initiateQRLogin(workspaceId: string): Promise<{ qr_code: s
     device = createData.results;
   }
 
+  if (!device || !device.id) {
+    throw new Error("Failed to obtain device ID from GoWA.");
+  }
+
   // 3. If device exists but is disconnected, request a new QR code
-  if (device && (device.state === 'disconnected' || !device.state)) {
+  if (device.state === 'disconnected' || !device.state) {
     const qrResponse = await fetch(`${GOWA_BASE_URL}/app/login`, {
         method: 'GET',
         headers: { ...gowaHeaders, 'X-Device-Id': device.id },
@@ -234,11 +238,11 @@ export async function initiateQRLogin(workspaceId: string): Promise<{ qr_code: s
         throw new Error("Failed to retrieve a new QR code for the existing session.");
     }
     const qrData = await qrResponse.json();
-    return { qr_code: qrData.results?.qr_link || '' };
+    return { qr_code: qrData.results?.qr_link || '', device_id: device.id };
   }
   
   // 4. If it's already pending or connected, return empty
-  return { qr_code: '' };
+  return { qr_code: '', device_id: device.id };
 }
 
 /**

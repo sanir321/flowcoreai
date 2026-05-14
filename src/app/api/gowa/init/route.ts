@@ -21,12 +21,21 @@ export async function GET() {
       return new NextResponse("No active workspace found for user.", { status: 404 })
     }
 
-    // Use the robust, unified function from the GOWA library
     const qrData = await initiateQRLogin(workspace.id)
 
     if (!qrData.qr_code) {
       throw new Error("QR code not returned by the initialization function.");
     }
+
+    // Save GoWA device session to DB
+    await supabase
+      .from("gowa_sessions")
+      .upsert({
+        workspace_id: workspace.id,
+        gowa_session_id: qrData.device_id,
+        status: "qr_pending",
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "workspace_id" })
 
     return NextResponse.json({ qr_code: qrData.qr_code })
 
