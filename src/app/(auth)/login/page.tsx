@@ -56,37 +56,16 @@ export default function LoginPage() {
 
   const handleGoogleLogin = async () => {
     setIsLoading(true)
-
-    if (!(window as any).google?.accounts?.oauth2) {
-      const script = document.createElement("script")
-      script.src = "https://accounts.google.com/gsi/client"
-      await new Promise((resolve) => { script.onload = resolve; document.head.appendChild(script) })
-    }
-
-    const client = (window as any).google.accounts.oauth2.initTokenClient({
-      client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
-      scope: "openid email profile",
-      callback: async (response: any) => {
-        if (response.error) {
-          toast.error("Google sign-in failed")
-          setIsLoading(false)
-          return
-        }
-        if (!response.id_token) {
-          toast.error("Could not get Google identity token")
-          setIsLoading(false)
-          return
-        }
-        const { error } = await supabase.auth.signInWithIdToken({
-          provider: "google",
-          token: response.id_token,
-        })
-        if (error) toast.error(error.message)
-        setIsLoading(false)
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
       },
     })
-
-    client.requestAccessToken()
+    if (error) {
+      toast.error(error.message)
+      setIsLoading(false)
+    }
   }
 
   const handleSendOtp = async (e: React.FormEvent) => {
