@@ -149,6 +149,73 @@ export async function executeTool(input: any): Promise<any> {
         };
       }
 
+      case 'update_appointment': {
+        const { data: existing } = await supabase.from('appointments').select('*').eq('id', args.appointment_id).single();
+        if (!existing) throw new Error("Appointment not found");
+        if (!existing.google_event_id) throw new Error("No Google Calendar event to update");
+
+        const startAt = args.date || args.time ? parseDT(args.date, args.time) : existing.start_at;
+        const durationMs = (args.duration || 30) * 60000;
+        const endAt = new Date(new Date(startAt).getTime() + durationMs).toISOString();
+        const gConfig = await getGoogleConfig(supabase, workspace_id);
+
+        const gRes = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${gConfig.calendar_id || 'primary'}/events/${existing.google_event_id}`, {
+          method: "PATCH",
+          headers: { Authorization: `Bearer ${gConfig.access_token}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            start: { dateTime: startAt },
+            end: { dateTime: endAt },
+          }),
+        });
+        if (!gRes.ok) throw new Error("Google Calendar Update Failed");
+
+        const { data: updated } = await supabase.from('appointments').update({
+            customer_name: args.name || existing.customer_name,
+            customer_phone: args.phone || existing.customer_phone,
+            service: args.service || existing.service,
+            start_at: startAt,
+            end_at: endAt,
+            updated_at: new Date().toISOString()
+        }).eq('id', args.appointment_id).select().single();
+        return updated;
+      }
+
+      case 'cancel_appointment': {
+        const { data: appt } = await supabase.from('appointments').select('*').eq('id', args.appointment_id).single();
+        if (!appt) throw new Error("Appointment not found");
+
+        if (appt.google_event_id) {
+          const gConfig = await getGoogleConfig(supabase, workspace_id);
+          await fetch(`https://www.googleapis.com/calendar/v3/calendars/${gConfig.calendar_id || 'primary'}/events/${appt.google_event_id}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${gConfig.access_token}` }
+          }).catch(() => {});
+        }
+
+        await supabase.from('appointments').update({ status: 'cancelled', updated_at: new Date().toISOString() }).eq('id', args.appointment_id);
+        return { success: true };
+      }
+
+      case 'get_contact_history': {
+        const { data: session } = await supabase.from('conversation_sessions').select('contact_id').eq('id', session_id).single();
+        if (!session?.contact_id) throw new Error("Contact not found");
+        const { data: contact } = await supabase.from('contacts').select('*, appointments(*)').eq('id', session.contact_id).single();
+        return contact;
+      }
+
+      case 'update_contact': {
+        const { data: session } = await supabase.from('conversation_sessions').select('contact_id').eq('id', session_id).single();
+        if (!session?.contact_id) throw new Error("Contact not found");
+        const { data: updated } = await supabase.from('contacts').update({
+            name: args.name,
+            email: args.email,
+            phone: args.phone,
+            notes: args.notes ? `[Update] ${args.notes}` : undefined,
+            updated_at: new Date().toISOString()
+        }).eq('id', session.contact_id).select().single();
+        return updated;
+      }
+
       default: return { success: true };
     }
   } catch (e: any) {

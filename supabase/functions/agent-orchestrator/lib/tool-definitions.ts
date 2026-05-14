@@ -101,5 +101,89 @@ export const TOOL_DEFINITIONS = [
         required: ["target_agent", "reason"]
       }
     }
+  },
+  {
+    type: "function",
+    function: {
+      name: "escalation_request",
+      description: "Escalate the conversation to a human agent. Use this when the user is frustrated, asking for a manager, or needs human intervention.",
+      parameters: {
+        type: "object",
+        properties: {
+          reason: {
+            type: "string",
+            description: "Reason for escalation."
+          }
+        },
+        required: ["reason"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_appointment",
+      description: "Reschedule or modify an existing appointment.",
+      parameters: {
+        type: "object",
+        properties: {
+          appointment_id: { type: "string", description: "The appointment ID to update." },
+          name: { type: "string", description: "Updated customer name." },
+          phone: { type: "string", description: "Updated phone number." },
+          service: { type: "string", description: "Updated service name." },
+          date: { type: "string", description: "New date (e.g. '2026-05-15' or 'tomorrow')." },
+          time: { type: "string", description: "New time (e.g. '2pm' or '14:00')." },
+          duration: { type: "number", description: "Duration in minutes (default 30)." }
+        },
+        required: ["appointment_id"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "cancel_appointment",
+      description: "Cancel an existing appointment.",
+      parameters: {
+        type: "object",
+        properties: {
+          appointment_id: { type: "string", description: "The appointment ID to cancel." },
+          reason: { type: "string", description: "Reason for cancellation." }
+        },
+        required: ["appointment_id"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_contact_history",
+      description: "Retrieve full contact details and past appointment history for the current customer.",
+      parameters: {
+        type: "object",
+        properties: {
+          detail: {
+            type: "string",
+            description: "Optional specific detail to look up."
+          }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_contact",
+      description: "Update customer contact information (name, email, phone, notes) during conversation.",
+      parameters: {
+        type: "object",
+        properties: {
+          name: { type: "string", description: "Customer's name." },
+          email: { type: "string", description: "Customer's email address." },
+          phone: { type: "string", description: "Customer's phone number." },
+          notes: { type: "string", description: "Additional notes about the customer." }
+        }
+      }
+    }
   }
 ];
