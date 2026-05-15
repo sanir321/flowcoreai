@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { StructuredData } from "@/components/seo/structured-data";
 import { AuthGuard } from "@/components/auth/auth-guard";
 import { CookieConsent } from "@/components/cookie-consent";
+import { PostHogProvider } from "@/components/posthog-provider";
 import { getSiteUrl, siteName, siteDescription } from "@/lib/site";
 
 const inter = Inter({ 
@@ -74,12 +75,14 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} ${lora.variable} font-sans antialiased`}>
         <ThemeProvider>
-          <AuthGuard>
-            <StructuredData />
-            {children}
-            <Toaster />
-            <CookieConsent />
-          </AuthGuard>
+          <PostHogProvider>
+            <AuthGuard>
+              <StructuredData />
+              {children}
+              <Toaster />
+              <CookieConsent />
+            </AuthGuard>
+          </PostHogProvider>
         </ThemeProvider>
       </body>
     </html>
