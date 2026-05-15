@@ -416,28 +416,61 @@ Deno.serve(async (req) => {
     const phone = customer_jid?.split('@')[0];
 
     if (channel === 'whatsapp' && deviceId && phone && !is_test) {
+        // Send composing presence indicator
+        try {
+            await fetch(`${gowaBase}/send/presence`, {
+                method: 'POST',
+                headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/json', 'X-Device-Id': deviceId },
+                body: JSON.stringify({ phone, type: 'composing' })
+            });
+        } catch (_) {}
+
         const delayMs = calculateTypingDelay(finalResponse);
         await new Promise(resolve => setTimeout(resolve, delayMs));
 
+        // Stop composing indicator
+        try {
+            await fetch(`${gowaBase}/send/presence`, {
+                method: 'POST',
+                headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/json', 'X-Device-Id': deviceId },
+                body: JSON.stringify({ phone, type: 'paused' })
+            });
+        } catch (_) {}
+
+        // Split long messages at sentence boundaries
+        const maxLen = 1000;
+        const parts: string[] = [];
+        let remaining = finalResponse;
+        while (remaining.length > maxLen) {
+            let splitAt = remaining.lastIndexOf('. ', maxLen);
+            if (splitAt < maxLen / 2) splitAt = remaining.lastIndexOf(' ', maxLen);
+            if (splitAt < maxLen / 2) splitAt = maxLen;
+            parts.push(remaining.slice(0, splitAt + 1).trim());
+            remaining = remaining.slice(splitAt + 1).trim();
+        }
+        if (remaining) parts.push(remaining);
+
         let lastError = "";
         let dispatched = false;
-        for (let attempt = 0; attempt < 3; attempt++) {
-            if (attempt > 0) {
-                const backoff = 1000 * Math.pow(2, attempt) + Math.random() * 500;
-                await new Promise(res => setTimeout(res, backoff));
+        for (const part of parts) {
+            for (let attempt = 0; attempt < 3; attempt++) {
+                if (attempt > 0) {
+                    const backoff = 1000 * Math.pow(2, attempt) + Math.random() * 500;
+                    await new Promise(res => setTimeout(res, backoff));
+                }
+                try {
+                    const resp = await fetch(`${gowaBase}/send/message`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/json', 'X-Device-Id': deviceId },
+                        body: JSON.stringify({ phone, message: part })
+                    });
+                    if (resp.ok) { dispatched = true; break; }
+                    lastError = `HTTP ${resp.status}: ${await resp.text().catch(() => '')}`;
+                } catch (err: any) {
+                    lastError = err.message;
+                }
+                console.warn(`[ORCHESTRATOR] GoWA dispatch attempt ${attempt + 1}/3 for part failed: ${lastError}`);
             }
-            try {
-                const resp = await fetch(`${gowaBase}/send/message`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/json', 'X-Device-Id': deviceId },
-                    body: JSON.stringify({ phone, message: finalResponse })
-                });
-                if (resp.ok) { dispatched = true; break; }
-                lastError = `HTTP ${resp.status}: ${await resp.text().catch(() => '')}`;
-            } catch (err: any) {
-                lastError = err.message;
-            }
-            console.warn(`[ORCHESTRATOR] GoWA dispatch attempt ${attempt + 1}/3 failed: ${lastError}`);
         }
 
         if (!dispatched) {

@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
       await supabaseAdmin
         .from("gowa_sessions")
         .update({ 
-          status: device.status,
+          status: device.state,
           phone_jid: device.phone,
           last_seen_at: new Date().toISOString()
         })
