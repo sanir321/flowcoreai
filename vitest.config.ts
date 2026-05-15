@@ -4,9 +4,4 @@ export default defineConfig({
   test: {
     include: ['supabase/functions/**/*.test.ts'],
   },
-  server: {
-    deps: {
-      inline: [/https:\/\/esm\.sh\//],
-    },
-  },
 })
