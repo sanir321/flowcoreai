@@ -19,7 +19,6 @@ import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 
-import { syncWhatsAppHistory } from "@/app/actions/whatsapp"
 import { useWorkspace } from "@/hooks/use-workspace"
 import { createClient } from "@/lib/supabase/client"
 
