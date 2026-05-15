@@ -20,6 +20,6 @@ export async function captureError(
 ) {
   if (!key) return
   const client = new PostHog(key, { host })
-  client.captureException(error, context)
+  client.captureException(error, undefined, { properties: context })
   await client.shutdown()
 }
