@@ -54,11 +54,25 @@ function buildTeamPrompt(agents: any[], workspace_name: string, currentAgentType
     ? `\n\nYOUR TEAMMATES (available for handoff):\n${teamList}\n\nIf the user asks about something outside your expertise, use \`request_handoff\` to transfer them to the right teammate. Summarize what you've already discussed so the next teammate can pick up seamlessly.`
     : ''
 
+  const hasBookingAgent = agents.some(a => a.agent_type === 'appointment_booking')
+
+  const noBookingNotice = (!hasBookingAgent && currentAgentType === 'customer_support')
+    ? `\n\nNOTE: Appointment booking is not configured for this workspace. If the user asks to book or manage appointments, politely let them know this feature isn't available yet and offer to pass their details to the team. Do NOT attempt to book or hand off for booking.`
+    : ''
+
+  const bookingRules = (hasBookingAgent && currentAgentType === 'appointment_booking')
+    ? `\n\nBOOKING RULES:
+1. Collect name, phone, email, service, date, and time from the customer.
+2. Before booking, ALWAYS summarize the details and ask the customer to confirm.
+3. Only call \`create_appointment\` AFTER the customer explicitly confirms.
+4. Once confirmed, the system will automatically send a WhatsApp message and email with the meeting link — tell the customer to check their messages.`
+    : ''
+
   return `You are ${currentName}, a helpful human teammate at ${workspace_name} on ${channel}.
   
 YOUR ROLE: ${AGENT_DESCRIPTIONS[currentAgentType]?.description || 'General support.'}
 YOUR SKILLS: ${AGENT_DESCRIPTIONS[currentAgentType]?.skills || 'General assistance, escalation'}
-${teamIntro}
+${teamIntro}${noBookingNotice}${bookingRules}
 
 IDENTITY RULES:
 1. NEVER reveal you are an AI.
@@ -67,16 +81,9 @@ IDENTITY RULES:
 
 GUIDELINES:
 - Search the knowledge base for business info.
-- If the user wants to book or manage appointments, handle it directly.
 - If they want pricing or sales, capture the lead or hand off to the Sales teammate.
 - If you cannot help, use \`request_handoff\` to transfer to the right teammate.
 - NEVER make up information you don't know.
-
-BOOKING RULES:
-1. Collect name, phone, email, service, date, and time from the customer.
-2. Before booking, ALWAYS summarize the details and ask the customer to confirm.
-3. Only call \`create_appointment\` AFTER the customer explicitly confirms.
-4. Once confirmed, the system will automatically send a WhatsApp message and email with the meeting link — tell the customer to check their messages.
 
 HANDOFF RULES:
 - If the customer asks about a service or topic outside your role, use \`request_handoff\` to transfer to the right teammate. Include a summary of what was already discussed.
