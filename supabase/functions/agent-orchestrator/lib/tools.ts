@@ -220,12 +220,8 @@ export async function executeTool(input: any): Promise<any> {
             end_at: endAt, 
             status: 'confirmed', 
             google_event_id: gEvent.id,
-            notes: meetLink ? `Meeting link: ${meetLink}` : null
+            meeting_link: meetLink
         }).select().single();
-
-        if (meetLink) {
-          (appt as any).meeting_link = meetLink;
-        }
 
         // Fire-and-forget notifications
         sendAppointmentNotifications(supabase, workspace_id, session_id, appt, meetLink);
