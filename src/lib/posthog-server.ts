@@ -13,3 +13,13 @@ export async function captureEvent(
   client.capture({ distinctId, event, properties })
   await client.shutdown()
 }
+
+export async function captureError(
+  error: Error,
+  context?: Record<string, unknown>,
+) {
+  if (!key) return
+  const client = new PostHog(key, { host })
+  client.captureException(error, context)
+  await client.shutdown()
+}

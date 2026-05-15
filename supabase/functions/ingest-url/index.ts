@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Initialize the local embedding model
+// Initialize the local embedding model — loaded once, reused across invocations
 const model = new Supabase.ai.Session('gte-small')
 
 Deno.serve(async (req) => {
@@ -20,7 +20,7 @@ Deno.serve(async (req) => {
 
     const { workspace_id, source_id, url } = await req.json()
 
-    // 0. Update status to processing and set initial message
+    // 0. Update status to processing
     await supabase.from('kb_sources').update({ 
       status: 'processing',
       error_message: 'Fetching website content...' 
@@ -32,24 +32,20 @@ Deno.serve(async (req) => {
     
     const html = await response.text()
     const text = convertHtmlToText(html)
-
     if (text.length < 10) throw new Error("No meaningful content found on the page.")
 
     // 2. Chunking
-    await supabase.from('kb_sources').update({ error_message: 'Analyzing and chunking content...' }).eq('id', source_id)
-    const chunks = splitIntoChunks(text, 1000)
+    await supabase.from('kb_sources').update({ error_message: 'Chunking content...' }).eq('id', source_id)
+    const chunks = splitIntoChunks(text, 5000)
 
     // 3. Generate Embeddings via Local Model
     const chunksToInsert = []
     for (let i = 0; i < chunks.length; i++) {
       const content = chunks[i];
       
-      // Update progress periodically
-      if (i % 5 === 0) {
-        await supabase.from('kb_sources').update({ 
-          error_message: `Generating AI embeddings (Chunk ${i + 1}/${chunks.length})...` 
-        }).eq('id', source_id)
-      }
+      await supabase.from('kb_sources').update({ 
+        error_message: `Embedding chunk ${i + 1}/${chunks.length}...` 
+      }).eq('id', source_id)
       
       const embedding = await model.run(content, {
         mean_pool: true,

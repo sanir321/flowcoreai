@@ -32,7 +32,7 @@ function parseDT(dStr?: string, tStr?: string) {
 }
 
 async function getGoogleConfig(supabase: any, workspace_id: string) {
-  const { data: config } = await supabase.from("google_oauth_tokens").select("*").eq("workspace_id", workspace_id).single();
+  const { data: config } = await supabase.from("google_oauth_tokens").select("*").eq("workspace_id", workspace_id).order('created_at', { ascending: false }).limit(1).maybeSingle();
   if (!config) throw new Error("Google integration not found");
   const now = new Date();
   const expiry = new Date(config.token_expiry);
@@ -248,7 +248,7 @@ export async function executeTool(input: any): Promise<any> {
 
         // Auto-push to Google Sheets if configured
         try {
-          const gConfig = await supabase.from("google_oauth_tokens").select("access_token, sheet_id, sheet_range, token_expiry, refresh_token").eq("workspace_id", workspace_id).single();
+          const gConfig = await supabase.from("google_oauth_tokens").select("access_token, sheet_id, sheet_range, token_expiry, refresh_token").eq("workspace_id", workspace_id).order('created_at', { ascending: false }).limit(1).maybeSingle();
           if (gConfig.data?.sheet_id && gConfig.data?.access_token) {
             const now = new Date();
             const expiry = new Date(gConfig.data.token_expiry);

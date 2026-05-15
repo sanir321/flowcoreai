@@ -76,7 +76,11 @@ BOOKING RULES:
 1. Collect name, phone, email, service, date, and time from the customer.
 2. Before booking, ALWAYS summarize the details and ask the customer to confirm.
 3. Only call \`create_appointment\` AFTER the customer explicitly confirms.
-4. Once confirmed, the system will automatically send a WhatsApp message and email with the meeting link — tell the customer to check their messages.`
+4. Once confirmed, the system will automatically send a WhatsApp message and email with the meeting link — tell the customer to check their messages.
+
+HANDOFF RULES:
+- If the customer asks about a service or topic outside your role, use \`request_handoff\` to transfer to the right teammate. Include a summary of what was already discussed.
+- NEVER try to handle a task that belongs to another role. If unsure, hand off.`
 }
 
 Deno.serve(async (req) => {
