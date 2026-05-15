@@ -51,6 +51,7 @@ export const TOOL_DEFINITIONS = [
         properties: {
           name: { type: "string", description: "Customer's full name." },
           phone: { type: "string", description: "Customer's phone number." },
+          email: { type: "string", description: "Customer's email address for sending appointment confirmation." },
           service: { type: "string", description: "The service being booked." },
           date: { type: "string", description: "Date of appointment." },
           time: { type: "string", description: "Time of appointment." }

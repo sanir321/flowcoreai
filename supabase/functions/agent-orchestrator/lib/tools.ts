@@ -115,11 +115,13 @@ async function sendAppointmentWhatsApp(supabase: any, workspace_id: string, sess
 
 async function sendAppointmentEmail(supabase: any, workspace_id: string, session_id: string, appt: any, meetLink: string | null) {
   try {
-    let email: string | null = null;
-    const { data: session } = await supabase.from('conversation_sessions').select('contact_id').eq('id', session_id).single();
-    if (session?.contact_id) {
-      const { data: contact } = await supabase.from('contacts').select('email').eq('id', session.contact_id).single();
-      email = contact?.email || null;
+    let email: string | null = appt.customer_email || null;
+    if (!email) {
+      const { data: session } = await supabase.from('conversation_sessions').select('contact_id').eq('id', session_id).single();
+      if (session?.contact_id) {
+        const { data: contact } = await supabase.from('contacts').select('email').eq('id', session.contact_id).single();
+        email = contact?.email || null;
+      }
     }
     if (!email) return;
 
@@ -215,6 +217,7 @@ export async function executeTool(input: any): Promise<any> {
             contact_id: curSession?.contact_id || null,
             customer_name: args.name, 
             customer_phone: args.phone || null, 
+            customer_email: args.email || null, 
             service: args.service, 
             start_at: startAt, 
             end_at: endAt, 
@@ -222,6 +225,11 @@ export async function executeTool(input: any): Promise<any> {
             google_event_id: gEvent.id,
             meeting_link: meetLink
         }).select().single();
+
+        // Update contact with email if provided
+        if (args.email && curSession?.contact_id) {
+          await supabase.from('contacts').update({ email: args.email, updated_at: new Date().toISOString() }).eq('id', curSession.contact_id);
+        }
 
         // Fire-and-forget notifications
         sendAppointmentNotifications(supabase, workspace_id, session_id, appt, meetLink);
