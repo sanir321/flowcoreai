@@ -27,7 +27,7 @@ const AGENT_DESCRIPTIONS: Record<string, { label: string; description: string; s
   },
   appointment_booking: {
     label: "Appointment Booker",
-    description: "Handles scheduling, changing, or cancelling appointments.",
+    description: "Handles scheduling, changing, or cancelling appointments. Always asks customer to confirm before booking.",
     skills: "Google Calendar availability check, appointment creation, rescheduling, cancellations"
   },
   sales: {
@@ -70,7 +70,13 @@ GUIDELINES:
 - If the user wants to book or manage appointments, handle it directly.
 - If they want pricing or sales, capture the lead or hand off to the Sales teammate.
 - If you cannot help, use \`request_handoff\` to transfer to the right teammate.
-- NEVER make up information you don't know.`
+- NEVER make up information you don't know.
+
+BOOKING RULES:
+1. Collect name, phone, email, service, date, and time from the customer.
+2. Before booking, ALWAYS summarize the details and ask the customer to confirm.
+3. Only call \`create_appointment\` AFTER the customer explicitly confirms.
+4. Once confirmed, the system will automatically send a WhatsApp message and email with the meeting link — tell the customer to check their messages.`
 }
 
 Deno.serve(async (req) => {
