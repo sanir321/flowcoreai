@@ -2,11 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getDevices } from "@/lib/gowa";
 
-// Protected internal route for pg_cron
+// Protected internal route for pg_cron / Vercel Cron Jobs
 export async function GET(req: NextRequest) {
   try {
+    const isVercelCron = req.headers.get("x-vercel-cron") === "1";
     const authHeader = req.headers.get("Authorization");
-    if (authHeader !== `Bearer ${process.env.INTERNAL_CRON_SECRET}`) {
+    const isValidToken = authHeader === `Bearer ${process.env.INTERNAL_CRON_SECRET}`;
+    if (!isVercelCron && !isValidToken) {
       return new Response("Unauthorized", { status: 401 });
     }
 

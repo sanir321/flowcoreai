@@ -1,7 +1,7 @@
 import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.39.7"
 
-const TYPING_SPEED_MS_PER_CHAR = 35;
-const MAX_TYPING_DELAY_MS = 4000;
+const TYPING_SPEED_MS_PER_CHAR = 12;
+const MAX_TYPING_DELAY_MS = 1500;
 const WHATSAPP_WINDOW_HOURS = 24;
 
 export async function checkWhatsAppWindow(supabase: SupabaseClient, sessionId: string): Promise<{ expired: boolean }> {

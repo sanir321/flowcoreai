@@ -13,6 +13,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const TOOL_PERMISSIONS: Record<string, string[]> = {
+  customer_support: ["match_kb_chunks", "get_contact_history", "update_contact", "request_handoff", "escalation_request"],
+  appointment_booking: ["check_availability", "create_appointment", "update_appointment", "cancel_appointment", "get_contact_history", "request_handoff", "escalation_request"],
+  sales: ["capture_lead", "match_kb_chunks", "get_contact_history", "update_contact", "request_handoff", "escalation_request"],
+}
+
 const AGENT_DESCRIPTIONS: Record<string, { label: string; description: string; skills: string }> = {
   customer_support: {
     label: "Customer Support",
@@ -81,6 +87,12 @@ Deno.serve(async (req) => {
 
     const payload = await req.json()
     let { workspace_id, customer_jid, message, channel, agent_type, is_test } = payload
+
+    // Auto-generate customer_jid for webchat if missing
+    if (!customer_jid && channel === 'webchat') {
+      customer_jid = crypto.randomUUID();
+    }
+
     console.log(`[ORCHESTRATOR] Received request for workspace: ${workspace_id}, channel: ${channel}`);
 
     // Sanitize user input
@@ -88,6 +100,14 @@ Deno.serve(async (req) => {
 
     // 1. Load/Create Session
     const session = await getOrCreateSession(supabase, { workspace_id, customer_jid, channel, agent_type })
+
+    if (!session) {
+      console.error(`[ORCHESTRATOR] Failed to create session for workspace: ${workspace_id}`);
+      return new Response(JSON.stringify({
+        response_parts: ["Sorry, we're having trouble starting a conversation. Please try again."],
+        metadata: { error: "Session creation failed", trace_id: traceId }
+      }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
     
     // 1.1 Load Guardrail Config
     const guardrailConfig = session.workspaces.guardrail_config || {
@@ -95,7 +115,7 @@ Deno.serve(async (req) => {
         max_response_length: 800,
         blocked_topics: [],
         escalation_keywords: ["refund", "legal", "complaint", "cancel", "manager"],
-        fallback_message: "Thank you for reaching out! Our team will get back to you shortly. 🙏"
+        fallback_message: "Thank you for reaching out! Our team will get back to you shortly."
     };
 
     // Token Budget Check
@@ -131,6 +151,30 @@ Deno.serve(async (req) => {
       }
     }
 
+    // 1.5 KB Response Cache Check
+    let cacheKeyHex = "";
+    {
+      const msgBytes = new TextEncoder().encode(sanitizedMessage.toLowerCase().trim().slice(0, 500));
+      const hashBuf = await crypto.subtle.digest('SHA-256', msgBytes);
+      cacheKeyHex = Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+      const { data: cached } = await supabase.from('kb_response_cache')
+        .select('response_text, access_count, id')
+        .eq('workspace_id', workspace_id)
+        .eq('cache_key', cacheKeyHex)
+        .maybeSingle();
+
+      if (cached && !is_test) {
+        await supabase.from('kb_response_cache').update({ accessed_at: new Date().toISOString(), access_count: (cached.access_count || 0) + 1 }).eq('id', cached.id);
+        await supabase.from('messages').insert({
+          workspace_id, session_id: session.id, content: cached.response_text, direction: 'outbound', role: 'agent', agent_type: agent_type || session.agent_type,
+          metadata: { trace_id: traceId, cached: true }
+        });
+        await updateSessionState(supabase, session.id, { last_message_at: new Date().toISOString(), last_message_preview: cached.response_text.slice(0, 100), typing_status: 'idle' });
+        return new Response(JSON.stringify({ response_parts: [cached.response_text], cached: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+    }
+
     // 2. Load ALL Active Agents
     const { data: allAgents } = await supabase.from('workspace_agents')
         .select('*')
@@ -163,6 +207,7 @@ Deno.serve(async (req) => {
     let finalResponse = "";
     let handoffRequested = false;
     let handoffContext = "";
+    let kbToolUsed = false;
 
     // 4. Multi-Agent LLM Loop (handoff-aware)
     let handoffCount = 0;
@@ -240,7 +285,20 @@ Deno.serve(async (req) => {
             const toolArgs = JSON.parse(call.function.arguments);
             
             await updateSessionState(supabase, session.id, { typing_status: 'executing_tool' });
+
+            const allowedTools = TOOL_PERMISSIONS[currentAgentType] || [];
+            if (!allowedTools.includes(toolName)) {
+              messages.push({
+                role: "tool",
+                tool_call_id: call.id,
+                name: toolName,
+                content: JSON.stringify({ error: `Tool "${toolName}" is not available for your role. Available tools: ${allowedTools.join(", ")}` })
+              });
+              continue;
+            }
             
+            if (toolName === 'match_kb_chunks') kbToolUsed = true;
+
             const toolResult = await executeTool({
               tool_name: toolName,
               args: toolArgs,
@@ -319,13 +377,20 @@ Deno.serve(async (req) => {
 
     if (!finalResponse) finalResponse = guardrailConfig.fallback_message;
 
+    // 5.5 Cache KB-generated responses
+    if (!is_test && cacheKeyHex && kbToolUsed && finalResponse !== guardrailConfig.fallback_message) {
+      try { await supabase.from('kb_response_cache').upsert({
+        workspace_id, cache_key: cacheKeyHex, query_text: sanitizedMessage, response_text: finalResponse
+      }, { onConflict: 'workspace_id, cache_key' }); } catch (_) {}
+    }
+
     // 6. Store Final Response
     await supabase.from('messages').insert({
         workspace_id, session_id: session.id, content: finalResponse, direction: 'outbound', role: 'agent', agent_type: currentAgentType,
         metadata: { trace_id: traceId, handoff_count: handoffCount }
     });
 
-    // 7. GoWA Dispatch
+    // 7. GoWA Dispatch with retry + failed queue
     const { data: gowaSession } = await supabase.from('gowa_sessions').select('gowa_session_id').eq('workspace_id', workspace_id).maybeSingle();
     const deviceId = gowaSession?.gowa_session_id;
     const gowaBase = Deno.env.get('GOWA_BASE_URL')?.replace(/\/$/, "");
@@ -336,11 +401,36 @@ Deno.serve(async (req) => {
     if (channel === 'whatsapp' && deviceId && phone && !is_test) {
         const delayMs = calculateTypingDelay(finalResponse);
         await new Promise(resolve => setTimeout(resolve, delayMs));
-        await fetch(`${gowaBase}/send/message`, { 
-            method: 'POST', 
-            headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/json', 'X-Device-Id': deviceId }, 
-            body: JSON.stringify({ phone, message: finalResponse }) 
-        }).catch((err: any) => console.error(`[ORCHESTRATOR] GoWA dispatch failed: ${err.message}`));
+
+        let lastError = "";
+        let dispatched = false;
+        for (let attempt = 0; attempt < 3; attempt++) {
+            if (attempt > 0) {
+                const backoff = 1000 * Math.pow(2, attempt) + Math.random() * 500;
+                await new Promise(res => setTimeout(res, backoff));
+            }
+            try {
+                const resp = await fetch(`${gowaBase}/send/message`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/json', 'X-Device-Id': deviceId },
+                    body: JSON.stringify({ phone, message: finalResponse })
+                });
+                if (resp.ok) { dispatched = true; break; }
+                lastError = `HTTP ${resp.status}: ${await resp.text().catch(() => '')}`;
+            } catch (err: any) {
+                lastError = err.message;
+            }
+            console.warn(`[ORCHESTRATOR] GoWA dispatch attempt ${attempt + 1}/3 failed: ${lastError}`);
+        }
+
+        if (!dispatched) {
+            try { await supabase.from('failed_messages').insert({
+                workspace_id,
+                raw_message: finalResponse,
+                payload: { phone, device_id: deviceId, channel: 'whatsapp', session_id: session.id },
+                error_message: lastError
+            }); } catch (_) {}
+        }
     }
 
     // 8. Update Session State

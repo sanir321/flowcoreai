@@ -323,10 +323,24 @@ export default function IntegrationsPage() {
                                     Sync Configuration
                                 </Button>
                              </div>
-                             <p className="text-[10px] text-gray-500 ml-1 font-medium italic">Specify tab and column range (e.g., Sheet1!A:H) for data sync.</p>
-                          </div>
-                       </div>
-                    </Card>
+                           <p className="text-[10px] text-gray-500 ml-1 font-medium italic">Specify tab and column range (e.g., Sheet1!A:H) for data sync.</p>
+                           </div>
+
+                           <div className="space-y-3 md:col-span-2 border-t border-gray-100 pt-8">
+                              <Label className="text-[10px] font-bold text-gray-500 ml-1">Download Spreadsheet</Label>
+                              <div className="flex gap-4 items-center">
+                                 <a
+                                    href="/api/sheets/download"
+                                    className="inline-flex h-12 px-8 rounded-xl bg-black text-white hover:bg-gray-800 items-center gap-3 text-[11px] font-bold transition-all active:scale-95 no-underline"
+                                 >
+                                    <Save className="h-4 w-4" />
+                                    Download as CSV
+                                 </a>
+                              </div>
+                              <p className="text-[10px] text-gray-500 ml-1 font-medium italic">Download the Google Sheet data as a CSV file.</p>
+                           </div>
+                        </div>
+                     </Card>
                   </motion.div>
                 )}
               </AnimatePresence>

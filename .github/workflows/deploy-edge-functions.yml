@@ -1,0 +1,36 @@
+name: Deploy Edge Functions
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'supabase/functions/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Deploy changed edge functions
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          CHANGED=$(git diff --name-only HEAD~1 -- supabase/functions/ | cut -d/ -f3 | sort -u)
+          if [ -z "$CHANGED" ]; then
+            echo "No function changes detected"
+            exit 0
+          fi
+          for fn in $CHANGED; do
+            if [ -d "supabase/functions/$fn" ]; then
+              echo "Deploying $fn..."
+              npx supabase functions deploy "$fn" --project-ref "${{ secrets.SUPABASE_PROJECT_REF }}"
+            fi
+          done

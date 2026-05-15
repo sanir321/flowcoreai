@@ -11,9 +11,12 @@ export async function getOrCreateSession(supabase: any, {
 }: { 
   workspace_id: string; 
   customer_jid: string; 
-  channel: 'whatsapp' | 'widget';
+  channel: string;
   agent_type: string;
 }) {
+  // Normalize channel to DB-valid values
+  const dbChannel = channel === 'webchat' ? 'widget' : channel;
+
   // 1. Try to find existing active session
   let { data: session, error } = await supabase
     .from('conversation_sessions')
@@ -37,11 +40,11 @@ export async function getOrCreateSession(supabase: any, {
     if (!contact_id) {
        const { data: newContact } = await supabase
          .from('contacts')
-         .insert({
-           workspace_id,
-           [channel === 'whatsapp' ? 'whatsapp_jid' : 'session_token']: customer_jid,
-           channel
-         })
+          .insert({
+            workspace_id,
+            [channel === 'whatsapp' ? 'whatsapp_jid' : 'session_token']: customer_jid,
+            channel: dbChannel
+          })
          .select('id')
          .single();
        contact_id = newContact.id;
@@ -53,7 +56,7 @@ export async function getOrCreateSession(supabase: any, {
       .insert({
         workspace_id,
         contact_id,
-        channel,
+        channel: dbChannel,
         customer_jid,
         agent_type,
         status: 'active',

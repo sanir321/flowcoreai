@@ -1,0 +1,14 @@
+[functions.agent-orchestrator]
+verify_jwt = false
+
+[functions.gowa-webhook]
+verify_jwt = false
+
+[functions.crm-export]
+verify_jwt = false
+
+[functions.gowa-cleanup]
+verify_jwt = false
+
+[functions.tool-executor]
+verify_jwt = false

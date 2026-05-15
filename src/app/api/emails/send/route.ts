@@ -1,6 +1,7 @@
 import { sendEmail } from "@/lib/mail";
 import { NextResponse } from "next/server";
 import { render } from "@react-email/components";
+import { AppointmentConfirmationEmail } from "@/components/emails/appointment-confirmation";
 import { EscalationAlertEmail } from "@/components/emails/escalation-alert";
 import { WelcomeEmail } from "@/components/emails/welcome";
 import { SignInNotificationEmail } from "@/components/emails/sign-in-notification";
@@ -48,6 +49,17 @@ export async function POST(req: Request) {
             username: data.username,
             time: data.time || new Date().toLocaleString(),
             device: data.device || "Browser",
+          })
+        );
+        break;
+      case "appointment":
+        emailHtml = await render(
+          React.createElement(AppointmentConfirmationEmail, {
+            customerName: data.customerName,
+            workspaceName: data.workspaceName,
+            service: data.service,
+            date: data.date,
+            meetLink: data.meetLink,
           })
         );
         break;

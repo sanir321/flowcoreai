@@ -1,9 +1,15 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 import { UpdateNotificationsSchema, UpdateWidgetConfigSchema } from "@/lib/schemas"
 import { revalidatePath } from "next/cache"
 import { ActionResponse } from "./workspace"
+
+const supabaseAdmin = createSupabaseClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
 export async function updateNotifications(input: unknown): Promise<ActionResponse<{ success: true }>> {
   try {
@@ -104,6 +110,24 @@ export async function updateGoogleConfig(input: GoogleConfigInput): Promise<Acti
     } catch (err) {
       console.error(err)
       return { data: null, error: "Failed to update Google config" }
+    }
+  }
+
+export async function exportToSheets(workspace_id: string): Promise<ActionResponse<{ exported: number }>> {
+    try {
+      const supabase = await createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return { data: null, error: "Unauthorized" }
+
+      const { data, error } = await supabaseAdmin.functions.invoke("crm-export", {
+        body: { workspace_id }
+      })
+
+      if (error) throw new Error(error.message || "Export failed")
+      return { data: { exported: data.exported || 0 }, error: null }
+    } catch (err: any) {
+      console.error(err)
+      return { data: null, error: err.message || "Failed to export to Sheets" }
     }
   }
 
