@@ -80,7 +80,7 @@ export async function deleteSource(id: string): Promise<ActionResponse<{ success
 
     const { error } = await supabase
       .from("kb_sources")
-      .update({ deleted_at: new Date().toISOString() })
+      .update({ deleted_at: new Date().toISOString() } as any)
       .eq("id", res.data)
 
     if (error) throw error

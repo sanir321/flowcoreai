@@ -181,7 +181,7 @@ export async function deleteWorkspace(): Promise<ActionResponse<{ success: true 
 
     const { error } = await supabase
       .from("workspaces")
-      .update({ deleted_at: new Date().toISOString() })
+      .update({ deleted_at: new Date().toISOString() } as any)
       .eq("id", workspaceId)
       .eq("owner_id", user.id)
 
