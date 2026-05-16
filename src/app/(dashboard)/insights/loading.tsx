@@ -6,8 +6,8 @@ export default function Loading() {
         <div className="h-4 w-64 bg-gray-100 rounded-lg animate-pulse" />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {[...Array(4)].map((_, i) => (
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {[...Array(3)].map((_, i) => (
           <div key={i} className="p-8 rounded-2xl border border-gray-100 bg-white space-y-6">
             <div className="flex items-center justify-between">
               <div className="h-10 w-10 rounded-xl bg-gray-100 animate-pulse" />
@@ -23,19 +23,7 @@ export default function Loading() {
 
       <div className="space-y-4">
         <div className="h-6 w-40 bg-gray-100 rounded-lg animate-pulse" />
-        <div className="h-64 w-full rounded-3xl bg-gray-50 border border-gray-100 animate-pulse" />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {[...Array(4)].map((_, i) => (
-          <div key={i} className="p-6 rounded-2xl border border-gray-100 bg-white space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="h-8 w-8 rounded-lg bg-gray-100 animate-pulse" />
-              <div className="h-4 w-24 bg-gray-100 rounded animate-pulse" />
-            </div>
-            <div className="h-3 w-32 bg-gray-100 rounded animate-pulse" />
-          </div>
-        ))}
+        <div className="h-[373px] w-full rounded-3xl bg-gray-50 border border-gray-100 animate-pulse" />
       </div>
     </div>
   )

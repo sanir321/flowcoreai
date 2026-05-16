@@ -25,27 +25,11 @@ export default async function InsightsPage() {
   }
 
   // 3. Fetch Aggregate Metrics & Telemetry
-  const [msgCount, contactCount, healthRes, performanceRes] = await Promise.all([
+  const [msgCount, contactCount, performanceRes] = await Promise.all([
     supabase.from("messages").select("*", { count: "exact", head: true }).eq("workspace_id", workspaceId),
     supabase.from("contacts").select("*", { count: "exact", head: true }).eq("workspace_id", workspaceId),
-    (supabase.rpc as any)('get_workspace_health', { ws_id: workspaceId }),
     (supabase.from as any)("ai_performance_report").select("*").eq("workspace_id", workspaceId).maybeSingle()
   ])
-
-  // 4. Calculate Health & Performance Metrics
-  let health = { avg_latency: 0, fallback_rate: 0, block_rate: 0, total_traces: 0 };
-  const traceStats = (healthRes as any)?.data?.[0];
-  if (traceStats) {
-      health = traceStats;
-  } else {
-      const { data: traces } = await (supabase.from as any)('agent_traces').select('latency_ms, fallback_used, guardrail_blocked').eq('workspace_id', workspaceId).limit(100);
-      if (traces && traces.length > 0) {
-          health.total_traces = traces.length;
-          health.avg_latency = Math.round((traces as any[]).reduce((acc: number, t: any) => acc + (t.latency_ms || 0), 0) / traces.length);
-          health.fallback_rate = Math.round(((traces as any[]).filter((t: any) => t.fallback_used).length / traces.length) * 100);
-          health.block_rate = Math.round(((traces as any[]).filter((t: any) => t.guardrail_blocked).length / traces.length) * 100);
-      }
-  }
 
   const aiResolutionRate = (performanceRes?.data as any)?.ai_resolution_rate_pct || 0;
 
@@ -55,7 +39,7 @@ export default async function InsightsPage() {
     conversion_rate: aiResolutionRate
   }
 
-  // 5. Fetch Chart Data (Last 7 Days)
+  // 4. Fetch Chart Data (Last 7 Days)
   const last7Days = Array.from({ length: 7 }, (_, i) => {
     const d = new Date()
     d.setDate(d.getDate() - i)
@@ -89,7 +73,7 @@ export default async function InsightsPage() {
         <p className="text-sm text-gray-500 font-medium">Real-time performance metrics and traffic analysis.</p>
       </div>
       
-      <InsightsClient metrics={metrics} health={health} chartData={chartData} />
+      <InsightsClient metrics={metrics} chartData={chartData} />
     </div>
   )
 }
