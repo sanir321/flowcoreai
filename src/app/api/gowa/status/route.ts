@@ -28,7 +28,8 @@ export async function GET() {
         .eq("workspace_id", workspaceId)
         .maybeSingle() as any)
 
-    // Check GoWA devices — try matching by name first, then ID, then fallback to any logged_in device
+    // Check GoWA devices — match by device name or stored session ID only
+    // Never fallback to any logged-in device (prevents cross-workspace contamination)
     let gowaConnected = false
     let gowaJid = ""
     let gowaDisplay = ""
@@ -43,16 +44,14 @@ export async function GET() {
         const data = await resp.json()
         const devices: any[] = data.results || []
 
-        // 1. Match by device name (new flow)
+        // Match by device name (each workspace has a unique name)
         const named = devices.find(d => d.name === deviceName)
-        // 2. Match by stored session ID (if DB has one)
+        // Fallback: match by stored session ID
         const byId = session?.gowa_session_id
           ? devices.find(d => d.id === session.gowa_session_id)
           : null
-        // 3. Fallback: any logged_in device
-        const anyLoggedIn = devices.find(d => d.state === "logged_in" && d.jid)
 
-        const candidate = named || byId || anyLoggedIn
+        const candidate = named || byId
         if (candidate?.state === "logged_in" && candidate?.jid) {
           gowaConnected = true
           gowaJid = candidate.jid
