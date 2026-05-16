@@ -10,7 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { AssistantsSidebar } from "@/components/nav/assistants-sidebar"
 import { addAgent } from "@/app/actions/agents"
 
-interface Agent {
+export interface Agent {
   id: string
   workspace_id: string
   agent_type: string

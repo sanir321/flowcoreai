@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
-import { AgentHubClient } from "./agent-hub-client"
+import { AgentHubClient, type Agent } from "./agent-hub-client"
 import { redirect } from "next/navigation"
 
 export default async function AgentHubPage() {
@@ -24,7 +24,7 @@ export default async function AgentHubPage() {
 
   return (
     <AgentHubClient 
-      initialAgents={agents || []} 
+      initialAgents={(agents || []) as Agent[]} 
       workspaceId={workspaceId} 
     />
   )
