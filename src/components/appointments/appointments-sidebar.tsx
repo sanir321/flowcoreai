@@ -7,11 +7,14 @@ import { motion } from "framer-motion"
 
 interface AppointmentsSidebarProps {
   currentView: 'list' | 'calendar'
-  onViewChange: (view: 'list' | 'calendar') => void
 }
 
-export function AppointmentsSidebar({ currentView, onViewChange }: AppointmentsSidebarProps) {
+export function AppointmentsSidebar({ currentView }: AppointmentsSidebarProps) {
   const router = useRouter()
+
+  const setView = (view: 'list' | 'calendar') => {
+    router.push(`/appointments?view=${view}`)
+  }
 
   return (
     <div className="hidden lg:flex w-64 border-r border-gray-100 bg-white flex-col h-full shrink-0 relative z-40 font-sans">
@@ -24,7 +27,7 @@ export function AppointmentsSidebar({ currentView, onViewChange }: AppointmentsS
       <div className="px-4 flex-1 space-y-8 overflow-y-auto">
         <div className="space-y-1">
           <button 
-            onClick={() => onViewChange('list')}
+            onClick={() => setView('list')}
             className={cn(
               "w-full flex items-center gap-3 px-5 py-3.5 rounded-2xl transition-all group text-left",
               currentView === 'list' 
@@ -40,7 +43,7 @@ export function AppointmentsSidebar({ currentView, onViewChange }: AppointmentsS
           </button>
 
           <button 
-            onClick={() => onViewChange('calendar')}
+            onClick={() => setView('calendar')}
             className={cn(
               "w-full flex items-center gap-3 px-5 py-3.5 rounded-2xl transition-all group text-left",
               currentView === 'calendar'

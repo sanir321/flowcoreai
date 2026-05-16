@@ -5,28 +5,40 @@ import { UpdateContactSchema } from "@/lib/schemas"
 import { revalidatePath } from "next/cache"
 import { ActionResponse } from "./workspace"
 import { sendWhatsAppText } from "@/lib/gowa"
+import { z } from "zod"
 
-export async function sendManualMessage(input: {
-  workspace_id: string;
-  phone: string;
-  message: string;
-  contact_id: string;
-}): Promise<ActionResponse<{ success: true }>> {
+export async function sendManualMessage(input: unknown): Promise<ActionResponse<{ success: true }>> {
   try {
+    const result = z.object({
+      workspace_id: z.string().uuid(),
+      phone: z.string().min(5),
+      message: z.string().min(1),
+      contact_id: z.string().uuid(),
+    }).safeParse(input)
+
+    if (!result.success) return { data: null, error: "Invalid request data" }
+
+    const { workspace_id, phone, message, contact_id } = result.data
+
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
 
+    // IDOR Check
+    if (user.app_metadata.workspace_id !== workspace_id) {
+      return { data: null, error: "Forbidden: Workspace mismatch" }
+    }
+
     // 1. Send via GoWA
-    await sendWhatsAppText(input.workspace_id, input.phone, input.message)
+    await sendWhatsAppText(workspace_id, phone, message)
 
     // 2. Log in database
     // Find or create session
     const { data: session } = await supabase
       .from('conversation_sessions')
       .select('id')
-      .eq('workspace_id', input.workspace_id)
-      .eq('contact_id', input.contact_id)
+      .eq('workspace_id', workspace_id)
+      .eq('contact_id', contact_id)
       .eq('status', 'active')
       .maybeSingle()
 
@@ -36,8 +48,8 @@ export async function sendManualMessage(input: {
       const { data: newSession, error: sErr } = await supabase
         .from('conversation_sessions')
         .insert({
-          workspace_id: input.workspace_id,
-          contact_id: input.contact_id,
+          workspace_id,
+          contact_id,
           channel: 'whatsapp',
           status: 'active'
         })
@@ -50,9 +62,9 @@ export async function sendManualMessage(input: {
     const { error: msgErr } = await supabase
       .from('messages')
       .insert({
-        workspace_id: input.workspace_id,
+        workspace_id,
         session_id: activeSessionId,
-        content: input.message,
+        content: message,
         direction: 'outbound',
         role: 'agent',
         metadata: { manual: true }
@@ -64,7 +76,7 @@ export async function sendManualMessage(input: {
     await supabase
         .from('conversation_sessions')
         .update({
-            last_message_preview: input.message,
+            last_message_preview: message,
             updated_at: new Date().toISOString()
         })
         .eq('id', activeSessionId)
@@ -77,26 +89,37 @@ export async function sendManualMessage(input: {
   }
 }
 
-export async function createContact(input: {
-  workspace_id: string;
-  name: string;
-  phone: string;
-  email?: string;
-}): Promise<ActionResponse<{ id: string }>> {
+export async function createContact(input: unknown): Promise<ActionResponse<{ id: string }>> {
   try {
+    const result = z.object({
+      workspace_id: z.string().uuid(),
+      name: z.string().min(1),
+      phone: z.string().min(5),
+      email: z.string().email().optional().or(z.literal("")),
+    }).safeParse(input)
+
+    if (!result.success) return { data: null, error: "Invalid contact data" }
+
+    const { workspace_id, name, phone, email } = result.data
+
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
 
+    // IDOR Check
+    if (user.app_metadata.workspace_id !== workspace_id) {
+      return { data: null, error: "Forbidden: Workspace mismatch" }
+    }
+
     const { data, error } = await supabase
       .from("contacts")
       .insert({
-        workspace_id: input.workspace_id,
-        name: input.name,
-        phone: input.phone,
-        email: input.email || null,
+        workspace_id,
+        name,
+        phone,
+        email: email || null,
         channel: 'whatsapp',
-        whatsapp_jid: `${input.phone}@s.whatsapp.net`
+        whatsapp_jid: `${phone}@s.whatsapp.net`
       })
       .select("id")
       .single()
@@ -125,6 +148,9 @@ export async function updateContact(input: unknown): Promise<ActionResponse<{ su
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
 
+    // RLS will handle workspace isolation, but we verify we have a workspace_id in metadata
+    if (!user.app_metadata.workspace_id) return { data: null, error: "No workspace assigned" }
+
     const { error } = await supabase
       .from("contacts")
       .update(updates)
@@ -143,14 +169,22 @@ export async function updateContact(input: unknown): Promise<ActionResponse<{ su
 
 export async function exportContacts(workspace_id: string): Promise<ActionResponse<{ csv: string }>> {
   try {
+    const res = z.string().uuid().safeParse(workspace_id)
+    if (!res.success) return { data: null, error: "Invalid workspace ID" }
+
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
 
+    // IDOR Check
+    if (user.app_metadata.workspace_id !== res.data) {
+      return { data: null, error: "Forbidden: Workspace mismatch" }
+    }
+
     const { data: contacts, error } = await supabase
       .from("contacts")
       .select("*")
-      .eq("workspace_id", workspace_id)
+      .eq("workspace_id", res.data)
       .is("deleted_at", null)
 
     if (error) throw error

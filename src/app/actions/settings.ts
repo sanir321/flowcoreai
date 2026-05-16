@@ -5,6 +5,7 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 import { UpdateNotificationsSchema, UpdateWidgetConfigSchema } from "@/lib/schemas"
 import { revalidatePath } from "next/cache"
 import { ActionResponse } from "./workspace"
+import { z } from "zod"
 
 const supabaseAdmin = createSupabaseClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -21,6 +22,11 @@ export async function updateNotifications(input: unknown): Promise<ActionRespons
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
+
+    // IDOR Check
+    if (user.app_metadata.workspace_id !== workspace_id) {
+      return { data: null, error: "Forbidden: Workspace mismatch" }
+    }
 
     const { error } = await supabase
       .from("workspace_notifications")
@@ -49,6 +55,11 @@ export async function updateWidgetConfig(input: unknown): Promise<ActionResponse
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
 
+    // IDOR Check
+    if (user.app_metadata.workspace_id !== workspace_id) {
+      return { data: null, error: "Forbidden: Workspace mismatch" }
+    }
+
     const { error } = await supabase
       .from("widget_config")
       .update(config)
@@ -66,13 +77,25 @@ export async function updateWidgetConfig(input: unknown): Promise<ActionResponse
 }
 
 export async function getGoogleAuthUrl(workspace_id: string): Promise<ActionResponse<{ url: string }>> {
+  const result = z.string().uuid().safeParse(workspace_id)
+  if (!result.success) return { data: null, error: "Invalid workspace ID" }
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { data: null, error: "Unauthorized" }
+
+  // IDOR Check
+  if (user.app_metadata.workspace_id !== result.data) {
+    return { data: null, error: "Forbidden: Workspace mismatch" }
+  }
+
   const client_id = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
   const redirect_uri = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/google/callback`;
   const scope = encodeURIComponent(
     "openid https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/spreadsheets"
   );
 
-  const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${client_id}&redirect_uri=${redirect_uri}&response_type=code&scope=${scope}&access_type=offline&prompt=consent&state=${workspace_id}`;
+  const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${client_id}&redirect_uri=${redirect_uri}&response_type=code&scope=${scope}&access_type=offline&prompt=consent&state=${result.data}`;
 
   return { data: { url }, error: null };
 }
@@ -84,13 +107,26 @@ export interface GoogleConfigInput {
   sheet_range?: string
 }
 
-export async function updateGoogleConfig(input: GoogleConfigInput): Promise<ActionResponse<{ success: true }>> {
+export async function updateGoogleConfig(input: unknown): Promise<ActionResponse<{ success: true }>> {
     try {
-      const { workspace_id, calendar_id, sheet_id, sheet_range } = input
+      const result = z.object({
+        workspace_id: z.string().uuid(),
+        calendar_id: z.string().optional(),
+        sheet_id: z.string().optional(),
+        sheet_range: z.string().optional(),
+      }).safeParse(input)
+
+      if (!result.success) return { data: null, error: "Invalid input" }
+      const { workspace_id, calendar_id, sheet_id, sheet_range } = result.data
   
       const supabase = await createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return { data: null, error: "Unauthorized" }
+
+      // IDOR Check
+      if (user.app_metadata.workspace_id !== workspace_id) {
+        return { data: null, error: "Forbidden: Workspace mismatch" }
+      }
   
       const { error } = await supabase
         .from("google_oauth_tokens")
@@ -115,12 +151,20 @@ export async function updateGoogleConfig(input: GoogleConfigInput): Promise<Acti
 
 export async function exportToSheets(workspace_id: string): Promise<ActionResponse<{ exported: number }>> {
     try {
+      const res = z.string().uuid().safeParse(workspace_id)
+      if (!res.success) return { data: null, error: "Invalid workspace ID" }
+
       const supabase = await createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return { data: null, error: "Unauthorized" }
 
+      // IDOR Check
+      if (user.app_metadata.workspace_id !== res.data) {
+        return { data: null, error: "Forbidden: Workspace mismatch" }
+      }
+
       const { data, error } = await supabaseAdmin.functions.invoke("crm-export", {
-        body: { workspace_id }
+        body: { workspace_id: res.data }
       })
 
       if (error) throw new Error(error.message || "Export failed")

@@ -73,6 +73,7 @@ import {
 import { cancelAppointment, createAppointment, rescheduleAppointment } from "@/app/actions/appointments"
 import { toast } from "sonner"
 import { motion, AnimatePresence } from "framer-motion"
+import { createClient } from "@/lib/supabase/client"
 
 interface AppointmentsClientProps {
   initialAppointments: any[]
@@ -96,6 +97,34 @@ const STATUS_OPTIONS = [
 export function AppointmentsClient({ initialAppointments, workspaceId, view, isModuleActive }: AppointmentsClientProps) {
   const [appointments, setAppointments] = useState(initialAppointments)
   const [currentDate, setCurrentDate] = useState(new Date())
+
+  // Handle real-time updates
+  useEffect(() => {
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`appointments:${workspaceId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "appointments", filter: `workspace_id=eq.${workspaceId}` },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            setAppointments((prev) => [...prev, payload.new])
+          }
+          if (payload.eventType === 'UPDATE') {
+            setAppointments((prev) => prev.map(a => a.id === payload.new.id ? payload.new : a))
+          }
+          if (payload.eventType === 'DELETE') {
+            setAppointments((prev) => prev.filter(a => a.id !== payload.old.id))
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [workspaceId]);
+
   const [selectedAppt, setSelectedAppt] = useState<any>(null)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isActionLoading, setIsActionLoading] = useState(false)

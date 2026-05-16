@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
+import { z } from "zod"
 import { CreateAppointmentSchema, RescheduleAppointmentSchema } from "@/lib/schemas/appointments"
 import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent } from "@/lib/google"
 import { ActionResponse } from "./workspace"
@@ -14,7 +15,18 @@ export async function createAppointment(input: unknown): Promise<ActionResponse<
     }
 
     const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (!user) {
+      return { data: null, error: "Unauthorized" }
+    }
+
     const { workspace_id, customer_name, customer_phone, service, start_at, end_at } = result.data
+
+    // IDOR Check: Ensure user owns the workspace
+    if (user.app_metadata.workspace_id !== workspace_id) {
+      return { data: null, error: "Forbidden: You do not own this workspace" }
+    }
 
     // 1. Create Google Calendar Event
     let google_event_id = null
@@ -66,6 +78,12 @@ export async function rescheduleAppointment(input: unknown): Promise<ActionRespo
     }
 
     const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (!user) {
+      return { data: null, error: "Unauthorized" }
+    }
+
     const { appointment_id, start_at, end_at } = result.data
 
     const { data: existing } = await supabase
@@ -74,7 +92,16 @@ export async function rescheduleAppointment(input: unknown): Promise<ActionRespo
       .eq("id", appointment_id)
       .single()
 
-    if (existing?.google_event_id) {
+    if (!existing) {
+      return { data: null, error: "Appointment not found" }
+    }
+
+    // IDOR Check: Ensure user owns the workspace associated with this appointment
+    if (user.app_metadata.workspace_id !== existing.workspace_id) {
+      return { data: null, error: "Forbidden: You do not own this workspace" }
+    }
+
+    if (existing.google_event_id) {
       try {
         await updateCalendarEvent(existing.workspace_id, existing.google_event_id, {
           start: { dateTime: start_at },
@@ -107,18 +134,38 @@ export async function rescheduleAppointment(input: unknown): Promise<ActionRespo
   }
 }
 
-export async function cancelAppointment(appointment_id: string): Promise<ActionResponse<any>> {
+export async function cancelAppointment(input: unknown): Promise<ActionResponse<any>> {
   try {
-    const supabase = await createClient()
+    const result = z.string().uuid().safeParse(input)
+    if (!result.success) {
+      return { data: null, error: "Invalid appointment ID" }
+    }
+    const appointment_id = result.data
 
-    // 1. Get current appointment to check for google_event_id
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (!user) {
+      return { data: null, error: "Unauthorized" }
+    }
+
+    // 1. Get current appointment to check for google_event_id and ownership
     const { data: appt } = await supabase
       .from("appointments")
       .select("workspace_id, google_event_id")
       .eq("id", appointment_id)
       .single()
 
-    if (appt?.google_event_id) {
+    if (!appt) {
+      return { data: null, error: "Appointment not found" }
+    }
+
+    // IDOR Check: Ensure user owns the workspace associated with this appointment
+    if (user.app_metadata.workspace_id !== appt.workspace_id) {
+      return { data: null, error: "Forbidden: You do not own this workspace" }
+    }
+
+    if (appt.google_event_id) {
       try {
         await deleteCalendarEvent(appt.workspace_id, appt.google_event_id)
       } catch (err) {

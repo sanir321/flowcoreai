@@ -72,22 +72,24 @@ async function sendAppointmentNotifications(supabase: any, workspace_id: string,
 
 async function sendAppointmentWhatsApp(supabase: any, workspace_id: string, session_id: string, appt: any, meetLink: string | null) {
   try {
-    const { data: gowaSession } = await supabase.from('gowa_sessions').select('gowa_session_id').eq('workspace_id', workspace_id).maybeSingle();
-    const deviceId = gowaSession?.gowa_session_id;
+    // 1. Fetch all required data in a single joined query
+    const { data: sessionData, error } = await supabase
+      .from('conversation_sessions')
+      .select(`
+        customer_jid,
+        contact:contacts(phone),
+        gowa_session:gowa_sessions!workspace_id(gowa_session_id)
+      `)
+      .eq('id', session_id)
+      .eq('workspace_id', workspace_id)
+      .single();
+
+    if (error || !sessionData) throw new Error("Could not fetch notification data");
+
+    const deviceId = sessionData.gowa_session?.gowa_session_id;
     if (!deviceId) return;
 
-    let phone: string | null = null;
-    if (appt.customer_phone) {
-      phone = appt.customer_phone;
-    } else {
-      const { data: session } = await supabase.from('conversation_sessions').select('contact_id, customer_jid').eq('id', session_id).single();
-      if (session?.customer_jid) {
-        phone = session.customer_jid.split('@')[0];
-      } else if (session?.contact_id) {
-        const { data: contact } = await supabase.from('contacts').select('phone').eq('id', session.contact_id).single();
-        phone = contact?.phone || null;
-      }
-    }
+    let phone = appt.customer_phone || sessionData.customer_jid?.split('@')[0] || sessionData.contact?.phone;
     if (!phone) return;
 
     const gowaBase = Deno.env.get('GOWA_BASE_URL')?.replace(/\/$/, "");
@@ -115,21 +117,26 @@ async function sendAppointmentWhatsApp(supabase: any, workspace_id: string, sess
 
 async function sendAppointmentEmail(supabase: any, workspace_id: string, session_id: string, appt: any, meetLink: string | null) {
   try {
-    let email: string | null = appt.customer_email || null;
-    if (!email) {
-      const { data: session } = await supabase.from('conversation_sessions').select('contact_id').eq('id', session_id).single();
-      if (session?.contact_id) {
-        const { data: contact } = await supabase.from('contacts').select('email').eq('id', session.contact_id).single();
-        email = contact?.email || null;
-      }
-    }
+    // 1. Fetch all required data in a single joined query
+    const { data: workspaceData, error } = await supabase
+      .from('workspaces')
+      .select(`
+        name,
+        session:conversation_sessions!id(
+          contact:contacts(email)
+        )
+      `)
+      .eq('id', workspace_id)
+      .eq('session.id', session_id)
+      .single();
+
+    if (error || !workspaceData) throw new Error("Could not fetch email data");
+
+    const email = appt.customer_email || workspaceData.session?.[0]?.contact?.email;
     if (!email) return;
 
     const appUrl = Deno.env.get('NEXT_PUBLIC_APP_URL') || 'https://flowter-bay.vercel.app';
-
-    const { data: workspace } = await supabase.from('workspaces').select('name').eq('id', workspace_id).single();
-    const workspaceName = workspace?.name || 'FlowCore';
-
+    const workspaceName = workspaceData.name || 'FlowCore';
     const formattedDate = new Date(appt.start_at).toLocaleString();
 
     await fetch(`${appUrl}/api/emails/send`, {

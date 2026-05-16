@@ -31,23 +31,25 @@ export async function POST() {
         .from("gowa_sessions").select("gowa_session_id")
         .eq("workspace_id", workspaceId)
 
-      // Delete all workspace data
+      const deletedAt = new Date().toISOString()
+
+      // Soft-delete all workspace data
       await Promise.all([
-        supabase.from("contacts").delete().eq("workspace_id", workspaceId),
-        supabase.from("conversation_sessions").delete().eq("workspace_id", workspaceId),
-        supabase.from("messages").delete().eq("workspace_id", workspaceId),
-        supabase.from("workspace_agents").delete().eq("workspace_id", workspaceId),
-        supabase.from("kb_sources").delete().eq("workspace_id", workspaceId),
-        supabase.from("kb_chunks").delete().eq("workspace_id", workspaceId),
-        supabase.from("gowa_sessions").delete().eq("workspace_id", workspaceId),
-        supabase.from("google_oauth_tokens").delete().eq("workspace_id", workspaceId),
-        supabase.from("widget_config").delete().eq("workspace_id", workspaceId),
-        supabase.from("appointments").delete().eq("workspace_id", workspaceId),
-        supabase.from("escalation_logs").delete().eq("workspace_id", workspaceId),
-        supabase.from("billing_transactions").delete().eq("workspace_id", workspaceId),
-        supabase.from("agent_traces" as any).delete().eq("workspace_id", workspaceId),
-        supabase.from("workspace_notifications").delete().eq("workspace_id", workspaceId),
-        supabase.from("workspaces").delete().eq("id", workspaceId),
+        supabase.from("contacts").update({ deleted_at: deletedAt }).eq("workspace_id", workspaceId),
+        supabase.from("conversation_sessions").update({ deleted_at: deletedAt }).eq("workspace_id", workspaceId),
+        supabase.from("messages").update({ deleted_at: deletedAt }).eq("workspace_id", workspaceId),
+        supabase.from("workspace_agents").update({ deleted_at: deletedAt }).eq("workspace_id", workspaceId),
+        supabase.from("kb_sources").update({ deleted_at: deletedAt }).eq("workspace_id", workspaceId),
+        supabase.from("kb_chunks").update({ deleted_at: deletedAt }).eq("workspace_id", workspaceId),
+        supabase.from("gowa_sessions").update({ deleted_at: deletedAt }).eq("workspace_id", workspaceId),
+        supabase.from("google_oauth_tokens").update({ deleted_at: deletedAt }).eq("workspace_id", workspaceId),
+        supabase.from("widget_config").update({ deleted_at: deletedAt }).eq("workspace_id", workspaceId),
+        supabase.from("appointments").update({ deleted_at: deletedAt }).eq("workspace_id", workspaceId),
+        supabase.from("escalation_logs").update({ deleted_at: deletedAt }).eq("workspace_id", workspaceId),
+        supabase.from("billing_transactions").update({ deleted_at: deletedAt }).eq("workspace_id", workspaceId),
+        supabase.from("agent_traces" as any).update({ deleted_at: deletedAt }).eq("workspace_id", workspaceId),
+        supabase.from("workspace_notifications").update({ deleted_at: deletedAt }).eq("workspace_id", workspaceId),
+        supabase.from("workspaces").update({ deleted_at: deletedAt }).eq("id", workspaceId),
       ])
 
       // Logout + delete GoWA device from Railway

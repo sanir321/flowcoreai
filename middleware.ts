@@ -29,10 +29,14 @@ export async function middleware(request: NextRequest) {
     url.pathname.startsWith(route)
   )
   const isOnboardingRoute = url.pathname.startsWith("/onboarding")
+  const isInternalApiRoute = url.pathname.startsWith("/api/") && 
+    !url.pathname.startsWith("/api/widget/") && 
+    !url.pathname.startsWith("/api/webhooks/") &&
+    !url.pathname.startsWith("/api/auth/google/callback")
 
   let supabaseResponse = NextResponse.next({ request })
 
-  if (isPublicRoute && !isDashboardRoute && !isOnboardingRoute) {
+  if (isPublicRoute && !isDashboardRoute && !isOnboardingRoute && !isInternalApiRoute) {
     return applySecurityHeaders(supabaseResponse)
   }
 
@@ -61,34 +65,18 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (isDashboardRoute || isOnboardingRoute) {
+  if (isDashboardRoute || isOnboardingRoute || isInternalApiRoute) {
     if (!user) {
+      if (isInternalApiRoute) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
       url.pathname = "/login"
       return NextResponse.redirect(url)
     }
 
-    let workspaceId = user.app_metadata?.workspace_id
-
-    // FALLBACK: If workspaceId is missing from metadata, check database aggressively
-    if (isDashboardRoute && !workspaceId) {
-      const { data: workspace } = await supabase
-        .from("workspaces")
-        .select("id")
-        .eq("owner_id", user.id)
-        .eq("status", "active")
-        .is("deleted_at", null)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle()
-      
-      if (workspace) {
-        workspaceId = workspace.id
-      }
-    }
+    const workspaceId = user.app_metadata?.workspace_id
 
     // REDIRECTION LOGIC
     if (isDashboardRoute && !workspaceId) {
-      // No workspace found in metadata OR database -> must onboard
+      // No workspace found in metadata -> must onboard
       const onboardingUrl = new URL("/onboarding", request.url)
       return NextResponse.redirect(onboardingUrl)
     }

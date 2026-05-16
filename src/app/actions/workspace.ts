@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
+import { z } from "zod"
 
 export interface Workspace {
   id: string
@@ -32,8 +33,19 @@ export type ActionResponse<T = unknown> = {
   error: string | null;
 }
 
-export async function createWorkspace(input: WorkspaceCreateInput): Promise<ActionResponse<{ workspace_id: string }>> {
+export async function createWorkspace(input: unknown): Promise<ActionResponse<{ workspace_id: string }>> {
   try {
+    const result = z.object({
+      name: z.string().min(1),
+      business_type: z.string().optional(),
+      website_url: z.string().url().optional().or(z.literal("")),
+      employee_count: z.string().optional(),
+    }).safeParse(input)
+
+    if (!result.success) {
+      return { data: null, error: "Invalid workspace data" }
+    }
+
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
@@ -41,10 +53,10 @@ export async function createWorkspace(input: WorkspaceCreateInput): Promise<Acti
     const { error, data } = await supabase
       .from("workspaces")
       .insert({
-        name: input.name,
-        business_type: input.business_type,
-        website_url: input.website_url,
-        employee_count: input.employee_count,
+        name: result.data.name,
+        business_type: result.data.business_type,
+        website_url: result.data.website_url,
+        employee_count: result.data.employee_count,
         owner_id: user.id,
         status: 'active'
       })
@@ -60,14 +72,20 @@ export async function createWorkspace(input: WorkspaceCreateInput): Promise<Acti
   }
 }
 
-export async function updateWorkspace(input: {
-  id: string;
-  name?: string;
-  business_type?: string;
-  timezone?: string;
-  owner_personal_phone?: string;
-}): Promise<ActionResponse<{ success: true }>> {
+export async function updateWorkspace(input: unknown): Promise<ActionResponse<{ success: true }>> {
   try {
+    const result = z.object({
+      id: z.string().uuid(),
+      name: z.string().min(1).optional(),
+      business_type: z.string().optional(),
+      timezone: z.string().optional(),
+      owner_personal_phone: z.string().optional(),
+    }).safeParse(input)
+
+    if (!result.success) {
+      return { data: null, error: "Invalid update data" }
+    }
+
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
@@ -75,13 +93,13 @@ export async function updateWorkspace(input: {
     const { error } = await supabase
       .from("workspaces")
       .update({
-        name: input.name,
-        business_type: input.business_type,
-        timezone: input.timezone,
-        owner_personal_phone: input.owner_personal_phone,
+        name: result.data.name,
+        business_type: result.data.business_type,
+        timezone: result.data.timezone,
+        owner_personal_phone: result.data.owner_personal_phone,
         updated_at: new Date().toISOString()
       })
-      .eq("id", input.id)
+      .eq("id", result.data.id)
       .eq("owner_id", user.id)
 
     if (error) throw error
@@ -96,14 +114,23 @@ export async function updateWorkspace(input: {
 
 export async function updateWelcomeTemplate(workspace_id: string, template: string): Promise<ActionResponse<{ success: true }>> {
   try {
+    const result = z.object({
+      workspace_id: z.string().uuid(),
+      template: z.string()
+    }).safeParse({ workspace_id, template })
+
+    if (!result.success) {
+      return { data: null, error: "Invalid template data" }
+    }
+
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
 
     const { error } = await supabase
       .from("workspaces")
-      .update({ welcome_template: template })
-      .eq("id", workspace_id)
+      .update({ welcome_template: result.data.template })
+      .eq("id", result.data.workspace_id)
       .eq("owner_id", user.id)
 
     if (error) throw error
@@ -118,9 +145,24 @@ export async function updateWelcomeTemplate(workspace_id: string, template: stri
 
 export async function checkUserExists(email: string): Promise<ActionResponse<{ exists: boolean }>> {
   try {
+    const emailResult = z.string().email().safeParse(email)
+    if (!emailResult.success) {
+      return { data: null, error: "Invalid email address" }
+    }
+
     const supabase = createAdminClient()
-    const { data } = await supabase.auth.admin.listUsers()
-    const exists = data?.users.some(u => u.email === email) ?? false
+    
+    // Efficiently check if user exists without listing all users
+    const { data: { users }, error } = await supabase.auth.admin.listUsers({
+      filters: {
+        email: emailResult.data
+      },
+      perPage: 1
+    })
+
+    if (error) throw error
+    
+    const exists = users.length > 0
     return { data: { exists }, error: null }
   } catch (err) {
     console.error(err)
@@ -137,7 +179,12 @@ export async function deleteWorkspace(): Promise<ActionResponse<{ success: true 
     const workspaceId = user.app_metadata?.workspace_id
     if (!workspaceId) return { data: null, error: "No workspace found" }
 
-    const { error } = await supabase.from("workspaces").delete().eq("id", workspaceId).eq("owner_id", user.id)
+    const { error } = await supabase
+      .from("workspaces")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", workspaceId)
+      .eq("owner_id", user.id)
+
     if (error) throw error
 
     const admin = createAdminClient()

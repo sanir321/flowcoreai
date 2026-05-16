@@ -119,7 +119,11 @@ export async function deleteAgent(input: unknown): Promise<ActionResponse<{ succ
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
 
-    const { error } = await supabase.from("workspace_agents").delete().eq("id", agent_id)
+    const { error } = await supabase
+      .from("workspace_agents")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", agent_id)
+
     if (error) throw error
 
     revalidatePath("/agent-hub")

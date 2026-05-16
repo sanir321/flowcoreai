@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createClient as createAdminClient } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
 import { rateLimit } from "@/lib/rate-limit";
 
 
-const supabaseAdmin = createClient(
+const supabaseAdmin = createAdminClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
@@ -17,10 +18,11 @@ const TestMessageSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
-    const ip = req.headers.get("x-forwarded-for") || "127.0.0.1";
-    const { success: isAllowed } = await rateLimit(ip, 10, 60);
-    if (!isAllowed) {
-      return new Response("Too many requests. Please wait a minute.", { status: 429 });
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return new Response("Unauthorized", { status: 401 });
     }
 
     const body = await req.json();
@@ -31,6 +33,17 @@ export async function POST(req: NextRequest) {
     }
 
     const { workspace_id, message, agent_type } = result.data;
+
+    // IDOR Check: Ensure user owns the workspace
+    if (user.app_metadata.workspace_id !== workspace_id) {
+      return new Response("Forbidden: You do not own this workspace", { status: 403 });
+    }
+
+    const ip = req.headers.get("x-forwarded-for") || "127.0.0.1";
+    const { success: isAllowed } = await rateLimit(ip, 10, 60, workspace_id);
+    if (!isAllowed) {
+      return new Response("Too many requests for this workspace. Please wait a minute.", { status: 429 });
+    }
 
     // 1. Create or Find a "Test Session" for this workspace/agent
     let { data: session } = await supabaseAdmin

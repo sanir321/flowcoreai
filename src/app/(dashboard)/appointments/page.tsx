@@ -1,85 +1,48 @@
-"use client"
-
-import { useState, useEffect } from "react"
-import { createClient } from "@/lib/supabase/client"
-import { useRouter } from "next/navigation"
+import { createClient } from "@/lib/supabase/server"
+import { redirect } from "next/navigation"
 import { AppointmentsClient } from "@/components/appointments/appointments-client"
 import { AppointmentsSidebar } from "@/components/appointments/appointments-sidebar"
-import { Loader2 } from "lucide-react"
 
-const supabase = createClient()
+export default async function AppointmentsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ view?: string }>
+}) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect("/login")
 
-export default function AppointmentsPage() {
-  const [view, setView] = useState<'list' | 'calendar'>('calendar')
-  const [appointments, setAppointments] = useState<any[]>([])
-  const [isModuleActive, setIsModuleActive] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
-  const [workspaceId, setWorkspaceId] = useState<string | null>(null)
-  const router = useRouter()
+  const workspaceId = user.app_metadata?.workspace_id
+  if (!workspaceId) redirect("/onboarding")
 
-  useEffect(() => {
-    async function init() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      const id = user.app_metadata?.workspace_id
-      if (!id) return
-      setWorkspaceId(id)
+  const view = (await searchParams).view === 'list' ? 'list' : 'calendar'
 
-      const { data: agent } = await supabase
-        .from("workspace_agents")
-        .select("id, status")
-        .eq("workspace_id", id)
-        .eq("agent_type", "appointment_booking")
-        .single()
+  // Fetch initial appointments
+  const { data: appointments } = await supabase
+    .from("appointments")
+    .select("*")
+    .eq("workspace_id", workspaceId)
+    .is("deleted_at", null)
+    .order("start_at", { ascending: true })
 
-      setIsModuleActive(agent?.status === "active")
-      setIsLoading(false)
-    }
-    init()
-  }, [])
+  // Check if module is active
+  const { data: agent } = await supabase
+    .from("workspace_agents")
+    .select("status")
+    .eq("workspace_id", workspaceId)
+    .eq("agent_type", "appointment_booking")
+    .single()
 
-  useEffect(() => {
-    if (!workspaceId) return;
-
-    // Listen for new appointments in real-time
-    const channel = supabase
-      .channel(`appointments:${workspaceId}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "appointments", filter: `workspace_id=eq.${workspaceId}` },
-        (payload) => {
-          if (payload.eventType === 'INSERT') {
-            setAppointments((prev) => [...prev, payload.new])
-          }
-          if (payload.eventType === 'UPDATE') {
-            setAppointments((prev) => prev.map(a => a.id === payload.new.id ? payload.new : a))
-          }
-          if (payload.eventType === 'DELETE') {
-            setAppointments((prev) => prev.filter(a => a.id !== payload.old.id))
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [workspaceId]);
-
-  if (isLoading) return (
-    <div className="flex h-full items-center justify-center">
-       <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
-    </div>
-  )
+  const isModuleActive = agent?.status === "active"
 
   return (
     <div className="flex h-full bg-white font-sans overflow-hidden">
-      <AppointmentsSidebar currentView={view} onViewChange={setView} />
+      <AppointmentsSidebar currentView={view} />
       
       <div className="flex-1 flex flex-col h-full overflow-hidden border-l border-gray-50">
         <AppointmentsClient 
-          initialAppointments={appointments} 
-          workspaceId={workspaceId!} 
+          initialAppointments={appointments || []} 
+          workspaceId={workspaceId} 
           view={view}
           isModuleActive={isModuleActive}
         />
