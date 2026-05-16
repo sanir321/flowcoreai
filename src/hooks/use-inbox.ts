@@ -12,7 +12,7 @@ export function useInbox(workspaceId?: string) {
 
   // Fetch sessions
   useEffect(() => {
-    if (!workspaceId || workspaceId === "placeholder-id") return
+    if (!workspaceId) return
 
     async function fetchSessions() {
       const { data, error } = await supabase

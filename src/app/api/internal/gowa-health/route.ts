@@ -38,9 +38,43 @@ export async function GET(req: NextRequest) {
         .is("notification_sent", false)
         .lt("created_at", new Date(Date.now() - 30 * 60 * 1000).toISOString()); // 30 mins old
 
-    if (pendingEscalations) {
+    if (pendingEscalations && pendingEscalations.length > 0) {
+        console.log(`[GOWA_HEALTH] Processing ${pendingEscalations.length} pending escalation(s)`);
         for (const esc of pendingEscalations) {
-            // Logic to re-trigger notification (notifyEscalation stub)
+            try {
+                const { data: workspace } = await supabaseAdmin
+                    .from("workspaces")
+                    .select("owner_id")
+                    .eq("id", esc.workspace_id)
+                    .single();
+
+                if (workspace?.owner_id) {
+                    const { data: owner } = await supabaseAdmin.auth.admin.getUserById(workspace.owner_id);
+                    const ownerEmail = owner?.user?.email;
+                    if (ownerEmail) {
+                        await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/emails/send`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                to: ownerEmail,
+                                subject: "Escalation Alert — Action Required",
+                                template: "escalation",
+                                data: {
+                                    workspaceName: esc.workspace_id,
+                                    triggerType: esc.trigger_type,
+                                    triggerMessage: esc.trigger_message || "Customer requested human assistance",
+                                }
+                            }),
+                        }).catch(e => console.error(`[GOWA_HEALTH] Email notification failed: ${e.message}`));
+                    }
+                }
+                await supabaseAdmin
+                    .from("escalation_logs")
+                    .update({ notification_sent: true })
+                    .eq("id", esc.id);
+            } catch (e: any) {
+                console.error(`[GOWA_HEALTH] Failed to process escalation ${esc.id}: ${e.message}`);
+            }
         }
     }
 

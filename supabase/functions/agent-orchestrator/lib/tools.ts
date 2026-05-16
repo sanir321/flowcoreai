@@ -160,7 +160,12 @@ export async function executeTool(input: any): Promise<any> {
   try {
     switch (tool_name) {
       case 'match_kb_chunks': {
-        const embedding = await generateEmbedding(args.query);
+        let embedding: number[];
+        try {
+          embedding = await generateEmbedding(args.query);
+        } catch {
+          return { kb_chunks: [] };
+        }
         const { data: kb, error } = await supabase.rpc('match_kb_chunks', { 
             query_embedding: embedding, 
             match_threshold: 0.75, 
@@ -248,35 +253,13 @@ export async function executeTool(input: any): Promise<any> {
 
         // Auto-push to Google Sheets if configured
         try {
-          const gConfig = await supabase.from("google_oauth_tokens").select("access_token, sheet_id, sheet_range, token_expiry, refresh_token").eq("workspace_id", workspace_id).order('created_at', { ascending: false }).limit(1).maybeSingle();
-          if (gConfig.data?.sheet_id && gConfig.data?.access_token) {
-            const now = new Date();
-            const expiry = new Date(gConfig.data.token_expiry);
-            let accessToken = gConfig.data.access_token;
-
-            if (expiry.getTime() - now.getTime() < 5 * 60 * 1000 && gConfig.data.refresh_token) {
-              const r = await fetch("https://oauth2.googleapis.com/token", {
-                method: "POST",
-                headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                body: new URLSearchParams({
-                  client_id: Deno.env.get('GOOGLE_CLIENT_ID')!,
-                  client_secret: Deno.env.get('GOOGLE_CLIENT_SECRET')!,
-                  refresh_token: gConfig.data.refresh_token,
-                  grant_type: "refresh_token",
-                }),
-              });
-              const t = await r.json();
-              if (r.ok) {
-                accessToken = t.access_token;
-                await supabase.from("google_oauth_tokens").update({ access_token: t.access_token, token_expiry: new Date(Date.now() + t.expires_in * 1000).toISOString() }).eq("workspace_id", workspace_id);
-              }
-            }
-
-            const sheetRange = gConfig.data.sheet_range ?? 'Sheet1!A:Z';
+          const gConfig = await getGoogleConfig(supabase, workspace_id);
+          if (gConfig?.sheet_id) {
+            const sheetRange = gConfig.sheet_range ?? 'Sheet1!A:Z';
             const row = [args.name ?? '', args.email ?? '', args.phone ?? '', '', '', new Date().toISOString(), new Date().toISOString()];
-            await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${gConfig.data.sheet_id}/values/${sheetRange}:append?valueInputOption=USER_ENTERED`, {
+            await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${gConfig.sheet_id}/values/${sheetRange}:append?valueInputOption=USER_ENTERED`, {
               method: 'POST',
-              headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+              headers: { Authorization: `Bearer ${gConfig.access_token}`, 'Content-Type': 'application/json' },
               body: JSON.stringify({ values: [row] }),
             });
           }

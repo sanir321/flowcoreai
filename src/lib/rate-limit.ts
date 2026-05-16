@@ -14,8 +14,8 @@ export async function rateLimit(ip: string, limit = 30, windowSeconds = 60): Pro
   const windowStart = now - windowSeconds;
 
   try {
-    // Note: This requires a 'rate_limits' table. If it doesn't exist, we'll gracefully pass
-    // for the prototype but log the need.
+    // Note: This requires a 'rate_limits' table (service_role bypasses RLS).
+    // If the table is missing, requests are denied to be safe.
     const { count, error } = await supabaseAdmin
       .from("rate_limits")
       .select("*", { count: "exact", head: true })
@@ -24,7 +24,7 @@ export async function rateLimit(ip: string, limit = 30, windowSeconds = 60): Pro
 
     if (error) {
       console.warn("Rate limit table missing or error:", error.message);
-      return { success: true }; 
+      return { success: false }; 
     }
 
     if ((count || 0) >= limit) {
@@ -35,7 +35,8 @@ export async function rateLimit(ip: string, limit = 30, windowSeconds = 60): Pro
     await supabaseAdmin.from("rate_limits").insert({ ip });
 
     return { success: true };
-  } catch {
-    return { success: true };
+  } catch (e) {
+    console.error("Rate limit error:", e);
+    return { success: false };
   }
 }

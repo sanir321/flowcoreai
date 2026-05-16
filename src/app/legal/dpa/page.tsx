@@ -22,7 +22,7 @@ This Data Processing Agreement ("DPA") forms part of the Terms & Conditions betw
 
 ## 2. Scope
 
-This DPA governs the Processor's processing of Personal Data on behalf of the Controller when using the FlowCore AI platform. It applies to all Personal Data processed through the Service, including end-customer data routed through WhatsApp, webchat, email, Telegram, and Slack channels.
+This DPA governs the Processor's processing of Personal Data on behalf of the Controller when using the FlowCore AI platform. It applies to all Personal Data processed through the Service, including end-customer data routed through WhatsApp, webchat, and email channels.
 
 ---
 

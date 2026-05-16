@@ -220,7 +220,7 @@ Sub-pages: General, Profile, Workspace, Notifications, Channels (WhatsApp + Widg
 | Feature | Reason |
 |---|---|
 | Multiple WhatsApp numbers per workspace | Single GoWA session per workspace for MVP |
-| Instagram / Telegram / Messenger | Post-revenue |
+| Instagram / Messenger | Post-revenue |
 | Voice/audio transcription | Infrastructure complexity |
 | AI-initiated broadcast campaigns | Meta compliance layer not yet built |
 | Manual billing | Stripe integration deferred to post-MVP; managed via 'Request Upgrade' flow |

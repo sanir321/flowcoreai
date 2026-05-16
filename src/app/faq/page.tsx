@@ -18,11 +18,11 @@ export const metadata: Metadata = {
 const faqs = [
   {
     q: "What is FlowCore?",
-    a: "FlowCore is an AI-powered customer service orchestration platform. It connects WhatsApp, webchat, email, Telegram, and Slack to a single AI inbox, automating responses while keeping a human in the loop when needed.",
+    a: "FlowCore is an AI-powered customer service orchestration platform. It connects WhatsApp, webchat, and email to a single AI inbox, automating responses while keeping a human in the loop when needed.",
   },
   {
     q: "Which channels does FlowCore support?",
-    a: "WhatsApp (via GoWA), Telegram, Slack, Gmail, and a native webchat widget. Each channel connects through its own integration — you bring the credentials, we handle the rest.",
+    a: "WhatsApp (via GoWA), Gmail, and a native webchat widget. Each channel connects through its own integration — you bring the credentials, we handle the rest.",
   },
   {
     q: "Do I need a Meta/WhatsApp Business API approval?",
@@ -50,7 +50,7 @@ const faqs = [
   },
   {
     q: "What happens if the GoWA server goes down?",
-    a: "WhatsApp messaging will be unavailable until the GoWA server is restored. Other channels (Telegram, Slack, webchat, email) continue working independently. You can host GoWA on your own infrastructure for better reliability.",
+    a: "WhatsApp messaging will be unavailable until the GoWA server is restored. Other channels (webchat, email) continue working independently. You can host GoWA on your own infrastructure for better reliability.",
   },
   {
     q: "How do I get started?",

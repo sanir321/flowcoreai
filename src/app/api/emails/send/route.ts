@@ -11,7 +11,6 @@ import * as React from "react";
 export async function POST(req: Request) {
   try {
     const authHeader = req.headers.get("Authorization");
-    const apiKey = process.env.RESEND_API_KEY || process.env.SMTP_PASSWORD;
 
     const { to, subject, template, data } = await req.json();
 

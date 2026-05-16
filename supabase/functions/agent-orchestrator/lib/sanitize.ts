@@ -26,7 +26,7 @@ export async function checkTokenBudget(
   supabase: any,
   sessionId: string,
   tokensUsed: number,
-  maxTokensPerSession = 15000
+  maxTokensPerSession = 100000
 ): Promise<{ allowed: boolean; usage: number }> {
   const { data: session } = await supabase
     .from("conversation_sessions")

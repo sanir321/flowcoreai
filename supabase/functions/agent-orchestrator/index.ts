@@ -19,6 +19,14 @@ const TOOL_PERMISSIONS: Record<string, string[]> = {
   sales: ["capture_lead", "match_kb_chunks", "get_contact_history", "update_contact", "request_handoff", "escalation_request"],
 }
 
+function getAgentTools(agentType: string, allAgents: any[]): string[] {
+  const base = TOOL_PERMISSIONS[agentType] || [];
+  if (allAgents.length <= 1) {
+    return base.filter(t => t !== 'request_handoff');
+  }
+  return base;
+}
+
 const AGENT_DESCRIPTIONS: Record<string, { label: string; description: string; skills: string }> = {
   customer_support: {
     label: "Customer Support",
@@ -40,24 +48,34 @@ const AGENT_DESCRIPTIONS: Record<string, { label: string; description: string; s
 function buildTeamPrompt(agents: any[], workspace_name: string, currentAgentType: string, channel: string): string {
   const current = agents.find(a => a.agent_type === currentAgentType)
   const currentName = current?.config?.agent_name || AGENT_DESCRIPTIONS[currentAgentType]?.label || "Teammate"
+  const hasTeam = agents.length > 1
+  const hasBookingAgent = agents.some(a => a.agent_type === 'appointment_booking')
 
-  const teamList = agents
-    .filter(a => a.agent_type !== currentAgentType)
-    .map(a => {
-      const name = a.config?.agent_name || AGENT_DESCRIPTIONS[a.agent_type]?.label || a.agent_type
-      const desc = AGENT_DESCRIPTIONS[a.agent_type]
-      return `  - ${name} (${a.agent_type}): ${desc?.description || ''} | Skills: ${desc?.skills || ''}`
-    })
-    .join('\n')
-
-  const teamIntro = teamList
-    ? `\n\nYOUR TEAMMATES (available for handoff):\n${teamList}\n\nIf the user asks about something outside your expertise, use \`request_handoff\` to transfer them to the right teammate. Summarize what you've already discussed so the next teammate can pick up seamlessly.`
+  const teamSection = hasTeam
+    ? agents
+        .filter(a => a.agent_type !== currentAgentType)
+        .map(a => {
+          const name = a.config?.agent_name || AGENT_DESCRIPTIONS[a.agent_type]?.label || a.agent_type
+          const desc = AGENT_DESCRIPTIONS[a.agent_type]
+          return `  - ${name} (${a.agent_type}): ${desc?.description || ''} | Skills: ${desc?.skills || ''}`
+        })
+        .join('\n')
     : ''
 
-  const hasBookingAgent = agents.some(a => a.agent_type === 'appointment_booking')
+  const teamIntro = hasTeam && teamSection
+    ? `\n\nYOUR TEAMMATES (available for handoff):\n${teamSection}\n\nIf the user asks about something outside your expertise, use \`request_handoff\` to transfer them to the right teammate. Summarize what you've already discussed so the next teammate can pick up seamlessly.`
+    : ''
+
+  const noTeamNotice = !hasTeam
+    ? `\n\nNOTE: You are the only agent for this workspace. Handle everything within your capabilities. If you cannot help, escalate to a human using \`escalation_request\`.`
+    : ''
 
   const noBookingNotice = (!hasBookingAgent && currentAgentType === 'customer_support')
     ? `\n\nNOTE: Appointment booking is not configured for this workspace. If the user asks to book or manage appointments, politely let them know this feature isn't available yet and offer to pass their details to the team. Do NOT attempt to book or hand off for booking.`
+    : ''
+
+  const mustHandoffBooking = (hasBookingAgent && currentAgentType === 'customer_support')
+    ? `\n\nIMPORTANT: You CANNOT book or check appointment availability. Only the Appointment Booker teammate can do that. If the user asks to book, reschedule, cancel, or check appointment times — use \`request_handoff\` with target_agent "appointment_booking" immediately. Do NOT try to handle it yourself.`
     : ''
 
   const bookingRules = (hasBookingAgent && currentAgentType === 'appointment_booking')
@@ -72,22 +90,31 @@ function buildTeamPrompt(agents: any[], workspace_name: string, currentAgentType
   
 YOUR ROLE: ${AGENT_DESCRIPTIONS[currentAgentType]?.description || 'General support.'}
 YOUR SKILLS: ${AGENT_DESCRIPTIONS[currentAgentType]?.skills || 'General assistance, escalation'}
-${teamIntro}${noBookingNotice}${bookingRules}
+${teamIntro}${noTeamNotice}${noBookingNotice}${mustHandoffBooking}${bookingRules}
 
 IDENTITY RULES:
 1. NEVER reveal you are an AI.
 2. If asked identity, say: "I'm ${currentName} from ${workspace_name}."
-3. Be warm, professional, and concise.
+3. Sound like a real human texting — short messages, natural language, no bullet points or lists.
+4. Ask ONE question at a time. Never dump multiple questions in a single message.
+
+STYLE RULES:
+- Write like a friendly person texting on a phone. Short sentences. Casual but not unprofessional.
+- No bullet points, no numbered lists, no markdown, no emojis.
+- One topic per message. If you need multiple details, ask for them one by one.
+- Keep responses brief — 2-3 sentences max unless the customer asks for details.
 
 GUIDELINES:
-- Search the knowledge base for business info.
-- If they want pricing or sales, capture the lead or hand off to the Sales teammate.
-- If you cannot help, use \`request_handoff\` to transfer to the right teammate.
+- Search the knowledge base for business info.${hasTeam ? "\n- If they want pricing or sales, capture the lead or hand off to the Sales teammate." : "\n- If they want pricing or sales, capture the lead directly."}
+- If you cannot help, use \`escalation_request\` to transfer to a human.
 - NEVER make up information you don't know.
 
-HANDOFF RULES:
-- If the customer asks about a service or topic outside your role, use \`request_handoff\` to transfer to the right teammate. Include a summary of what was already discussed.
-- NEVER try to handle a task that belongs to another role. If unsure, hand off.`
+${hasTeam
+  ? `HANDOFF RULES:\n- If the customer asks about a service or topic outside your role, use \`request_handoff\` to transfer to the right teammate. Include a summary of what was already discussed.\n- NEVER try to handle a task that belongs to another role. If unsure, hand off.`
+  : `SINGLE AGENT RULES:\n- You are handling all requests. Use \`escalation_request\` only for issues you truly cannot resolve.`}
+
+AVAILABLE FUNCTIONS:
+- You have functions available to perform actions. When you need to do something (check availability, book, look up info), use the appropriate function instead of just describing what you would do.`
 }
 
 Deno.serve(async (req) => {
@@ -135,6 +162,19 @@ Deno.serve(async (req) => {
         fallback_message: "Thank you for reaching out! Our team will get back to you shortly."
     };
 
+    // Blocked Topics Check
+    if (!is_test && guardrailConfig.blocked_topics?.length > 0) {
+      const blockedMatch = guardrailConfig.blocked_topics.some((topic: string) =>
+        sanitizedMessage.toLowerCase().includes(topic.toLowerCase())
+      );
+      if (blockedMatch) {
+        await updateSessionState(supabase, session.id, { typing_status: 'idle' });
+        return new Response(JSON.stringify({ 
+          response_parts: [guardrailConfig.fallback_message]
+        }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+    }
+
     // Token Budget Check
     if (!is_test) {
       const { allowed } = await checkTokenBudget(supabase, session.id, 0);
@@ -168,28 +208,13 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 1.5 KB Response Cache Check
+    // 1.5 Compute cache hash (check happens after agent loading)
+    const isAffirmation = /^(yes|yeah|yep|yeh|ok|okay|sure|correct|right|confirm|proceed|do it|go ahead|process|send it)\b/i.test(sanitizedMessage.trim());
     let cacheKeyHex = "";
     {
       const msgBytes = new TextEncoder().encode(sanitizedMessage.toLowerCase().trim().slice(0, 500));
       const hashBuf = await crypto.subtle.digest('SHA-256', msgBytes);
       cacheKeyHex = Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
-
-      const { data: cached } = await supabase.from('kb_response_cache')
-        .select('response_text, access_count, id')
-        .eq('workspace_id', workspace_id)
-        .eq('cache_key', cacheKeyHex)
-        .maybeSingle();
-
-      if (cached && !is_test) {
-        await supabase.from('kb_response_cache').update({ accessed_at: new Date().toISOString(), access_count: (cached.access_count || 0) + 1 }).eq('id', cached.id);
-        await supabase.from('messages').insert({
-          workspace_id, session_id: session.id, content: cached.response_text, direction: 'outbound', role: 'agent', agent_type: agent_type || session.agent_type,
-          metadata: { trace_id: traceId, cached: true }
-        });
-        await updateSessionState(supabase, session.id, { last_message_at: new Date().toISOString(), last_message_preview: cached.response_text.slice(0, 100), typing_status: 'idle' });
-        return new Response(JSON.stringify({ response_parts: [cached.response_text], cached: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      }
     }
 
     // 2. Load ALL Active Agents
@@ -204,6 +229,27 @@ Deno.serve(async (req) => {
       }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
+    // 2.5 KB Response Cache Check (only after agents loaded so we can validate)
+    const agentHash = allAgents.map(a => a.agent_type).sort().join(',');
+    if (!isAffirmation || !session?.agent_type) {
+      const { data: cached } = await supabase.from('kb_response_cache')
+        .select('response_text, access_count, id')
+        .eq('workspace_id', workspace_id)
+        .eq('cache_key', cacheKeyHex)
+        .eq('agent_hash', agentHash)
+        .maybeSingle();
+
+      if (cached && !is_test) {
+        await supabase.from('kb_response_cache').update({ accessed_at: new Date().toISOString(), access_count: (cached.access_count || 0) + 1 }).eq('id', cached.id);
+        await supabase.from('messages').insert({
+          workspace_id, session_id: session.id, content: cached.response_text, direction: 'outbound', role: 'agent', agent_type: agent_type || session.agent_type,
+          metadata: { trace_id: traceId, cached: true }
+        });
+        await updateSessionState(supabase, session.id, { last_message_at: new Date().toISOString(), last_message_preview: cached.response_text.slice(0, 100), typing_status: 'idle' });
+        return new Response(JSON.stringify({ response_parts: [cached.response_text], cached: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+    }
+
     // 3. Determine initial agent via routing
     const { data: history } = await supabase.from('messages')
         .select('*')
@@ -211,9 +257,17 @@ Deno.serve(async (req) => {
         .order('created_at', { ascending: false })
         .limit(10);
 
-    const routeResult = await routeIntent(sanitizedMessage, history || []);
+    // Keep existing agent for follow-up confirmations (yes/ok/proceed)
+    const routeResult = isAffirmation && session.agent_type
+      ? { agent: session.agent_type, intent: 'general', urgency: 'low', entities: {} }
+      : await routeIntent(sanitizedMessage, history || []);
     const validAgentTypes = allAgents.map(a => a.agent_type);
-    let currentAgentType = validAgentTypes.includes(routeResult.agent) ? routeResult.agent : allAgents[0].agent_type;
+    let currentAgentType = routeResult.agent;
+    if (!validAgentTypes.includes(currentAgentType)) {
+      currentAgentType = (session.agent_type && validAgentTypes.includes(session.agent_type))
+        ? session.agent_type
+        : allAgents[0].agent_type;
+    }
 
     // Update session agent_type if it changed
     if (currentAgentType !== session.agent_type) {
@@ -225,6 +279,7 @@ Deno.serve(async (req) => {
     let handoffRequested = false;
     let handoffContext = "";
     let kbToolUsed = false;
+    let bookingToolCalled = false;
 
     // 4. Multi-Agent LLM Loop (handoff-aware)
     let handoffCount = 0;
@@ -277,14 +332,16 @@ Deno.serve(async (req) => {
       let toolLoopResponse = "";
       let toolCalls: any[] = [];
       let loopCount = 0;
+      const allowedTools = getAgentTools(currentAgentType, allAgents);
+      const agentTools = TOOL_DEFINITIONS.filter(t => allowedTools.includes(t.function.name));
 
       while (loopCount < 3) {
         await updateSessionState(supabase, session.id, { typing_status: 'thinking' });
         
         const llmResponse = await callAgentModel({
           messages,
-          tools: TOOL_DEFINITIONS,
-          tool_choice: "auto"
+          tools: agentTools,
+          tool_choice: loopCount === 0 ? "required" : "auto"
         });
 
         const choice = llmResponse.choices[0].message;
@@ -303,7 +360,6 @@ Deno.serve(async (req) => {
             
             await updateSessionState(supabase, session.id, { typing_status: 'executing_tool' });
 
-            const allowedTools = TOOL_PERMISSIONS[currentAgentType] || [];
             if (!allowedTools.includes(toolName)) {
               messages.push({
                 role: "tool",
@@ -315,6 +371,7 @@ Deno.serve(async (req) => {
             }
             
             if (toolName === 'match_kb_chunks') kbToolUsed = true;
+            if (toolName === 'create_appointment') bookingToolCalled = true;
 
             const toolResult = await executeTool({
               tool_name: toolName,
@@ -394,11 +451,181 @@ Deno.serve(async (req) => {
 
     if (!finalResponse) finalResponse = guardrailConfig.fallback_message;
 
-    // 5.5 Cache KB-generated responses
+    // Enforce max_response_length
+    const maxLen = guardrailConfig.max_response_length || 800;
+    if (finalResponse.length > maxLen) {
+      const truncated = finalResponse.slice(0, maxLen);
+      const lastSentence = truncated.lastIndexOf('. ');
+      const lastPeriod = truncated.lastIndexOf('.');
+      const lastNewline = truncated.lastIndexOf('\n');
+      const breakAt = Math.max(lastSentence, lastPeriod, lastNewline);
+      finalResponse = breakAt > maxLen * 0.5 ? truncated.slice(0, breakAt + 1).trim() : truncated.trim() + '...';
+    }
+
+    // 5.5 Inline JSON tool fallback (catches LLM text+JSON output when tool calling fails)
+    const jsonToolMatch = finalResponse.match(/\{[\s\S]*"(\w+)"[\s\S]*\}/);
+    if (jsonToolMatch) {
+      try {
+        const parsed = JSON.parse(jsonToolMatch[0]);
+        const toolSignatures: Record<string, string[]> = {
+          check_availability: ["date", "time"],
+          create_appointment: ["name", "service", "date", "time"],
+          request_handoff: ["target_agent", "reason"],
+          update_appointment: ["appointment_id"],
+          cancel_appointment: ["appointment_id"],
+          capture_lead: ["name"],
+          update_contact: ["name"],
+          match_kb_chunks: ["query"],
+        };
+        let matchedTool: string | null = null;
+        for (const [tool, reqKeys] of Object.entries(toolSignatures)) {
+          if (reqKeys.some(k => k in parsed)) { matchedTool = tool; break; }
+        }
+        if (matchedTool) {
+          const allowedTools = getAgentTools(currentAgentType, allAgents || []);
+          if (allowedTools.includes(matchedTool)) {
+            finalResponse = finalResponse.replace(jsonToolMatch[0], '').replace(/\s+,?\s*$/, '') || 'One moment please...';
+            const toolResult = await executeTool({ tool_name: matchedTool, args: parsed, workspace_id, session_id: session.id, supabase });
+
+            if (matchedTool === 'request_handoff' && toolResult?.handoff_to && toolResult.handoff_to !== currentAgentType) {
+              currentAgentType = toolResult.handoff_to;
+              handoffCount++;
+              await supabase.from('conversation_sessions').update({ agent_type: toolResult.handoff_to, updated_at: new Date().toISOString() }).eq('id', session.id);
+              messages.push({ role: "assistant", content: finalResponse });
+              messages.push({ role: "tool", tool_call_id: "inline", name: matchedTool, content: JSON.stringify(toolResult) });
+
+              const currentAgent = allAgents?.find(a => a.agent_type === currentAgentType);
+              const config = currentAgent?.config || {};
+              const handoffPrompt = buildTeamPrompt(allAgents, workspace_name, currentAgentType, channel);
+              messages.unshift({ role: "system", content: handoffPrompt });
+              const handoffMessages = messages.filter(m => m.role !== 'system' || m === messages[0]);
+              const handoffPayload = { messages: handoffMessages.concat({ role: "user", content: `[Handoff from previous teammate] ${toolResult.handoff_context || ''}. Continue assisting the customer.` }) };
+              const handoffLlm = await callAgentModel(handoffPayload);
+              finalResponse = sanitizeLlmOutput(handoffLlm.choices?.[0]?.message?.content || guardrailConfig.fallback_message);
+            } else if (!toolResult?.error) {
+              messages.push({ role: "assistant", content: finalResponse });
+              messages.push({ role: "tool", tool_call_id: "inline", name: matchedTool, content: JSON.stringify(toolResult) });
+              const rePromptPayload = { messages: messages.concat({ role: "user", content: `Based on the tool result above, respond to the customer naturally. Keep it brief.` }) };
+              const rePromptLlm = await callAgentModel(rePromptPayload);
+              finalResponse = sanitizeLlmOutput(rePromptLlm.choices?.[0]?.message?.content || finalResponse);
+            }
+          }
+        }
+      } catch (_) {}
+    }
+
+    // 5.6 Cache KB-generated responses
     if (!is_test && cacheKeyHex && kbToolUsed && finalResponse !== guardrailConfig.fallback_message) {
       try { await supabase.from('kb_response_cache').upsert({
-        workspace_id, cache_key: cacheKeyHex, query_text: sanitizedMessage, response_text: finalResponse
-      }, { onConflict: 'workspace_id, cache_key' }); } catch (_) {}
+        workspace_id, cache_key: cacheKeyHex, agent_hash: agentHash, query_text: sanitizedMessage, response_text: finalResponse
+      }, { onConflict: 'workspace_id, cache_key, agent_hash' }); } catch (_) {}
+    }
+
+    // 5.7 Booking confirmation pattern detector
+    // Catches LLM claiming "I've booked your appointment" without calling create_appointment
+    if (!is_test && currentAgentType === 'appointment_booking' && !bookingToolCalled) {
+      const bookingPatterns = /\b(booked|booking|scheduled|confirmed|set up|reserved)\b/i;
+      if (bookingPatterns.test(finalResponse) && !/unable|cannot|can't|sorry/i.test(finalResponse)) {
+        try {
+          const { data: msgHistory } = await supabase.from('messages')
+            .select('content, role')
+            .eq('session_id', session.id)
+            .order('created_at', { ascending: true });
+
+          const convoText = (msgHistory || []).map(m =>
+            `${m.role === 'agent' ? 'AI' : 'Customer'}: ${m.content}`
+          ).join('\n');
+
+          const extractResult = await callAgentModel({
+            messages: [
+              { role: "system", content: "Extract booking details from this conversation. Return ONLY a JSON object with these fields (use null for missing): name, phone, email, service, date, time. No other text." },
+              { role: "user", content: convoText }
+            ]
+          });
+
+          const extractedText = extractResult.choices?.[0]?.message?.content || '';
+          const jsonMatch = extractedText.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const bookingDetails = JSON.parse(jsonMatch[0]);
+            if (!bookingDetails.service) bookingDetails.service = 'General';
+            if (!bookingDetails.date && !bookingDetails.time) bookingDetails.date = 'tomorrow';
+
+            const apptResult = await executeTool({
+              tool_name: 'create_appointment',
+              args: bookingDetails,
+              workspace_id,
+              session_id: session.id,
+              supabase
+            });
+
+            if (apptResult && !apptResult.error) {
+              const dateStr = apptResult.start_at ? new Date(apptResult.start_at).toLocaleString() : '';
+              finalResponse = `Your appointment has been confirmed for ${dateStr}.`;
+              if (apptResult.meeting_link) finalResponse += ` You'll receive a Google Meet link shortly.`;
+              bookingToolCalled = true;
+            }
+          }
+        } catch (_) {
+          console.warn('[ORCHESTRATOR] Booking pattern detection failed (non-fatal)');
+        }
+      }
+    }
+
+    // 5.8 KB fallback for customer_support
+    if (!is_test && currentAgentType === 'customer_support' && !kbToolUsed) {
+      try {
+        const kbResult = await executeTool({
+          tool_name: 'match_kb_chunks',
+          args: { query: sanitizedMessage },
+          workspace_id,
+          session_id: session.id,
+          supabase
+        });
+        if (kbResult?.kb_chunks?.length > 0) {
+          const kbPrompt = [
+            { role: "system", content: "Answer the customer's question based on the knowledge base information below. Keep it brief and natural." },
+            { role: "user", content: `Customer question: ${sanitizedMessage}\n\nKnowledge base:\n${kbResult.kb_chunks.map((c: any) => c.content).join('\n')}` }
+          ];
+          const kbResponse = await callAgentModel({ messages: kbPrompt, tool_choice: "none" });
+          const kbText = kbResponse.choices?.[0]?.message?.content;
+          if (kbText) {
+            finalResponse = sanitizeLlmOutput(kbText);
+            kbToolUsed = true;
+          }
+        }
+      } catch (_) {
+        console.warn('[ORCHESTRATOR] KB fallback failed (non-fatal)');
+      }
+    }
+
+    // 5.9 Lead capture fallback for sales
+    if (!is_test && currentAgentType === 'sales') {
+      const leadPattern = /\b(name|email|phone|interested|want|need|buy|price|quote|pricing|cost|rate)\b/i;
+      if (leadPattern.test(sanitizedMessage)) {
+        try {
+          const extractResult = await callAgentModel({
+            messages: [
+              { role: "system", content: "Extract lead details from this customer message. Return ONLY a JSON object with these fields (use null for missing): name, phone, email, interest. No other text." },
+              { role: "user", content: sanitizedMessage }
+            ]
+          });
+          const extracted = extractResult.choices?.[0]?.message?.content?.match(/\{[\s\S]*\}/);
+          if (extracted) {
+            const leadDetails = JSON.parse(extracted[0]);
+            if (leadDetails.name || leadDetails.phone || leadDetails.email) {
+              await executeTool({
+                tool_name: 'capture_lead',
+                args: leadDetails,
+                workspace_id,
+                session_id: session.id,
+                supabase
+              });
+            }
+          }
+        } catch (_) {
+          console.warn('[ORCHESTRATOR] Lead capture fallback failed (non-fatal)');
+        }
+      }
     }
 
     // 6. Store Final Response
@@ -421,7 +648,7 @@ Deno.serve(async (req) => {
             await fetch(`${gowaBase}/send/presence`, {
                 method: 'POST',
                 headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/json', 'X-Device-Id': deviceId },
-                body: JSON.stringify({ phone, type: 'composing' })
+                body: JSON.stringify({ phone, type: 'available' })
             });
         } catch (_) {}
 
@@ -433,7 +660,7 @@ Deno.serve(async (req) => {
             await fetch(`${gowaBase}/send/presence`, {
                 method: 'POST',
                 headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/json', 'X-Device-Id': deviceId },
-                body: JSON.stringify({ phone, type: 'paused' })
+                body: JSON.stringify({ phone, type: 'unavailable' })
             });
         } catch (_) {}
 
@@ -476,9 +703,11 @@ Deno.serve(async (req) => {
         if (!dispatched) {
             try { await supabase.from('failed_messages').insert({
                 workspace_id,
+                session_id: session.id,
                 raw_message: finalResponse,
-                payload: { phone, device_id: deviceId, channel: 'whatsapp', session_id: session.id },
-                error_message: lastError
+                failure_reason: lastError,
+                retry_count: 3,
+                resolved: false
             }); } catch (_) {}
         }
     }

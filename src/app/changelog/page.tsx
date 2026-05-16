@@ -38,7 +38,6 @@ const changes = [
       "Migrated AI from Kilo Gateway to Groq (llama-3.3-70b-versatile)",
       "Added circuit breaker for Groq API calls",
       "Fixed WhatsApp message deduplication in queue worker",
-      "Fixed Telegram recursive loop (bot replying to itself)",
       "Added conversation deduplication for burst messages",
       "Knowledge Base truncation at 1000 chars per item",
       "Escalation RPC with POSIX word boundary matching",

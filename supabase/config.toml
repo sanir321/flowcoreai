@@ -12,3 +12,9 @@ verify_jwt = false
 
 [functions.tool-executor]
 verify_jwt = false
+
+[functions.ingest-url]
+verify_jwt = false
+
+[functions.ingest-document]
+verify_jwt = false

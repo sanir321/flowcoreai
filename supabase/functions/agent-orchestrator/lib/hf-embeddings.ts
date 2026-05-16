@@ -9,6 +9,6 @@ export async function generateEmbedding(text: string): Promise<number[]> {
     return Array.from(embedding)
   } catch (error: any) {
     console.error("Embedding generation failed:", error)
-    return Array(384).fill(0).map(() => (Math.random() * 2 - 1))
+    throw new Error("Embedding generation failed");
   }
 }

@@ -1,6 +1,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7"
 
+declare var EdgeRuntime: { waitUntil: (promise: Promise<any>) => void }
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -231,6 +233,7 @@ Deno.serve(async (req) => {
             console.log(`[WEBHOOK] Triggering AI for workspace ${workspaceId}`)
             const aiPayload = {
                 workspace_id: workspaceId,
+                session_id: activeSession.id,
                 customer_jid: normalizedFrom,
                 message: messageText,
                 channel: 'whatsapp',
@@ -260,7 +263,6 @@ Deno.serve(async (req) => {
         }
     }
 
-    // @ts-ignore
     EdgeRuntime.waitUntil(processAI())
     
     return new Response(
