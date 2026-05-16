@@ -3,7 +3,9 @@
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Switch } from "@/components/ui/switch"
-import { Bell, Shield, Mail, MessageSquare, Zap, Loader2, Volume2, AlertTriangle, Inbox } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Loader2, Volume2, AlertTriangle, Inbox, MessageSquare, Save } from "lucide-react"
 import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
 import { updateNotifications } from "@/app/actions/settings"
@@ -17,30 +19,23 @@ const fadeUp = {
 }
 
 const NOTIFICATION_EVENTS = [
-  { 
-    id: 'email_on_escalation', 
-    label: "Escalations", 
-    desc: "When an AI teammate needs manual intervention.",
-    icon: AlertTriangle
-  },
-  { 
-    id: 'email_on_booking', 
-    label: "New Appointments", 
-    desc: "Alerts for confirmed calendar bookings.",
-    icon: Inbox
-  },
-  { 
-    id: 'email_on_lead', 
-    label: "Lead Captures", 
-    desc: "Notification when new customers are saved to Sheets.",
-    icon: Volume2
-  }
+  { id: 'email_on_escalation', label: "Escalations", desc: "When an AI teammate needs manual intervention.", icon: AlertTriangle },
+  { id: 'email_on_booking', label: "New Appointments", desc: "Alerts for confirmed calendar bookings.", icon: Inbox },
+  { id: 'email_on_lead', label: "Lead Captures", desc: "Notification when new customers are saved to Sheets.", icon: Volume2 }
+]
+
+const MODES = [
+  { value: 'instant' as const, label: "Instant", desc: "Real-time push for all events" },
+  { value: 'digest' as const, label: "Daily Digest", desc: "Single daily summary" },
+  { value: 'off' as const, label: "Off", desc: "Suppress all notifications" }
 ]
 
 export default function NotificationsPage() {
   const { workspaceId, isLoading: wsLoading } = useWorkspace()
   const [isLoading, setIsLoading] = useState(true)
   const [config, setConfig] = useState<any>(null)
+  const [whatsappNumber, setWhatsappNumber] = useState("")
+  const [savingWhatsapp, setSavingWhatsapp] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
@@ -60,8 +55,10 @@ export default function NotificationsPage() {
           .select()
           .single()
         setConfig(newData)
+        setWhatsappNumber("")
       } else {
         setConfig(data)
+        setWhatsappNumber(data.whatsapp_alert_number || "")
       }
       setIsLoading(false)
     }
@@ -83,8 +80,24 @@ export default function NotificationsPage() {
       toast.error(result.error)
       setConfig(prev)
     } else {
-      toast.success("Notification updated")
+      toast.success("Updated")
     }
+  }
+
+  const saveWhatsAppNumber = async () => {
+    if (!workspaceId) return
+    setSavingWhatsapp(true)
+    const result = await updateNotifications({
+      workspace_id: workspaceId,
+      whatsapp_alert_number: whatsappNumber || null,
+    })
+    if (result.error) {
+      toast.error(result.error)
+    } else {
+      setConfig({ ...config, whatsapp_alert_number: whatsappNumber })
+      toast.success("WhatsApp alert number saved")
+    }
+    setSavingWhatsapp(false)
   }
 
   if (wsLoading || isLoading) return (
@@ -109,11 +122,7 @@ export default function NotificationsPage() {
       <motion.div {...fadeUp} transition={{ delay: 0.1 }} className="space-y-5">
         <h4 className="text-[10px] font-bold text-[#c65f39]">Delivery Mode</h4>
         <div className="space-y-3">
-          {[
-            { value: 'instant', label: "Instant", desc: "Real-time push for all events" },
-            { value: 'digest', label: "Daily Digest", desc: "Single daily summary" },
-            { value: 'off', label: "Off", desc: "Suppress all notifications" }
-          ].map((mode) => {
+          {MODES.map((mode) => {
             const isActive = config?.notification_mode === mode.value
             return (
               <div
@@ -184,35 +193,33 @@ export default function NotificationsPage() {
         </div>
       </motion.div>
 
-      {/* Channels */}
+      {/* WhatsApp Alert Number */}
       <motion.div {...fadeUp} transition={{ delay: 0.3 }} className="space-y-5">
-        <h4 className="text-[10px] font-bold text-[#c65f39]">Channels</h4>
-        <div className="space-y-3">
-          {[
-            { label: "Email Notifications", icon: Mail, desc: "Receive alerts via email", active: true },
-            { label: "WhatsApp Alerts", icon: MessageSquare, desc: "Forward notifications to your WhatsApp", active: false },
-            { label: "SMS Alerts", icon: Bell, desc: "Get SMS for critical escalations", active: false }
-          ].map((item, i) => (
-            <div
-              key={i}
-              className={cn(
-                "flex items-center justify-between px-6 py-5 rounded-xl border bg-white transition-all duration-300",
-                item.active ? "border-gray-100" : "border-gray-50 opacity-50"
-              )}
-            >
-              <div className="flex items-center gap-4">
-                <item.icon className="h-4 w-4 text-gray-400" />
-                <div>
-                  <p className="text-sm font-semibold text-gray-900">{item.label}</p>
-                  <p className="text-xs text-gray-500 font-medium">{item.desc}</p>
-                </div>
-              </div>
-              <Switch
-                checked={item.active}
-                className="data-[state=checked]:bg-[#10B981] pointer-events-none"
-              />
+        <h4 className="text-[10px] font-bold text-[#c65f39]">WhatsApp Alert Number</h4>
+        <div className="px-6 py-5 rounded-xl border border-gray-100 bg-white">
+          <div className="flex items-center gap-4 mb-4">
+            <MessageSquare className="h-4 w-4 text-gray-400" />
+            <div>
+              <p className="text-sm font-semibold text-gray-900">Forward Escalations to WhatsApp</p>
+              <p className="text-xs text-gray-500 font-medium">Receive urgent alerts on this number</p>
             </div>
-          ))}
+          </div>
+          <div className="flex gap-3">
+            <Input
+              value={whatsappNumber}
+              onChange={(e) => setWhatsappNumber(e.target.value)}
+              placeholder="+919XXXXXXXXX"
+              className="h-11 bg-white border-gray-200 rounded-xl text-sm flex-1 font-medium text-gray-900"
+            />
+            <Button
+              onClick={saveWhatsAppNumber}
+              disabled={savingWhatsapp}
+              className="h-11 px-6 rounded-xl bg-black text-white hover:bg-gray-800 flex items-center gap-2 text-[11px] font-bold transition-all active:scale-95"
+            >
+              {savingWhatsapp ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              Save
+            </Button>
+          </div>
         </div>
       </motion.div>
 
@@ -220,7 +227,7 @@ export default function NotificationsPage() {
       <motion.div {...fadeUp} transition={{ delay: 0.4 }}>
         <hr className="border-gray-100 mb-6" />
         <p className="text-xs text-gray-400 font-medium leading-relaxed">
-          Escalation alerts are sent immediately regardless of mode. WhatsApp alerts require a configured alert number in workspace settings.
+          Escalation alerts are sent immediately regardless of delivery mode. Digest mode compiles non-urgent events into a single daily summary.
         </p>
       </motion.div>
     </div>
