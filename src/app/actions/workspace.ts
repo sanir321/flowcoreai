@@ -158,7 +158,7 @@ export async function checkUserExists(email: string): Promise<ActionResponse<{ e
         email: emailResult.data
       },
       perPage: 1
-    })
+    } as any)
 
     if (error) throw error
     
