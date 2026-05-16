@@ -120,17 +120,6 @@ export function SettingsClient({ initialWorkspace }: SettingsClientProps) {
                  </Select>
               </div>
 
-              <div className="space-y-2.5">
-                 <Label className="text-xs font-bold text-gray-700 ml-1">Personal WhatsApp Number (for Alerts)</Label>
-                 <Input 
-                   value={workspace.owner_personal_phone || ""}
-                   onChange={(e) => setWorkspace(prev => ({ ...prev, owner_personal_phone: e.target.value }))}
-                   placeholder="e.g. +91 9876543210" 
-                   className="h-12 border-gray-200 focus:border-black transition-all text-gray-900 bg-gray-50/30"
-                 />
-                 <p className="text-[10px] text-gray-500 ml-1 font-medium">Critical system alerts and notifications will be sent here.</p>
-              </div>
-
               <div className="space-y-2.5 pt-4 border-t border-gray-50">
                  <div className="flex items-center gap-2 mb-2">
                     <MapPin className="h-3 w-3 text-gray-400" />
