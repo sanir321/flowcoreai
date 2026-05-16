@@ -181,10 +181,8 @@ export default function PricingPage() {
                   marginBottom: "32px",
                   background: plan.popular ? "#c65f39" : "rgba(255,255,255,0.06)",
                   color: plan.popular ? "#fff" : "#c0c0c0",
-                  transition: "opacity 0.2s",
+                  opacity: 1,
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.8")}
-                onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
               >
                 {plan.cta}
               </Link>
