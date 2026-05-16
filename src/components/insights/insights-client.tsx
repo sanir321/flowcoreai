@@ -3,11 +3,8 @@
 import { motion } from "framer-motion"
 import { 
   Users, 
-  Activity, 
   Zap, 
-  Calendar, 
   TrendingUp, 
-  MessageSquare,
   ShieldCheck,
   Clock,
   ShieldAlert,
@@ -16,7 +13,6 @@ import {
   Bot
 } from "lucide-react"
 import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import dynamic from "next/dynamic"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
@@ -28,7 +24,6 @@ const InsightsChart = dynamic(() => import("./insights-chart"), {
 
 interface Metrics {
   messages: number
-  escalations: number
   contacts: number
   conversion_rate: number
 }
