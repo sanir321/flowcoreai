@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react"
 import { motion } from "framer-motion"
 import { Card } from "@/components/ui/card"
+import { getSiteUrl } from "@/lib/site"
 import { Button } from "@/components/ui/button"
 import { 
   CreditCard, 
@@ -292,7 +293,7 @@ export default function BillingPage() {
 
       <motion.div {...fadeUp} transition={{ ...ANIMATION_TRANSITION, delay: 0.5 }} className="mt-16 pt-8 border-t border-gray-100 flex justify-center">
          <a 
-          href="https://flowter.io/pricing" 
+          href={`${getSiteUrl()}/pricing`} 
           target="_blank" 
           className="text-xs font-semibold text-gray-500 hover:text-black transition-colors flex items-center gap-1.5 group"
          >
