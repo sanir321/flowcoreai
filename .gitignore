@@ -45,3 +45,5 @@ supabase/.temp/
 next-env.d.ts
 
 .vercel
+
+docs/instruction.md

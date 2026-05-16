@@ -7,23 +7,98 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
+      agent_traces: {
+        Row: {
+          circuit_breaker_open: boolean | null
+          created_at: string | null
+          deleted_at: string | null
+          escalation_triggered: boolean | null
+          fallback_used: boolean | null
+          grounding_score: number | null
+          guardrail_blocked: boolean | null
+          id: string
+          intent_detected: string | null
+          latency_ms: number | null
+          message_length: number | null
+          model_used: string | null
+          response_length: number | null
+          session_id: string
+          tokens_used: number | null
+          trace_id: string
+          workspace_id: string
+        }
+        Insert: {
+          circuit_breaker_open?: boolean | null
+          created_at?: string | null
+          deleted_at?: string | null
+          escalation_triggered?: boolean | null
+          fallback_used?: boolean | null
+          grounding_score?: number | null
+          guardrail_blocked?: boolean | null
+          id?: string
+          intent_detected?: string | null
+          latency_ms?: number | null
+          message_length?: number | null
+          model_used?: string | null
+          response_length?: number | null
+          session_id: string
+          tokens_used?: number | null
+          trace_id: string
+          workspace_id: string
+        }
+        Update: {
+          circuit_breaker_open?: boolean | null
+          created_at?: string | null
+          deleted_at?: string | null
+          escalation_triggered?: boolean | null
+          fallback_used?: boolean | null
+          grounding_score?: number | null
+          guardrail_blocked?: boolean | null
+          id?: string
+          intent_detected?: string | null
+          latency_ms?: number | null
+          message_length?: number | null
+          model_used?: string | null
+          response_length?: number | null
+          session_id?: string
+          tokens_used?: number | null
+          trace_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_traces_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "conversation_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_traces_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointments: {
         Row: {
           contact_id: string | null
           created_at: string
+          customer_email: string | null
           customer_name: string
           customer_phone: string | null
           deleted_at: string | null
           end_at: string
           google_event_id: string | null
           id: string
+          meeting_link: string | null
           notes: string | null
           service: string | null
           session_id: string | null
@@ -35,12 +110,14 @@ export type Database = {
         Insert: {
           contact_id?: string | null
           created_at?: string
+          customer_email?: string | null
           customer_name: string
           customer_phone?: string | null
           deleted_at?: string | null
           end_at: string
           google_event_id?: string | null
           id?: string
+          meeting_link?: string | null
           notes?: string | null
           service?: string | null
           session_id?: string | null
@@ -52,12 +129,14 @@ export type Database = {
         Update: {
           contact_id?: string | null
           created_at?: string
+          customer_email?: string | null
           customer_name?: string
           customer_phone?: string | null
           deleted_at?: string | null
           end_at?: string
           google_event_id?: string | null
           id?: string
+          meeting_link?: string | null
           notes?: string | null
           service?: string | null
           session_id?: string | null
@@ -93,25 +172,46 @@ export type Database = {
       billing_transactions: {
         Row: {
           amount_credits: number
+          amount_paid: number | null
           created_at: string
+          currency: string
+          deleted_at: string | null
           description: string | null
           id: string
+          payment_status: string
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
+          razorpay_signature: string | null
           transaction_type: string
           workspace_id: string
         }
         Insert: {
           amount_credits: number
+          amount_paid?: number | null
           created_at?: string
+          currency?: string
+          deleted_at?: string | null
           description?: string | null
           id?: string
+          payment_status?: string
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          razorpay_signature?: string | null
           transaction_type: string
           workspace_id: string
         }
         Update: {
           amount_credits?: number
+          amount_paid?: number | null
           created_at?: string
+          currency?: string
+          deleted_at?: string | null
           description?: string | null
           id?: string
+          payment_status?: string
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          razorpay_signature?: string | null
           transaction_type?: string
           workspace_id?: string
         }
@@ -209,6 +309,7 @@ export type Database = {
           created_at: string
           customer_jid: string | null
           customer_name: string | null
+          deleted_at: string | null
           failed_attempts: number
           handoff_at: string | null
           handoff_reason: string | null
@@ -221,7 +322,9 @@ export type Database = {
           message_count: number
           metadata: Json
           pending_confirmation: Json | null
+          resolved_by: string | null
           status: string
+          total_tokens_used: number
           typing_status: string | null
           updated_at: string
           workspace_id: string
@@ -234,6 +337,7 @@ export type Database = {
           created_at?: string
           customer_jid?: string | null
           customer_name?: string | null
+          deleted_at?: string | null
           failed_attempts?: number
           handoff_at?: string | null
           handoff_reason?: string | null
@@ -246,7 +350,9 @@ export type Database = {
           message_count?: number
           metadata?: Json
           pending_confirmation?: Json | null
+          resolved_by?: string | null
           status?: string
+          total_tokens_used?: number
           typing_status?: string | null
           updated_at?: string
           workspace_id: string
@@ -259,6 +365,7 @@ export type Database = {
           created_at?: string
           customer_jid?: string | null
           customer_name?: string | null
+          deleted_at?: string | null
           failed_attempts?: number
           handoff_at?: string | null
           handoff_reason?: string | null
@@ -271,7 +378,9 @@ export type Database = {
           message_count?: number
           metadata?: Json
           pending_confirmation?: Json | null
+          resolved_by?: string | null
           status?: string
+          total_tokens_used?: number
           typing_status?: string | null
           updated_at?: string
           workspace_id?: string
@@ -297,6 +406,7 @@ export type Database = {
         Row: {
           conversation_snapshot: Json
           created_at: string
+          deleted_at: string | null
           id: string
           notes: string | null
           notification_sent: boolean
@@ -312,6 +422,7 @@ export type Database = {
         Insert: {
           conversation_snapshot: Json
           created_at?: string
+          deleted_at?: string | null
           id?: string
           notes?: string | null
           notification_sent?: boolean
@@ -327,6 +438,7 @@ export type Database = {
         Update: {
           conversation_snapshot?: Json
           created_at?: string
+          deleted_at?: string | null
           id?: string
           notes?: string | null
           notification_sent?: boolean
@@ -354,11 +466,58 @@ export type Database = {
             referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
+        ]
+      }
+      failed_messages: {
+        Row: {
+          created_at: string | null
+          deleted_at: string | null
+          failure_reason: string | null
+          id: string
+          last_retried_at: string | null
+          raw_message: Json
+          resolved: boolean | null
+          retry_count: number | null
+          session_id: string | null
+          workspace_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          deleted_at?: string | null
+          failure_reason?: string | null
+          id?: string
+          last_retried_at?: string | null
+          raw_message: Json
+          resolved?: boolean | null
+          retry_count?: number | null
+          session_id?: string | null
+          workspace_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          deleted_at?: string | null
+          failure_reason?: string | null
+          id?: string
+          last_retried_at?: string | null
+          raw_message?: Json
+          resolved?: boolean | null
+          retry_count?: number | null
+          session_id?: string | null
+          workspace_id?: string | null
+        }
+        Relationships: [
           {
-            foreignKeyName: "escalation_logs_resolved_by_fkey"
-            columns: ["resolved_by"]
+            foreignKeyName: "failed_messages_session_id_fkey"
+            columns: ["session_id"]
             isOneToOne: false
-            referencedRelation: "users"
+            referencedRelation: "conversation_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "failed_messages_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
         ]
@@ -368,6 +527,7 @@ export type Database = {
           access_token: string
           calendar_id: string
           created_at: string
+          deleted_at: string | null
           google_email: string | null
           refresh_token: string
           scopes: string[]
@@ -381,6 +541,7 @@ export type Database = {
           access_token: string
           calendar_id?: string
           created_at?: string
+          deleted_at?: string | null
           google_email?: string | null
           refresh_token: string
           scopes: string[]
@@ -394,6 +555,7 @@ export type Database = {
           access_token?: string
           calendar_id?: string
           created_at?: string
+          deleted_at?: string | null
           google_email?: string | null
           refresh_token?: string
           scopes?: string[]
@@ -416,6 +578,7 @@ export type Database = {
       gowa_sessions: {
         Row: {
           created_at: string
+          deleted_at: string | null
           display_name: string | null
           error_message: string | null
           gowa_session_id: string
@@ -428,6 +591,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          deleted_at?: string | null
           display_name?: string | null
           error_message?: string | null
           gowa_session_id: string
@@ -440,6 +604,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          deleted_at?: string | null
           display_name?: string | null
           error_message?: string | null
           gowa_session_id?: string
@@ -465,6 +630,7 @@ export type Database = {
           attempts: number
           completed_at: string | null
           created_at: string
+          deleted_at: string | null
           error_message: string | null
           id: string
           max_attempts: number
@@ -477,6 +643,7 @@ export type Database = {
           attempts?: number
           completed_at?: string | null
           created_at?: string
+          deleted_at?: string | null
           error_message?: string | null
           id?: string
           max_attempts?: number
@@ -489,6 +656,7 @@ export type Database = {
           attempts?: number
           completed_at?: string | null
           created_at?: string
+          deleted_at?: string | null
           error_message?: string | null
           id?: string
           max_attempts?: number
@@ -568,6 +736,56 @@ export type Database = {
           },
         ]
       }
+      kb_response_cache: {
+        Row: {
+          access_count: number
+          accessed_at: string
+          agent_hash: string | null
+          cache_key: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          model: string | null
+          query_text: string
+          response_text: string
+          workspace_id: string
+        }
+        Insert: {
+          access_count?: number
+          accessed_at?: string
+          agent_hash?: string | null
+          cache_key: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          model?: string | null
+          query_text: string
+          response_text: string
+          workspace_id: string
+        }
+        Update: {
+          access_count?: number
+          accessed_at?: string
+          agent_hash?: string | null
+          cache_key?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          model?: string | null
+          query_text?: string
+          response_text?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kb_response_cache_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       kb_sources: {
         Row: {
           agent_id: string | null
@@ -636,6 +854,7 @@ export type Database = {
           agent_type: string | null
           content: string
           created_at: string
+          deleted_at: string | null
           direction: string
           gowa_message_id: string | null
           id: string
@@ -649,6 +868,7 @@ export type Database = {
           agent_type?: string | null
           content: string
           created_at?: string
+          deleted_at?: string | null
           direction: string
           gowa_message_id?: string | null
           id?: string
@@ -662,6 +882,7 @@ export type Database = {
           agent_type?: string | null
           content?: string
           created_at?: string
+          deleted_at?: string | null
           direction?: string
           gowa_message_id?: string | null
           id?: string
@@ -693,24 +914,36 @@ export type Database = {
           created_at: string
           id: string
           ip: string
+          workspace_id: string | null
         }
         Insert: {
           created_at?: string
           id?: string
           ip: string
+          workspace_id?: string | null
         }
         Update: {
           created_at?: string
           id?: string
           ip?: string
+          workspace_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "rate_limits_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       widget_config: {
         Row: {
           accent_color: string
           allowed_domains: string[] | null
           avatar_url: string | null
+          deleted_at: string | null
           greeting: string
           theme: string
           updated_at: string
@@ -720,6 +953,7 @@ export type Database = {
           accent_color?: string
           allowed_domains?: string[] | null
           avatar_url?: string | null
+          deleted_at?: string | null
           greeting?: string
           theme?: string
           updated_at?: string
@@ -729,6 +963,7 @@ export type Database = {
           accent_color?: string
           allowed_domains?: string[] | null
           avatar_url?: string | null
+          deleted_at?: string | null
           greeting?: string
           theme?: string
           updated_at?: string
@@ -749,6 +984,7 @@ export type Database = {
           agent_type: string
           config: Json
           created_at: string
+          deleted_at: string | null
           id: string
           status: string
           updated_at: string
@@ -758,6 +994,7 @@ export type Database = {
           agent_type: string
           config?: Json
           created_at?: string
+          deleted_at?: string | null
           id?: string
           status?: string
           updated_at?: string
@@ -767,6 +1004,7 @@ export type Database = {
           agent_type?: string
           config?: Json
           created_at?: string
+          deleted_at?: string | null
           id?: string
           status?: string
           updated_at?: string
@@ -784,6 +1022,7 @@ export type Database = {
       }
       workspace_notifications: {
         Row: {
+          deleted_at: string | null
           email_on_booking: boolean
           email_on_escalation: boolean
           email_on_lead: boolean
@@ -793,6 +1032,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          deleted_at?: string | null
           email_on_booking?: boolean
           email_on_escalation?: boolean
           email_on_lead?: boolean
@@ -802,6 +1042,7 @@ export type Database = {
           workspace_id: string
         }
         Update: {
+          deleted_at?: string | null
           email_on_booking?: boolean
           email_on_escalation?: boolean
           email_on_lead?: boolean
@@ -828,6 +1069,7 @@ export type Database = {
           deleted_at: string | null
           description: string | null
           employee_count: string | null
+          guardrail_config: Json
           id: string
           is_ai_enabled: boolean
           logo_url: string | null
@@ -836,7 +1078,6 @@ export type Database = {
           owner_personal_phone: string | null
           plan: string
           plan_type: string
-
           status: string
           timezone: string
           updated_at: string
@@ -850,6 +1091,7 @@ export type Database = {
           deleted_at?: string | null
           description?: string | null
           employee_count?: string | null
+          guardrail_config?: Json
           id?: string
           is_ai_enabled?: boolean
           logo_url?: string | null
@@ -858,7 +1100,6 @@ export type Database = {
           owner_personal_phone?: string | null
           plan?: string
           plan_type?: string
-
           status?: string
           timezone?: string
           updated_at?: string
@@ -872,6 +1113,7 @@ export type Database = {
           deleted_at?: string | null
           description?: string | null
           employee_count?: string | null
+          guardrail_config?: Json
           id?: string
           is_ai_enabled?: boolean
           logo_url?: string | null
@@ -880,7 +1122,6 @@ export type Database = {
           owner_personal_phone?: string | null
           plan?: string
           plan_type?: string
-
           status?: string
           timezone?: string
           updated_at?: string
@@ -891,14 +1132,46 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      ai_performance_report: {
+        Row: {
+          ai_resolution_rate_pct: number | null
+          ai_resolutions: number | null
+          avg_latency: number | null
+          block_rate: number | null
+          fallback_rate: number | null
+          total_traces: number | null
+          workspace_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_traces_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
+      get_workspace_health: {
+        Args: { ws_id: string }
+        Returns: {
+          avg_latency: number
+          block_rate: number
+          fallback_rate: number
+          total_traces: number
+        }[]
+      }
+      increment_credits: {
+        Args: { p_credits: number; p_workspace_id: string }
+        Returns: undefined
+      }
       match_kb_chunks: {
         Args: {
-          match_count: number
-          match_threshold: number
-          p_workspace_id: string
+          match_count?: number
+          match_threshold?: number
+          p_workspace_id?: string
           query_embedding: string
         }
         Returns: {

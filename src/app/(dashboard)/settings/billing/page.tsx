@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { motion } from "framer-motion"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -14,7 +14,10 @@ import {
   Zap,
   HelpCircle,
   ArrowUpRight,
-  ArrowDownLeft
+  ArrowDownLeft,
+  CheckCircle2,
+  IndianRupee,
+  Gift,
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useWorkspace } from "@/hooks/use-workspace"
@@ -27,6 +30,34 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { type Tables } from "@/types/supabase"
+import { toast } from "sonner"
+
+declare global {
+  interface Window {
+    Razorpay: any
+  }
+}
+
+interface CreditPack {
+  id: string
+  name: string
+  credits: number
+  price: number
+  bonus: number
+  popular?: boolean
+}
+
+function loadRazorpayScript(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (window.Razorpay) return resolve()
+    const script = document.createElement("script")
+    script.src = "https://checkout.razorpay.com/v1/checkout.js"
+    script.async = true
+    script.onload = () => resolve()
+    script.onerror = () => reject(new Error("Failed to load Razorpay SDK"))
+    document.body.appendChild(script)
+  })
+}
 
 export default function BillingPage() {
   const { workspaceId, isLoading: wsLoading } = useWorkspace()
@@ -34,6 +65,9 @@ export default function BillingPage() {
   const [error, setError] = useState<string | null>(null)
   const [workspace, setWorkspace] = useState<Tables<"workspaces"> | null>(null)
   const [transactions, setTransactions] = useState<Tables<"billing_transactions">[]>([])
+  const [packs, setPacks] = useState<CreditPack[]>([])
+  const [razorpayKey, setRazorpayKey] = useState("")
+  const [buyingPack, setBuyingPack] = useState<string | null>(null)
   const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
@@ -44,7 +78,7 @@ export default function BillingPage() {
       return
     }
     
-    async function fetchWorkspace() {
+    async function init() {
       try {
         const { data, error: fetchError } = await supabase
           .from("workspaces")
@@ -55,7 +89,6 @@ export default function BillingPage() {
         if (fetchError) throw fetchError
         setWorkspace(data)
 
-        // Fetch last 10 transactions
         const { data: txData, error: txError } = await supabase
           .from("billing_transactions")
           .select("*")
@@ -68,6 +101,13 @@ export default function BillingPage() {
         } else {
           setTransactions(txData || [])
         }
+
+        const catalogRes = await fetch("/api/billing/catalog")
+        if (catalogRes.ok) {
+          const catalog = await catalogRes.json()
+          setPacks(catalog.packs)
+          setRazorpayKey(catalog.key_id)
+        }
       } catch (err) {
         console.error("Error fetching billing data:", err)
         const message = err instanceof Error ? err.message : "Failed to load billing data"
@@ -77,12 +117,79 @@ export default function BillingPage() {
       }
     }
     
-    fetchWorkspace()
+    init()
   }, [workspaceId, wsLoading, supabase])
 
-  const handleUpgrade = () => {
-    window.open("https://wa.me/917904721312?text=I%20want%20to%20recharge%20my%20FlowCore%20credits", "_blank")
-  }
+  const handleBuyPack = useCallback(async (pack: CreditPack) => {
+    try {
+      setBuyingPack(pack.id)
+      await loadRazorpayScript()
+
+      const orderRes = await fetch("/api/billing/create-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pack_id: pack.id }),
+      })
+
+      if (!orderRes.ok) {
+        const err = await orderRes.json()
+        throw new Error(err.error || "Failed to create order")
+      }
+
+      const { order_id, amount, currency } = await orderRes.json()
+
+      const options = {
+        key: razorpayKey,
+        amount,
+        currency,
+        name: "FlowCore AI",
+        description: pack.name,
+        order_id,
+        prefill: { contact: "", email: "" },
+        handler: async function (response: any) {
+          const verifyRes = await fetch("/api/billing/verify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            }),
+          })
+
+          const result = await verifyRes.json()
+          if (result.success) {
+            toast.success(`${result.credits_added.toLocaleString()} credits added!`)
+            setWorkspace(prev => prev ? { ...prev, credits_balance: (prev.credits_balance || 0) + result.credits_added } as any : prev)
+            const { data: txData } = await supabase
+              .from("billing_transactions")
+              .select("*")
+              .eq("workspace_id", workspaceId!)
+              .order("created_at", { ascending: false })
+              .limit(10)
+            if (txData) setTransactions(txData)
+          } else {
+            toast.error(result.error || "Payment verification failed")
+          }
+        },
+        modal: {
+          ondismiss: function () {
+            setBuyingPack(null)
+          },
+        },
+      }
+
+      const rzp = new window.Razorpay(options)
+      rzp.on("payment.failed", function (response: any) {
+        toast.error("Payment failed: " + (response.error.description || "Unknown error"))
+        setBuyingPack(null)
+      })
+      rzp.open()
+    } catch (err: any) {
+      toast.error(err.message || "Something went wrong")
+      setBuyingPack(null)
+    }
+  }, [razorpayKey, workspaceId, supabase])
 
   const ANIMATION_TRANSITION = { duration: 0.4, ease: [0.16, 1, 0.3, 1] as const }
   const fadeUp = {
@@ -122,7 +229,6 @@ export default function BillingPage() {
       <hr className="border-gray-100 my-10" />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
-        {/* Credits Balance Card */}
         <motion.div {...fadeUp} transition={{ ...ANIMATION_TRANSITION, delay: 0.1 }} className="md:col-span-2">
           <Card className="relative overflow-hidden p-12 rounded-[2.5rem] bg-white border-gray-100 shadow-sm group hover:border-[#D95E46]/30 transition-all duration-500">
             <div className="absolute top-0 right-0 p-12 opacity-[0.03] group-hover:opacity-[0.06] transition-opacity">
@@ -141,52 +247,115 @@ export default function BillingPage() {
                   </h2>
                   <p className="text-base font-medium text-gray-500">Available Credits</p>
                </div>
-
-               <div className="pt-6 flex flex-wrap gap-4">
-                  <Button 
-                    onClick={handleUpgrade}
-                    className="bg-black text-white hover:bg-gray-800 rounded-2xl px-10 h-14 text-sm font-bold transition-all shadow-xl active:scale-95 flex items-center gap-3"
-                  >
-                    <Plus className="h-5 w-5" />
-                    Recharge Credits
-                  </Button>
-                  <Button 
-                    variant="outline"
-                    className="border-gray-200 text-gray-600 hover:bg-gray-50 rounded-2xl px-10 h-14 text-sm font-bold transition-all"
-                  >
-                    <History className="h-5 w-5 mr-2" />
-                    Usage History
-                  </Button>
-               </div>
             </div>
           </Card>
         </motion.div>
 
-        {/* Plan Info Card */}
         <motion.div {...fadeUp} transition={{ ...ANIMATION_TRANSITION, delay: 0.2 }}>
           <Card className="h-full p-8 bg-gray-50/50 border-gray-100 rounded-2xl shadow-sm flex flex-col justify-between">
             <div className="space-y-4">
                <h3 className="text-sm font-semibold text-gray-600">Active Plan</h3>
                <div className="space-y-1">
                   <p className="text-xl font-bold text-gray-900 uppercase tracking-tight">{workspace?.plan || 'Pay As You Go'}</p>
-                  <p className="text-[11px] text-gray-500 font-medium">Indian Manual Billing Mode</p>
+                  <p className="text-[11px] text-gray-500 font-medium">Powered by Razorpay</p>
                </div>
             </div>
 
             <div className="pt-8 space-y-4">
                <div className="flex items-center gap-2 text-[11px] font-medium text-gray-600">
                   <ShieldCheck className="h-4 w-4 text-[#10B981]" />
-                  Secure Manual Recharge
+                  Secure Razorpay Payments
                </div>
                <p className="text-[10px] text-gray-400 leading-relaxed italic">
-                 Contact support via WhatsApp to recharge your wallet. Credits are usually added within 15 minutes of payment verification.
+                 Credits are added instantly after successful payment. All transactions are processed securely via Razorpay.
                </p>
             </div>
           </Card>
         </motion.div>
       </div>
 
-      {/* Pricing Info Section */}
+      {packs.length > 0 && (
+        <motion.div {...fadeUp} transition={{ ...ANIMATION_TRANSITION, delay: 0.25 }} className="mt-12 space-y-6">
+          <div className="flex items-center gap-2">
+            <IndianRupee className="h-4 w-4 text-gray-400" />
+            <h3 className="text-sm font-semibold text-gray-600">Buy Credits</h3>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {packs.map((pack) => {
+              const perCredit = (pack.price / 100) / pack.credits
+              return (
+                <Card key={pack.id} className={`relative p-8 rounded-[2rem] border transition-all duration-300 ${
+                  pack.popular
+                    ? "bg-black text-white border-black shadow-xl scale-105"
+                    : "bg-white border-gray-100 hover:border-black/10 shadow-sm"
+                }`}>
+                  {pack.popular && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                      <span className="px-4 py-1 bg-[#10B981] text-white text-[10px] font-bold rounded-full uppercase tracking-widest">
+                        Best Value
+                      </span>
+                    </div>
+                  )}
+                  <div className="space-y-6 pt-2">
+                    <div>
+                      <p className={`text-sm font-bold tracking-wide uppercase ${pack.popular ? 'text-gray-300' : 'text-gray-500'}`}>
+                        {pack.name}
+                      </p>
+                      <div className="mt-3 flex items-baseline gap-1">
+                        <span className={`text-sm ${pack.popular ? 'text-gray-300' : 'text-gray-500'}`}>₹</span>
+                        <span className="text-5xl font-bold tracking-tight">
+                          {(pack.price / 100).toLocaleString('en-IN')}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <Zap className={`h-4 w-4 ${pack.popular ? 'text-[#10B981]' : 'text-[#10B981]'}`} />
+                        <span className={`text-sm font-semibold ${pack.popular ? 'text-gray-200' : 'text-gray-900'}`}>
+                          {pack.credits.toLocaleString()} Credits
+                        </span>
+                      </div>
+                      {pack.bonus > 0 && (
+                        <div className="flex items-center gap-3">
+                          <Gift className="h-4 w-4 text-amber-400" />
+                          <span className={`text-sm font-semibold ${pack.popular ? 'text-amber-300' : 'text-amber-600'}`}>
+                            +{pack.bonus}% Bonus
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-3">
+                        <CheckCircle2 className={`h-4 w-4 ${pack.popular ? 'text-gray-400' : 'text-gray-400'}`} />
+                        <span className={`text-xs ${pack.popular ? 'text-gray-400' : 'text-gray-500'}`}>
+                          ₹{perCredit.toFixed(2)} per credit
+                        </span>
+                      </div>
+                    </div>
+
+                    <Button
+                      onClick={() => handleBuyPack(pack)}
+                      disabled={buyingPack === pack.id}
+                      className={`w-full h-12 rounded-xl text-sm font-bold transition-all active:scale-95 ${
+                        pack.popular
+                          ? "bg-white text-black hover:bg-gray-100"
+                          : "bg-black text-white hover:bg-gray-800"
+                      }`}
+                    >
+                      {buyingPack === pack.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <>Buy Now — ₹{(pack.price / 100).toLocaleString('en-IN')}</>
+                      )}
+                    </Button>
+                  </div>
+                </Card>
+              )
+            })}
+          </div>
+        </motion.div>
+      )}
+
       <motion.div {...fadeUp} transition={{ ...ANIMATION_TRANSITION, delay: 0.3 }} className="space-y-6 mt-12">
          <div className="flex items-center gap-2">
             <CreditCard className="h-4 w-4 text-gray-400" />
@@ -218,16 +387,12 @@ export default function BillingPage() {
          </div>
       </motion.div>
 
-      {/* Recent Activity Section */}
       <motion.div {...fadeUp} transition={{ ...ANIMATION_TRANSITION, delay: 0.4 }} className="mt-12 space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <History className="h-4 w-4 text-gray-400" />
             <h3 className="text-sm font-semibold text-gray-600">Recent Activity</h3>
           </div>
-          <Button variant="ghost" className="text-xs text-gray-500 hover:text-black font-medium">
-            View All
-          </Button>
         </div>
 
         <Card className="overflow-hidden border-gray-100 bg-white rounded-2xl shadow-sm">
