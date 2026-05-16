@@ -121,7 +121,7 @@ export async function deleteAgent(input: unknown): Promise<ActionResponse<{ succ
 
     const { error } = await supabase
       .from("workspace_agents")
-      .update({ deleted_at: new Date().toISOString() })
+      .update({ deleted_at: new Date().toISOString() } as any)
       .eq("id", agent_id)
 
     if (error) throw error
