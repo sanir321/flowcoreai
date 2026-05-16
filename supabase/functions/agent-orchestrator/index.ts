@@ -723,6 +723,6 @@ Deno.serve(async (req) => {
 
   } catch (error: any) {
     console.error(`[ORCHESTRATOR] Global Error: ${error.message}`);
-    return new Response(JSON.stringify({ response_parts: [STATIC_FALLBACK_MESSAGE], metadata: { error: error.message } }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify({ response_parts: [STATIC_FALLBACK_MESSAGE] }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 });

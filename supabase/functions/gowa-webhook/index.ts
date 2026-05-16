@@ -273,7 +273,7 @@ Deno.serve(async (req) => {
   } catch (error: any) {
     console.error(`[WEBHOOK] Error:`, error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: "Webhook processing failed" }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }

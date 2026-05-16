@@ -11,6 +11,10 @@ import * as React from "react";
 export async function POST(req: Request) {
   try {
     const authHeader = req.headers.get("Authorization");
+    const isValidRequest = authHeader === `Bearer ${process.env.INTERNAL_CRON_SECRET}`;
+    if (!isValidRequest) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const { to, subject, template, data } = await req.json();
 
@@ -96,6 +100,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true, id: (result as any)?.messageId });
   } catch (err: any) {
     console.error("[EMAIL_API] Global Error:", err.message);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: "Failed to send email" }, { status: 500 });
   }
 }

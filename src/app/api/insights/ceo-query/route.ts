@@ -1,8 +1,23 @@
 import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
+import { rateLimit } from "@/lib/rate-limit"
+import { z } from "zod"
+
+const QuerySchema = z.object({
+  message: z.string().min(1).max(1000).trim(),
+  agent_type: z.string().max(100).optional().default("single"),
+  reasoning: z.string().max(100).optional().default("analytical"),
+  contact_id: z.string().uuid().optional(),
+})
 
 export async function POST(req: Request) {
   try {
+    const ip = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown"
+    const { success: allowed } = await rateLimit(ip, 10, 60)
+    if (!allowed) {
+      return NextResponse.json({ reply: "Too many requests. Try again later." }, { status: 429 })
+    }
+
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return new NextResponse("Unauthorized", { status: 401 })
@@ -10,7 +25,11 @@ export async function POST(req: Request) {
     const workspaceId = user.app_metadata.workspace_id
     if (!workspaceId) return new NextResponse("No workspace", { status: 400 })
 
-    const { message, agent_type, reasoning, contact_id } = await req.json()
+    const parsed = QuerySchema.safeParse(await req.json())
+    if (!parsed.success) {
+      return NextResponse.json({ reply: "Invalid request" }, { status: 400 })
+    }
+    const { message, agent_type, reasoning, contact_id } = parsed.data
 
     // 1. Time Ranges
     const now = new Date()

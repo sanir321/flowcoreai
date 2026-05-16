@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
         await supabase.from('kb_sources').update({ status: 'failed', error_message: error.message }).eq('id', source_id)
       }
     } catch {}
-    return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    return new Response(JSON.stringify({ error: "Document ingestion failed" }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
   }
 })
 

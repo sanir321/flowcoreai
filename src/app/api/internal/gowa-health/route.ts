@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
                     if (ownerEmail) {
                         await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/emails/send`, {
                             method: "POST",
-                            headers: { "Content-Type": "application/json" },
+                            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${process.env.INTERNAL_CRON_SECRET}` },
                             body: JSON.stringify({
                                 to: ownerEmail,
                                 subject: "Escalation Alert — Action Required",

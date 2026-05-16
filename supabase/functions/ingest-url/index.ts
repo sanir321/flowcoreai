@@ -104,7 +104,7 @@ Deno.serve(async (req) => {
       console.error("Failed to update error status:", e)
     }
 
-    return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    return new Response(JSON.stringify({ error: "URL ingestion failed" }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
   }
 })
 

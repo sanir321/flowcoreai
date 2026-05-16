@@ -50,6 +50,6 @@ export async function generateResponse(input: any): Promise<any> {
     return { response_parts: [text], metadata: { intent } };
   } catch (error: any) {
     console.error("[RESPONSE] LLM Error:", error.message);
-    return { response_parts: ["I'm having a little trouble with my connection! A teammate will help you shortly."], metadata: { intent, error: error.message } };
+    return { response_parts: ["I'm having a little trouble with my connection! A teammate will help you shortly."], metadata: { intent } };
   }
 }

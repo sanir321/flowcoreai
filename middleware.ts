@@ -32,6 +32,7 @@ export async function middleware(request: NextRequest) {
   const isInternalApiRoute = url.pathname.startsWith("/api/") && 
     !url.pathname.startsWith("/api/widget/") && 
     !url.pathname.startsWith("/api/webhooks/") &&
+    !url.pathname.startsWith("/api/internal/") &&
     !url.pathname.startsWith("/api/auth/google/callback")
 
   let supabaseResponse = NextResponse.next({ request })

@@ -13,11 +13,14 @@ export async function GET() {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
+    const { data: workspace } = await auth.from("workspaces").select("id").eq("owner_id", user.id).eq("status", "active").maybeSingle()
+    if (!workspace) return NextResponse.json({ error: "No workspace" }, { status: 404 })
+
     const { data: tokens } = await supabase
       .from("google_oauth_tokens")
       .select("access_token, sheet_id, sheet_range, token_expiry, refresh_token")
-      .limit(1)
-      .single()
+      .eq("workspace_id", workspace.id)
+      .maybeSingle()
 
     if (!tokens?.sheet_id || !tokens?.access_token) {
       return NextResponse.json({ error: "No Google Sheet configured" }, { status: 404 })
