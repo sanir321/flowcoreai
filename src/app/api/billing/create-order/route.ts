@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
-import { razorpay, CREDIT_PACKS } from "@/lib/razorpay"
+import { getRazorpay, CREDIT_PACKS } from "@/lib/razorpay"
 import { z } from "zod"
 
 const schema = z.object({
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     const bonusCredits = Math.floor(pack.credits * pack.bonus / 100)
     const totalCredits = pack.credits + bonusCredits
 
-    const order = await razorpay.orders.create({
+    const order = await getRazorpay().orders.create({
       amount: pack.price,
       currency: "INR",
       receipt: `${workspaceId}_${pack.id}_${Date.now()}`,
