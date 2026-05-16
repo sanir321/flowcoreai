@@ -3,13 +3,11 @@
 ## Remaining (requires manual action)
 - [ ] **Google OAuth re-auth** — Re-authorize Google for workspaces with expired tokens via `/settings/integrations`. "scluptdental" has a refresh_token (auto-refresh working). "dhivya" has no Google connection. If auto-refresh fails, user will see "Google session expired" and must re-connect.
 - [ ] **Uptime monitoring** — Set up Better Uptime / Pingdom pointing at `https://flowter-bay.vercel.app/api/health` (endpoint returns `{"status":"ok"}`)
-- [ ] **Razorpay keys** — Set `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `NEXT_PUBLIC_RAZORPAY_KEY_ID` in Vercel env. Razorpay checkout is wired up on Billing page.
-- [ ] **Razorpay webhook** — Configure webhook in Razorpay dashboard -> Settings -> Webhooks: URL `https://flowter-bay.vercel.app/api/billing/webhook`, secret = `RAZORPAY_KEY_SECRET`, events = `payment.captured`
 - [ ] **Penetration testing & vulnerability scanning cadence** — See `docs/security-audit-schedule.md`
 
 ## Deferred
-- [ ] Subscription plans (Starter/Growth/Scale) with recurring billing — current implementation is prepaid credit packs only
-- [ ] Stripe integration for international customers
+- [ ] Billing — Stripe/Razorpay integration *(manual billing for now)*
+- [ ] Subscription plans (Starter/Growth/Scale) with recurring billing
 
 ## Done
 - [x] Terms checkbox on signup/sign-in (new users only)
@@ -29,7 +27,6 @@
 - [x] PostHog fully set up — instrumentation-client.ts, posthog-node, server helper, autocapture active
 - [x] Public /api/health endpoint created for uptime monitoring
 - [x] Google OAuth token — scluptdental workspace has refresh_token (auto-refresh)
-- [x] **All security audit findings fixed** — auth, CORS, rate limits, error leaks (commit `bc5c991`)
-- [x] **Razorpay integration** — API routes (create-order, verify, webhook, catalog), billing page UI with credit packs, `billing_transactions` migration
-- [x] **Security audit schedule** — `docs/security-audit-schedule.md` created
-- [x] **Supabase migrations directory** — initial schema + Razorpay migration tracked
+- [x] All security audit findings fixed — auth, CORS, rate limits, error leaks (commit `bc5c991`)
+- [x] Security audit schedule — `docs/security-audit-schedule.md` created
+- [x] Supabase migrations directory — initial schema tracked
