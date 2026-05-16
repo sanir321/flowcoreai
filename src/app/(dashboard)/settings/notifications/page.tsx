@@ -2,20 +2,18 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Card } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
-import { Bell, Shield, Mail, MessageSquare, Zap, Loader2, Settings2, ExternalLink, Volume2, AlertTriangle, Inbox } from "lucide-react"
+import { Bell, Shield, Mail, MessageSquare, Zap, Loader2, Volume2, AlertTriangle, Inbox } from "lucide-react"
 import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
 import { updateNotifications } from "@/app/actions/settings"
 import { useWorkspace } from "@/hooks/use-workspace"
 import { cn } from "@/lib/utils"
 
-const ANIMATION = { duration: 0.4, ease: [0.16, 1, 0.3, 1] as const }
 const fadeUp = {
   initial: { opacity: 0, y: 10 },
   animate: { opacity: 1, y: 0 },
-  transition: ANIMATION
+  transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] as const }
 }
 
 const NOTIFICATION_EVENTS = [
@@ -36,29 +34,6 @@ const NOTIFICATION_EVENTS = [
     label: "Lead Captures", 
     desc: "Notification when new customers are saved to Sheets.",
     icon: Volume2
-  }
-]
-
-const NOTIFICATION_MODES = [
-  { 
-    value: 'instant', 
-    label: "Instant", 
-    desc: "Real-time push for all events",
-    icon: Zap
-  },
-  { 
-    value: 'digest', 
-    label: "Daily Digest", 
-    desc: "Single daily summary",
-    icon: MessageSquare,
-    comingSoon: true
-  },
-  { 
-    value: 'off', 
-    label: "Quiet Hours", 
-    desc: "Suppress all notifications",
-    icon: Bell,
-    comingSoon: true
   }
 ]
 
@@ -131,197 +106,122 @@ export default function NotificationsPage() {
       <hr className="border-gray-100 my-10" />
 
       {/* Delivery Mode */}
-      <motion.div {...fadeUp} transition={{ ...ANIMATION, delay: 0.1 }} className="space-y-6">
-        <div className="space-y-1">
-          <h4 className="text-[10px] font-bold text-[#c65f39]">Delivery Mode</h4>
-          <p className="text-lg font-semibold text-gray-900 tracking-tight">How alerts reach you</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {NOTIFICATION_MODES.map((mode) => {
+      <motion.div {...fadeUp} transition={{ delay: 0.1 }} className="space-y-5">
+        <h4 className="text-[10px] font-bold text-[#c65f39]">Delivery Mode</h4>
+        <div className="space-y-3">
+          {[
+            { value: 'instant', label: "Instant", desc: "Real-time push for all events" },
+            { value: 'digest', label: "Daily Digest", desc: "Single daily summary" },
+            { value: 'off', label: "Off", desc: "Suppress all notifications" }
+          ].map((mode) => {
             const isActive = config?.notification_mode === mode.value
-            const isDisabled = mode.comingSoon && !isActive
             return (
-              <Card
+              <div
                 key={mode.value}
-                onClick={() => !mode.comingSoon && handleToggle('notification_mode', mode.value)}
+                onClick={() => handleToggle('notification_mode', mode.value)}
                 className={cn(
-                  "relative p-8 rounded-[2.5rem] border transition-all duration-500 cursor-pointer",
+                  "flex items-center justify-between px-6 py-5 rounded-xl border transition-all duration-300 cursor-pointer",
                   isActive
-                    ? "bg-black text-white border-black shadow-xl"
-                    : "bg-white border-gray-100 hover:border-black/10 shadow-sm",
-                  isDisabled && "opacity-40 cursor-not-allowed pointer-events-none"
+                    ? "bg-gray-50 border-gray-200"
+                    : "bg-white border-gray-100 hover:border-gray-200"
                 )}
               >
-                {mode.comingSoon && (
-                  <div className="absolute top-4 right-4">
-                    <span className="px-2 py-1 bg-gray-100 text-[9px] font-bold rounded-full uppercase tracking-widest text-gray-400">
-                      Soon
-                    </span>
-                  </div>
-                )}
-                <div className="space-y-6">
+                <div className="flex items-center gap-4">
                   <div className={cn(
-                    "h-12 w-12 rounded-[1.25rem] border flex items-center justify-center transition-all duration-500",
-                    isActive
-                      ? "bg-white/10 border-white/20"
-                      : "bg-gray-50 border-gray-100"
-                  )}>
-                    <mode.icon className={cn(
-                      "h-5 w-5 transition-colors",
-                      isActive ? "text-white" : "text-gray-400"
-                    )} />
-                  </div>
-                  <div className="space-y-1">
+                    "h-2.5 w-2.5 rounded-full transition-colors",
+                    isActive ? "bg-[#10B981]" : "bg-gray-200"
+                  )} />
+                  <div>
                     <p className={cn(
-                      "text-base font-semibold tracking-tight",
-                      isActive ? "text-white" : "text-gray-900"
+                      "text-sm font-semibold",
+                      isActive ? "text-gray-900" : "text-gray-600"
                     )}>
                       {mode.label}
                     </p>
-                    <p className={cn(
-                      "text-sm font-medium leading-snug",
-                      isActive ? "text-gray-300" : "text-gray-500"
-                    )}>
-                      {mode.desc}
-                    </p>
+                    <p className="text-xs text-gray-500 font-medium">{mode.desc}</p>
                   </div>
-                  <Switch
-                    checked={isActive}
-                    onCheckedChange={() => !mode.comingSoon && handleToggle('notification_mode', mode.value)}
-                    className={cn(
-                      "data-[state=checked]:bg-[#10B981]",
-                      isActive && "data-[state=checked]:bg-white/30"
-                    )}
-                  />
                 </div>
-              </Card>
+                <Switch
+                  checked={isActive}
+                  onCheckedChange={() => handleToggle('notification_mode', mode.value)}
+                  className="data-[state=checked]:bg-[#10B981]"
+                />
+              </div>
             )
           })}
         </div>
       </motion.div>
 
       {/* Event Notifications */}
-      <motion.div {...fadeUp} transition={{ ...ANIMATION, delay: 0.2 }} className="space-y-6">
-        <div className="space-y-1">
-          <h4 className="text-[10px] font-bold text-[#c65f39]">Events</h4>
-          <p className="text-lg font-semibold text-gray-900 tracking-tight">Assistant Events</p>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4">
+      <motion.div {...fadeUp} transition={{ delay: 0.2 }} className="space-y-5">
+        <h4 className="text-[10px] font-bold text-[#c65f39]">Events</h4>
+        <div className="space-y-2">
           {NOTIFICATION_EVENTS.map((item) => {
             const isChecked = config?.[item.id] ?? true
             return (
-              <Card
+              <div
                 key={item.id}
-                className={cn(
-                  "p-8 rounded-[2.5rem] bg-white border-gray-100 shadow-sm hover:border-black/5 hover:shadow-md transition-all duration-500",
-                  isChecked && "border-emerald-100"
-                )}
+                className="flex items-center justify-between px-6 py-5 rounded-xl border border-gray-100 bg-white hover:border-gray-200 transition-all duration-300"
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-5">
-                    <div className={cn(
-                      "h-12 w-12 rounded-[1.25rem] border flex items-center justify-center transition-all duration-500",
-                      isChecked
-                        ? "bg-emerald-50 border-emerald-100"
-                        : "bg-gray-50 border-gray-100"
-                    )}>
-                      <item.icon className={cn(
-                        "h-5 w-5 transition-colors",
-                        isChecked ? "text-emerald-600" : "text-gray-400"
-                      )} />
-                    </div>
-                    <div className="space-y-0.5">
-                      <p className="text-base font-semibold text-gray-900">{item.label}</p>
-                      <p className="text-sm font-medium text-gray-500">{item.desc}</p>
-                    </div>
+                <div className="flex items-center gap-4">
+                  <item.icon className={cn(
+                    "h-4 w-4 transition-colors",
+                    isChecked ? "text-gray-700" : "text-gray-300"
+                  )} />
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">{item.label}</p>
+                    <p className="text-xs text-gray-500 font-medium">{item.desc}</p>
                   </div>
-                  <Switch
-                    checked={isChecked}
-                    onCheckedChange={(val) => handleToggle(item.id, val)}
-                    className="data-[state=checked]:bg-[#10B981]"
-                  />
                 </div>
-              </Card>
+                <Switch
+                  checked={isChecked}
+                  onCheckedChange={(val) => handleToggle(item.id, val)}
+                  className="data-[state=checked]:bg-[#10B981]"
+                />
+              </div>
             )
           })}
         </div>
       </motion.div>
 
       {/* Channels */}
-      <motion.div {...fadeUp} transition={{ ...ANIMATION, delay: 0.3 }} className="space-y-6">
-        <div className="space-y-1">
-          <h4 className="text-[10px] font-bold text-[#c65f39]">Channels</h4>
-          <p className="text-lg font-semibold text-gray-900 tracking-tight">Communication Channels</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <motion.div {...fadeUp} transition={{ delay: 0.3 }} className="space-y-5">
+        <h4 className="text-[10px] font-bold text-[#c65f39]">Channels</h4>
+        <div className="space-y-3">
           {[
-            { 
-              label: "Email Notifications", 
-              icon: Mail, 
-              desc: "Receive alerts via email",
-              active: true 
-            },
-            { 
-              label: "WhatsApp Alerts", 
-              icon: ExternalLink, 
-              desc: "Forward notifications to your WhatsApp number",
-              active: false,
-              note: config?.whatsapp_alert_number || "Not configured"
-            },
-            { 
-              label: "SMS Alerts", 
-              icon: Bell, 
-              desc: "Get SMS for critical escalations",
-              active: false 
-            }
+            { label: "Email Notifications", icon: Mail, desc: "Receive alerts via email", active: true },
+            { label: "WhatsApp Alerts", icon: MessageSquare, desc: "Forward notifications to your WhatsApp", active: false },
+            { label: "SMS Alerts", icon: Bell, desc: "Get SMS for critical escalations", active: false }
           ].map((item, i) => (
-            <Card key={i} className={cn(
-              "p-8 rounded-[2.5rem] bg-white border-gray-100 shadow-sm transition-all duration-500 relative overflow-hidden",
-              !item.active && "opacity-60 grayscale pointer-events-none"
-            )}>
-              <div className="absolute top-0 right-0 p-6 opacity-[0.03] pointer-events-none">
-                <item.icon className="h-20 w-20 text-black" />
-              </div>
-              <div className="relative space-y-5">
-                <div className="flex items-center justify-between">
-                  <div className="h-10 w-10 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center">
-                    <item.icon className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <Switch
-                    checked={item.active}
-                    className="data-[state=checked]:bg-[#10B981]"
-                  />
-                </div>
-                <div className="space-y-1">
+            <div
+              key={i}
+              className={cn(
+                "flex items-center justify-between px-6 py-5 rounded-xl border bg-white transition-all duration-300",
+                item.active ? "border-gray-100" : "border-gray-50 opacity-50"
+              )}
+            >
+              <div className="flex items-center gap-4">
+                <item.icon className="h-4 w-4 text-gray-400" />
+                <div>
                   <p className="text-sm font-semibold text-gray-900">{item.label}</p>
-                  <p className="text-[11px] text-gray-500 font-medium">{item.desc}</p>
+                  <p className="text-xs text-gray-500 font-medium">{item.desc}</p>
                 </div>
               </div>
-            </Card>
+              <Switch
+                checked={item.active}
+                className="data-[state=checked]:bg-[#10B981] pointer-events-none"
+              />
+            </div>
           ))}
         </div>
       </motion.div>
 
-      {/* Info footer */}
-      <motion.div {...fadeUp} transition={{ ...ANIMATION, delay: 0.4 }}>
-        <Card className="p-8 bg-gray-50/50 border-gray-100 rounded-[2.5rem] shadow-sm">
-          <div className="flex items-start gap-4">
-            <div className="h-10 w-10 rounded-xl bg-[#c65f39]/10 border border-[#c65f39]/20 flex items-center justify-center shrink-0">
-              <Settings2 className="h-5 w-5 text-[#c65f39]" />
-            </div>
-            <div className="space-y-1">
-              <p className="text-sm font-semibold text-gray-900">About Notification Delivery</p>
-              <p className="text-[11px] text-gray-500 font-medium leading-relaxed">
-                Escalation alerts are sent immediately regardless of mode. 
-                Digest mode compiles non-urgent events into a single daily summary. 
-                WhatsApp alerts require a configured alert number in workspace settings.
-              </p>
-            </div>
-          </div>
-        </Card>
+      {/* Info */}
+      <motion.div {...fadeUp} transition={{ delay: 0.4 }}>
+        <hr className="border-gray-100 mb-6" />
+        <p className="text-xs text-gray-400 font-medium leading-relaxed">
+          Escalation alerts are sent immediately regardless of mode. WhatsApp alerts require a configured alert number in workspace settings.
+        </p>
       </motion.div>
     </div>
   )
