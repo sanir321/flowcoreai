@@ -11,7 +11,8 @@ import {
   Zap,
   ChevronRight,
   ShieldCheck,
-  ShoppingBag
+  ShoppingBag,
+  ClipboardList
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { motion } from "framer-motion"
@@ -25,6 +26,7 @@ const SETTINGS_NAV = [
   { name: "Data & Privacy", href: "/settings/data", icon: ShieldCheck },
   { name: "Billing & Credits", href: "/settings/billing", icon: Zap },
   { name: "Menu", href: "/settings/menu", icon: ShoppingBag },
+  { name: "Orders", href: "/orders", icon: ClipboardList },
 ]
 
 export default function SettingsLayout({
