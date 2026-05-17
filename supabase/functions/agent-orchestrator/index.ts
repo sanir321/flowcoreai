@@ -16,7 +16,7 @@ const corsHeaders = {
 const TOOL_PERMISSIONS: Record<string, string[]> = {
   customer_support: ["match_kb_chunks", "get_contact_history", "update_contact", "request_handoff", "escalation_request"],
   appointment_booking: ["check_availability", "create_appointment", "update_appointment", "cancel_appointment", "get_contact_history", "request_handoff", "escalation_request"],
-  sales: ["capture_lead", "match_kb_chunks", "get_contact_history", "update_contact", "request_handoff", "escalation_request"],
+  sales: ["capture_lead", "match_kb_chunks", "get_contact_history", "update_contact", "update_lead_stage", "get_pipeline", "schedule_follow_up", "generate_quote", "request_handoff", "escalation_request"],
 }
 
 function getAgentTools(agentType: string, allAgents: any[]): string[] {

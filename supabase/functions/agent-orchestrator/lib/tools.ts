@@ -371,6 +371,71 @@ export async function executeTool(input: any): Promise<any> {
         return updated;
       }
 
+      case 'update_lead_stage': {
+        const { data: session } = await supabase.from('conversation_sessions').select('contact_id').eq('id', session_id).single();
+        if (!session?.contact_id) throw new Error("Contact not found");
+        await supabase.from('contacts').update({
+            pipeline_stage: args.stage,
+            notes: args.notes ? `[Stage: ${args.stage}] ${args.notes}` : undefined,
+            updated_at: new Date().toISOString()
+        }).eq('id', session.contact_id);
+        return { success: true, stage: args.stage, message: `Lead moved to ${args.stage}` };
+      }
+
+      case 'get_pipeline': {
+        const stages = ['new', 'contacted', 'qualified', 'proposal', 'negotiation', 'won', 'lost'];
+        const { data: contacts } = await supabase.from('contacts')
+            .select('pipeline_stage, count:id')
+            .eq('workspace_id', workspace_id)
+            .not('pipeline_stage', 'is', null)
+            .in('pipeline_stage', stages);
+        const counts: Record<string, number> = {};
+        for (const s of stages) counts[s] = 0;
+        for (const c of contacts || []) {
+            if (c.pipeline_stage) counts[c.pipeline_stage] = (counts[c.pipeline_stage] || 0) + 1;
+        }
+        return { success: true, pipeline: counts };
+      }
+
+      case 'schedule_follow_up': {
+        const { data: session } = await supabase.from('conversation_sessions').select('contact_id').eq('id', session_id).single();
+        const scheduledAt = new Date(Date.now() + (args.hours || 24) * 3600000).toISOString();
+        const { data: followUp } = await supabase.from('follow_ups').insert({
+            workspace_id,
+            contact_id: session?.contact_id || null,
+            session_id,
+            scheduled_at: scheduledAt,
+            message_template: args.message || "Hi! Just following up on our conversation. Let me know if you need any help!",
+            status: 'pending'
+        }).select().single();
+        return { success: true, follow_up_id: followUp?.id, scheduled_at: scheduledAt, message: `Follow-up scheduled for ${new Date(scheduledAt).toLocaleString()}` };
+      }
+
+      case 'generate_quote': {
+        const { data: session } = await supabase.from('conversation_sessions').select('contact_id, customer_name, customer_jid').eq('id', session_id).single();
+        if (!session) throw new Error("Session not found");
+        const subtotal = (args.items || []).reduce((sum: number, item: any) => sum + (item.qty || 1) * (item.price || 0), 0);
+        const tax = Math.round(subtotal * 0.18 * 100) / 100;
+        const total = subtotal + tax;
+        const quoteNumber = `Q-${Date.now().toString(36).toUpperCase()}`;
+        const { data: quote } = await supabase.from('quotes').insert({
+            workspace_id,
+            contact_id: session.contact_id || null,
+            quote_number: quoteNumber,
+            items: args.items,
+            subtotal,
+            tax,
+            total,
+            status: 'draft',
+            notes: args.notes || null,
+            valid_until: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0]
+        }).select().single();
+
+        const quoteText = `*Quote ${quoteNumber}*\n\n${(args.items || []).map((i: any) => `${i.name} × ${i.qty || 1} = ₹${((i.qty || 1) * i.price).toLocaleString()}`).join('\n')}\n\nSubtotal: ₹${subtotal.toLocaleString()}\nTax (18%): ₹${tax.toLocaleString()}\n*Total: ₹${total.toLocaleString()}*\n\nValid until: ${new Date(Date.now() + 30 * 86400000).toLocaleDateString()}`;
+
+        return { success: true, quote_id: quote?.id, quote_number: quoteNumber, total, quote_text: quoteText };
+      }
+
       default: return { success: true };
     }
   } catch (e: any) {

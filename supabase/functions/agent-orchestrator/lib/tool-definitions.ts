@@ -186,5 +186,82 @@ export const TOOL_DEFINITIONS = [
         }
       }
     }
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_lead_stage",
+      description: "Move a lead through the sales pipeline. Stages: new → contacted → qualified → proposal → negotiation → won/lost.",
+      parameters: {
+        type: "object",
+        properties: {
+          stage: {
+            type: "string",
+            enum: ["new", "contacted", "qualified", "proposal", "negotiation", "won", "lost"],
+            description: "Target pipeline stage."
+          },
+          notes: { type: "string", description: "Reason or context for the stage change." }
+        },
+        required: ["stage"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_pipeline",
+      description: "Get an overview of all leads in the sales pipeline broken down by stage.",
+      parameters: {
+        type: "object",
+        properties: {}
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "schedule_follow_up",
+      description: "Schedule an automated WhatsApp follow-up message for a lead after a specified number of hours.",
+      parameters: {
+        type: "object",
+        properties: {
+          hours: {
+            type: "number",
+            description: "Hours from now to send the follow-up (e.g. 24, 48)."
+          },
+          message: {
+            type: "string",
+            description: "Content of the follow-up message."
+          }
+        },
+        required: ["hours", "message"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "generate_quote",
+      description: "Generate and send a price quote to the customer via WhatsApp.",
+      parameters: {
+        type: "object",
+        properties: {
+          items: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                name: { type: "string", description: "Item/service name." },
+                qty: { type: "number", description: "Quantity." },
+                price: { type: "number", description: "Unit price." }
+              }
+            },
+            description: "List of items/services with quantities and prices."
+          },
+          notes: { type: "string", description: "Optional notes for the quote." }
+        },
+        required: ["items"]
+      }
+    }
   }
 ];
