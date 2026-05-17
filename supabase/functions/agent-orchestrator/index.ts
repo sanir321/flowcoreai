@@ -16,7 +16,7 @@ const corsHeaders = {
 const TOOL_PERMISSIONS: Record<string, string[]> = {
   customer_support: ["match_kb_chunks", "get_contact_history", "update_contact", "request_handoff", "escalation_request"],
   appointment_booking: ["check_availability", "create_appointment", "update_appointment", "cancel_appointment", "get_contact_history", "request_handoff", "escalation_request"],
-  sales: ["capture_lead", "match_kb_chunks", "get_contact_history", "update_contact", "update_lead_stage", "get_pipeline", "schedule_follow_up", "generate_quote", "request_handoff", "escalation_request"],
+  sales: ["capture_lead", "match_kb_chunks", "get_contact_history", "update_contact", "update_lead_stage", "get_pipeline", "schedule_follow_up", "generate_quote", "search_menu", "create_order", "confirm_payment", "get_order_status", "request_handoff", "escalation_request"],
 }
 
 function getAgentTools(agentType: string, allAgents: any[]): string[] {
@@ -40,8 +40,8 @@ const AGENT_DESCRIPTIONS: Record<string, { label: string; description: string; s
   },
   sales: {
     label: "Sales Assistant",
-    description: "Handles pricing inquiries, lead capture, and qualification.",
-    skills: "lead capture, pricing info, qualification questions"
+    description: "Handles pricing inquiries, lead capture, qualification, menu browsing, order taking, and payment processing.",
+    skills: "lead capture, pipeline management, follow-ups, quotes, menu browsing, order taking, UPI payment links, payment confirmation"
   }
 }
 
@@ -476,6 +476,10 @@ Deno.serve(async (req) => {
           capture_lead: ["name"],
           update_contact: ["name"],
           match_kb_chunks: ["query"],
+          search_menu: ["query"],
+          create_order: ["items"],
+          confirm_payment: ["order_id"],
+          get_order_status: ["order_id"],
         };
         let matchedTool: string | null = null;
         for (const [tool, reqKeys] of Object.entries(toolSignatures)) {

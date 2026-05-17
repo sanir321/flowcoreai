@@ -263,5 +263,75 @@ export const TOOL_DEFINITIONS = [
         required: ["items"]
       }
     }
+  },
+  {
+    type: "function",
+    function: {
+      name: "search_menu",
+      description: "Search available menu items and services by name or category.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: { type: "string", description: "Search term to match item name or category." },
+          category: { type: "string", description: "Optional category filter (e.g. Dental, Cosmetic)." }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "create_order",
+      description: "Create a new order with items from the menu. Generates a UPI payment link automatically.",
+      parameters: {
+        type: "object",
+        properties: {
+          items: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                menu_item_id: { type: "string", description: "ID of the menu item from search_menu." },
+                name: { type: "string", description: "Item name." },
+                qty: { type: "number", description: "Quantity." },
+                price: { type: "number", description: "Unit price." }
+              }
+            },
+            description: "Items to order."
+          },
+          notes: { type: "string", description: "Optional notes for the order." }
+        },
+        required: ["items"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "confirm_payment",
+      description: "Mark an order as paid after the customer confirms payment via UPI/cash.",
+      parameters: {
+        type: "object",
+        properties: {
+          order_id: { type: "string", description: "The order ID to confirm payment for." },
+          payment_method: { type: "string", enum: ["upi", "cash"], description: "How the customer paid." }
+        },
+        required: ["order_id"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_order_status",
+      description: "Check the status of an order by its ID.",
+      parameters: {
+        type: "object",
+        properties: {
+          order_id: { type: "string", description: "The order ID to check." }
+        },
+        required: ["order_id"]
+      }
+    }
   }
 ];

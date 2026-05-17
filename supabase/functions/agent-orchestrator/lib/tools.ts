@@ -436,6 +436,53 @@ export async function executeTool(input: any): Promise<any> {
         return { success: true, quote_id: quote?.id, quote_number: quoteNumber, total, quote_text: quoteText };
       }
 
+      case 'search_menu': {
+        let query = supabase.from('menu_items').select('id, name, description, price, category').eq('workspace_id', workspace_id).eq('is_available', true);
+        if (args.query) query = query.or(`name.ilike.%${args.query}%,category.ilike.%${args.query}%,description.ilike.%${args.query}%`);
+        if (args.category) query = query.eq('category', args.category);
+        const { data: items } = await query.order('name').limit(20);
+        return { success: true, items: items || [] };
+      }
+
+      case 'create_order': {
+        const { data: session } = await supabase.from('conversation_sessions').select('contact_id').eq('id', session_id).single();
+        const { data: workspace } = await supabase.from('workspaces').select('upi_id').eq('id', workspace_id).single();
+        const items = args.items || [];
+        const subtotal = items.reduce((sum: number, i: any) => sum + (i.qty || 1) * (i.price || 0), 0);
+        const tax = Math.round(subtotal * 0.18 * 100) / 100;
+        const total = subtotal + tax;
+        const orderNumber = `ORD-${Date.now().toString(36).toUpperCase()}`;
+        const upiId = workspace?.upi_id || 'flowcoreai@upi';
+        const upiLink = `upi://pay?pa=${upiId}&am=${total}&tn=Order%20${orderNumber}&cu=INR`;
+        const { data: order } = await supabase.from('orders').insert({
+            workspace_id,
+            contact_id: session?.contact_id || null,
+            session_id,
+            order_number: orderNumber,
+            items, subtotal, tax, total,
+            status: 'pending', upi_link: upiLink,
+            notes: args.notes || null
+        }).select().single();
+        const orderText = `*Order ${orderNumber}*\n\n${items.map((i: any) => `${i.name} × ${i.qty || 1} = ₹${((i.qty || 1) * i.price).toLocaleString()}`).join('\n')}\n\nSubtotal: ₹${subtotal.toLocaleString()}\nTax (18%): ₹${tax.toLocaleString()}\n*Total: ₹${total.toLocaleString()}*\n\n*Pay via UPI:* ${upiLink}\n\nReply with your payment confirmation or ask for help.`;
+        return { success: true, order_id: order?.id, order_number: orderNumber, total, upi_link: upiLink, order_text: orderText };
+      }
+
+      case 'confirm_payment': {
+        const { data: order } = await supabase.from('orders').update({
+            status: 'paid',
+            payment_method: args.payment_method || 'upi',
+            updated_at: new Date().toISOString()
+        }).eq('id', args.order_id).eq('workspace_id', workspace_id).select().single();
+        if (!order) throw new Error("Order not found");
+        return { success: true, order_id: order.id, order_number: order.order_number, status: 'paid', message: `Payment confirmed for ${order.order_number}` };
+      }
+
+      case 'get_order_status': {
+        const { data: order } = await supabase.from('orders').select('*').eq('id', args.order_id).eq('workspace_id', workspace_id).single();
+        if (!order) throw new Error("Order not found");
+        return { success: true, order_number: order.order_number, status: order.status, total: order.total, items: order.items, upi_link: order.upi_link, created_at: order.created_at };
+      }
+
       default: return { success: true };
     }
   } catch (e: any) {
