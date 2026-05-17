@@ -133,6 +133,44 @@ Deno.serve(async (req) => {
 
     if (gowaError || !gowaSession) {
         console.error(`[WEBHOOK] Workspace not found for session identifier: ${sessionIdentifier}`)
+        // Auto-sync: try to find device on GoWA and match by JID
+        try {
+            const gowaBase = (Deno.env.get('GOWA_BASE_URL') ?? '').replace(/\/$/, '');
+            const gowaKey = Deno.env.get('GOWA_API_KEY');
+            if (gowaBase && gowaKey && sessionIdentifier) {
+                const auth = btoa(gowaKey);
+                const devicesResp = await fetch(`${gowaBase}/devices`, {
+                    headers: { 'Authorization': `Basic ${auth}` },
+                    signal: AbortSignal.timeout(5000)
+                });
+                if (devicesResp.ok) {
+                    const devicesData = await devicesResp.json();
+                    const devices: any[] = devicesData.results || [];
+                    const device = devices.find((d: any) =>
+                        d.id === sessionIdentifier || d.jid === sessionIdentifier
+                    );
+                    if (device?.jid && device?.state === 'logged_in') {
+                        const { data: existing } = await supabase
+                            .from('gowa_sessions')
+                            .select('workspace_id, id')
+                            .eq('phone_jid', device.jid)
+                            .maybeSingle();
+                        if (existing) {
+                            await supabase.from('gowa_sessions').update({
+                                gowa_session_id: device.id,
+                                phone_jid: device.jid,
+                                display_name: device.display_name || null,
+                                status: 'connected',
+                                updated_at: new Date().toISOString()
+                            }).eq('id', existing.id);
+                            console.log(`[WEBHOOK] Auto-synced session ${existing.id} with device ${device.id}`);
+                        }
+                    }
+                }
+            }
+        } catch (_) {
+            console.error(`[WEBHOOK] Auto-sync failed`);
+        }
         return new Response(JSON.stringify({ success: false, error: 'Workspace not found' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
     const workspaceId = gowaSession.workspace_id

@@ -44,14 +44,22 @@ export async function GET() {
         const data = await resp.json()
         const devices: any[] = data.results || []
 
-        // Match by device name (each workspace has a unique name)
+        // Match by device name (GoWA may or may not return 'name' field)
         const named = devices.find(d => d.name === deviceName)
-        // Fallback: match by stored session ID
+        // Match by stored session ID
         const byId = session?.gowa_session_id
           ? devices.find(d => d.id === session.gowa_session_id)
           : null
+        // Match by stored phone JID (handles device reconnection with new ID)
+        const byJid = session?.phone_jid
+          ? devices.find(d => d.jid === session.phone_jid)
+          : null
+        // Match by display name (GoVA shows name/phone as display_name)
+        const byDisplay = devices.find(d =>
+          d.display_name && d.display_name.includes(workspaceId.substring(0, 8))
+        )
 
-        const candidate = named || byId
+        const candidate = named || byId || byJid || byDisplay
         if (candidate?.state === "logged_in" && candidate?.jid) {
           gowaConnected = true
           gowaJid = candidate.jid
