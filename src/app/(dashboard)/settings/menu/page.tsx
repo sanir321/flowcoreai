@@ -14,6 +14,7 @@ export default async function MenuSettingsPage() {
     .from("menu_items")
     .select("*")
     .eq("workspace_id", workspaceId)
+    .is("deleted_at", null)
     .order("category")
     .order("name")
 

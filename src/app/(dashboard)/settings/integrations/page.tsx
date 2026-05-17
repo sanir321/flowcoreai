@@ -91,6 +91,7 @@ export default function IntegrationsPage() {
         .select("agent_type")
         .eq("workspace_id", workspaceId)
         .eq("status", "active")
+        .is("deleted_at", null)
       
       if (agents) {
         setActiveAgentTypes((agents as any[]).map(a => a.agent_type))

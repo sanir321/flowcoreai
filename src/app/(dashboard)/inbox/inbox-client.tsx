@@ -143,6 +143,7 @@ export function InboxClient({
               .from("conversation_sessions")
               .select("*, contacts(*)")
               .eq("workspace_id", workspaceId)
+              .is("deleted_at", null)
               .order("last_message_at", { ascending: false })
             setSessions((data as unknown as Session[]) || [])
           }

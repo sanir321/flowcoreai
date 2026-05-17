@@ -53,6 +53,7 @@ export async function POST(req: NextRequest) {
       .eq("is_test", true)
       .eq("agent_type", agent_type)
       .eq("status", "active")
+      .is("deleted_at", null)
       .maybeSingle();
 
     if (!session) {

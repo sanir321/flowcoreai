@@ -30,6 +30,7 @@ export async function POST() {
       const { data: gowaDevices } = await supabase
         .from("gowa_sessions").select("gowa_session_id")
         .eq("workspace_id", workspaceId)
+        .is("deleted_at", null)
 
       const deletedAt = new Date().toISOString()
 

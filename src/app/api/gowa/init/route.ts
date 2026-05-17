@@ -15,6 +15,7 @@ export async function GET() {
         .select("id")
         .eq("owner_id", user.id)
         .eq("status", "active")
+        .is("deleted_at", null)
         .maybeSingle()
 
     if (!workspace) {

@@ -47,19 +47,19 @@ export async function POST(req: Request) {
       specificContact
     ] = await Promise.all([
       // Current Week
-      supabase.from("messages").select("*", { count: "exact", head: true }).eq("workspace_id", workspaceId).gte("created_at", sevenDaysAgo),
+      supabase.from("messages").select("*", { count: "exact", head: true }).eq("workspace_id", workspaceId).is("deleted_at", null).gte("created_at", sevenDaysAgo),
       // Previous Week
-      supabase.from("messages").select("*", { count: "exact", head: true }).eq("workspace_id", workspaceId).gte("created_at", fourteenDaysAgo).lt("created_at", sevenDaysAgo),
+      supabase.from("messages").select("*", { count: "exact", head: true }).eq("workspace_id", workspaceId).is("deleted_at", null).gte("created_at", fourteenDaysAgo).lt("created_at", sevenDaysAgo),
       // Leads (Contacts)
-      supabase.from("contacts").select("*", { count: "exact", head: true }).eq("workspace_id", workspaceId).gte("created_at", sevenDaysAgo),
-      supabase.from("contacts").select("*", { count: "exact", head: true }).eq("workspace_id", workspaceId).gte("created_at", fourteenDaysAgo).lt("created_at", sevenDaysAgo),
+      supabase.from("contacts").select("*", { count: "exact", head: true }).eq("workspace_id", workspaceId).is("deleted_at", null).gte("created_at", sevenDaysAgo),
+      supabase.from("contacts").select("*", { count: "exact", head: true }).eq("workspace_id", workspaceId).is("deleted_at", null).gte("created_at", fourteenDaysAgo).lt("created_at", sevenDaysAgo),
       // Escalations
-      supabase.from("conversation_sessions").select("*", { count: "exact", head: true }).eq("workspace_id", workspaceId).eq("status", "escalated").gte("updated_at", sevenDaysAgo),
-      supabase.from("conversation_sessions").select("*", { count: "exact", head: true }).eq("workspace_id", workspaceId).eq("status", "escalated").gte("updated_at", fourteenDaysAgo).lt("updated_at", sevenDaysAgo),
+      supabase.from("conversation_sessions").select("*", { count: "exact", head: true }).eq("workspace_id", workspaceId).is("deleted_at", null).eq("status", "escalated").gte("updated_at", sevenDaysAgo),
+      supabase.from("conversation_sessions").select("*", { count: "exact", head: true }).eq("workspace_id", workspaceId).is("deleted_at", null).eq("status", "escalated").gte("updated_at", fourteenDaysAgo).lt("updated_at", sevenDaysAgo),
       // Infrastructure
-      supabase.from("gowa_sessions").select("status, gowa_session_id").eq("workspace_id", workspaceId).maybeSingle(),
-      supabase.from("google_oauth_tokens").select("calendar_id, sheet_id").eq("workspace_id", workspaceId).maybeSingle(),
-      supabase.from("kb_chunks").select("*", { count: "exact", head: true }).eq("workspace_id", workspaceId),
+      supabase.from("gowa_sessions").select("status, gowa_session_id").eq("workspace_id", workspaceId).is("deleted_at", null).maybeSingle(),
+      supabase.from("google_oauth_tokens").select("calendar_id, sheet_id").eq("workspace_id", workspaceId).is("deleted_at", null).maybeSingle(),
+      supabase.from("kb_chunks").select("*", { count: "exact", head: true }).eq("workspace_id", workspaceId).is("deleted_at", null),
       // Optional: Specific Contact Context
       contact_id ? supabase.from("contacts").select("*").eq("id", contact_id).single() : Promise.resolve(null)
     ])

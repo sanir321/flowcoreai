@@ -78,6 +78,14 @@ export async function deleteSource(id: string): Promise<ActionResponse<{ success
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
 
+    // Delete chunks first, then soft-delete the source
+    const { error: chunkError } = await supabase
+      .from("kb_chunks")
+      .delete()
+      .eq("source_id", res.data)
+
+    if (chunkError) throw chunkError
+
     const { error } = await supabase
       .from("kb_sources")
       .update({ deleted_at: new Date().toISOString() } as any)

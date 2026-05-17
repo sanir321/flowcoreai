@@ -274,8 +274,7 @@ Deno.serve(async (req) => {
                 session_id: activeSession.id,
                 customer_jid: normalizedFrom,
                 message: messageText,
-                channel: 'whatsapp',
-                agent_type: "customer_support"
+                channel: 'whatsapp'
             };
             
             // Initialize a dedicated client for the AI call with service role

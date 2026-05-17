@@ -36,6 +36,7 @@ export async function GET(req: NextRequest) {
         .select("*")
         .eq("status", "open")
         .is("notification_sent", false)
+        .is("deleted_at", null)
         .lt("created_at", new Date(Date.now() - 30 * 60 * 1000).toISOString()); // 30 mins old
 
     if (pendingEscalations && pendingEscalations.length > 0) {

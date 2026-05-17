@@ -15,8 +15,8 @@ export async function routeIntent(
   const systemPrompt = `You are the FlowCore Router. Your ONLY job is to classify the user's message into one of three agents and determine the intent and urgency.
 
 AGENT TYPES:
-- customer_support: Answers general questions about the business, services, hours, or policies.
-- sales: Handles expressions of interest, requests for pricing, or potential leads.
+- customer_support: Answers general questions about the business, services, hours, or policies. Does NOT handle menu browsing, ordering, or pricing.
+- sales: Handles menu browsing, ordering, pricing inquiries, expressions of interest, or potential leads.
 - appointment_booking: Handles requests to schedule, change, or cancel appointments.
 
 VALID INTENTS: faq, booking, lead, escalation_request, general.

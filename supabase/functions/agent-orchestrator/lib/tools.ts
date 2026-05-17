@@ -437,8 +437,13 @@ export async function executeTool(input: any): Promise<any> {
       }
 
       case 'search_menu': {
+        const generic = ['menu', 'services', 'list', 'all', 'everything', 'show', 'available', ''];
+        const isGeneric = !args.query || generic.includes(args.query?.toString().toLowerCase().trim());
         let query = supabase.from('menu_items').select('id, name, description, price, category').eq('workspace_id', workspace_id).eq('is_available', true);
-        if (args.query) query = query.or(`name.ilike.%${args.query}%,category.ilike.%${args.query}%,description.ilike.%${args.query}%`);
+
+        if (!isGeneric && args.query) {
+          query = query.or(`name.ilike.%${args.query}%,category.ilike.%${args.query}%,description.ilike.%${args.query}%`);
+        }
         if (args.category) query = query.eq('category', args.category);
         const { data: items } = await query.order('name').limit(20);
         return { success: true, items: items || [] };

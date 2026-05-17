@@ -268,11 +268,11 @@ export const TOOL_DEFINITIONS = [
     type: "function",
     function: {
       name: "search_menu",
-      description: "Search available menu items and services by name or category.",
+      description: "Browse or search available menu items/services. Omit query to see everything, or search by name/category.",
       parameters: {
         type: "object",
         properties: {
-          query: { type: "string", description: "Search term to match item name or category." },
+          query: { type: "string", description: "Optional search term to filter by item name or category. Leave empty to show all items." },
           category: { type: "string", description: "Optional category filter (e.g. Dental, Cosmetic)." }
         }
       }

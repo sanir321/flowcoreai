@@ -26,8 +26,8 @@ export default async function InsightsPage() {
 
   // 3. Fetch Aggregate Metrics & Telemetry
   const [msgCount, contactCount, performanceRes] = await Promise.all([
-    supabase.from("messages").select("*", { count: "exact", head: true }).eq("workspace_id", workspaceId),
-    supabase.from("contacts").select("*", { count: "exact", head: true }).eq("workspace_id", workspaceId),
+    supabase.from("messages").select("*", { count: "exact", head: true }).eq("workspace_id", workspaceId).is("deleted_at", null),
+    supabase.from("contacts").select("*", { count: "exact", head: true }).eq("workspace_id", workspaceId).is("deleted_at", null),
     (supabase.from as any)("ai_performance_report").select("*").eq("workspace_id", workspaceId).maybeSingle()
   ])
 
@@ -50,6 +50,7 @@ export default async function InsightsPage() {
     .from("messages")
     .select("created_at")
     .eq("workspace_id", workspaceId)
+    .is("deleted_at", null)
     .gte("created_at", `${last7Days[0]}T00:00:00Z`)
     .order("created_at", { ascending: true })
 

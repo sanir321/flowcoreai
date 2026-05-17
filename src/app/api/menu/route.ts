@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const category = searchParams.get("category");
 
-    let query = supabase.from("menu_items").select("*").eq("workspace_id", workspaceId);
+    let query = supabase.from("menu_items").select("*").eq("workspace_id", workspaceId).is("deleted_at", null);
     if (category) query = query.eq("category", category);
     query = query.order("category").order("name");
 

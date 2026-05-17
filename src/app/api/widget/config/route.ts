@@ -35,6 +35,7 @@ export async function GET(req: NextRequest) {
       .from("widget_config")
       .select("*")
       .eq("workspace_id", workspaceId)
+      .is("deleted_at", null)
       .single();
 
     // 2. Fetch primary agent for name/avatar
@@ -43,6 +44,7 @@ export async function GET(req: NextRequest) {
       .select("config")
       .eq("workspace_id", workspaceId)
       .eq("agent_type", "customer_support")
+      .is("deleted_at", null)
       .single();
 
     const responseData = {

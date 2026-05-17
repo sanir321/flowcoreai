@@ -12,10 +12,10 @@ export async function POST() {
 
     const [workspaceRes, contactsRes, sessionsRes, messagesRes, agentsRes] = await Promise.all([
       supabase.from("workspaces").select("*").eq("id", workspaceId).single(),
-      supabase.from("contacts").select("*").eq("workspace_id", workspaceId),
-      supabase.from("conversation_sessions").select("*").eq("workspace_id", workspaceId),
-      supabase.from("messages").select("*").eq("workspace_id", workspaceId),
-      supabase.from("workspace_agents").select("*").eq("workspace_id", workspaceId),
+      supabase.from("contacts").select("*").eq("workspace_id", workspaceId).is("deleted_at", null),
+      supabase.from("conversation_sessions").select("*").eq("workspace_id", workspaceId).is("deleted_at", null),
+      supabase.from("messages").select("*").eq("workspace_id", workspaceId).is("deleted_at", null),
+      supabase.from("workspace_agents").select("*").eq("workspace_id", workspaceId).is("deleted_at", null),
     ])
 
     const exportData = {

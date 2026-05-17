@@ -14,6 +14,7 @@ export async function GET() {
         .from("google_oauth_tokens") as any)
         .select("*")
         .eq("workspace_id", workspaceId)
+        .is("deleted_at", null)
         .maybeSingle()
     
     if (error) throw error

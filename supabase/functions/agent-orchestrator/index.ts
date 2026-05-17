@@ -16,7 +16,7 @@ const corsHeaders = {
 const TOOL_PERMISSIONS: Record<string, string[]> = {
   customer_support: ["match_kb_chunks", "get_contact_history", "update_contact", "request_handoff", "escalation_request"],
   appointment_booking: ["check_availability", "create_appointment", "update_appointment", "cancel_appointment", "get_contact_history", "request_handoff", "escalation_request"],
-  sales: ["capture_lead", "match_kb_chunks", "get_contact_history", "update_contact", "update_lead_stage", "get_pipeline", "schedule_follow_up", "generate_quote", "search_menu", "create_order", "confirm_payment", "get_order_status", "request_handoff", "escalation_request"],
+  sales: ["capture_lead", "get_contact_history", "update_contact", "update_lead_stage", "get_pipeline", "schedule_follow_up", "generate_quote", "search_menu", "create_order", "confirm_payment", "get_order_status", "request_handoff", "escalation_request"],
 }
 
 function getAgentTools(agentType: string, allAgents: any[]): string[] {
@@ -77,6 +77,10 @@ function buildTeamPrompt(agents: any[], workspace_name: string, currentAgentType
   const mustHandoffBooking = (hasBookingAgent && currentAgentType === 'customer_support')
     ? `\n\nIMPORTANT: You CANNOT book or check appointment availability. Only the Appointment Booker teammate can do that. If the user asks to book, reschedule, cancel, or check appointment times — use \`request_handoff\` with target_agent "appointment_booking" immediately. Do NOT try to handle it yourself.`
     : ''
+  
+  const mustHandoffMenu = (currentAgentType === 'customer_support')
+    ? `\n\nIMPORTANT: You CANNOT browse, show, or provide pricing for the menu/services. Only the Sales teammate can do that. If the user asks about menu, services, pricing, ordering, or what's available — use \`request_handoff\` with target_agent "sales" immediately. Do NOT try to handle it yourself.`
+    : ''
 
   const bookingRules = (hasBookingAgent && currentAgentType === 'appointment_booking')
     ? `\n\nBOOKING RULES:
@@ -103,7 +107,7 @@ FORMATTING: When presenting menu items or order summaries, you MAY use short lin
   
 YOUR ROLE: ${AGENT_DESCRIPTIONS[currentAgentType]?.description || 'General support.'}
 YOUR SKILLS: ${AGENT_DESCRIPTIONS[currentAgentType]?.skills || 'General assistance, escalation'}
-${teamIntro}${noTeamNotice}${noBookingNotice}${mustHandoffBooking}${bookingRules}${salesRules}
+${teamIntro}${noTeamNotice}${noBookingNotice}${mustHandoffBooking}${mustHandoffMenu}${bookingRules}${salesRules}
 
 IDENTITY RULES:
 1. NEVER reveal you are an AI.
@@ -233,7 +237,8 @@ Deno.serve(async (req) => {
     const { data: allAgents } = await supabase.from('workspace_agents')
         .select('*')
         .eq('workspace_id', workspace_id)
-        .eq('status', 'active');
+        .eq('status', 'active')
+        .is('deleted_at', null);
 
     if (!allAgents || allAgents.length === 0) {
       return new Response(JSON.stringify({ 
@@ -347,9 +352,34 @@ Deno.serve(async (req) => {
       const allowedTools = getAgentTools(currentAgentType, allAgents);
       const agentTools = TOOL_DEFINITIONS.filter(t => allowedTools.includes(t.function.name));
 
+      const menuKeywords = /\b(menu|services?|price|pricing|cost|rate|available|items?|list|show|what.*(?:offer|have|got|all))\b/i;
+      const isMenuQuery = currentAgentType === 'sales' && menuKeywords.test(sanitizedMessage);
+      let shortCircuited = false;
+
+      // Short-circuit: direct menu response for menu queries (bypasses LLM loop entirely)
+      if (isMenuQuery) {
+        const { data: menuItems, error: menuError } = await supabase.from('menu_items')
+          .select('name, description, price, category')
+          .eq('workspace_id', workspace_id)
+          .eq('is_available', true)
+          .order('name')
+          .limit(20);
+        console.log(`[ORCHESTRATOR] Menu query: found ${menuItems?.length || 0} items, error: ${menuError?.message || 'none'}`);
+        if (menuItems && menuItems.length > 0) {
+          const lines = menuItems.map(i => `${i.name} — ₹${i.price}${i.description ? ' (' + i.description + ')' : ''} [${i.category}]`);
+          finalResponse = `Here's what we have available:\n\n${lines.join('\n')}\n\nLet me know what you'd like to order!`;
+          kbToolUsed = true;
+          shortCircuited = true;
+        } else {
+          finalResponse = "Let me check our menu for you... It looks like I can't find any available items right now. A team member will get back to you shortly.";
+          shortCircuited = true;
+        }
+      }
+
+      if (shortCircuited) { /* skip LLM loop */ } else
       while (loopCount < 3) {
         await updateSessionState(supabase, session.id, { typing_status: 'thinking' });
-        
+
         const llmResponse = await callAgentModel({
           messages,
           tools: agentTools,
@@ -455,7 +485,7 @@ Deno.serve(async (req) => {
         }
       }
 
-      if (!handoffRequested) {
+      if (!handoffRequested && !shortCircuited) {
         finalResponse = toolLoopResponse || guardrailConfig.fallback_message;
       }
 

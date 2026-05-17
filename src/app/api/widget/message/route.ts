@@ -52,6 +52,7 @@ export async function POST(req: NextRequest) {
       .eq("customer_jid", session_token)
       .eq("channel", "widget")
       .eq("status", "active")
+      .is("deleted_at", null)
       .maybeSingle();
 
     if (!session) {

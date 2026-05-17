@@ -14,6 +14,7 @@ export default async function OrdersPage() {
     .from("orders")
     .select("*")
     .eq("workspace_id", workspaceId)
+    .is("deleted_at", null)
     .order("created_at", { ascending: false })
 
   return (

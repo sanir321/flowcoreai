@@ -16,6 +16,7 @@ export async function GET() {
         .select("id")
         .eq("owner_id", user.id)
         .eq("status", "active")
+        .is("deleted_at", null)
         .maybeSingle()
 
     if (!workspace) return new NextResponse("No workspace found for user", { status: 404 })
@@ -26,6 +27,7 @@ export async function GET() {
         .from("gowa_sessions")
         .select("status, phone_jid, display_name, error_message, gowa_session_id")
         .eq("workspace_id", workspaceId)
+        .is("deleted_at", null)
         .maybeSingle() as any)
 
     // Check GoWA devices — match by device name or stored session ID only

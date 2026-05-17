@@ -51,6 +51,7 @@ export default function BillingPage() {
           .from("workspaces")
           .select("*")
           .eq("id", workspaceId!)
+          .is("deleted_at", null)
           .single()
         
         if (fetchError) throw fetchError

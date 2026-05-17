@@ -56,6 +56,7 @@ export function KnowledgeClient({ initialSources, workspaceId }: { initialSource
         .from("kb_sources")
         .select("*")
         .eq("workspace_id", workspaceId)
+        .is("deleted_at", null)
         .order("created_at", { ascending: false })
       
       if (error) throw error

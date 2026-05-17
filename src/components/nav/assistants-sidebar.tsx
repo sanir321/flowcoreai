@@ -32,6 +32,7 @@ export function AssistantsSidebar({ onAddAssistant }: AssistantsSidebarProps) {
       .from("workspace_agents")
       .select("id, agent_type")
       .eq("workspace_id", workspaceId)
+      .is("deleted_at", null)
     
     setAgents((data as Agent[]) || [])
   }, [supabase])

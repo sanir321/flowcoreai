@@ -28,6 +28,7 @@ export default async function KnowledgePage() {
     .from("kb_sources")
     .select("*")
     .eq("workspace_id", workspaceId)
+    .is("deleted_at", null)
     .order("created_at", { ascending: false })
 
   return <KnowledgeClient initialSources={(sources || []) as any} workspaceId={workspaceId} />

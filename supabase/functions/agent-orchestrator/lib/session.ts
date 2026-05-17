@@ -24,6 +24,7 @@ export async function getOrCreateSession(supabase: any, {
     .eq('workspace_id', workspace_id)
     .eq('customer_jid', customer_jid)
     .eq('status', 'active')
+    .is("deleted_at", null)
     .maybeSingle();
 
   if (!session) {
@@ -33,6 +34,7 @@ export async function getOrCreateSession(supabase: any, {
       .select('id')
       .eq('workspace_id', workspace_id)
       .eq(channel === 'whatsapp' ? 'whatsapp_jid' : 'session_token', customer_jid)
+      .is("deleted_at", null)
       .maybeSingle();
 
     let contact_id = contact?.id;

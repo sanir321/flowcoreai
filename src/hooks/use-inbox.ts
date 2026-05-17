@@ -22,6 +22,7 @@ export function useInbox(workspaceId?: string) {
           contacts (*)
         `)
         .eq("workspace_id", workspaceId)
+        .is("deleted_at", null)
         .order("last_message_at", { ascending: false })
 
       if (error) {
