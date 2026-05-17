@@ -172,46 +172,28 @@ export type Database = {
       billing_transactions: {
         Row: {
           amount_credits: number
-          amount_paid: number | null
           created_at: string
-          currency: string
           deleted_at: string | null
           description: string | null
           id: string
-          payment_status: string
-          razorpay_order_id: string | null
-          razorpay_payment_id: string | null
-          razorpay_signature: string | null
           transaction_type: string
           workspace_id: string
         }
         Insert: {
           amount_credits: number
-          amount_paid?: number | null
           created_at?: string
-          currency?: string
           deleted_at?: string | null
           description?: string | null
           id?: string
-          payment_status?: string
-          razorpay_order_id?: string | null
-          razorpay_payment_id?: string | null
-          razorpay_signature?: string | null
           transaction_type: string
           workspace_id: string
         }
         Update: {
           amount_credits?: number
-          amount_paid?: number | null
           created_at?: string
-          currency?: string
           deleted_at?: string | null
           description?: string | null
           id?: string
-          payment_status?: string
-          razorpay_order_id?: string | null
-          razorpay_payment_id?: string | null
-          razorpay_signature?: string | null
           transaction_type?: string
           workspace_id?: string
         }
@@ -235,10 +217,14 @@ export type Database = {
           first_contact: string
           id: string
           last_active: string | null
+          last_followed_up_at: string | null
+          lead_score: number | null
+          lead_source: string | null
           merged_into: string | null
           name: string | null
           notes: string | null
           phone: string | null
+          pipeline_stage: string | null
           session_token: string | null
           tags: string[]
           updated_at: string
@@ -254,10 +240,14 @@ export type Database = {
           first_contact?: string
           id?: string
           last_active?: string | null
+          last_followed_up_at?: string | null
+          lead_score?: number | null
+          lead_source?: string | null
           merged_into?: string | null
           name?: string | null
           notes?: string | null
           phone?: string | null
+          pipeline_stage?: string | null
           session_token?: string | null
           tags?: string[]
           updated_at?: string
@@ -273,10 +263,14 @@ export type Database = {
           first_contact?: string
           id?: string
           last_active?: string | null
+          last_followed_up_at?: string | null
+          lead_score?: number | null
+          lead_source?: string | null
           merged_into?: string | null
           name?: string | null
           notes?: string | null
           phone?: string | null
+          pipeline_stage?: string | null
           session_token?: string | null
           tags?: string[]
           updated_at?: string
@@ -515,6 +509,73 @@ export type Database = {
           },
           {
             foreignKeyName: "failed_messages_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      follow_ups: {
+        Row: {
+          contact_id: string | null
+          created_at: string | null
+          deleted_at: string | null
+          failure_reason: string | null
+          id: string
+          message_template: string
+          scheduled_at: string
+          sent_at: string | null
+          session_id: string | null
+          status: string | null
+          updated_at: string | null
+          workspace_id: string
+        }
+        Insert: {
+          contact_id?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          failure_reason?: string | null
+          id?: string
+          message_template: string
+          scheduled_at: string
+          sent_at?: string | null
+          session_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          workspace_id: string
+        }
+        Update: {
+          contact_id?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          failure_reason?: string | null
+          id?: string
+          message_template?: string
+          scheduled_at?: string
+          sent_at?: string | null
+          session_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "follow_ups_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "follow_ups_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "conversation_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "follow_ups_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
@@ -849,6 +910,56 @@ export type Database = {
           },
         ]
       }
+      menu_items: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          deleted_at: string | null
+          description: string | null
+          id: string
+          image_url: string | null
+          is_available: boolean | null
+          name: string
+          price: number
+          updated_at: string | null
+          workspace_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_available?: boolean | null
+          name: string
+          price: number
+          updated_at?: string | null
+          workspace_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_available?: boolean | null
+          name?: string
+          price?: number
+          updated_at?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_items_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           agent_type: string | null
@@ -902,6 +1013,163 @@ export type Database = {
           },
           {
             foreignKeyName: "messages_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          contact_id: string | null
+          created_at: string | null
+          currency: string | null
+          deleted_at: string | null
+          id: string
+          items: Json | null
+          notes: string | null
+          order_number: string | null
+          payment_method: string | null
+          payment_ref: string | null
+          session_id: string | null
+          status: string | null
+          subtotal: number | null
+          tax: number | null
+          total: number | null
+          updated_at: string | null
+          upi_link: string | null
+          workspace_id: string
+        }
+        Insert: {
+          contact_id?: string | null
+          created_at?: string | null
+          currency?: string | null
+          deleted_at?: string | null
+          id?: string
+          items?: Json | null
+          notes?: string | null
+          order_number?: string | null
+          payment_method?: string | null
+          payment_ref?: string | null
+          session_id?: string | null
+          status?: string | null
+          subtotal?: number | null
+          tax?: number | null
+          total?: number | null
+          updated_at?: string | null
+          upi_link?: string | null
+          workspace_id: string
+        }
+        Update: {
+          contact_id?: string | null
+          created_at?: string | null
+          currency?: string | null
+          deleted_at?: string | null
+          id?: string
+          items?: Json | null
+          notes?: string | null
+          order_number?: string | null
+          payment_method?: string | null
+          payment_ref?: string | null
+          session_id?: string | null
+          status?: string | null
+          subtotal?: number | null
+          tax?: number | null
+          total?: number | null
+          updated_at?: string | null
+          upi_link?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "conversation_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotes: {
+        Row: {
+          contact_id: string | null
+          created_at: string | null
+          currency: string | null
+          deleted_at: string | null
+          id: string
+          items: Json | null
+          notes: string | null
+          quote_number: string | null
+          sent_at: string | null
+          status: string | null
+          subtotal: number | null
+          tax: number | null
+          total: number | null
+          updated_at: string | null
+          valid_until: string | null
+          workspace_id: string
+        }
+        Insert: {
+          contact_id?: string | null
+          created_at?: string | null
+          currency?: string | null
+          deleted_at?: string | null
+          id?: string
+          items?: Json | null
+          notes?: string | null
+          quote_number?: string | null
+          sent_at?: string | null
+          status?: string | null
+          subtotal?: number | null
+          tax?: number | null
+          total?: number | null
+          updated_at?: string | null
+          valid_until?: string | null
+          workspace_id: string
+        }
+        Update: {
+          contact_id?: string | null
+          created_at?: string | null
+          currency?: string | null
+          deleted_at?: string | null
+          id?: string
+          items?: Json | null
+          notes?: string | null
+          quote_number?: string | null
+          sent_at?: string | null
+          status?: string | null
+          subtotal?: number | null
+          tax?: number | null
+          total?: number | null
+          updated_at?: string | null
+          valid_until?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotes_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
@@ -1081,6 +1349,7 @@ export type Database = {
           status: string
           timezone: string
           updated_at: string
+          upi_id: string | null
           website_url: string | null
           welcome_template: string | null
         }
@@ -1103,6 +1372,7 @@ export type Database = {
           status?: string
           timezone?: string
           updated_at?: string
+          upi_id?: string | null
           website_url?: string | null
           welcome_template?: string | null
         }
@@ -1125,6 +1395,7 @@ export type Database = {
           status?: string
           timezone?: string
           updated_at?: string
+          upi_id?: string | null
           website_url?: string | null
           welcome_template?: string | null
         }
@@ -1162,10 +1433,6 @@ export type Database = {
           fallback_rate: number
           total_traces: number
         }[]
-      }
-      increment_credits: {
-        Args: { p_credits: number; p_workspace_id: string }
-        Returns: undefined
       }
       match_kb_chunks: {
         Args: {
