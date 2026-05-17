@@ -63,6 +63,7 @@ interface Message {
   content: string
   created_at: string
   direction?: 'inbound' | 'outbound'
+  agent_type?: string
 }
 
 interface InboxClientProps {
