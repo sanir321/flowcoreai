@@ -11,6 +11,7 @@ export async function getValidAccessToken(workspace_id: string): Promise<string>
     .from("google_oauth_tokens")
     .select("*")
     .eq("workspace_id", workspace_id)
+    .is("deleted_at", null)
     .single();
 
   if (error || !tokens) throw new Error("Google integration not found");

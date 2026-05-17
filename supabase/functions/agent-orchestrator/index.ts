@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7"
-import { executeTool } from "./lib/tools.ts"
+import { executeTool, formatIST } from "./lib/tools.ts"
 import { getOrCreateSession, updateSessionState } from "./lib/session.ts"
 import { callAgentModel, STATIC_FALLBACK_MESSAGE } from "./lib/llm.ts"
 import { checkWhatsAppWindow, calculateTypingDelay, logWindowExpired } from "./lib/compliance.ts"
@@ -84,10 +84,15 @@ function buildTeamPrompt(agents: any[], workspace_name: string, currentAgentType
 
   const bookingRules = (hasBookingAgent && currentAgentType === 'appointment_booking')
     ? `\n\nBOOKING RULES:
-1. Collect name, phone, email, service, date, and time from the customer.
-2. Before booking, ALWAYS summarize the details and ask the customer to confirm.
-3. Only call \`create_appointment\` AFTER the customer explicitly confirms.
-4. Once confirmed, the system will automatically send a WhatsApp message and email with the meeting link — tell the customer to check their messages.`
+1. Collect EACH detail one at a time: service → date → time → name → email. Ask ONE question per message.
+2. If the customer already provided some details (e.g. from conversation history), do NOT ask again.
+3. ${channel === 'whatsapp' ? "The customer's phone is already available from WhatsApp — do NOT ask for it." : "phone is MANDATORY — keep asking if not provided."}
+4. Before booking, ALWAYS summarize ALL collected details and ask the customer to confirm.
+5. Only call \`create_appointment\` AFTER the customer explicitly confirms.
+6. After successful booking, tell the customer: "Your appointment is confirmed! You'll receive a WhatsApp message and email with the meeting link shortly."
+7. Include the booking summary (service, date, time, name) in your confirmation message.
+8. CRITICAL: NEVER claim an appointment is booked, confirmed, or scheduled unless you have actually called the \`create_appointment\` tool and it succeeded.
+9. When a customer gives you a date and time, ALWAYS call \`check_availability\` immediately — do NOT just say "let me check" without actually calling the tool. If available, tell the customer the slot is free. If not, suggest alternatives.`
     : ''
 
   const salesRules = (currentAgentType === 'sales')
@@ -383,7 +388,7 @@ Deno.serve(async (req) => {
         const llmResponse = await callAgentModel({
           messages,
           tools: agentTools,
-          tool_choice: loopCount === 0 ? "required" : "auto"
+          tool_choice: "auto"
         });
 
         const choice = llmResponse.choices[0].message;
@@ -594,7 +599,6 @@ Deno.serve(async (req) => {
           if (jsonMatch) {
             const bookingDetails = JSON.parse(jsonMatch[0]);
             if (!bookingDetails.service) bookingDetails.service = 'General';
-            if (!bookingDetails.date && !bookingDetails.time) bookingDetails.date = 'tomorrow';
 
             const apptResult = await executeTool({
               tool_name: 'create_appointment',
@@ -605,7 +609,7 @@ Deno.serve(async (req) => {
             });
 
             if (apptResult && !apptResult.error) {
-              const dateStr = apptResult.start_at ? new Date(apptResult.start_at).toLocaleString() : '';
+              const dateStr = apptResult.start_at ? formatIST(apptResult.start_at) : '';
               finalResponse = `Your appointment has been confirmed for ${dateStr}.`;
               if (apptResult.meeting_link) finalResponse += ` You'll receive a Google Meet link shortly.`;
               bookingToolCalled = true;
@@ -680,6 +684,8 @@ Deno.serve(async (req) => {
         metadata: { trace_id: traceId, handoff_count: handoffCount }
     });
 
+    let messageId: string | undefined;
+
     // 7. GoWA Dispatch with retry + failed queue
     const { data: gowaSession } = await supabase.from('gowa_sessions').select('gowa_session_id').eq('workspace_id', workspace_id).maybeSingle();
     const deviceId = gowaSession?.gowa_session_id;
@@ -689,7 +695,6 @@ Deno.serve(async (req) => {
     const phone = customer_jid?.split('@')[0];
 
     if (channel === 'whatsapp' && deviceId && phone && !is_test) {
-        // Send composing presence indicator
         try {
             await fetch(`${gowaBase}/send/presence`, {
                 method: 'POST',
@@ -701,7 +706,6 @@ Deno.serve(async (req) => {
         const delayMs = calculateTypingDelay(finalResponse);
         await new Promise(resolve => setTimeout(resolve, delayMs));
 
-        // Stop composing indicator
         try {
             await fetch(`${gowaBase}/send/presence`, {
                 method: 'POST',
@@ -725,6 +729,7 @@ Deno.serve(async (req) => {
 
         let lastError = "";
         let dispatched = false;
+        let gowaMessageIds: string[] = [];
         for (const part of parts) {
             for (let attempt = 0; attempt < 3; attempt++) {
                 if (attempt > 0) {
@@ -737,7 +742,13 @@ Deno.serve(async (req) => {
                         headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/json', 'X-Device-Id': deviceId },
                         body: JSON.stringify({ phone, message: part })
                     });
-                    if (resp.ok) { dispatched = true; break; }
+                    if (resp.ok) {
+                        const body = await resp.json();
+                        const msgId = body?.results?.message_id || body?.message_id || '';
+                        if (msgId) gowaMessageIds.push(msgId);
+                        dispatched = true;
+                        break;
+                    }
                     lastError = `HTTP ${resp.status}: ${await resp.text().catch(() => '')}`;
                 } catch (err: any) {
                     lastError = err.message;
@@ -746,7 +757,16 @@ Deno.serve(async (req) => {
             }
         }
 
-        if (!dispatched) {
+        if (dispatched) {
+            try {
+                const { data: msgs } = await supabase.from('messages').select('id').eq('session_id', session.id).eq('direction', 'outbound').order('created_at', { ascending: false }).limit(1);
+                messageId = msgs?.[0]?.id;
+            } catch (_) {}
+            console.log(`[ORCHESTRATOR] GoWA dispatch success for message ${messageId}: gowa_message_ids=${gowaMessageIds.join(',')}`);
+            if (messageId && gowaMessageIds.length > 0) {
+                try { await supabase.from('messages').update({ gowa_message_id: gowaMessageIds[0] }).eq('id', messageId); } catch (_) {}
+            }
+        } else {
             try { await supabase.from('failed_messages').insert({
                 workspace_id,
                 session_id: session.id,
@@ -769,6 +789,42 @@ Deno.serve(async (req) => {
 
   } catch (error: any) {
     console.error(`[ORCHESTRATOR] Global Error: ${error.message}`);
-    return new Response(JSON.stringify({ response_parts: [STATIC_FALLBACK_MESSAGE] }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+
+    // Persist fallback message + reset session state even on error
+    if (session && workspace_id) {
+      try {
+        await supabase.from('messages').insert({
+          workspace_id,
+          session_id: session.id,
+          content: STATIC_FALLBACK_MESSAGE,
+          direction: 'outbound',
+          role: 'agent',
+          metadata: { trace_id: traceId, error: error.message }
+        });
+      } catch (_) {}
+
+      try { await updateSessionState(supabase, session.id, { typing_status: 'idle' }); } catch (_) {}
+
+      // Attempt GoWA dispatch for the fallback message
+      if (channel === 'whatsapp' && !is_test && customer_jid) {
+        try {
+          const { data: gs } = await supabase.from('gowa_sessions').select('gowa_session_id').eq('workspace_id', workspace_id).maybeSingle();
+          const deviceId = gs?.gowa_session_id;
+          if (deviceId) {
+            const gowaBase = Deno.env.get('GOWA_BASE_URL')?.replace(/\/$/, "");
+            const gowaKey = Deno.env.get('GOWA_API_KEY');
+            const auth = btoa(gowaKey || '');
+            const phone = customer_jid.split('@')[0];
+            await fetch(`${gowaBase}/send/message`, {
+              method: 'POST',
+              headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/json', 'X-Device-Id': deviceId },
+              body: JSON.stringify({ phone, message: STATIC_FALLBACK_MESSAGE })
+            });
+          }
+        } catch (_) {}
+      }
+    }
+
+    return new Response(JSON.stringify({ response_parts: [STATIC_FALLBACK_MESSAGE], metadata: { error: error.message, trace_id: traceId } }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 });

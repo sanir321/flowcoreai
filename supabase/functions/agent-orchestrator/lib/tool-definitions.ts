@@ -24,7 +24,7 @@ export const TOOL_DEFINITIONS = [
     type: "function",
     function: {
       name: "check_availability",
-      description: "Check the business calendar for free slots on a specific date or time range.",
+      description: "REQUIRED: When a customer gives you a date and time, you MUST call this immediately to verify the slot. Checks the Google Calendar for free/busy on a specific date or time range.",
       parameters: {
         type: "object",
         properties: {
@@ -45,18 +45,18 @@ export const TOOL_DEFINITIONS = [
     type: "function",
     function: {
       name: "create_appointment",
-      description: "Book a new appointment for a customer.",
+      description: "Book a new appointment for a customer. Only call AFTER collecting ALL required details (name + email + service + date + time) and getting explicit confirmation.",
       parameters: {
         type: "object",
         properties: {
           name: { type: "string", description: "Customer's full name." },
-          phone: { type: "string", description: "Customer's phone number." },
-          email: { type: "string", description: "Customer's email address for sending appointment confirmation." },
+          phone: { type: "string", description: "Customer's phone number (optional — already known on WhatsApp). Pass null if unknown." },
+          email: { type: "string", description: "Customer's email address for sending appointment confirmation. Pass null if unknown. NEVER make up placeholder values." },
           service: { type: "string", description: "The service being booked." },
-          date: { type: "string", description: "Date of appointment." },
-          time: { type: "string", description: "Time of appointment." }
+          date: { type: "string", description: "Date of appointment (e.g. '2026-05-20' or 'tomorrow')." },
+          time: { type: "string", description: "Time of appointment (e.g. '10am' or '14:00')." }
         },
-        required: ["name", "service", "date", "time"]
+        required: ["name", "email", "service", "date", "time"]
       }
     }
   },

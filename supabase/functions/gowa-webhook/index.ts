@@ -216,6 +216,30 @@ Deno.serve(async (req) => {
       .maybeSingle()
 
     if (!activeSession) {
+      // Check for existing escalated session and re-activate it
+      const { data: escalatedSession } = await supabase
+        .from('conversation_sessions')
+        .select('*')
+        .eq('workspace_id', workspaceId)
+        .eq('customer_jid', normalizedFrom)
+        .eq('status', 'escalated')
+        .maybeSingle()
+
+      if (escalatedSession) {
+        const { data: reactivated, error: reactErr } = await supabase
+          .from('conversation_sessions')
+          .update({ status: 'active', updated_at: new Date().toISOString() })
+          .eq('id', escalatedSession.id)
+          .select()
+          .single()
+
+        if (!reactErr && reactivated) {
+          activeSession = reactivated
+        }
+      }
+    }
+
+    if (!activeSession) {
       const { data: newSession, error: createError } = await supabase
         .from('conversation_sessions')
         .insert({

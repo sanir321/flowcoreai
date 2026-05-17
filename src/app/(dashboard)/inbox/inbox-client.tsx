@@ -502,9 +502,12 @@ export function InboxClient({
                              {m.content}
                           </div>
                           
-                          <div className="flex items-center gap-3 px-1 text-gray-500 font-semibold">
-                             <span className="text-[9px]">{m.role === 'customer' ? 'Customer' : 'Assistant'}</span>
-                          </div>
+                           <div className="flex items-center gap-3 px-1 text-gray-500 font-semibold">
+                              <span className="text-[9px]">{m.role === 'customer' ? 'Customer' : 'Assistant'}</span>
+                              {m.role !== 'customer' && m.agent_type && m.agent_type !== 'customer_support' && (
+                                <span className="text-[8px] uppercase tracking-wider text-[#c65f39] font-bold">{formatAgentType(m.agent_type)}</span>
+                              )}
+                           </div>
                        </div>
                      ))}
 

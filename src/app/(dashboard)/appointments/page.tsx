@@ -3,19 +3,13 @@ import { redirect } from "next/navigation"
 import { AppointmentsClient } from "@/components/appointments/appointments-client"
 import { AppointmentsSidebar } from "@/components/appointments/appointments-sidebar"
 
-export default async function AppointmentsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ view?: string }>
-}) {
+export default async function AppointmentsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
   const workspaceId = user.app_metadata?.workspace_id
   if (!workspaceId) redirect("/onboarding")
-
-  const view = (await searchParams).view === 'list' ? 'list' : 'calendar'
 
   // Fetch initial appointments
   const { data: appointments } = await supabase
@@ -37,13 +31,12 @@ export default async function AppointmentsPage({
 
   return (
     <div className="flex h-full bg-white font-sans overflow-hidden">
-      <AppointmentsSidebar currentView={view} />
+      <AppointmentsSidebar />
       
       <div className="flex-1 flex flex-col h-full overflow-hidden border-l border-gray-50">
         <AppointmentsClient 
           initialAppointments={appointments || []} 
           workspaceId={workspaceId} 
-          view={view}
           isModuleActive={isModuleActive}
         />
       </div>

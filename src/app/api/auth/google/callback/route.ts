@@ -57,6 +57,7 @@ export async function GET(req: NextRequest) {
         token_expiry: expiry,
         scopes: data.scope.split(" "),
         google_email: googleEmail,
+        deleted_at: null,
         updated_at: new Date().toISOString(),
       });
 

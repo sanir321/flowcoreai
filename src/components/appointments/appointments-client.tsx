@@ -1,33 +1,27 @@
 "use client"
 
-import { useState, useMemo, useRef, useEffect } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { 
-  ChevronRight, 
   ChevronLeft,
+  ChevronRight,
   Calendar as CalendarIcon, 
   Clock, 
-  User, 
   MoreHorizontal,
   Plus,
   RefreshCw,
   Phone,
-  LayoutGrid,
   Loader2,
   ChevronDown,
   Copy,
   Check,
-  Search,
-  X,
-  ShieldCheck,
   Circle,
   Mail,
   Building2,
   CheckCircle2,
   XCircle,
-  AlertCircle
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { format, startOfWeek, addDays, addHours, startOfDay, isSameDay, subDays, startOfMonth, subMonths, endOfMonth, endOfWeek, endOfDay, eachDayOfInterval, isWithinInterval, addMonths } from "date-fns"
+import { format, startOfWeek, addHours, startOfDay, isSameDay, subDays, startOfMonth, subMonths, endOfMonth, endOfWeek, endOfDay, eachDayOfInterval, isWithinInterval, addMonths } from "date-fns"
 import { 
   Sheet, 
   SheetContent, 
@@ -61,7 +55,6 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   Table,
   TableBody,
@@ -72,17 +65,14 @@ import {
 } from "@/components/ui/table"
 import { cancelAppointment, createAppointment, rescheduleAppointment } from "@/app/actions/appointments"
 import { toast } from "sonner"
-import { motion, AnimatePresence } from "framer-motion"
+
 import { createClient } from "@/lib/supabase/client"
 
 interface AppointmentsClientProps {
   initialAppointments: any[]
   workspaceId: string
-  view: 'list' | 'calendar'
   isModuleActive: boolean
 }
-
-const HOURS = Array.from({ length: 24 }, (_, i) => i)
 
 const STATUS_OPTIONS = [
   { id: 'awaiting_response', label: 'Awaiting Response', icon: Circle, bg: 'bg-gray-100/50', text: 'text-gray-500' },
@@ -94,9 +84,8 @@ const STATUS_OPTIONS = [
   { id: 'rescheduled', label: 'Rescheduled', icon: RefreshCw, bg: 'bg-purple-50', text: 'text-purple-500' },
 ]
 
-export function AppointmentsClient({ initialAppointments, workspaceId, view, isModuleActive }: AppointmentsClientProps) {
+export function AppointmentsClient({ initialAppointments, workspaceId, isModuleActive }: AppointmentsClientProps) {
   const [appointments, setAppointments] = useState(initialAppointments)
-  const [currentDate, setCurrentDate] = useState(new Date())
 
   // Handle real-time updates
   useEffect(() => {
@@ -155,23 +144,6 @@ export function AppointmentsClient({ initialAppointments, workspaceId, view, isM
   })
   const [pickerMonth, setPickerMonth] = useState(new Date())
 
-  // Sync currentDate when dateRange changes (for calendar view)
-  useEffect(() => {
-    if (view === 'list') {
-      setCurrentDate(dateRange.start)
-    }
-  }, [dateRange.start, view])
-
-  // Sync dateRange when currentDate changes (for list view)
-  useEffect(() => {
-    if (view === 'calendar') {
-      setDateRange({
-        start: startOfWeek(currentDate, { weekStartsOn: 1 }),
-        end: endOfWeek(currentDate, { weekStartsOn: 1 })
-      })
-    }
-  }, [currentDate, view])
-
   const filteredAppointments = useMemo(() => {
     return appointments.filter(appt => {
       // Status filter
@@ -186,17 +158,6 @@ export function AppointmentsClient({ initialAppointments, workspaceId, view, isM
       return true;
     });
   }, [appointments, statusFilter, dateRange])
-
-  const weekDays = useMemo(() => {
-    const start = startOfWeek(currentDate, { weekStartsOn: 0 })
-    return Array.from({ length: 7 }, (_, i) => addDays(start, i))
-  }, [currentDate])
-
-  const navigateWeek = (direction: 'prev' | 'next') => {
-    setCurrentDate(prev => addDays(prev, direction === 'next' ? 7 : -7))
-  }
-
-  const isToday = (date: Date) => isSameDay(date, new Date())
 
   const handleCreateAppointment = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -326,71 +287,26 @@ export function AppointmentsClient({ initialAppointments, workspaceId, view, isM
 
   return (
     <div className="h-full flex flex-col font-sans bg-white overflow-hidden relative text-gray-900">
-      {/* Header Actions - Conditional based on view */}
+          {/* Header Actions */}
           <div className="h-20 px-4 md:px-6 lg:px-10 border-b border-gray-100 flex items-center justify-between shrink-0 bg-white z-30">
-          <h1 className="text-xl font-bold tracking-tight capitalize">{view === 'calendar' ? 'Calendar' : 'Appointments'}</h1>
+          <h1 className="text-xl font-bold tracking-tight">Appointments</h1>
           
           <div className="flex items-center gap-4">
-             {view === 'calendar' ? (
-                <>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                       <button className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-gray-600 bg-gray-50 border border-gray-100 rounded-xl hover:bg-gray-100 transition-all shadow-sm">
-                         Active appointments <ChevronDown size={14} className="opacity-40" />
-                       </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2 border-gray-100 shadow-2xl">
-                       <DropdownMenuItem className="rounded-xl flex justify-between py-2.5">
-                          <span className="text-xs font-semibold">Active appointments</span>
-                          <Check size={14} className="text-[#c65f39]" />
-                       </DropdownMenuItem>
-                       <DropdownMenuItem className="rounded-xl py-2.5">
-                          <span className="text-xs font-semibold text-gray-500">All appointments</span>
-                       </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                       <button className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-gray-600 bg-gray-50 border border-gray-100 rounded-xl hover:bg-gray-100 transition-all shadow-sm">
-                         Week <ChevronDown size={14} className="opacity-40" />
-                       </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-32 rounded-2xl p-2 border-gray-100 shadow-2xl">
-                       <DropdownMenuItem className="rounded-xl font-semibold text-xs">Week</DropdownMenuItem>
-                       <DropdownMenuItem className="rounded-xl font-semibold text-xs text-gray-500">Day</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                  
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setCurrentDate(new Date())}
-                    className="h-10 px-6 rounded-xl text-xs font-bold border-gray-200 text-gray-900 hover:bg-gray-50 shadow-sm"
-                  >
-                    Today
-                  </Button>
-                </>
-             ) : (
-                <>
-                  <Button variant="outline" className="h-10 px-6 rounded-xl text-xs font-bold border-gray-200 text-gray-600 hover:bg-gray-50 shadow-sm flex items-center gap-2">
-                    <Copy size={14} /> Copy link
-                  </Button>
-                  <Button 
-                    onClick={() => setIsCreateModalOpen(true)}
-                    className="h-10 px-6 rounded-xl bg-black text-white hover:bg-gray-800 text-xs font-bold shadow-sm flex items-center gap-2 active:scale-95 transition-all"
-                  >
-                    <Plus size={14} /> Add
-                  </Button>
-                </>
-             )}
+              <Button variant="outline" className="h-10 px-6 rounded-xl text-xs font-bold border-gray-200 text-gray-600 hover:bg-gray-50 shadow-sm flex items-center gap-2">
+                <Copy size={14} /> Copy link
+              </Button>
+              <Button 
+                onClick={() => setIsCreateModalOpen(true)}
+                className="h-10 px-6 rounded-xl bg-black text-white hover:bg-gray-800 text-xs font-bold shadow-sm flex items-center gap-2 active:scale-95 transition-all"
+              >
+                <Plus size={14} /> Add
+              </Button>
           </div>
       </div>
 
       {/* View Content */}
       <div className="flex-1 flex flex-col overflow-hidden relative">
-        {view === 'list' ? (
-           <>
-              <div className="h-16 px-4 md:px-6 lg:px-10 border-b border-gray-100 flex items-center gap-6 bg-white shrink-0">
+          <div className="h-16 px-4 md:px-6 lg:px-10 border-b border-gray-100 flex items-center gap-6 bg-white shrink-0">
                 <div className="flex items-center gap-2">
                    <span className="text-xs font-medium text-gray-400">Show</span>
                    <DropdownMenu>
@@ -596,137 +512,6 @@ export function AppointmentsClient({ initialAppointments, workspaceId, view, isM
                   </div>
                 )}
               </div>
-           </>
-        ) : (
-           <>
-              <div className="h-16 px-4 md:px-6 lg:px-10 border-b border-gray-100 flex items-center justify-between bg-white shrink-0 text-gray-900">
-                <button 
-                  onClick={() => navigateWeek('prev')}
-                  className="flex items-center gap-2 text-xs font-bold text-gray-600 hover:text-black transition-colors"
-                >
-                    <ChevronLeft size={16} /> Previous Week
-                </button>
-                
-                <h2 className="text-sm font-bold tracking-tight">
-                    {weekDays[0] ? format(weekDays[0], 'MMMM d') : ''} - {weekDays[6] ? format(weekDays[6], 'MMMM d, yyyy') : ''}
-                </h2>
-
-                <button 
-                  onClick={() => navigateWeek('next')}
-                  className="flex items-center gap-2 text-xs font-bold text-gray-600 hover:text-black transition-colors"
-                >
-                    Next Week <ChevronRight size={16} />
-                </button>
-              </div>
-
-              <div className="flex-1 flex flex-col overflow-hidden relative">
-                {/* Mobile: simple day list */}
-                <div className="lg:hidden flex-1 overflow-y-auto p-4 space-y-3">
-                  {filteredAppointments.length > 0 ? (
-                    filteredAppointments
-                      .filter(a => a.status !== 'cancelled')
-                      .sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime())
-                      .slice(0, 20)
-                      .map((appt) => (
-                        <div
-                          key={appt.id}
-                          onClick={() => setSelectedAppt(appt)}
-                          className="p-4 rounded-xl bg-white border border-gray-100 shadow-sm active:scale-[0.98] transition-all cursor-pointer"
-                        >
-                          <div className="flex items-center justify-between mb-1">
-                            <p className="text-sm font-bold text-gray-900">{appt.customer_name}</p>
-                            <span className="text-[10px] font-bold text-gray-400">{format(new Date(appt.start_at), 'h:mm aa')}</span>
-                          </div>
-                          <p className="text-xs text-gray-500">{appt.service}</p>
-                          <p className="text-[10px] text-gray-400 mt-1">{format(new Date(appt.start_at), 'MMM d, yyyy')}</p>
-                        </div>
-                      ))
-                  ) : (
-                    <div className="h-full flex flex-col items-center justify-center text-center py-20">
-                      <div className="h-12 w-12 rounded-2xl bg-gray-50 flex items-center justify-center mb-4">
-                        <CalendarIcon className="h-6 w-6 text-gray-300" />
-                      </div>
-                      <p className="text-sm font-semibold text-gray-900">No appointments this week</p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Desktop: week calendar grid */}
-                <div className="hidden lg:block flex-1 flex flex-col overflow-hidden relative">
-                <div className="grid grid-cols-8 border-b border-gray-100 bg-white sticky top-0 z-20 text-gray-900">
-                  <div className="p-4 border-r border-gray-100 h-24" />
-                  {weekDays.map((day, i) => (
-                    <div key={i} className={cn(
-                      "p-4 text-center border-r border-gray-100 last:border-0 h-24 flex flex-col items-center justify-center gap-1",
-                      isToday(day) && "bg-gray-50/50"
-                    )}>
-                      <p className="text-[10px] font-bold text-gray-400">{format(day, 'EEE')}</p>
-                      <div className={cn(
-                          "h-10 w-10 flex items-center justify-center rounded-full text-lg font-bold transition-all",
-                          isToday(day) ? "bg-[#007AFF] text-white shadow-lg shadow-[#007AFF]/20 scale-110" : "text-gray-900"
-                      )}>
-                          {format(day, 'd')}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <ScrollArea className="flex-1 bg-white">
-                  <div className="grid grid-cols-8 relative min-h-full">
-                      <div className="col-span-1 border-r border-gray-100 bg-white text-gray-900">
-                        {HOURS.map(hour => (
-                          <div key={hour} className="h-24 p-2 text-left border-b border-gray-50">
-                              <span className="text-[10px] font-bold text-gray-400">{format(addHours(startOfDay(new Date()), hour), 'h:mm aa')}</span>
-                          </div>
-                        ))}
-                      </div>
-
-                      {weekDays.map((day, dayIdx) => (
-                        <div key={dayIdx} className={cn(
-                            "col-span-1 border-r border-gray-100 last:border-0 relative h-full",
-                            isToday(day) && "bg-gray-50/20"
-                        )}>
-                          {HOURS.map(hour => (
-                            <div key={hour} className="h-24 border-b border-gray-50 group hover:bg-gray-50/30 transition-colors" />
-                          ))}
-
-                          {filteredAppointments
-                            .filter(a => isSameDay(new Date(a.start_at), day) && a.status !== 'cancelled')
-                            .map((appt, i) => {
-                              const startHour = new Date(appt.start_at).getHours();
-                              const startMin = new Date(appt.start_at).getMinutes();
-                              const topOffset = startHour * 96 + (startMin / 60) * 96;
-                              
-                              return (
-                                <motion.div
-                                  key={appt.id}
-                                  initial={{ opacity: 0, x: -5 }}
-                                  animate={{ opacity: 1, x: 0 }}
-                                  onClick={() => setSelectedAppt(appt)}
-                                  style={{ top: `${topOffset + 2}px`, height: '92px' }}
-                                  className="absolute left-1 right-1 p-3 rounded-xl bg-white border border-gray-100 shadow-sm hover:shadow-md hover:border-[#c65f39]/20 transition-all cursor-pointer group z-10 overflow-hidden"
-                                >
-                                  <div className="flex flex-col h-full gap-1">
-                                      <p className="text-[11px] font-bold text-gray-900 truncate leading-none">{appt.customer_name}</p>
-                                      <p className="text-[10px] text-gray-400 font-medium truncate">{appt.service}</p>
-                                      <div className="mt-auto flex items-center justify-between">
-                                        <span className="text-[9px] font-bold text-gray-300">{format(new Date(appt.start_at), 'h:mm aa')}</span>
-                                        <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
-                                      </div>
-                                  </div>
-                                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#c65f39] opacity-0 group-hover:opacity-100 transition-opacity" />
-                                </motion.div>
-                              )
-                            })
-                          }
-                        </div>
-                      ))}
-                  </div>
-                </ScrollArea>
-                </div>
-              </div>
-           </>
-        )}
       </div>
 
       {/* CREATE NEW APPOINTMENT MODAL */}

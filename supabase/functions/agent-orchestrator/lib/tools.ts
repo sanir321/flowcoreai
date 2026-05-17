@@ -4,35 +4,59 @@
  */
 
 import { generateEmbedding } from "./hf-embeddings.ts";
+declare var EdgeRuntime: { waitUntil: (promise: Promise<any>) => void }
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')?.replace(/\/$/, "");
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
 function parseDT(dStr?: string, tStr?: string) {
-  const now = new Date(); let d = new Date();
+  const months: Record<string, number> = {
+    jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
+    jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11
+  };
+  const IST_OFFSET = 5.5 * 60 * 60 * 1000;
+  const istNow = new Date(Date.now() + IST_OFFSET);
+  let y = istNow.getUTCFullYear();
+  let mo = istNow.getUTCMonth();
+  let d = istNow.getUTCDate();
   if (dStr) {
-    const ds = dStr.toLowerCase();
-    if (ds.includes('tomorrow')) d.setDate(now.getDate() + 1);
-    else if (ds.match(/^\d{4}-\d{2}-\d{2}$/)) d = new Date(dStr);
-    else if (ds.includes('today')) d = now;
-  }
-  let h = 10, m = 0;
-  if (tStr) {
-    const match = tStr.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
-    if (match) { 
-        h = parseInt(match[1]); 
-        m = match[2] ? parseInt(match[2]) : 0; 
-        const ampm = match[3]?.toLowerCase(); 
-        if (ampm === 'pm' && h < 12) h += 12; 
-        if (ampm === 'am' && h === 12) h = 0; 
+    const s = dStr.toLowerCase().trim();
+    if (s.includes('tomorrow') || s === 'tom') {
+      const t = new Date(istNow.getTime() + 86400000);
+      y = t.getUTCFullYear(); mo = t.getUTCMonth(); d = t.getUTCDate();
+    } else if (s.includes('today')) {
+    } else if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+      const p = s.split('-').map(Number);
+      y = p[0]; mo = p[1] - 1; d = p[2];
+    } else {
+      const dm = s.match(/(\d{1,2})(?:st|nd|rd|th)?\s*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i);
+      const md = s.match(/(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s*(\d{1,2})(?:st|nd|rd|th)?/i);
+      if (dm) { d = parseInt(dm[1]); mo = months[dm[2].toLowerCase().slice(0, 3)]; }
+      else if (md) { mo = months[md[1].toLowerCase().slice(0, 3)]; d = parseInt(md[2]); }
     }
   }
-  d.setHours(h, m, 0, 0); 
-  return d.toISOString();
+  let h = 10, mi = 0;
+  if (tStr) {
+    const ts = tStr.toLowerCase().trim();
+    if (ts.includes('afternoon') || ts.includes('noon')) { h = 14; mi = 0; }
+    else if (ts.includes('evening')) { h = 18; mi = 0; }
+    else if (ts.includes('morning')) { h = 9; mi = 0; }
+    else if (ts.includes('night')) { h = 20; mi = 0; }
+    else {
+      const mt = ts.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
+      if (mt) {
+        h = parseInt(mt[1]); mi = mt[2] ? parseInt(mt[2]) : 0;
+        const a = mt[3]?.toLowerCase();
+        if (a === 'pm' && h < 12) h += 12;
+        if (a === 'am' && h === 12) h = 0;
+      }
+    }
+  }
+  return new Date(Date.UTC(y, mo, d, h, mi) - IST_OFFSET).toISOString();
 }
 
 async function getGoogleConfig(supabase: any, workspace_id: string) {
-  const { data: config } = await supabase.from("google_oauth_tokens").select("*").eq("workspace_id", workspace_id).order('created_at', { ascending: false }).limit(1).maybeSingle();
+  const { data: config } = await supabase.from("google_oauth_tokens").select("*").eq("workspace_id", workspace_id).is("deleted_at", null).order('created_at', { ascending: false }).limit(1).maybeSingle();
   if (!config) throw new Error("Google integration not found");
   const now = new Date();
   const expiry = new Date(config.token_expiry);
@@ -48,7 +72,12 @@ async function getGoogleConfig(supabase: any, workspace_id: string) {
       }),
     });
     const newTokens = await response.json();
-    if (!response.ok) throw new Error("Failed to refresh Google token");
+    if (!response.ok) {
+      if (newTokens?.error === 'invalid_grant') {
+        await supabase.from("google_oauth_tokens").update({ deleted_at: new Date().toISOString() }).eq("workspace_id", workspace_id);
+      }
+      throw new Error("Failed to refresh Google token");
+    }
     const newExpiry = new Date(Date.now() + newTokens.expires_in * 1000).toISOString();
     await supabase.from("google_oauth_tokens").update({ access_token: newTokens.access_token, token_expiry: newExpiry }).eq("workspace_id", workspace_id);
     return { ...config, access_token: newTokens.access_token };
@@ -66,8 +95,10 @@ function formatPhoneForGoWA(phone: string): string {
 }
 
 async function sendAppointmentNotifications(supabase: any, workspace_id: string, session_id: string, appt: any, meetLink: string | null) {
-  sendAppointmentWhatsApp(supabase, workspace_id, session_id, appt, meetLink);
-  sendAppointmentEmail(supabase, workspace_id, session_id, appt, meetLink);
+  await Promise.allSettled([
+    sendAppointmentWhatsApp(supabase, workspace_id, session_id, appt, meetLink),
+    sendAppointmentEmail(supabase, workspace_id, session_id, appt, meetLink),
+  ]);
 }
 
 async function sendAppointmentWhatsApp(supabase: any, workspace_id: string, session_id: string, appt: any, meetLink: string | null) {
@@ -89,7 +120,10 @@ async function sendAppointmentWhatsApp(supabase: any, workspace_id: string, sess
     const deviceId = sessionData.gowa_session?.gowa_session_id;
     if (!deviceId) return;
 
-    let phone = appt.customer_phone || sessionData.customer_jid?.split('@')[0] || sessionData.contact?.phone;
+    let phone = appt.customer_phone;
+    if (!phone || !/^\d{7,15}$/.test(phone.replace(/\D/g, ''))) {
+      phone = sessionData.customer_jid?.split('@')[0] || sessionData.contact?.phone;
+    }
     if (!phone) return;
 
     const gowaBase = Deno.env.get('GOWA_BASE_URL')?.replace(/\/$/, "");
@@ -98,11 +132,11 @@ async function sendAppointmentWhatsApp(supabase: any, workspace_id: string, sess
 
     const auth = btoa(gowaKey);
     const formattedPhone = formatPhoneForGoWA(phone);
-    const formattedDate = new Date(appt.start_at).toLocaleString();
+    const formattedDate = formatIST(appt.start_at);
 
     let message = `✅ Appointment Confirmed!\n\nHi ${appt.customer_name},\n\nYour appointment has been confirmed:\n• Service: ${appt.service}\n• Date: ${formattedDate}`;
     if (meetLink) message += `\n• Google Meet: ${meetLink}`;
-    message += `\n\n— FlowCore AI`;
+    message += `\n\nThank you!`;
 
     const resp = await fetch(`${gowaBase}/send/message`, {
       method: 'POST',
@@ -160,6 +194,15 @@ async function sendAppointmentEmail(supabase: any, workspace_id: string, session
   }
 }
 
+export function formatIST(isoString: string): string {
+  const d = new Date(isoString);
+  const IST_OFFSET = 5.5 * 60 * 60 * 1000;
+  const ist = new Date(d.getTime() + IST_OFFSET);
+  const datePart = ist.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+  const timePart = ist.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'UTC' });
+  return `${datePart} at ${timePart} IST`;
+}
+
 export async function executeTool(input: any): Promise<any> {
   const { tool_name, args = {}, workspace_id, session_id, supabase } = input;
   console.log(`[TOOLS] Executing ${tool_name}.`);
@@ -185,56 +228,70 @@ export async function executeTool(input: any): Promise<any> {
 
       case 'check_availability': {
         const startAt = parseDT(args.date, args.time);
-        const gConfig = await getGoogleConfig(supabase, workspace_id);
-        
-        const gRes = await fetch(`https://www.googleapis.com/calendar/v3/freeBusy`, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${gConfig.access_token}`, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            timeMin: startAt,
-            timeMax: new Date(new Date(startAt).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-            items: [{ id: gConfig.calendar_id || 'primary' }]
-          }),
-        });
-        const data = await gRes.json();
-        return { availability: data.calendars[gConfig.calendar_id || 'primary']?.busy || [], requested_time: startAt };
+        try {
+          const gConfig = await getGoogleConfig(supabase, workspace_id);
+          const gRes = await fetch(`https://www.googleapis.com/calendar/v3/freeBusy`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${gConfig.access_token}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              timeMin: startAt,
+              timeMax: new Date(new Date(startAt).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+              items: [{ id: gConfig.calendar_id || 'primary' }]
+            }),
+          });
+          if (gRes.ok) {
+            const data = await gRes.json();
+            return { availability: data.calendars[gConfig.calendar_id || 'primary']?.busy || [], requested_time: startAt };
+          }
+        } catch (_) {}
+        return { availability: [], requested_time: startAt, note: "Calendar unavailable — assuming slot is free" };
       }
 
       case 'create_appointment': {
         const startAt = parseDT(args.date, args.time);
         const durationMs = (args.duration || 30) * 60000;
         const endAt = new Date(new Date(startAt).getTime() + durationMs).toISOString();
-        const gConfig = await getGoogleConfig(supabase, workspace_id);
+        let googleEventId: string | null = null;
+        let meetLink: string | null = null;
+        try {
+          const gConfig = await getGoogleConfig(supabase, workspace_id);
+          const gRes = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${gConfig.calendar_id || 'primary'}/events?conferenceDataVersion=1`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${gConfig.access_token}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              summary: `${args.service || 'Appointment'}: ${args.name || 'Customer'}`,
+              description: `Customer: ${args.name || 'N/A'}\nPhone: ${args.phone || 'N/A'}\nEmail: ${args.email || 'N/A'}\nService: ${args.service || 'N/A'}\nSession: ${session_id}`,
+              start: { dateTime: startAt },
+              end: { dateTime: endAt },
+              conferenceData: { createRequest: { requestId: `fc-${Date.now()}-${Math.random().toString(36).slice(2, 10)}` } },
+            }),
+          });
+          if (gRes.ok) {
+            const gEvent = await gRes.json();
+            googleEventId = gEvent.id;
+            meetLink = gEvent.hangoutLink || gEvent.conferenceData?.entryPoints?.[0]?.uri || null;
+          }
+        } catch (_) {
+          console.warn('[TOOLS] Google Calendar sync skipped (not configured)');
+        }
 
-        const gRes = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${gConfig.calendar_id || 'primary'}/events?conferenceDataVersion=1`, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${gConfig.access_token}`, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            summary: `FlowCore: ${args.name}`,
-            description: `Service: ${args.service}. Session: ${session_id}`,
-            start: { dateTime: startAt },
-            end: { dateTime: endAt },
-            conferenceData: { createRequest: { requestId: `fc-${Date.now()}-${Math.random().toString(36).slice(2, 10)}` } },
-          }),
-        });
-        if (!gRes.ok) throw new Error("Google Calendar Sync Failed");
-        const gEvent = await gRes.json();
-        const meetLink = gEvent.hangoutLink || gEvent.conferenceData?.entryPoints?.[0]?.uri || null;
-
-        const { data: curSession } = await supabase.from('conversation_sessions').select('contact_id').eq('id', session_id).single();
+        const { data: curSession } = await supabase.from('conversation_sessions').select('contact_id, customer_jid').eq('id', session_id).single();
+        const jidPhone = curSession?.customer_jid?.split('@')[0] || null;
+        const customerPhone = args.phone && /^\d{7,15}$/.test(args.phone.replace(/\D/g, '')) ? args.phone : jidPhone;
+        const customerEmail = args.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(args.email) ? args.email : null;
 
         const { data: appt } = await supabase.from('appointments').insert({ 
             workspace_id, 
             session_id, 
             contact_id: curSession?.contact_id || null,
             customer_name: args.name, 
-            customer_phone: args.phone || null, 
-            customer_email: args.email || null, 
+            customer_phone: customerPhone, 
+            customer_email: customerEmail, 
             service: args.service, 
             start_at: startAt, 
             end_at: endAt, 
             status: 'confirmed', 
-            google_event_id: gEvent.id,
+            google_event_id: googleEventId,
             meeting_link: meetLink
         }).select().single();
 
@@ -243,8 +300,7 @@ export async function executeTool(input: any): Promise<any> {
           await supabase.from('contacts').update({ email: args.email, updated_at: new Date().toISOString() }).eq('id', curSession.contact_id);
         }
 
-        // Fire-and-forget notifications
-        sendAppointmentNotifications(supabase, workspace_id, session_id, appt, meetLink);
+        EdgeRuntime.waitUntil(sendAppointmentNotifications(supabase, workspace_id, session_id, appt, meetLink));
 
         return appt;
       }
