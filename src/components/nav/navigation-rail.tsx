@@ -18,7 +18,8 @@ import {
   TrendingUp,
   Heart,
   Network,
-  Calendar as CalendarIcon
+  Calendar as CalendarIcon,
+  ShoppingBag
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState, useEffect } from "react"
@@ -41,6 +42,7 @@ const NAV_ITEMS = [
   { icon: TrendingUp, href: "/insights", label: "Insights" },
   { icon: BookOpen, href: "/knowledge", label: "Knowledge" },
   { icon: Users, href: "/contacts", label: "Contacts" },
+  { icon: ShoppingBag, href: "/orders", label: "Orders" },
 ]
 
 export function NavigationRail() {

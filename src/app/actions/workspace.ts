@@ -80,6 +80,7 @@ export async function updateWorkspace(input: unknown): Promise<ActionResponse<{ 
       business_type: z.string().optional(),
       timezone: z.string().optional(),
       owner_personal_phone: z.string().optional(),
+      upi_id: z.string().optional(),
     }).safeParse(input)
 
     if (!result.success) {
@@ -97,6 +98,7 @@ export async function updateWorkspace(input: unknown): Promise<ActionResponse<{ 
         business_type: result.data.business_type,
         timezone: result.data.timezone,
         owner_personal_phone: result.data.owner_personal_phone,
+        upi_id: result.data.upi_id,
         updated_at: new Date().toISOString()
       })
       .eq("id", result.data.id)

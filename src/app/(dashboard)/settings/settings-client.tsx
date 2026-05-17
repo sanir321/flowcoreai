@@ -30,6 +30,7 @@ interface Workspace {
   business_type: string | null
   timezone: string
   owner_personal_phone: string | null
+  upi_id: string | null
 }
 
 interface SettingsClientProps {
@@ -61,7 +62,8 @@ export function SettingsClient({ initialWorkspace }: SettingsClientProps) {
         name: workspace.name,
         business_type: workspace.business_type ?? undefined,
         timezone: workspace.timezone,
-        owner_personal_phone: workspace.owner_personal_phone ?? undefined
+        owner_personal_phone: workspace.owner_personal_phone ?? undefined,
+        upi_id: workspace.upi_id ?? undefined
     })
 
     if (result.error) {
@@ -139,9 +141,22 @@ export function SettingsClient({ initialWorkspace }: SettingsClientProps) {
                     </SelectContent>
                  </Select>
                  <p className="text-[10px] text-gray-500 ml-1 font-medium">Determines the &quot;current time&quot; for scheduling calculations.</p>
-              </div>
-           </div>
-        </Card>
+               </div>
+
+               <div className="space-y-2.5 pt-4 border-t border-gray-50">
+                  <div className="flex items-center gap-2 mb-2">
+                     <Label className="text-xs font-bold text-gray-700 ml-1">UPI Payment ID</Label>
+                  </div>
+                  <Input
+                    value={workspace.upi_id || ""}
+                    onChange={(e) => setWorkspace(prev => ({ ...prev, upi_id: e.target.value }))}
+                    placeholder="e.g. yourname@upi"
+                    className="h-12 border-gray-200 focus:border-black transition-all text-gray-900 bg-gray-50/30"
+                  />
+                  <p className="text-[10px] text-gray-500 ml-1 font-medium">Used to generate UPI payment links for customer orders. Customers will scan &amp; pay via any UPI app.</p>
+               </div>
+            </div>
+         </Card>
       </section>
 
       <div className="flex justify-end pt-4">

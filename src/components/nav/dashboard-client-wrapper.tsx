@@ -8,7 +8,7 @@ import { CommandPalette } from "@/components/nav/command-palette"
 import { PageTransition } from "@/components/ui/page-transition"
 import { useMemo } from "react"
 import { cn } from "@/lib/utils"
-import { Inbox, Bot, Calendar, TrendingUp, BookOpen, Users } from "lucide-react"
+import { Inbox, Bot, Calendar, TrendingUp, BookOpen, Users, ShoppingBag } from "lucide-react"
 
 const MOBILE_NAV = [
   { icon: Inbox, href: "/inbox", label: "Inbox" },
@@ -16,6 +16,7 @@ const MOBILE_NAV = [
   { icon: Calendar, href: "/appointments", label: "Bookings" },
   { icon: TrendingUp, href: "/insights", label: "Insights" },
   { icon: Users, href: "/contacts", label: "Contacts" },
+  { icon: ShoppingBag, href: "/orders", label: "Orders" },
 ]
 
 export function DashboardClientWrapper({
@@ -26,7 +27,7 @@ export function DashboardClientWrapper({
   const pathname = usePathname()
 
   const isDashboardRoute = useMemo(() => {
-    return ['/inbox', '/agent-hub', '/settings', '/contacts', '/knowledge', '/insights', '/appointments', '/ceo'].some(r => pathname.startsWith(r))
+    return ['/inbox', '/agent-hub', '/settings', '/contacts', '/knowledge', '/insights', '/appointments', '/ceo', '/orders'].some(r => pathname.startsWith(r))
   }, [pathname])
 
   const isFullBleed = useMemo(() => {

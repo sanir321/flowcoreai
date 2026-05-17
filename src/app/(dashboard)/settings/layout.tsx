@@ -10,7 +10,8 @@ import {
   Globe,
   Zap,
   ChevronRight,
-  ShieldCheck
+  ShieldCheck,
+  ShoppingBag
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { motion } from "framer-motion"
@@ -23,6 +24,7 @@ const SETTINGS_NAV = [
   { name: "Web Widget", href: "/settings/widget", icon: Globe },
   { name: "Data & Privacy", href: "/settings/data", icon: ShieldCheck },
   { name: "Billing & Credits", href: "/settings/billing", icon: Zap },
+  { name: "Menu", href: "/settings/menu", icon: ShoppingBag },
 ]
 
 export default function SettingsLayout({
