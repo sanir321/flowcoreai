@@ -1,7 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { AppointmentsClient } from "@/components/appointments/appointments-client"
-import { AppointmentsSidebar } from "@/components/appointments/appointments-sidebar"
 
 export default async function AppointmentsPage() {
   const supabase = await createClient()
@@ -31,9 +30,7 @@ export default async function AppointmentsPage() {
 
   return (
     <div className="flex h-full bg-white font-sans overflow-hidden">
-      <AppointmentsSidebar />
-      
-      <div className="flex-1 flex flex-col h-full overflow-hidden border-l border-gray-50">
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
         <AppointmentsClient 
           initialAppointments={appointments || []} 
           workspaceId={workspaceId} 
