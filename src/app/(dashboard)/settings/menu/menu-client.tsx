@@ -1,13 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
-import { Plus, Pencil, Trash2, Loader2, Search } from "lucide-react"
+import { Plus, Pencil, Trash2, Loader2, Search, Upload, CheckCircle, X } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
+import { motion } from "framer-motion"
 
 interface MenuItem {
   id: string
@@ -31,6 +32,10 @@ export function MenuClient({ initialItems }: MenuClientProps) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState(defaultForm)
   const [search, setSearch] = useState("")
+  const [uploading, setUploading] = useState(false)
+  const [previewItems, setPreviewItems] = useState<MenuItem[]>([])
+  const [showPreview, setShowPreview] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
 
   const filtered = search
@@ -132,6 +137,31 @@ export function MenuClient({ initialItems }: MenuClientProps) {
     setShowForm(true)
   }
 
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    const formData = new FormData()
+    formData.append("file", file)
+    try {
+      const res = await fetch("/api/menu/upload", { method: "POST", body: formData })
+      const data = await res.json()
+      if (!res.ok) {
+        toast.error(data.error || "Upload failed")
+      } else {
+        setPreviewItems(data.items)
+        setShowPreview(true)
+        setItems(prev => [...data.items, ...prev])
+        toast.success(`${data.count} item(s) imported`)
+        router.refresh()
+      }
+    } catch {
+      toast.error("Upload failed")
+    }
+    setUploading(false)
+    if (fileInputRef.current) fileInputRef.current.value = ""
+  }
+
   const categories = [...new Set(items.map(i => i.category).filter(Boolean))] as string[]
 
   return (
@@ -155,12 +185,29 @@ export function MenuClient({ initialItems }: MenuClientProps) {
             className="pl-9 h-10 border-gray-200 bg-gray-50/30 text-sm"
           />
         </div>
-        <Button
-          onClick={() => { resetForm(); setShowForm(true) }}
-          className="bg-black text-white hover:bg-gray-800 rounded-xl h-10 px-5 text-xs font-bold"
-        >
-          <Plus className="h-3.5 w-3.5 mr-1.5" /> Add Item
-        </Button>
+        <div className="flex gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,application/pdf"
+            onChange={handleUpload}
+            className="hidden"
+          />
+          <Button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 rounded-xl h-10 px-4 text-xs font-semibold"
+          >
+            {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <Upload className="h-3.5 w-3.5 mr-1.5" />}
+            {uploading ? "Processing..." : "Upload Menu"}
+          </Button>
+          <Button
+            onClick={() => { resetForm(); setShowForm(true) }}
+            className="bg-black text-white hover:bg-gray-800 rounded-xl h-10 px-5 text-xs font-bold"
+          >
+            <Plus className="h-3.5 w-3.5 mr-1.5" /> Add Item
+          </Button>
+        </div>
       </div>
 
       {showForm && (
@@ -279,6 +326,51 @@ export function MenuClient({ initialItems }: MenuClientProps) {
           ))
         )}
       </div>
+
+      {showPreview && previewItems.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+          onClick={() => setShowPreview(false)}
+        >
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            onClick={e => e.stopPropagation()}
+            className="bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4 max-h-[70vh] overflow-y-auto"
+          >
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-green-500" />
+                <h3 className="text-lg font-semibold text-gray-900">Imported {previewItems.length} Item(s)</h3>
+              </div>
+              <button onClick={() => setShowPreview(false)} className="text-gray-300 hover:text-gray-600">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-3">
+              {previewItems.map(item => (
+                <div key={item.id} className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-xl">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">{item.name}</p>
+                    <p className="text-[10px] text-gray-400">{item.category}{item.description ? ` — ${item.description}` : ""}</p>
+                  </div>
+                  <span className="text-sm font-bold text-gray-900">₹{item.price.toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
+            <div className="p-6 pt-0">
+              <Button
+                onClick={() => setShowPreview(false)}
+                className="w-full bg-black text-white hover:bg-gray-800 rounded-xl h-11 text-xs font-bold"
+              >
+                Done
+              </Button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
     </div>
   )
 }
