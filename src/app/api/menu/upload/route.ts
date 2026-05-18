@@ -55,17 +55,7 @@ async function groqChatCompletion(body: Record<string, unknown>): Promise<any> {
   }
 }
 
-const EXTRACT_PROMPT_VISION = `Extract ALL menu items from this image. Return ONLY a JSON array of objects. Each object has these exact fields:
-
-- name: string (item name)
-- price: number (price in INR, no currency symbol)
-- description: string (optional, brief description)
-- category: string (optional, category like "Starters", "Main Course", "Treatments", "Services")
-
-Rules:
-- Extract EVERY item
-- If a price range (e.g., ₹500-1000), use the lower price
-- Respond with ONLY the raw JSON array, nothing else`;
+const EXTRACT_PROMPT_VISION = `extract all menu items as json with name description and price and category`;
 
 function tryParseJSON(text: string): any[] {
   const cleaned = text.replace(/```json\s*/gi, "").replace(/```\s*$/g, "").trim();
