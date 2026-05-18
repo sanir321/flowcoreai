@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { z } from "zod";
 
 const CreateSchema = z.object({
@@ -30,6 +31,26 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
     const category = searchParams.get("category");
+    const type = searchParams.get("type");
+
+    if (type === "media") {
+      const admin = createAdminClient();
+      const { data: media, error } = await admin
+        .from("menu_media")
+        .select("*")
+        .eq("workspace_id", workspaceId)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      const mediaWithUrls = (media || []).map(m => ({
+        ...m,
+        public_url: admin.storage.from("menu-media").getPublicUrl(m.file_path).data.publicUrl,
+      }));
+
+      return NextResponse.json({ media: mediaWithUrls });
+    }
 
     let query = supabase.from("menu_items").select("*").eq("workspace_id", workspaceId).is("deleted_at", null);
     if (category) query = query.eq("category", category);
@@ -113,6 +134,19 @@ export async function DELETE(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
+    const type = searchParams.get("type");
+
+    if (type === "media") {
+      if (!id) return NextResponse.json({ error: "Missing media id" }, { status: 400 });
+      const admin = createAdminClient();
+      const { data: media } = await admin.from("menu_media").select("file_path").eq("id", id).eq("workspace_id", workspaceId).single();
+      if (media) {
+        await admin.storage.from("menu-media").remove([media.file_path]);
+        await admin.from("menu_media").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+      }
+      return NextResponse.json({ success: true });
+    }
+
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
 
     const { error } = await supabase

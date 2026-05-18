@@ -281,6 +281,19 @@ export const TOOL_DEFINITIONS = [
   {
     type: "function",
     function: {
+      name: "send_menu_media",
+      description: "Send the uploaded menu image or PDF to the customer via WhatsApp. Use this when the customer asks to see the menu, services, or what's available.",
+      parameters: {
+        type: "object",
+        properties: {
+          caption: { type: "string", description: "Optional caption to accompany the menu image." }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
       name: "create_order",
       description: "Create a new order with items from the menu. Generates a UPI payment link automatically.",
       parameters: {

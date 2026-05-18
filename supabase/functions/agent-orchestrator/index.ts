@@ -16,7 +16,7 @@ const corsHeaders = {
 const TOOL_PERMISSIONS: Record<string, string[]> = {
   customer_support: ["match_kb_chunks", "get_contact_history", "update_contact", "request_handoff", "escalation_request"],
   appointment_booking: ["check_availability", "create_appointment", "update_appointment", "cancel_appointment", "get_contact_history", "request_handoff", "escalation_request"],
-  sales: ["capture_lead", "get_contact_history", "update_contact", "update_lead_stage", "get_pipeline", "schedule_follow_up", "generate_quote", "search_menu", "create_order", "confirm_payment", "get_order_status", "request_handoff", "escalation_request"],
+  sales: ["capture_lead", "get_contact_history", "update_contact", "update_lead_stage", "get_pipeline", "schedule_follow_up", "generate_quote", "search_menu", "send_menu_media", "create_order", "confirm_payment", "get_order_status", "request_handoff", "escalation_request"],
 }
 
 function getAgentTools(agentType: string, allAgents: any[]): string[] {
@@ -98,12 +98,13 @@ function buildTeamPrompt(agents: any[], workspace_name: string, currentAgentType
   const salesRules = (currentAgentType === 'sales')
     ? `\n\nSALES ORDERING FLOW:
 When a customer asks about your menu/services:
-1. Call \`search_menu\` to show available items. Present them clearly with prices — you MAY use short descriptions per item.
-2. Ask what they'd like to order. Collect items and quantities one at a time.
-3. Before creating the order, summarize everything and ask the customer to confirm.
-4. Only call \`create_order\` AFTER the customer confirms.
-5. Send the UPI payment link and tell them to pay and reply with confirmation.
-6. When they confirm payment, call \`confirm_payment\` to mark it paid.
+1. First, call \`send_menu_media\` to send the uploaded menu image/PDF to the customer via WhatsApp.
+2. Then call \`search_menu\` to answer any specific questions about items or prices.
+3. Ask what they'd like to order. Collect items and quantities one at a time.
+4. Before creating the order, summarize everything and ask the customer to confirm.
+5. Only call \`create_order\` AFTER the customer confirms.
+6. Send the UPI payment link and tell them to pay and reply with confirmation.
+7. When they confirm payment, call \`confirm_payment\` to mark it paid.
 
 FORMATTING: When presenting menu items or order summaries, you MAY use short line breaks for readability. Keep it clean and scannable. One item per line is fine, but skip bullet symbols.`
     : ''

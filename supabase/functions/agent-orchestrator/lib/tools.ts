@@ -505,6 +505,61 @@ export async function executeTool(input: any): Promise<any> {
         return { success: true, items: items || [] };
       }
 
+      case 'send_menu_media': {
+        try {
+          const { data: media } = await supabase
+            .from('menu_media')
+            .select('file_path, file_type')
+            .eq('workspace_id', workspace_id)
+            .is('deleted_at', null)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+
+          if (!media) return { success: false, error: "No menu media uploaded yet. Ask the owner to upload a menu image first." };
+
+          const gowaBase = Deno.env.get('GOWA_BASE_URL')?.replace(/\/$/, "");
+          const gowaKey = Deno.env.get('GOWA_API_KEY');
+          if (!gowaBase || !gowaKey) return { success: false, error: "WhatsApp not configured" };
+
+          const { data: sessionData } = await supabase
+            .from('conversation_sessions')
+            .select('customer_jid, contact:contacts(phone), gowa_session:gowa_sessions!workspace_id(gowa_session_id)')
+            .eq('id', session_id)
+            .eq('workspace_id', workspace_id)
+            .single();
+
+          if (!sessionData) return { success: false, error: "Session not found" };
+          const deviceId = sessionData.gowa_session?.gowa_session_id;
+          if (!deviceId) return { success: false, error: "WhatsApp device not connected" };
+
+          let phone = sessionData.customer_jid?.split('@')[0] || sessionData.contact?.phone;
+          if (!phone) return { success: false, error: "Customer phone not found" };
+
+          const imageUrl = `${Deno.env.get('NEXT_PUBLIC_SUPABASE_URL')}/storage/v1/object/public/menu-media/${media.file_path}`;
+          const auth = btoa(gowaKey);
+          const formattedPhone = formatPhoneForGoWA(phone);
+          const caption = args.caption || "Here is our menu — take a look!";
+
+          const resp = await fetch(`${gowaBase}/send/image`, {
+            method: 'POST',
+            headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/json', 'X-Device-Id': deviceId },
+            body: JSON.stringify({ phone: formattedPhone, image_url: imageUrl, caption }),
+          });
+
+          if (!resp.ok) {
+            const errText = await resp.text().catch(() => "");
+            console.error(`[TOOLS] send_menu_media GoWA error ${resp.status}: ${errText}`);
+            return { success: false, error: "Failed to send menu via WhatsApp" };
+          }
+
+          return { success: true, message: "Menu image sent to customer via WhatsApp." };
+        } catch (e: any) {
+          console.error(`[TOOLS] send_menu_media error: ${e.message}`);
+          return { success: false, error: e.message };
+        }
+      }
+
       case 'create_order': {
         const { data: session } = await supabase.from('conversation_sessions').select('contact_id').eq('id', session_id).single();
         const { data: workspace } = await supabase.from('workspaces').select('upi_id').eq('id', workspace_id).single();

@@ -1,14 +1,13 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
-import { Plus, Pencil, Trash2, Loader2, Search, Upload, CheckCircle, X } from "lucide-react"
+import { Plus, Pencil, Trash2, Loader2, Search, Upload, Image, FileText, X } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
-import { motion } from "framer-motion"
 
 interface MenuItem {
   id: string
@@ -17,6 +16,15 @@ interface MenuItem {
   price: number
   category: string | null
   is_available: boolean
+}
+
+interface MenuMedia {
+  id: string
+  file_path: string
+  file_type: string
+  file_name: string
+  public_url: string
+  created_at: string
 }
 
 interface MenuClientProps {
@@ -34,10 +42,16 @@ export function MenuClient({ initialItems }: MenuClientProps) {
   const [search, setSearch] = useState("")
   const [uploading, setUploading] = useState(false)
   const [uploadStatus, setUploadStatus] = useState("")
-  const [previewItems, setPreviewItems] = useState<MenuItem[]>([])
-  const [showPreview, setShowPreview] = useState(false)
+  const [media, setMedia] = useState<MenuMedia[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
+
+  useEffect(() => {
+    fetch("/api/menu?type=media")
+      .then(r => r.json())
+      .then(d => { if (d.media) setMedia(d.media); })
+      .catch(() => {})
+  }, [])
 
   const filtered = search
     ? items.filter(i =>
@@ -142,40 +156,37 @@ export function MenuClient({ initialItems }: MenuClientProps) {
     const file = e.target.files?.[0]
     if (!file) return
     setUploading(true)
-    setUploadStatus("Uploading file...")
+    setUploadStatus("Uploading...")
     const formData = new FormData()
     formData.append("file", file)
     try {
-      await new Promise(r => setTimeout(r, 100))
-      setUploadStatus("Extracting menu items with AI...")
       const res = await fetch("/api/menu/upload", { method: "POST", body: formData })
       const data = await res.json()
       if (!res.ok) {
-        toast.error(data.error || `Upload failed (${res.status})`)
-        console.error("Menu upload error:", data)
-        setUploading(false)
-        setUploadStatus("")
-        if (fileInputRef.current) fileInputRef.current.value = ""
+        toast.error(data.error || "Upload failed")
         return
       }
-      setUploadStatus("Saving items...")
-      await new Promise(r => setTimeout(r, 200))
-      setPreviewItems(data.items)
-      setShowPreview(true)
-      setItems(prev => [...data.items, ...prev])
-      toast.success(`${data.count} item(s) imported`)
+      setMedia(prev => [{ ...data.media, created_at: new Date().toISOString() }, ...prev])
+      toast.success("Menu image uploaded")
+      router.refresh()
+    } catch {
+      toast.error("Upload failed")
+    } finally {
       setUploading(false)
       setUploadStatus("")
       if (fileInputRef.current) fileInputRef.current.value = ""
-      router.refresh()
-      return
-    } catch (err) {
-      console.error("Menu upload error:", err)
-      toast.error("Upload failed — check console for details")
     }
-    setUploading(false)
-    setUploadStatus("")
-    if (fileInputRef.current) fileInputRef.current.value = ""
+  }
+
+  const handleDeleteMedia = async (id: string) => {
+    const res = await fetch(`/api/menu?id=${id}&type=media`, { method: "DELETE" })
+    if (res.ok) {
+      setMedia(prev => prev.filter(m => m.id !== id))
+      toast.success("Menu image removed")
+      router.refresh()
+    } else {
+      toast.error("Failed to delete")
+    }
   }
 
   const categories = [...new Set(items.map(i => i.category).filter(Boolean))] as string[]
@@ -236,6 +247,31 @@ export function MenuClient({ initialItems }: MenuClientProps) {
             <div className="mt-2 h-1 bg-blue-100 rounded-full overflow-hidden">
               <div className="h-full bg-blue-500 rounded-full animate-pulse w-2/3" />
             </div>
+          </div>
+        </div>
+      )}
+
+      {media.length > 0 && (
+        <div>
+          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Menu Images</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {media.map(m => (
+              <div key={m.id} className="relative group rounded-xl overflow-hidden border border-gray-100 bg-white">
+                {m.file_type.startsWith("image/") ? (
+                  <img src={m.public_url} alt={m.file_name} className="w-full h-32 object-cover" />
+                ) : (
+                  <div className="w-full h-32 flex items-center justify-center bg-gray-50">
+                    <FileText className="h-8 w-8 text-gray-300" />
+                  </div>
+                )}
+                <div className="p-2 flex items-center justify-between">
+                  <span className="text-[10px] text-gray-500 truncate flex-1">{m.file_name}</span>
+                  <button onClick={() => handleDeleteMedia(m.id)} className="text-gray-300 hover:text-red-500 transition-colors ml-1 shrink-0">
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -356,51 +392,6 @@ export function MenuClient({ initialItems }: MenuClientProps) {
           ))
         )}
       </div>
-
-      {showPreview && previewItems.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
-          onClick={() => setShowPreview(false)}
-        >
-          <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            onClick={e => e.stopPropagation()}
-            className="bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4 max-h-[70vh] overflow-y-auto"
-          >
-            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-500" />
-                <h3 className="text-lg font-semibold text-gray-900">Imported {previewItems.length} Item(s)</h3>
-              </div>
-              <button onClick={() => setShowPreview(false)} className="text-gray-300 hover:text-gray-600">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <div className="p-6 space-y-3">
-              {previewItems.map(item => (
-                <div key={item.id} className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-xl">
-                  <div>
-                    <p className="text-sm font-semibold text-gray-900">{item.name}</p>
-                    <p className="text-[10px] text-gray-400">{item.category}{item.description ? ` — ${item.description}` : ""}</p>
-                  </div>
-                  <span className="text-sm font-bold text-gray-900">₹{item.price.toLocaleString()}</span>
-                </div>
-              ))}
-            </div>
-            <div className="p-6 pt-0">
-              <Button
-                onClick={() => setShowPreview(false)}
-                className="w-full bg-black text-white hover:bg-gray-800 rounded-xl h-11 text-xs font-bold"
-              >
-                Done
-              </Button>
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
     </div>
   )
 }
