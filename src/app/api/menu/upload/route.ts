@@ -55,6 +55,34 @@ async function groqChatCompletion(body: Record<string, unknown>): Promise<any> {
   }
 }
 
+const EXTRACT_PROMPT_VISION = `Extract ALL menu items from this image. Return ONLY a JSON array of objects. Each object has these exact fields:
+
+- name: string (item name)
+- price: number (price in INR, no currency symbol)
+- description: string (optional, brief description)
+- category: string (optional, category like "Starters", "Main Course", "Treatments", "Services")
+
+Rules:
+- Extract EVERY item
+- If a price range (e.g., ₹500-1000), use the lower price
+- Respond with ONLY the raw JSON array, nothing else`;
+
+function tryParseJSON(text: string): any[] {
+  const cleaned = text.replace(/```json\s*/gi, "").replace(/```\s*$/g, "").trim();
+  let start = cleaned.indexOf("[");
+  let end = cleaned.lastIndexOf("]");
+  if (start !== -1 && end > start) {
+    try { return JSON.parse(cleaned.slice(start, end + 1)); } catch {}
+  }
+  start = cleaned.indexOf("{");
+  end = cleaned.lastIndexOf("}");
+  if (start !== -1 && end > start) {
+    try { const o = JSON.parse(cleaned.slice(start, end + 1)); return Array.isArray(o.items) ? o.items : Array.isArray(o) ? o : []; } catch {}
+  }
+  try { const p = JSON.parse(cleaned); return Array.isArray(p.items) ? p.items : Array.isArray(p) ? p : []; } catch {}
+  return [];
+}
+
 async function extractWithVision(buffer: Buffer, mimeType: string): Promise<any[]> {
   const base64 = buffer.toString("base64");
   const dataUrl = `data:${mimeType};base64,${base64}`;
@@ -65,19 +93,18 @@ async function extractWithVision(buffer: Buffer, mimeType: string): Promise<any[
       {
         role: "user",
         content: [
-          { type: "text", text: EXTRACT_PROMPT },
+          { type: "text", text: EXTRACT_PROMPT_VISION },
           { type: "image_url", image_url: { url: dataUrl } },
         ],
       },
     ],
-    temperature: 0.1,
-    max_tokens: 4096,
-    response_format: { type: "json_object" },
+    temperature: 0.3,
+    max_completion_tokens: 4096,
   });
 
-  const text = response.choices?.[0]?.message?.content || '{"items":[]}';
-  const parsed = JSON.parse(text);
-  return Array.isArray(parsed.items) ? parsed.items : Array.isArray(parsed) ? parsed : [];
+  const text = response.choices?.[0]?.message?.content || "";
+  console.log(`[MENU UPLOAD] Groq vision raw response (first 500 chars):`, text.slice(0, 500));
+  return tryParseJSON(text);
 }
 
 async function extractFromPdfText(buffer: Buffer): Promise<any[]> {
@@ -87,17 +114,16 @@ async function extractFromPdfText(buffer: Buffer): Promise<any[]> {
   const response = await groqChatCompletion({
     model: "llama-3.3-70b-versatile",
     messages: [
-      { role: "system", content: EXTRACT_PROMPT },
+      { role: "system", content: EXTRACT_PROMPT_VISION },
       { role: "user", content: `Extract menu items from this text:\n\n${rawText.slice(0, 8000)}` },
     ],
-    temperature: 0.1,
-    max_tokens: 4096,
-    response_format: { type: "json_object" },
+    temperature: 0.3,
+    max_completion_tokens: 4096,
   });
 
-  const text = response.choices?.[0]?.message?.content || '{"items":[]}';
-  const parsed = JSON.parse(text);
-  return Array.isArray(parsed.items) ? parsed.items : Array.isArray(parsed) ? parsed : [];
+  const text = response.choices?.[0]?.message?.content || "";
+  console.log(`[MENU UPLOAD] Groq text raw response (first 500 chars):`, text.slice(0, 500));
+  return tryParseJSON(text);
 }
 
 export async function POST(req: NextRequest) {
