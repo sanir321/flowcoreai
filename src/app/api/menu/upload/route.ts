@@ -129,13 +129,26 @@ export async function POST(req: NextRequest) {
       items = await extractFromPdfText(buffer);
     }
 
+    console.log(`[MENU UPLOAD] Extracted ${items.length} raw items from image:`, JSON.stringify(items.slice(0, 3)));
+
     if (!Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: "Could not extract any menu items from this file." }, { status: 422 });
     }
 
-    const validItems = items.filter((i: any) => i.name && typeof i.price === "number" && i.price > 0);
+    const validItems = items.filter((i: any) => {
+      const hasName = i.name && typeof i.name === "string";
+      const hasPrice = typeof i.price === "number" || typeof i.price === "string";
+      const priceNum = typeof i.price === "number" ? i.price : parseFloat(i.price);
+      return hasName && hasPrice && priceNum > 0;
+    }).map((i: any) => ({
+      ...i,
+      price: typeof i.price === "number" ? i.price : parseFloat(i.price),
+    }));
+
+    console.log(`[MENU UPLOAD] Valid items after filter: ${validItems.length}`);
+
     if (validItems.length === 0) {
-      return NextResponse.json({ error: "Extracted items are missing required fields (name, price)." }, { status: 422 });
+      return NextResponse.json({ error: "Could not parse item names and prices from this menu." }, { status: 422 });
     }
 
     const inserted: any[] = [];
@@ -153,9 +166,14 @@ export async function POST(req: NextRequest) {
         .select()
         .single();
 
-      if (!error && data) inserted.push(data);
+      if (error) {
+        console.error(`[MENU UPLOAD] Insert error for "${item.name}":`, error);
+      } else if (data) {
+        inserted.push(data);
+      }
     }
 
+    console.log(`[MENU UPLOAD] Successfully inserted ${inserted.length} of ${validItems.length} items`);
     return NextResponse.json({ items: inserted, count: inserted.length });
   } catch (e: any) {
     console.error("Menu upload error:", e);
