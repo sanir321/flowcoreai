@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
 
     const { data: publicUrl } = admin.storage.from("menu-media").getPublicUrl(fileName);
 
-    const { data: media, error: insertError } = await admin
+    const { data: media, error: insertError } = await (admin as any)
       .from("menu_media")
       .insert({
         workspace_id: workspaceId,

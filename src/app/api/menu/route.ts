@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
 
     if (type === "media") {
       const admin = createAdminClient();
-      const { data: media, error } = await admin
+      const { data: media, error } = await (admin as any)
         .from("menu_media")
         .select("*")
         .eq("workspace_id", workspaceId)
@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
 
       if (error) throw error;
 
-      const mediaWithUrls = (media || []).map(m => ({
+      const mediaWithUrls = ((media as any[]) || []).map((m: any) => ({
         ...m,
         public_url: admin.storage.from("menu-media").getPublicUrl(m.file_path).data.publicUrl,
       }));
@@ -139,10 +139,10 @@ export async function DELETE(req: NextRequest) {
     if (type === "media") {
       if (!id) return NextResponse.json({ error: "Missing media id" }, { status: 400 });
       const admin = createAdminClient();
-      const { data: media } = await admin.from("menu_media").select("file_path").eq("id", id).eq("workspace_id", workspaceId).single();
+      const { data: media } = await (admin as any).from("menu_media").select("file_path").eq("id", id).eq("workspace_id", workspaceId).single();
       if (media) {
-        await admin.storage.from("menu-media").remove([media.file_path]);
-        await admin.from("menu_media").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+        await admin.storage.from("menu-media").remove([(media as any).file_path]);
+        await (admin as any).from("menu_media").update({ deleted_at: new Date().toISOString() }).eq("id", id);
       }
       return NextResponse.json({ success: true });
     }
