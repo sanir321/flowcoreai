@@ -90,7 +90,7 @@ Cleanup-TestData
 
 # --- Knowledge Base ---
 Write-Host "--- Knowledge Base ---"
-Test-Tool "match_kb_chunks" @{query="dental services"} "KB search"
+Test-Tool "match_kb_chunks" @{query="menu services"} "KB search"
 
 # --- Appointments ---
 Write-Host "`n--- Appointments ---"
@@ -107,8 +107,8 @@ Test-Tool "escalation_request" @{reason="Test escalation"} "Escalation"
 
 # --- Orchestrator (AI pipeline + KB cache) ---
 Write-Host "`n--- Orchestrator & KB Cache ---"
-Test-Orch "What dental services do you offer?" "Fresh (LLM)"
-Test-OrchCached "What dental services do you offer?" "Repeat (cache)"
+Test-Orch "What services do you offer?" "Fresh (LLM)"
+Test-OrchCached "What services do you offer?" "Repeat (cache)"
 
 # Cleanup
 Cleanup-TestData

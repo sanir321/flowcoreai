@@ -273,7 +273,7 @@ export const TOOL_DEFINITIONS = [
         type: "object",
         properties: {
           query: { type: "string", description: "Optional search term to filter by item name or category. Leave empty to show all items." },
-          category: { type: "string", description: "Optional category filter (e.g. Dental, Cosmetic)." }
+          category: { type: "string", description: "Optional category filter (e.g. Services, Products)." }
         }
       }
     }
