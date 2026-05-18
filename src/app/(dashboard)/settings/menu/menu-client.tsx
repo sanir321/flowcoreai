@@ -33,6 +33,7 @@ export function MenuClient({ initialItems }: MenuClientProps) {
   const [form, setForm] = useState(defaultForm)
   const [search, setSearch] = useState("")
   const [uploading, setUploading] = useState(false)
+  const [uploadStatus, setUploadStatus] = useState("")
   const [previewItems, setPreviewItems] = useState<MenuItem[]>([])
   const [showPreview, setShowPreview] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -141,24 +142,39 @@ export function MenuClient({ initialItems }: MenuClientProps) {
     const file = e.target.files?.[0]
     if (!file) return
     setUploading(true)
+    setUploadStatus("Uploading file...")
     const formData = new FormData()
     formData.append("file", file)
     try {
+      await new Promise(r => setTimeout(r, 100))
+      setUploadStatus("Extracting menu items with AI...")
       const res = await fetch("/api/menu/upload", { method: "POST", body: formData })
       const data = await res.json()
       if (!res.ok) {
-        toast.error(data.error || "Upload failed")
-      } else {
-        setPreviewItems(data.items)
-        setShowPreview(true)
-        setItems(prev => [...data.items, ...prev])
-        toast.success(`${data.count} item(s) imported`)
-        router.refresh()
+        toast.error(data.error || `Upload failed (${res.status})`)
+        console.error("Menu upload error:", data)
+        setUploading(false)
+        setUploadStatus("")
+        if (fileInputRef.current) fileInputRef.current.value = ""
+        return
       }
-    } catch {
-      toast.error("Upload failed")
+      setUploadStatus("Saving items...")
+      await new Promise(r => setTimeout(r, 200))
+      setPreviewItems(data.items)
+      setShowPreview(true)
+      setItems(prev => [...data.items, ...prev])
+      toast.success(`${data.count} item(s) imported`)
+      setUploading(false)
+      setUploadStatus("")
+      if (fileInputRef.current) fileInputRef.current.value = ""
+      router.refresh()
+      return
+    } catch (err) {
+      console.error("Menu upload error:", err)
+      toast.error("Upload failed — check console for details")
     }
     setUploading(false)
+    setUploadStatus("")
     if (fileInputRef.current) fileInputRef.current.value = ""
   }
 
@@ -199,7 +215,7 @@ export function MenuClient({ initialItems }: MenuClientProps) {
             className="bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 rounded-xl h-10 px-4 text-xs font-semibold"
           >
             {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <Upload className="h-3.5 w-3.5 mr-1.5" />}
-            {uploading ? "Processing..." : "Upload Menu"}
+            {uploading ? uploadStatus : "Upload Menu"}
           </Button>
           <Button
             onClick={() => { resetForm(); setShowForm(true) }}
@@ -209,6 +225,20 @@ export function MenuClient({ initialItems }: MenuClientProps) {
           </Button>
         </div>
       </div>
+
+      {uploading && (
+        <div className="flex items-center gap-3 px-4 py-3 bg-blue-50 border border-blue-100 rounded-xl">
+          <Loader2 className="h-4 w-4 animate-spin text-blue-500 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-blue-700">{uploadStatus}</span>
+            </div>
+            <div className="mt-2 h-1 bg-blue-100 rounded-full overflow-hidden">
+              <div className="h-full bg-blue-500 rounded-full animate-pulse w-2/3" />
+            </div>
+          </div>
+        </div>
+      )}
 
       {showForm && (
         <Card className="p-6 bg-white border-gray-100 shadow-sm space-y-5">

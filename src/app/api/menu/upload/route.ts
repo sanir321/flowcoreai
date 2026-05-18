@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import Groq from "groq-sdk";
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY! });
+const GROQ_API_KEY = process.env.GROQ_API_KEY!;
+const GROQ_BASE_URL = "https://api.groq.com/openai/v1";
 
 const EXTRACT_PROMPT = `You are a menu extraction assistant. Extract ALL menu items from this restaurant/service menu.
 
-Return a JSON array of objects with these exact fields:
+Return a JSON object with an "items" array. Each item has these fields:
 - name (string, required): Item name
 - price (number, required): Price in INR (if no currency specified, assume INR). Only the number, no symbol.
 - description (string, optional): Brief description of the item
@@ -16,7 +16,7 @@ Rules:
 - Extract EVERY item visible in the menu
 - If a price range is given (e.g., ₹500-1000), use the lower price
 - If items have modifiers/add-ons, skip those and extract only the base item
-- Respond with ONLY the JSON array, no markdown, no explanation`;
+- Respond with ONLY valid JSON, no markdown, no explanation outside the JSON`;
 
 function extractPdfText(buffer: Buffer): string {
   const raw = buffer.toString("binary");
@@ -32,12 +32,35 @@ function extractPdfText(buffer: Buffer): string {
   return parens.join("\n");
 }
 
+async function groqChatCompletion(body: Record<string, unknown>): Promise<any> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 60000);
+  try {
+    const res = await fetch(`${GROQ_BASE_URL}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${GROQ_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      const errBody = await res.text();
+      throw new Error(`Groq API ${res.status}: ${errBody.slice(0, 500)}`);
+    }
+    return await res.json();
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 async function extractWithVision(buffer: Buffer, mimeType: string): Promise<any[]> {
   const base64 = buffer.toString("base64");
   const dataUrl = `data:${mimeType};base64,${base64}`;
 
-  const response = await groq.chat.completions.create({
-    model: "llama-3.2-11b-vision-preview",
+  const response = await groqChatCompletion({
+    model: "meta-llama/llama-4-scout-17b-16e-instruct",
     messages: [
       {
         role: "user",
@@ -49,18 +72,19 @@ async function extractWithVision(buffer: Buffer, mimeType: string): Promise<any[
     ],
     temperature: 0.1,
     max_tokens: 4096,
+    response_format: { type: "json_object" },
   });
 
-  const text = response.choices?.[0]?.message?.content || "[]";
-  const cleaned = text.replace(/```json\s*/gi, "").replace(/```\s*$/g, "").trim();
-  return JSON.parse(cleaned);
+  const text = response.choices?.[0]?.message?.content || '{"items":[]}';
+  const parsed = JSON.parse(text);
+  return Array.isArray(parsed.items) ? parsed.items : Array.isArray(parsed) ? parsed : [];
 }
 
 async function extractFromPdfText(buffer: Buffer): Promise<any[]> {
   const rawText = extractPdfText(buffer);
   if (!rawText.trim()) throw new Error("Could not extract text from this PDF");
 
-  const response = await groq.chat.completions.create({
+  const response = await groqChatCompletion({
     model: "llama-3.3-70b-versatile",
     messages: [
       { role: "system", content: EXTRACT_PROMPT },
@@ -68,11 +92,12 @@ async function extractFromPdfText(buffer: Buffer): Promise<any[]> {
     ],
     temperature: 0.1,
     max_tokens: 4096,
+    response_format: { type: "json_object" },
   });
 
-  const text = response.choices?.[0]?.message?.content || "[]";
-  const cleaned = text.replace(/```json\s*/gi, "").replace(/```\s*$/g, "").trim();
-  return JSON.parse(cleaned);
+  const text = response.choices?.[0]?.message?.content || '{"items":[]}';
+  const parsed = JSON.parse(text);
+  return Array.isArray(parsed.items) ? parsed.items : Array.isArray(parsed) ? parsed : [];
 }
 
 export async function POST(req: NextRequest) {
