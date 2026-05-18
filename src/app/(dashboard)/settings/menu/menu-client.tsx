@@ -251,7 +251,7 @@ export function MenuClient({ initialItems }: MenuClientProps) {
               <Input
                 value={form.name}
                 onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
-                placeholder="e.g. Root Canal Treatment"
+                placeholder="Item name"
                 className="h-10 border-gray-200 text-sm"
               />
             </div>
@@ -262,7 +262,7 @@ export function MenuClient({ initialItems }: MenuClientProps) {
                 step="0.01"
                 value={form.price || ""}
                 onChange={e => setForm(p => ({ ...p, price: parseFloat(e.target.value) || 0 }))}
-                placeholder="e.g. 4999"
+                placeholder="Price"
                 className="h-10 border-gray-200 text-sm"
               />
             </div>
@@ -271,7 +271,7 @@ export function MenuClient({ initialItems }: MenuClientProps) {
               <Input
                 value={form.category}
                 onChange={e => setForm(p => ({ ...p, category: e.target.value }))}
-                placeholder="e.g. Dental, General Checkup"
+                placeholder="Category (optional)"
                 className="h-10 border-gray-200 text-sm"
                 list="category-suggestions"
               />
