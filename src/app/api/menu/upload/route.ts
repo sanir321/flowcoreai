@@ -4,19 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 const GROQ_API_KEY = process.env.GROQ_API_KEY!;
 const GROQ_BASE_URL = "https://api.groq.com/openai/v1";
 
-const EXTRACT_PROMPT = `You are a menu extraction assistant. Extract ALL menu items from this restaurant/service menu.
-
-Return a JSON object with an "items" array. Each item has these fields:
-- name (string, required): Item name
-- price (number, required): Price in INR (if no currency specified, assume INR). Only the number, no symbol.
-- description (string, optional): Brief description of the item
-- category (string, optional): Category/group this item belongs to (e.g., "Starters", "Main Course", "Treatments", "Services")
-
-Rules:
-- Extract EVERY item visible in the menu
-- If a price range is given (e.g., ₹500-1000), use the lower price
-- If items have modifiers/add-ons, skip those and extract only the base item
-- Respond with ONLY valid JSON, no markdown, no explanation outside the JSON`;
+const EXTRACT_PROMPT_VISION = `extract all menu items from this image as a JSON object with an "items" array. each item has: name, description, price (number, INR), category`;
 
 function extractPdfText(buffer: Buffer): string {
   const raw = buffer.toString("binary");
@@ -55,24 +43,6 @@ async function groqChatCompletion(body: Record<string, unknown>): Promise<any> {
   }
 }
 
-const EXTRACT_PROMPT_VISION = `extract all menu items as json with name description and price and category`;
-
-function tryParseJSON(text: string): any[] {
-  const cleaned = text.replace(/```json\s*/gi, "").replace(/```\s*$/g, "").trim();
-  let start = cleaned.indexOf("[");
-  let end = cleaned.lastIndexOf("]");
-  if (start !== -1 && end > start) {
-    try { return JSON.parse(cleaned.slice(start, end + 1)); } catch {}
-  }
-  start = cleaned.indexOf("{");
-  end = cleaned.lastIndexOf("}");
-  if (start !== -1 && end > start) {
-    try { const o = JSON.parse(cleaned.slice(start, end + 1)); return Array.isArray(o.items) ? o.items : Array.isArray(o) ? o : []; } catch {}
-  }
-  try { const p = JSON.parse(cleaned); return Array.isArray(p.items) ? p.items : Array.isArray(p) ? p : []; } catch {}
-  return [];
-}
-
 async function extractWithVision(buffer: Buffer, mimeType: string): Promise<any[]> {
   const base64 = buffer.toString("base64");
   const dataUrl = `data:${mimeType};base64,${base64}`;
@@ -90,11 +60,13 @@ async function extractWithVision(buffer: Buffer, mimeType: string): Promise<any[
     ],
     temperature: 0.3,
     max_completion_tokens: 4096,
+    response_format: { type: "json_object" },
   });
 
-  const text = response.choices?.[0]?.message?.content || "";
-  console.log(`[MENU UPLOAD] Groq vision raw response (first 500 chars):`, text.slice(0, 500));
-  return tryParseJSON(text);
+  const text = response.choices?.[0]?.message?.content || "{}";
+  console.log(`[MENU UPLOAD] Groq vision raw response:`, text.slice(0, 800));
+  const parsed = JSON.parse(text);
+  return Array.isArray(parsed.items) ? parsed.items : [];
 }
 
 async function extractFromPdfText(buffer: Buffer): Promise<any[]> {
@@ -109,11 +81,13 @@ async function extractFromPdfText(buffer: Buffer): Promise<any[]> {
     ],
     temperature: 0.3,
     max_completion_tokens: 4096,
+    response_format: { type: "json_object" },
   });
 
-  const text = response.choices?.[0]?.message?.content || "";
-  console.log(`[MENU UPLOAD] Groq text raw response (first 500 chars):`, text.slice(0, 500));
-  return tryParseJSON(text);
+  const text = response.choices?.[0]?.message?.content || "{}";
+  console.log(`[MENU UPLOAD] Groq text raw response:`, text.slice(0, 800));
+  const parsed = JSON.parse(text);
+  return Array.isArray(parsed.items) ? parsed.items : [];
 }
 
 export async function POST(req: NextRequest) {
@@ -145,7 +119,7 @@ export async function POST(req: NextRequest) {
       items = await extractFromPdfText(buffer);
     }
 
-    console.log(`[MENU UPLOAD] Extracted ${items.length} raw items from image:`, JSON.stringify(items.slice(0, 3)));
+    console.log(`[MENU UPLOAD] Extracted ${items.length} raw items:`, JSON.stringify(items.slice(0, 3)));
 
     if (!Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: "Could not extract any menu items from this file." }, { status: 422 });
