@@ -536,16 +536,26 @@ export async function executeTool(input: any): Promise<any> {
           let phone = sessionData.customer_jid?.split('@')[0] || sessionData.contact?.phone;
           if (!phone) return { success: false, error: "Customer phone not found" };
 
-          const imageUrl = `${Deno.env.get('NEXT_PUBLIC_SUPABASE_URL')}/storage/v1/object/public/menu-media/${media.file_path}`;
+          const fileUrl = `${Deno.env.get('SUPABASE_URL')}/storage/v1/object/public/menu-media/${media.file_path}`;
           const auth = btoa(gowaKey);
           const formattedPhone = formatPhoneForGoWA(phone);
           const caption = args.caption || "Here is our menu — take a look!";
+          const isImage = media.file_type.startsWith("image/");
 
-          const resp = await fetch(`${gowaBase}/send/image`, {
-            method: 'POST',
-            headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/json', 'X-Device-Id': deviceId },
-            body: JSON.stringify({ phone: formattedPhone, image_url: imageUrl, caption }),
-          });
+          let resp: Response;
+          if (isImage) {
+            resp = await fetch(`${gowaBase}/send/image`, {
+              method: 'POST',
+              headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/json', 'X-Device-Id': deviceId },
+              body: JSON.stringify({ phone: formattedPhone, image_url: fileUrl, caption }),
+            });
+          } else {
+            resp = await fetch(`${gowaBase}/send/message`, {
+              method: 'POST',
+              headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/json', 'X-Device-Id': deviceId },
+              body: JSON.stringify({ phone: formattedPhone, message: `${caption}\n\n📄 View Menu: ${fileUrl}` }),
+            });
+          }
 
           if (!resp.ok) {
             const errText = await resp.text().catch(() => "");
