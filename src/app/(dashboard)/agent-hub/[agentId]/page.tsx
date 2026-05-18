@@ -216,57 +216,58 @@ export default function AgentConfigurePage() {
   )
 
   return (
-    <div className="flex h-full bg-white font-sans overflow-hidden">
+    <div className="flex h-screen bg-white font-sans">
       <AssistantsSidebar />
 
-      <div className="flex-1 flex flex-col h-full overflow-hidden border-l border-gray-50">
-        <ScrollArea className="flex-1">
-          <PageTransition>
-            <div className="space-y-10 p-12 pb-32">
-              {/* Header */}
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-gray-100 pb-8">
-                <div className="flex items-center gap-6">
-                  <button 
-                    onClick={() => router.back()} 
-                    className="h-10 w-10 rounded-xl border border-gray-100 bg-white hover:bg-gray-50 transition-all flex items-center justify-center shadow-sm"
-                  >
-                    <ArrowLeft className="h-4 w-4 text-gray-600" />
-                  </button>
-                  <div>
-                    <div className="flex items-center gap-3">
-                      <h1 className="text-2xl font-bold text-gray-900 capitalize tracking-tight">
-                          {agent?.agent_type.replace(/_/g, ' ')}
-                      </h1>
-                      <Badge variant="outline" className="text-[10px] font-semibold h-5 px-1.5 border-gray-100 text-gray-500">
-                          ID: {agent?.id.split('-')[0]}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center gap-2 mt-1.5">
-                       <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
-                       <span className="text-[10px] font-semibold text-gray-500 capitalize">{agent?.status}</span>
+      <div className="flex-1 flex flex-col border-l border-gray-50 min-h-0">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0">
+          <ScrollArea className="flex-1 min-h-0">
+            <PageTransition>
+              <div className="space-y-10 p-12 pb-32">
+                {/* Header */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-gray-100 pb-8">
+                  <div className="flex items-center gap-6">
+                    <button 
+                      onClick={() => router.back()} 
+                      className="h-10 w-10 rounded-xl border border-gray-100 bg-white hover:bg-gray-50 transition-all flex items-center justify-center shadow-sm"
+                    >
+                      <ArrowLeft className="h-4 w-4 text-gray-600" />
+                    </button>
+                    <div>
+                      <div className="flex items-center gap-3">
+                        <h1 className="text-2xl font-bold text-gray-900 capitalize tracking-tight">
+                            {agent?.agent_type.replace(/_/g, ' ')}
+                        </h1>
+                        <Badge variant="outline" className="text-[10px] font-semibold h-5 px-1.5 border-gray-100 text-gray-500">
+                            ID: {agent?.id.split('-')[0]}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-2 mt-1.5">
+                         <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
+                         <span className="text-[10px] font-semibold text-gray-500 capitalize">{agent?.status}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="flex items-center gap-3">
-                   <Button 
-                     variant="outline"
-                     onClick={() => setShowDeleteConfirm(true)}
-                     className="border-red-200 text-red-500 hover:bg-red-50 hover:border-red-300 rounded-xl px-6 py-2 text-[11px] font-semibold transition-all active:scale-95"
-                   >
-                     <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-                     Delete
-                   </Button>
-                   <Button 
-                     onClick={form.handleSubmit(onSubmit)} 
-                     disabled={isSaving}
-                     className="bg-black text-white hover:bg-gray-800 rounded-xl px-8 py-2 text-[11px] font-semibold transition-all active:scale-95 shadow-lg"
-                   >
-                     {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                     Save Changes
-                   </Button>
+                  <div className="flex items-center gap-3">
+                     <Button 
+                       variant="outline"
+                       onClick={() => setShowDeleteConfirm(true)}
+                       className="border-red-200 text-red-500 hover:bg-red-50 hover:border-red-300 rounded-xl px-6 py-2 text-[11px] font-semibold transition-all active:scale-95"
+                     >
+                       <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                       Delete
+                     </Button>
+                     <Button 
+                       type="submit"
+                       disabled={isSaving}
+                       className="bg-black text-white hover:bg-gray-800 rounded-xl px-8 py-2 text-[11px] font-semibold transition-all active:scale-95 shadow-lg"
+                     >
+                       {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                       Save Changes
+                     </Button>
+                  </div>
                 </div>
-              </div>
 
               <Tabs defaultValue="skills" className="w-full">
                 <TabsList className="bg-gray-100/50 p-1 rounded-xl mb-8 inline-flex border border-gray-200/60 shadow-sm">
@@ -445,7 +446,8 @@ export default function AgentConfigurePage() {
               </Tabs>
             </div>
           </PageTransition>
-        </ScrollArea>
+          </ScrollArea>
+        </form>
       </div>
 
       <AnimatePresence>

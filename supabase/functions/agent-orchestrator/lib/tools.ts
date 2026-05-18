@@ -156,7 +156,7 @@ async function sendAppointmentEmail(supabase: any, workspace_id: string, session
       .from('workspaces')
       .select(`
         name,
-        session:conversation_sessions!id(
+        session:conversation_sessions!workspace_id(
           contact:contacts(email)
         )
       `)
@@ -171,11 +171,12 @@ async function sendAppointmentEmail(supabase: any, workspace_id: string, session
 
     const appUrl = Deno.env.get('NEXT_PUBLIC_APP_URL') || 'https://flowter-bay.vercel.app';
     const workspaceName = workspaceData.name || 'FlowCore';
-    const formattedDate = new Date(appt.start_at).toLocaleString();
+    const formattedDate = formatIST(appt.start_at);
+    const cronSecret = Deno.env.get('INTERNAL_CRON_SECRET') || '';
 
     await fetch(`${appUrl}/api/emails/send`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${cronSecret}` },
       body: JSON.stringify({
         to: email,
         subject: `Appointment Confirmed — ${workspaceName}`,
@@ -204,7 +205,7 @@ export function formatIST(isoString: string): string {
 }
 
 export async function executeTool(input: any): Promise<any> {
-  const { tool_name, args = {}, workspace_id, session_id, supabase } = input;
+  const { tool_name, args = {}, workspace_id, session_id, supabase, is_test } = input;
   console.log(`[TOOLS] Executing ${tool_name}.`);
   
   try {
@@ -248,9 +249,19 @@ export async function executeTool(input: any): Promise<any> {
       }
 
       case 'create_appointment': {
+        const rawName = args.name?.toString().trim();
+        const PLACEHOLDER_NAMES = ['your name', 'name', 'customer', 'guest', 'null', 'none', 'n/a', 'unknown'];
+        if (!rawName || rawName.length < 2 || PLACEHOLDER_NAMES.includes(rawName.toLowerCase())) {
+          return { error: "I need your full name to book the appointment. Please tell me your name." };
+        }
+        const customerName = rawName;
+
+        if (!args.service || !args.service.toString().trim()) {
+          return { error: "Service is required. Ask the customer what service they'd like to book." };
+        }
+
         const startAt = parseDT(args.date, args.time);
-        const durationMs = (args.duration || 30) * 60000;
-        const endAt = new Date(new Date(startAt).getTime() + durationMs).toISOString();
+        const endAt = new Date(new Date(startAt).getTime() + 30 * 60 * 1000).toISOString();
         let googleEventId: string | null = null;
         let meetLink: string | null = null;
         try {
@@ -284,7 +295,7 @@ export async function executeTool(input: any): Promise<any> {
             workspace_id, 
             session_id, 
             contact_id: curSession?.contact_id || null,
-            customer_name: args.name, 
+            customer_name: customerName, 
             customer_phone: customerPhone, 
             customer_email: customerEmail, 
             service: args.service, 
@@ -507,16 +518,33 @@ export async function executeTool(input: any): Promise<any> {
 
       case 'send_menu_media': {
         try {
-          const { data: media } = await supabase
+          const { data: media, error: mediaError } = await supabase
             .from('menu_media')
-            .select('file_path, file_type')
+            .select('file_path, file_type, file_name')
             .eq('workspace_id', workspace_id)
             .is('deleted_at', null)
             .order('created_at', { ascending: false })
             .limit(1)
-            .single();
+            .maybeSingle();
 
-          if (!media) return { success: false, error: "No menu media uploaded yet. Ask the owner to upload a menu image first." };
+          if (mediaError || !media) {
+            return { success: false, error: "No menu media uploaded yet. Ask the owner to upload a menu image first." };
+          }
+
+          if (is_test) {
+            const fileUrl = `${Deno.env.get('SUPABASE_URL')}/storage/v1/object/public/menu-media/${media.file_path}`;
+            const isImage = media.file_type.startsWith("image/");
+            return {
+              success: true,
+              message: "Menu sent to customer via WhatsApp.",
+              media_info: {
+                file_name: media.file_name,
+                file_type: media.file_type,
+                url: fileUrl,
+                type: isImage ? "image" : "document"
+              }
+            };
+          }
 
           const gowaBase = Deno.env.get('GOWA_BASE_URL')?.replace(/\/$/, "");
           const gowaKey = Deno.env.get('GOWA_API_KEY');

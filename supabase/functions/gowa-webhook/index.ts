@@ -290,6 +290,12 @@ Deno.serve(async (req) => {
       .eq('id', activeSession.id)
 
     // 7. Fire and Forget AI processing using EdgeRuntime.waitUntil
+    const deviceId = gowaSession.gowa_session_id;
+    const customerPhone = normalizedFrom.split('@')[0];
+    const gowaBase = (Deno.env.get('GOWA_BASE_URL') ?? '').replace(/\/$/, '');
+    const gowaKey = Deno.env.get('GOWA_API_KEY');
+    const gowaAuth = gowaKey ? btoa(gowaKey) : null;
+
     const processAI = async () => {
         try {
             console.log(`[WEBHOOK] Triggering AI for workspace ${workspaceId}`)
@@ -301,7 +307,6 @@ Deno.serve(async (req) => {
                 channel: 'whatsapp'
             };
             
-            // Initialize a dedicated client for the AI call with service role
             const aiClient = createClient(
                 Deno.env.get('SUPABASE_URL') ?? '',
                 Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -316,8 +321,48 @@ Deno.serve(async (req) => {
 
             if (aiError) {
                 console.error("[WEBHOOK] Agent Orchestrator Invoke Error:", aiError)
-            } else {
-                console.log(`[WEBHOOK] Agent Orchestrator triggered successfully`);
+                return
+            }
+
+            const parts: string[] = aiResponse?.response_parts || [];
+            if (parts.length === 0 || !gowaAuth || !gowaBase || !deviceId) {
+                console.log(`[WEBHOOK] No response parts (${parts.length}) or GoWA not configured`)
+                return
+            }
+
+            for (const part of parts) {
+                try {
+                    const msgResp = await fetch(`${gowaBase}/send/message`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Basic ${gowaAuth}`,
+                            'Content-Type': 'application/json',
+                            'X-Device-Id': deviceId
+                        },
+                        body: JSON.stringify({ phone: customerPhone, message: part })
+                    });
+
+                    if (msgResp.ok) {
+                        const msgData = await msgResp.json();
+                        const gowaOutboundId = msgData?.results?.message_id || null;
+                        console.log(`[WEBHOOK] Sent response to ${customerPhone}: ${part.substring(0, 50)}...`);
+
+                        await supabase.from('messages').insert({
+                            workspace_id: workspaceId,
+                            session_id: activeSession.id,
+                            content: part,
+                            direction: 'outbound',
+                            role: 'agent',
+                            agent_type: aiResponse?.metadata?.agent_type || 'customer_support',
+                            gowa_message_id: gowaOutboundId
+                        });
+                    } else {
+                        const errText = await msgResp.text().catch(() => "");
+                        console.error(`[WEBHOOK] GoWA send failed (${msgResp.status}): ${errText}`);
+                    }
+                } catch (sendErr) {
+                    console.error(`[WEBHOOK] GoWA send error for part:`, sendErr);
+                }
             }
         } catch (bgError) {
             console.error("[WEBHOOK] Background AI process failed:", bgError)

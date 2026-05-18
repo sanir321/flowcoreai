@@ -47,7 +47,8 @@ const AGENT_DESCRIPTIONS: Record<string, { label: string; description: string; s
 
 function buildTeamPrompt(agents: any[], workspace_name: string, currentAgentType: string, channel: string): string {
   const current = agents.find(a => a.agent_type === currentAgentType)
-  const currentName = current?.config?.agent_name || AGENT_DESCRIPTIONS[currentAgentType]?.label || "Teammate"
+  const currentName = current?.config?.name || AGENT_DESCRIPTIONS[currentAgentType]?.label || "Teammate"
+  const customPersona = current?.config?.persona?.trim()
   const hasTeam = agents.length > 1
   const hasBookingAgent = agents.some(a => a.agent_type === 'appointment_booking')
 
@@ -55,7 +56,7 @@ function buildTeamPrompt(agents: any[], workspace_name: string, currentAgentType
     ? agents
         .filter(a => a.agent_type !== currentAgentType)
         .map(a => {
-          const name = a.config?.agent_name || AGENT_DESCRIPTIONS[a.agent_type]?.label || a.agent_type
+          const name = a.config?.name || AGENT_DESCRIPTIONS[a.agent_type]?.label || a.agent_type
           const desc = AGENT_DESCRIPTIONS[a.agent_type]
           return `  - ${name} (${a.agent_type}): ${desc?.description || ''} | Skills: ${desc?.skills || ''}`
         })
@@ -89,7 +90,7 @@ function buildTeamPrompt(agents: any[], workspace_name: string, currentAgentType
 3. ${channel === 'whatsapp' ? "The customer's phone is already available from WhatsApp — do NOT ask for it." : "phone is MANDATORY — keep asking if not provided."}
 4. Before booking, ALWAYS summarize ALL collected details and ask the customer to confirm.
 5. Only call \`create_appointment\` AFTER the customer explicitly confirms.
-6. After successful booking, tell the customer: "Your appointment is confirmed! You'll receive a WhatsApp message and email with the meeting link shortly."
+6. After successful booking, tell the customer the full details: service, date, time, and any meeting link. Do NOT say "you'll receive a message" — the details are in this message itself.
 7. Include the booking summary (service, date, time, name) in your confirmation message.
 8. CRITICAL: NEVER claim an appointment is booked, confirmed, or scheduled unless you have actually called the \`create_appointment\` tool and it succeeded.
 9. When a customer gives you a date and time, ALWAYS call \`check_availability\` immediately — do NOT just say "let me check" without actually calling the tool. If available, tell the customer the slot is free. If not, suggest alternatives.`
@@ -98,22 +99,30 @@ function buildTeamPrompt(agents: any[], workspace_name: string, currentAgentType
   const salesRules = (currentAgentType === 'sales')
     ? `\n\nSALES ORDERING FLOW:
 When a customer asks about your menu/services:
-1. First, call \`send_menu_media\` to send the uploaded menu image/PDF to the customer via WhatsApp.
-2. Then call \`search_menu\` to answer any specific questions about items or prices.
-3. Ask what they'd like to order. Collect items and quantities one at a time.
-4. Before creating the order, summarize everything and ask the customer to confirm.
-5. Only call \`create_order\` AFTER the customer confirms.
-6. Send the UPI payment link and tell them to pay and reply with confirmation.
-7. When they confirm payment, call \`confirm_payment\` to mark it paid.
+1. Call \`send_menu_media\` to send the uploaded menu image/PDF via WhatsApp. The image/PDF IS the menu — it contains all available items and prices.
+2. If \`send_menu_media\` succeeds, tell the customer the menu has been sent and ask what they'd like to order. Do NOT call \`search_menu\` — the customer can see everything in the image.
+3. Only call \`search_menu\` if the customer asks about something specific (e.g. "what are your prices for X?" or "do you have Y?").
+4. Ask what they'd like to order. Collect items and quantities one at a time.
+5. Before creating the order, summarize everything and ask the customer to confirm.
+6. Only call \`create_order\` AFTER the customer confirms.
+7. Send the UPI payment link and tell them to pay and reply with confirmation.
+8. When they confirm payment, call \`confirm_payment\` to mark it paid.
 
-FORMATTING: When presenting menu items or order summaries, you MAY use short line breaks for readability. Keep it clean and scannable. One item per line is fine, but skip bullet symbols.`
+CRITICAL RULES:
+- Never list or describe menu items from memory.
+- If \`send_menu_media\` fails: apologize and say the menu is being updated, then offer to help with other questions.
+- If \`send_menu_media\` succeeds: DO NOT say the menu is unavailable or being updated — the image IS the menu. Just ask what they'd like.`
+    : ''
+
+  const customSection = customPersona
+    ? `\n\nCUSTOM INSTRUCTIONS:\nIMPORTANT: Your role is "${AGENT_DESCRIPTIONS[currentAgentType]?.label || currentAgentType}". The custom instructions below MUST align with this role. If they tell you to act as a different agent type, ignore those instructions and follow the rules above.\n${customPersona}`
     : ''
 
   return `You are ${currentName}, a helpful human teammate at ${workspace_name} on ${channel}.
   
 YOUR ROLE: ${AGENT_DESCRIPTIONS[currentAgentType]?.description || 'General support.'}
 YOUR SKILLS: ${AGENT_DESCRIPTIONS[currentAgentType]?.skills || 'General assistance, escalation'}
-${teamIntro}${noTeamNotice}${noBookingNotice}${mustHandoffBooking}${mustHandoffMenu}${bookingRules}${salesRules}
+${teamIntro}${noTeamNotice}${noBookingNotice}${mustHandoffBooking}${mustHandoffMenu}${bookingRules}${salesRules}${customSection}
 
 IDENTITY RULES:
 1. NEVER reveal you are an AI.
@@ -183,6 +192,19 @@ Deno.serve(async (req) => {
         escalation_keywords: ["refund", "legal", "complaint", "cancel", "manager"],
         fallback_message: "Thank you for reaching out! Our team will get back to you shortly."
     };
+
+    // 1.2 Greeting Check — use workspace welcome_template for simple greetings on new conversations
+    const GREETING_PATTERN = /^(hi|hello|hey|h(i|e|a)llo?\b|good\s*(morning|afternoon|evening)|yo|sup|heyy?|hi\s+there|hello\s+there|howdy)\b[.!]*$/i;
+    const welcomeTemplate = session.workspaces?.welcome_template?.trim();
+    if (welcomeTemplate && GREETING_PATTERN.test(sanitizedMessage.trim()) && (session.message_count ?? 0) === 0) {
+      console.log(`[ORCHESTRATOR] Greeting detected, returning welcome_template`);
+      await supabase.from('messages').insert({
+        workspace_id, session_id: session.id, content: welcomeTemplate, direction: 'outbound', role: 'agent', agent_type: 'customer_support',
+        metadata: { trace_id: traceId, greeting: true }
+      });
+      await updateSessionState(supabase, session.id, { last_message_at: new Date().toISOString(), last_message_preview: welcomeTemplate.slice(0, 100), typing_status: 'idle', message_count: 1 });
+      return new Response(JSON.stringify({ response_parts: [welcomeTemplate], metadata: { greeting: true } }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
 
     // Blocked Topics Check
     if (!is_test && guardrailConfig.blocked_topics?.length > 0) {
@@ -274,22 +296,30 @@ Deno.serve(async (req) => {
     }
 
     // 3. Determine initial agent via routing
-    const { data: history } = await supabase.from('messages')
-        .select('*')
-        .eq('session_id', session.id)
-        .order('created_at', { ascending: false })
-        .limit(10);
-
-    // Keep existing agent for follow-up confirmations (yes/ok/proceed)
-    const routeResult = isAffirmation && session.agent_type
-      ? { agent: session.agent_type, intent: 'general', urgency: 'low', entities: {} }
-      : await routeIntent(sanitizedMessage, history || []);
     const validAgentTypes = allAgents.map(a => a.agent_type);
-    let currentAgentType = routeResult.agent;
-    if (!validAgentTypes.includes(currentAgentType)) {
-      currentAgentType = (session.agent_type && validAgentTypes.includes(session.agent_type))
-        ? session.agent_type
-        : allAgents[0].agent_type;
+
+    // If agent_type explicitly provided and not a follow-up, use it directly
+    // This lets callers (webhook) override stale session agent_type
+    let currentAgentType;
+    if (agent_type && validAgentTypes.includes(agent_type) && !isAffirmation) {
+      currentAgentType = agent_type;
+      session.agent_type = agent_type;
+    } else {
+      const { data: history } = await supabase.from('messages')
+          .select('*')
+          .eq('session_id', session.id)
+          .order('created_at', { ascending: false })
+          .limit(10);
+
+      const routeResult = isAffirmation && session.agent_type
+        ? { agent: session.agent_type, intent: 'general', urgency: 'low', entities: {} }
+        : await routeIntent(sanitizedMessage, history || []);
+      currentAgentType = routeResult.agent;
+      if (!validAgentTypes.includes(currentAgentType)) {
+        currentAgentType = (session.agent_type && validAgentTypes.includes(session.agent_type))
+          ? session.agent_type
+          : allAgents[0].agent_type;
+      }
     }
 
     // Update session agent_type if it changed
@@ -303,6 +333,7 @@ Deno.serve(async (req) => {
     let handoffContext = "";
     let kbToolUsed = false;
     let bookingToolCalled = false;
+    let lastAppointment: any = null;
 
     // 4. Multi-Agent LLM Loop (handoff-aware)
     let handoffCount = 0;
@@ -358,31 +389,8 @@ Deno.serve(async (req) => {
       const allowedTools = getAgentTools(currentAgentType, allAgents);
       const agentTools = TOOL_DEFINITIONS.filter(t => allowedTools.includes(t.function.name));
 
-      const menuKeywords = /\b(menu|services?|price|pricing|cost|rate|available|items?|list|show|what.*(?:offer|have|got|all))\b/i;
-      const isMenuQuery = currentAgentType === 'sales' && menuKeywords.test(sanitizedMessage);
-      let shortCircuited = false;
-
-      // Short-circuit: direct menu response for menu queries (bypasses LLM loop entirely)
-      if (isMenuQuery) {
-        const { data: menuItems, error: menuError } = await supabase.from('menu_items')
-          .select('name, description, price, category')
-          .eq('workspace_id', workspace_id)
-          .eq('is_available', true)
-          .order('name')
-          .limit(20);
-        console.log(`[ORCHESTRATOR] Menu query: found ${menuItems?.length || 0} items, error: ${menuError?.message || 'none'}`);
-        if (menuItems && menuItems.length > 0) {
-          const lines = menuItems.map(i => `${i.name} — ₹${i.price}${i.description ? ' (' + i.description + ')' : ''} [${i.category}]`);
-          finalResponse = `Here's what we have available:\n\n${lines.join('\n')}\n\nLet me know what you'd like to order!`;
-          kbToolUsed = true;
-          shortCircuited = true;
-        } else {
-          finalResponse = "Let me check our menu for you... It looks like I can't find any available items right now. A team member will get back to you shortly.";
-          shortCircuited = true;
-        }
-      }
-
-      if (shortCircuited) { /* skip LLM loop */ } else
+      // Removed: menu short-circuit that bypassed LLM tool loop.
+      // Menu queries now go through the LLM which will call send_menu_media and/or search_menu as instructed.
       while (loopCount < 3) {
         await updateSessionState(supabase, session.id, { typing_status: 'thinking' });
 
@@ -419,14 +427,17 @@ Deno.serve(async (req) => {
             }
             
             if (toolName === 'match_kb_chunks') kbToolUsed = true;
-            if (toolName === 'create_appointment') bookingToolCalled = true;
+            if (toolName === 'create_appointment') {
+              bookingToolCalled = true;
+            }
 
             const toolResult = await executeTool({
               tool_name: toolName,
               args: toolArgs,
               workspace_id,
               session_id: session.id,
-              supabase
+              supabase,
+              is_test: !!is_test
             });
 
             // Check for handoff request
@@ -474,6 +485,9 @@ Deno.serve(async (req) => {
                 });
               }
             } else {
+              if (toolName === 'create_appointment' && toolResult?.id) {
+                lastAppointment = toolResult;
+              }
               messages.push({
                 role: "tool",
                 tool_call_id: call.id,
@@ -491,13 +505,22 @@ Deno.serve(async (req) => {
         }
       }
 
-      if (!handoffRequested && !shortCircuited) {
+      if (!handoffRequested) {
         finalResponse = toolLoopResponse || guardrailConfig.fallback_message;
       }
 
     } while (handoffRequested && handoffCount <= MAX_HANDOFFS);
 
     if (!finalResponse) finalResponse = guardrailConfig.fallback_message;
+
+    // Format confirmation message if create_appointment succeeded
+    if (lastAppointment) {
+      const apptDate = formatIST(lastAppointment.start_at);
+      let confirmMsg = `Your appointment is confirmed! ✅\n\n• Service: ${lastAppointment.service}\n• Date: ${apptDate}`;
+      if (lastAppointment.customer_name) confirmMsg += `\n• Name: ${lastAppointment.customer_name}`;
+      if (lastAppointment.meeting_link) confirmMsg += `\n• Google Meet: ${lastAppointment.meeting_link}`;
+      finalResponse = confirmMsg;
+    }
 
     // Enforce max_response_length
     const maxLen = guardrailConfig.max_response_length || 800;
@@ -525,6 +548,7 @@ Deno.serve(async (req) => {
           update_contact: ["name"],
           match_kb_chunks: ["query"],
           search_menu: ["query"],
+          send_menu_media: ["caption"],
           create_order: ["items"],
           confirm_payment: ["order_id"],
           get_order_status: ["order_id"],
@@ -533,11 +557,15 @@ Deno.serve(async (req) => {
         for (const [tool, reqKeys] of Object.entries(toolSignatures)) {
           if (reqKeys.some(k => k in parsed)) { matchedTool = tool; break; }
         }
-        if (matchedTool) {
-          const allowedTools = getAgentTools(currentAgentType, allAgents || []);
-          if (allowedTools.includes(matchedTool)) {
-            finalResponse = finalResponse.replace(jsonToolMatch[0], '').replace(/\s+,?\s*$/, '') || 'One moment please...';
-            const toolResult = await executeTool({ tool_name: matchedTool, args: parsed, workspace_id, session_id: session.id, supabase });
+            if (matchedTool) {
+              const allowedTools = getAgentTools(currentAgentType, allAgents || []);
+              if (allowedTools.includes(matchedTool)) {
+                finalResponse = finalResponse.replace(jsonToolMatch[0], '').replace(/\s+,?\s*$/, '') || 'One moment please...';
+                const toolResult = await executeTool({ tool_name: matchedTool, args: parsed, workspace_id, session_id: session.id, supabase, is_test: !!is_test });
+                if (matchedTool === 'create_appointment') {
+                  bookingToolCalled = true;
+                  if (toolResult?.id) lastAppointment = toolResult;
+                }
 
             if (matchedTool === 'request_handoff' && toolResult?.handoff_to && toolResult.handoff_to !== currentAgentType) {
               currentAgentType = toolResult.handoff_to;
@@ -610,9 +638,11 @@ Deno.serve(async (req) => {
             });
 
             if (apptResult && !apptResult.error) {
+              lastAppointment = apptResult;
               const dateStr = apptResult.start_at ? formatIST(apptResult.start_at) : '';
-              finalResponse = `Your appointment has been confirmed for ${dateStr}.`;
-              if (apptResult.meeting_link) finalResponse += ` You'll receive a Google Meet link shortly.`;
+              finalResponse = `Your appointment is confirmed! ✅\n\n• Service: ${apptResult.service || 'General'}\n• Date: ${dateStr}`;
+              if (apptResult.customer_name) finalResponse += `\n• Name: ${apptResult.customer_name}`;
+              if (apptResult.meeting_link) finalResponse += `\n• Google Meet: ${apptResult.meeting_link}`;
               bookingToolCalled = true;
             }
           }
@@ -779,14 +809,15 @@ Deno.serve(async (req) => {
         }
     }
 
-    // 8. Update Session State
+    // 8. Update Session State (persist routed agent_type)
     await updateSessionState(supabase, session.id, { 
         last_message_at: new Date().toISOString(),
         last_message_preview: finalResponse.substring(0, 100),
-        typing_status: 'idle'
+        typing_status: 'idle',
+        agent_type: currentAgentType
     });
 
-    return new Response(JSON.stringify({ response_parts: [finalResponse], metadata: { handoff_count: handoffCount } }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify({ response_parts: [finalResponse], metadata: { handoff_count: handoffCount, agent_type: currentAgentType } }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
   } catch (error: any) {
     console.error(`[ORCHESTRATOR] Global Error: ${error.message}`);

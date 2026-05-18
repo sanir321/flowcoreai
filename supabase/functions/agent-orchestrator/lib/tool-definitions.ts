@@ -282,7 +282,7 @@ export const TOOL_DEFINITIONS = [
     type: "function",
     function: {
       name: "send_menu_media",
-      description: "Send the uploaded menu image or PDF to the customer via WhatsApp. Use this when the customer asks to see the menu, services, or what's available.",
+      description: "REQUIRED when the customer asks about the menu, services, pricing, or what's available. Sends the uploaded menu image/PDF via WhatsApp. If no menu is uploaded, call search_menu instead.",
       parameters: {
         type: "object",
         properties: {

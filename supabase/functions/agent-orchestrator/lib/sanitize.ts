@@ -16,10 +16,14 @@ export function sanitizeUserInput(input: string): string {
 }
 
 const HTML_TAG_PATTERN = /<[^>]*>/g;
+const JSON_ARTIFACT_PATTERN = /\s*\{[^}]*"(?:caption|image_url|phone|message)"[^}]*\}\s*/g;
 
 export function sanitizeLlmOutput(output: string): string {
   if (!output) return output;
-  return output.replace(HTML_TAG_PATTERN, "");
+  let clean = output.replace(HTML_TAG_PATTERN, "");
+  clean = clean.replace(JSON_ARTIFACT_PATTERN, "");
+  clean = clean.replace(/\s+,?\s*$/, "").trim();
+  return clean;
 }
 
 export async function checkTokenBudget(

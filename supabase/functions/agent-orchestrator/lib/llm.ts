@@ -28,7 +28,7 @@ async function fetchFromGroq(payload: AgentPayload, model: string) {
         ...payload,
         model,
         temperature: 0.3,
-        max_tokens: 300
+        max_tokens: 800
       }),
       signal: controller.signal
     });
