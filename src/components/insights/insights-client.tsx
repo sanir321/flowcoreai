@@ -15,14 +15,13 @@ import {
   TrendingDown,
   Minus
 } from "lucide-react"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import dynamic from "next/dynamic"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 
 const InsightsChart = dynamic(() => import("./insights-chart"), {
   ssr: false,
-  loading: () => <Skeleton className="h-[280px] w-full rounded-xl" />
+  loading: () => <Skeleton className="h-[240px] w-full rounded-xl" />
 })
 
 interface Metrics {
@@ -61,7 +60,7 @@ const TrendBadge = ({ value }: { value: number }) => {
       isUp ? "text-emerald-600" : "text-red-500"
     )}>
       {isUp ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
-      {isUp ? '+' : ''}{value}% vs last week
+      {isUp ? '+' : ''}{value}%
     </span>
   )
 }
@@ -73,7 +72,6 @@ export function InsightsClient({ metrics, chartData }: { metrics: Metrics, chart
       value: metrics.messages.toLocaleString(),
       change: metrics.messageChange,
       icon: MessageSquare,
-      color: "text-gray-900",
       bg: "bg-gray-50",
     },
     {
@@ -81,7 +79,6 @@ export function InsightsClient({ metrics, chartData }: { metrics: Metrics, chart
       value: metrics.contacts.toLocaleString(),
       change: metrics.contactChange,
       icon: Users,
-      color: "text-gray-900",
       bg: "bg-gray-50",
     },
     {
@@ -89,7 +86,6 @@ export function InsightsClient({ metrics, chartData }: { metrics: Metrics, chart
       value: metrics.sessions.toLocaleString(),
       change: metrics.sessionChange,
       icon: Bot,
-      color: "text-gray-900",
       bg: "bg-gray-50",
     },
     {
@@ -97,28 +93,27 @@ export function InsightsClient({ metrics, chartData }: { metrics: Metrics, chart
       value: `${metrics.autonomyRate}%`,
       change: null,
       icon: Shield,
-      color: "text-emerald-600",
       bg: "bg-emerald-50",
+      valueColor: "text-emerald-600",
     },
   ]
 
   const statusItems = [
-    { label: "WhatsApp", connected: metrics.whatsappStatus === 'connected', icon: Phone },
-    { label: "Google Calendar", connected: metrics.googleCalendar, icon: Calendar },
-    { label: "Google Sheets", connected: metrics.googleSheets, icon: Table },
+    { label: "WhatsApp", connected: metrics.whatsappStatus === 'connected' },
+    { label: "Google Calendar", connected: metrics.googleCalendar },
+    { label: "Google Sheets", connected: metrics.googleSheets },
   ]
 
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="h-12 px-5 border-b border-gray-100 flex items-center justify-between shrink-0">
-        <div>
-          <h1 className="text-sm font-semibold text-gray-900 tracking-tight">Insights</h1>
-        </div>
+        <h1 className="text-sm font-semibold text-gray-900 tracking-tight">Insights</h1>
         <span className="text-[10px] text-gray-400 font-medium">Last 7 days</span>
       </div>
 
-      <ScrollArea className="flex-1">
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto">
         <div className="p-4 space-y-4">
           {/* KPI Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -131,12 +126,12 @@ export function InsightsClient({ metrics, chartData }: { metrics: Metrics, chart
                 className="p-4 rounded-xl border border-gray-100 bg-white"
               >
                 <div className="flex items-center justify-between mb-3">
-                  <div className={cn("h-7 w-7 rounded-lg flex items-center justify-center", card.bg, card.color)}>
-                    <card.icon size={14} />
+                  <div className={cn("h-7 w-7 rounded-lg flex items-center justify-center", card.bg)}>
+                    <card.icon size={14} className="text-gray-600" />
                   </div>
                   <TrendBadge value={card.change ?? 0} />
                 </div>
-                <p className="text-2xl font-bold text-gray-900 tracking-tight">{card.value}</p>
+                <p className={cn("text-2xl font-bold tracking-tight", card.valueColor || "text-gray-900")}>{card.value}</p>
                 <p className="text-[11px] text-gray-500 font-medium mt-0.5">{card.label}</p>
               </motion.div>
             ))}
@@ -147,14 +142,14 @@ export function InsightsClient({ metrics, chartData }: { metrics: Metrics, chart
             <div className="p-4 rounded-xl border border-gray-100 bg-white">
               <div className="flex items-center gap-2 mb-2">
                 <AlertTriangle size={14} className="text-amber-500" />
-                <span className="text-[11px] text-gray-500 font-medium">Pending Escalations</span>
+                <span className="text-[11px] text-gray-500 font-medium">Escalations</span>
               </div>
               <p className="text-xl font-bold text-gray-900 tracking-tight">{metrics.escalations}</p>
             </div>
             <div className="p-4 rounded-xl border border-gray-100 bg-white">
               <div className="flex items-center gap-2 mb-2">
                 <Bot size={14} className="text-gray-500" />
-                <span className="text-[11px] text-gray-500 font-medium">Active Agents</span>
+                <span className="text-[11px] text-gray-500 font-medium">Agents</span>
               </div>
               <p className="text-xl font-bold text-gray-900 tracking-tight">{metrics.agents}</p>
             </div>
@@ -167,7 +162,7 @@ export function InsightsClient({ metrics, chartData }: { metrics: Metrics, chart
             </div>
             <div className="p-4 rounded-xl border border-gray-100 bg-white">
               <span className="text-[11px] text-gray-500 font-medium block mb-2">Integrations</span>
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 {statusItems.map(s => (
                   <div key={s.label} className="flex items-center justify-between">
                     <span className="text-[11px] text-gray-600">{s.label}</span>
@@ -201,12 +196,10 @@ export function InsightsClient({ metrics, chartData }: { metrics: Metrics, chart
                 </div>
               </div>
             </div>
-            <div className="h-[240px]">
-              <InsightsChart data={chartData} />
-            </div>
+            <InsightsChart data={chartData} />
           </div>
         </div>
-      </ScrollArea>
+      </div>
     </div>
   )
 }
