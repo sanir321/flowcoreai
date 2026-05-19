@@ -17,7 +17,7 @@
   }
 
   var sessionToken;
-  try { sessionToken = localStorage.getItem(SESSION_KEY) || uuid(); } catch(e) { sessionToken = uuid(); }
+  try { sessionToken = sessionStorage.getItem(SESSION_KEY) || uuid(); } catch(e) { sessionToken = uuid(); }
 
   var state = { config: null, open: false, messages: [], loading: false, sending: false };
   var els = {};
@@ -304,7 +304,7 @@
       console.warn('[FlowWidget] Missing data-workspace attribute on script tag.');
       return;
     }
-    try { localStorage.setItem(SESSION_KEY, sessionToken); } catch(e) {}
+    try { sessionStorage.setItem(SESSION_KEY, sessionToken); } catch(e) {}
     fetchConfig(function (cfg) {
       if (!cfg) cfg = {};
       state.config = cfg;
