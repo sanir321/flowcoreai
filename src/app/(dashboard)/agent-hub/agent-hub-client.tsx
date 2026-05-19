@@ -24,8 +24,7 @@ interface AgentHubClientProps {
   workspaceId: string
 }
 
-export function AgentHubClient({ initialAgents, workspaceId }: AgentHubClientProps) {
-  const [agents, setAgents] = useState<Agent[]>(initialAgents)
+export function AgentHubClient({ initialAgents: agents, workspaceId }: AgentHubClientProps) {
   const [showTypeSelect, setShowTypeSelect] = useState(false)
   const [isCreating, setIsCreating] = useState<string | null>(null)
   
