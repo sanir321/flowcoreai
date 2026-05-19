@@ -27,9 +27,10 @@
 
   function css() {
     return (
-      '#fw-b { position:fixed;bottom:24px;right:24px;z-index:999999;border:none;cursor:pointer;width:52px;height:52px;border-radius:100%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,.14);transition:transform .2s,box-shadow .2s;font-family:Inter,system-ui,sans-serif; }' +
+      '#fw-b { position:fixed;bottom:24px;right:24px;z-index:999999;border:none;cursor:pointer;width:52px;height:52px;border-radius:100%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,.14);transition:transform .2s,box-shadow .2s;font-family:Inter,system-ui,sans-serif;color:#fff; }' +
       '#fw-b:hover { transform:scale(1.05);box-shadow:0 6px 28px rgba(0,0,0,.18); }' +
       '#fw-b svg { width:22px;height:22px; }' +
+      '#fw-av svg { color:#fff; }' +
       '#fw-p { position:fixed;bottom:86px;right:24px;z-index:999999;width:380px;max-width:calc(100vw - 48px);height:560px;max-height:calc(100vh - 120px);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,.1);border:1px solid rgba(0,0,0,.05);opacity:0;transform:translateY(12px) scale(.97);pointer-events:none;transition:all .22s ease;font-family:Inter,system-ui,sans-serif; }' +
       '#fw-p.open { opacity:1;transform:translateY(0) scale(1);pointer-events:auto; }' +
       '#fw-hdr { padding:16px 20px;display:flex;align-items:center;gap:10px; }' +
@@ -133,7 +134,7 @@
 
   function resizeInput() {
     els.inp.style.height = 'auto';
-    els.inp.style.height = Math.min(els.inp.scrollHeight, 120) + 'px';
+    els.inp.style.height = Math.min(els.inp.scrollHeight, 96) + 'px';
   }
 
   function applyTheme() {
@@ -262,7 +263,10 @@
         try {
           var data = JSON.parse(xhr.responseText);
           if (data.reply) {
-            addMsg(data.reply, 'bot');
+            var dup = false;
+            var existingMsgs = els.msgs.querySelectorAll('.fw-msg.bot');
+            existingMsgs.forEach(function (el) { if (el.textContent === data.reply) dup = true; });
+            if (!dup) addMsg(data.reply, 'bot');
             lastPoll = new Date().toISOString();
           }
         } catch (_) { /* ignore parse errors */ }
