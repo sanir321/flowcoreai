@@ -42,7 +42,7 @@
       '#fw-msgs { display:flex;flex-direction:column;gap:8px;min-height:100%; }' +
       '.fw-msg { max-width:82%;padding:8px 12px;border-radius:12px;font-size:13px;line-height:1.5;word-wrap:break-word; }' +
       '.fw-msg.bot { align-self:flex-start;background:#fff;color:#222;border:1px solid #e8eaed;border-bottom-left-radius:4px; }' +
-      '.fw-msg.user { align-self:flex-end;color:#fff;border-bottom-right-radius:4px; }' +
+      '.fw-msg.user { align-self:flex-end;color:#fff;background:var(--fw-color);border-bottom-right-radius:4px; }' +
       '.fw-msg-typing { align-self:flex-start;background:#fff;color:#888;border:1px solid #e8eaed;border-radius:12px;padding:8px 14px;font-size:13px;display:flex;gap:4px;align-items:center; }' +
       '.fw-msg-typing span { animation:fw-dot 1.4s infinite; }' +
       '.fw-msg-typing span:nth-child(2) { animation-delay:.2s; }' +

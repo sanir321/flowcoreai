@@ -112,17 +112,11 @@ export async function POST(req: NextRequest) {
       throw new Error(aiError?.message || "AI Agent failed to respond");
     }
 
-    // 4. Store AI response in DB
+    // 4. Extract AI response
     const reply = aiResponse.response_parts.join("\n\n");
-    await supabaseAdmin.from("messages").insert({
-      workspace_id,
-      session_id: session.id,
-      content: reply,
-      direction: "outbound",
-      role: "agent",
-    }).maybeSingle();
 
     // Update session metadata
+    // NOTE: The AI response is stored by agent-orchestrator itself.
     await supabaseAdmin.from("conversation_sessions").update({
       message_count: (session.message_count || 0) + 2,
       last_message_at: new Date().toISOString(),

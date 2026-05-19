@@ -17,6 +17,7 @@ const corsHeaders = {
   'Vary': 'Origin',
 }
 
+const CREDITS_PER_MESSAGE = 1;
 const TOOL_PERMISSIONS: Record<string, string[]> = {
   customer_support: ["match_kb_chunks", "get_contact_history", "update_contact", "request_handoff", "escalation_request"],
   appointment_booking: ["check_availability", "create_appointment", "update_appointment", "cancel_appointment", "get_contact_history", "request_handoff", "escalation_request"],
@@ -849,6 +850,19 @@ Deno.serve(async (req) => {
         typing_status: 'idle',
         agent_type: currentAgentType
     });
+
+    // 8b. Deduct credits (only for non-test sessions)
+    if (!is_test) {
+      try {
+        await supabase.rpc('decrement_credits', {
+          p_workspace_id: workspace_id,
+          p_credits: CREDITS_PER_MESSAGE,
+          p_session_id: session.id
+        });
+      } catch (creditError) {
+        console.error(`[ORCHESTRATOR] Credit deduction failed: ${creditError}`);
+      }
+    }
 
     return new Response(JSON.stringify({ response_parts: [finalResponse], metadata: { handoff_count: handoffCount, agent_type: currentAgentType } }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
