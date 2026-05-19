@@ -18,7 +18,8 @@ import {
   Search,
   Command,
   PanelLeftClose,
-  PanelLeftOpen
+  PanelLeftOpen,
+  Terminal
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { cn } from "@/lib/utils"
@@ -120,7 +121,8 @@ export function Sidebar() {
            </div>
            <NavItem icon={Inbox} label="Inbox" href="/inbox" isCollapsed={isCollapsed} />
            <NavItem icon={Bot} label="Agent Hub" href="/agent-hub" isCollapsed={isCollapsed} />
-           <NavItem icon={Zap} label="CEO Analyst" href="/ceo" isCollapsed={isCollapsed} />
+            <NavItem icon={Zap} label="CEO Analyst" href="/ceo" isCollapsed={isCollapsed} />
+            <NavItem icon={Terminal} label="Test Chat" href="/agent-hub/test" isCollapsed={isCollapsed} />
            <NavItem icon={BarChart2} label="Insights" href="/insights" isCollapsed={isCollapsed} />
            <NavItem icon={Users} label="Contacts" href="/contacts" isCollapsed={isCollapsed} />
            <NavItem icon={BookOpen} label="Knowledge Base" href="/knowledge" isCollapsed={isCollapsed} />
