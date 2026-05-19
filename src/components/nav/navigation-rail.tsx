@@ -18,7 +18,8 @@ import {
   TrendingUp,
   Heart,
   Network,
-  Calendar as CalendarIcon
+  Calendar as CalendarIcon,
+  Terminal
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState, useEffect } from "react"
@@ -37,6 +38,7 @@ import {
 const NAV_ITEMS = [
   { icon: Inbox, href: "/inbox", label: "Inbox" },
   { icon: Bot, href: "/agent-hub", label: "Agents" },
+  { icon: Terminal, href: "/agent-hub/test", label: "Test Chat" },
   { icon: CalendarIcon, href: "/appointments", label: "Appointments" },
   { icon: TrendingUp, href: "/insights", label: "Insights" },
   { icon: BookOpen, href: "/knowledge", label: "Knowledge" },
