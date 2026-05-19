@@ -512,7 +512,7 @@ export default function OnboardingPage() {
       {/* FAB - hide on step 3 */}
       {step !== 3 && (
         <div className="fixed bottom-10 right-10 z-[100]">
-           <div className="h-14 w-14 rounded-xl bg-black flex items-center justify-center text-white shadow-3xl">
+           <div className="h-14 w-14 rounded-xl bg-black flex items-center justify-center text-white shadow-2xl">
               <MessageSquare className="h-6 w-6" />
            </div>
         </div>

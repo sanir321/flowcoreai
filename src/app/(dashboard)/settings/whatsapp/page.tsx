@@ -201,14 +201,28 @@ export default function WhatsAppPage() {
 
   if (status === 'checking') {
     return (
-      <div className="flex flex-col items-center justify-center h-[400px] space-y-6">
-        <div className="relative">
-            <Loader2 className="h-10 w-10 animate-spin text-gray-200" />
-            <div className="absolute inset-0 flex items-center justify-center">
-                <WhatsAppLogo className="h-5 w-5 text-gray-300" />
-            </div>
+      <div className="max-w-4xl mx-auto font-sans pb-32 space-y-8 animate-in fade-in duration-500">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <div className="h-8 w-52 bg-gray-100 rounded-lg animate-pulse" />
+            <div className="h-4 w-80 bg-gray-100 rounded animate-pulse" />
+          </div>
+          <div className="h-9 w-28 bg-gray-100 rounded-xl animate-pulse" />
         </div>
-        <p className="text-sm font-medium text-gray-500">Checking connection state...</p>
+        
+        <hr className="border-gray-100 my-10" />
+
+        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-12 space-y-8">
+          <div className="flex flex-col items-center space-y-4">
+            <div className="h-16 w-16 bg-gray-100 rounded-full animate-pulse" />
+            <div className="h-6 w-40 bg-gray-100 rounded animate-pulse" />
+            <div className="h-4 w-56 bg-gray-100 rounded animate-pulse" />
+          </div>
+          <div className="flex justify-center gap-3">
+            <div className="h-12 w-32 bg-gray-100 rounded-xl animate-pulse" />
+            <div className="h-12 w-32 bg-gray-100 rounded-xl animate-pulse" />
+          </div>
+        </div>
       </div>
     )
   }
@@ -332,7 +346,7 @@ export default function WhatsAppPage() {
 
       {/* Pairing Modal */}
       <Dialog open={showPairingModal} onOpenChange={(open) => !open && setShowPairingModal(false)}>
-        <DialogContent className="sm:max-w-2xl p-0 overflow-hidden rounded-[2.5rem] border-none shadow-3xl font-sans text-gray-900">
+        <DialogContent className="sm:max-w-2xl p-0 overflow-hidden rounded-[2.5rem] border-none shadow-2xl font-sans text-gray-900">
             <div className="grid grid-cols-1 md:grid-cols-2">
                 {/* Left: QR Side */}
                 <div className="p-12 bg-white flex flex-col items-center justify-center space-y-8 relative">

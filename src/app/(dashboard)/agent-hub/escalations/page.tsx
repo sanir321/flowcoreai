@@ -24,6 +24,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Skeleton } from "@/components/ui/skeleton"
 import { createClient } from "@/lib/supabase/client"
 import { cn } from "@/lib/utils"
 
@@ -71,38 +72,61 @@ export default function EscalationsPage() {
 
       {/* Stats Summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {[
-          { label: "Active Escalations", val: logs.filter(l => l.status === 'pending').length, color: "text-rose-600", bg: "bg-rose-50" },
-          { label: "Avg Resolution", val: "14m", color: "text-emerald-600", bg: "bg-emerald-50" },
-          { label: "Critical Priority", val: logs.filter(l => l.priority === 'high').length, color: "text-amber-600", bg: "bg-amber-50" },
-        ].map((stat, i) => (
-          <div key={i} className="p-6 bg-white border border-gray-100 rounded-xl shadow-sm space-y-3">
-             <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">{stat.label}</p>
-             <div className="flex items-center justify-between">
-                <h3 className={cn("text-3xl font-bold", stat.color)}>{stat.val}</h3>
-                <div className={cn("h-10 w-10 rounded-lg flex items-center justify-center", stat.bg)}>
-                   <ShieldAlert className={cn("h-5 w-5", stat.color)} />
+        {isLoading ? (
+          <>
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="p-6 bg-white border border-gray-100 rounded-xl shadow-sm space-y-3">
+                <Skeleton className="h-3 w-28" />
+                <div className="flex items-center justify-between">
+                  <Skeleton className="h-8 w-12" />
+                  <Skeleton className="h-10 w-10 rounded-lg" />
                 </div>
-             </div>
-          </div>
-        ))}
+              </div>
+            ))}
+          </>
+        ) : (
+          logs.filter((_, i) => i < 3).length > 0 ? (
+            [
+              { label: "Active Escalations", val: logs.filter(l => l.status === 'pending').length, color: "text-rose-600", bg: "bg-rose-50" },
+              { label: "Avg Resolution", val: "14m", color: "text-emerald-600", bg: "bg-emerald-50" },
+              { label: "Critical Priority", val: logs.filter(l => l.priority === 'high').length, color: "text-amber-600", bg: "bg-amber-50" },
+            ].map((stat, i) => (
+              <div key={i} className="p-6 bg-white border border-gray-100 rounded-xl shadow-sm space-y-3">
+                 <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">{stat.label}</p>
+                 <div className="flex items-center justify-between">
+                    <h3 className={cn("text-3xl font-bold", stat.color)}>{stat.val}</h3>
+                    <div className={cn("h-10 w-10 rounded-lg flex items-center justify-center", stat.bg)}>
+                       <ShieldAlert className={cn("h-5 w-5", stat.color)} />
+                    </div>
+                 </div>
+              </div>
+            ))
+          ) : null
+        )}
       </div>
 
       {/* Filter Bar */}
-      <div className="flex flex-col sm:flex-row items-center gap-4">
-        <div className="relative flex-1 w-full max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input 
-            placeholder="Search by reason or contact..." 
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 h-10 border-gray-200 rounded-lg text-sm"
-          />
+      {isLoading ? (
+        <div className="flex flex-col sm:flex-row items-center gap-4">
+          <Skeleton className="h-10 flex-1 w-full max-w-md rounded-lg" />
+          <Skeleton className="h-10 w-20 rounded-lg" />
         </div>
-        <Button variant="outline" className="h-10 px-4 gap-2 rounded-lg text-sm text-gray-600 border-gray-200">
-           <Filter className="h-4 w-4" /> Filter
-        </Button>
-      </div>
+      ) : (
+        <div className="flex flex-col sm:flex-row items-center gap-4">
+          <div className="relative flex-1 w-full max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input 
+              placeholder="Search by reason or contact..." 
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 h-10 border-gray-200 rounded-lg text-sm"
+            />
+          </div>
+          <Button variant="outline" className="h-10 px-4 gap-2 rounded-lg text-sm text-gray-600 border-gray-200">
+             <Filter className="h-4 w-4" /> Filter
+          </Button>
+        </div>
+      )}
 
       {/* Logs Table */}
       <div className="bg-white border border-gray-100 rounded-xl overflow-x-auto shadow-sm">
@@ -120,12 +144,12 @@ export default function EscalationsPage() {
           <TableBody>
             {isLoading ? (
               Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i} className="animate-pulse">
-                  <TableCell className="pl-6"><div className="h-4 w-32 bg-gray-100 rounded" /></TableCell>
-                  <TableCell><div className="h-4 w-24 bg-gray-100 rounded" /></TableCell>
-                  <TableCell><div className="h-6 w-20 bg-gray-100 rounded-full" /></TableCell>
-                  <TableCell><div className="h-4 w-12 bg-gray-100 rounded" /></TableCell>
-                  <TableCell><div className="h-4 w-16 bg-gray-100 rounded" /></TableCell>
+                <TableRow key={i}>
+                  <TableCell className="pl-6"><Skeleton className="h-4 w-32" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                  <TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-12" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-16" /></TableCell>
                   <TableCell />
                 </TableRow>
               ))

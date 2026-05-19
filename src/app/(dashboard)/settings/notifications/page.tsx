@@ -101,9 +101,37 @@ export default function NotificationsPage() {
   }
 
   if (wsLoading || isLoading) return (
-    <div className="flex flex-col items-center justify-center h-[400px] space-y-4">
-      <Loader2 className="h-8 w-8 animate-spin text-gray-300" />
-      <p className="text-sm text-gray-500 font-medium">Loading notification settings...</p>
+    <div className="max-w-4xl mx-auto space-y-10 font-sans pb-32 animate-in fade-in duration-500">
+      <div className="space-y-2">
+        <div className="h-8 w-36 bg-gray-100 rounded-lg animate-pulse" />
+        <div className="h-4 w-72 bg-gray-100 rounded animate-pulse" />
+      </div>
+
+      <hr className="border-gray-100 my-10" />
+
+      <div className="space-y-4">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="flex items-center justify-between p-6 bg-white border border-gray-100 rounded-xl shadow-sm">
+            <div className="flex items-center gap-4">
+              <div className="h-10 w-10 bg-gray-100 rounded-xl animate-pulse" />
+              <div className="space-y-2">
+                <div className="h-4 w-28 bg-gray-100 rounded animate-pulse" />
+                <div className="h-3 w-48 bg-gray-100 rounded animate-pulse" />
+              </div>
+            </div>
+            <div className="h-6 w-12 bg-gray-100 rounded-full animate-pulse" />
+          </div>
+        ))}
+      </div>
+
+      <div className="bg-white border border-gray-100 rounded-xl shadow-sm p-6 space-y-4">
+        <div className="h-5 w-40 bg-gray-100 rounded animate-pulse" />
+        <div className="flex gap-3">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="h-10 flex-1 bg-gray-100 rounded-xl animate-pulse" />
+          ))}
+        </div>
+      </div>
     </div>
   )
 

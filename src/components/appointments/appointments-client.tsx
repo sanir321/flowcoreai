@@ -353,7 +353,7 @@ export function AppointmentsClient({ initialAppointments, workspaceId, isModuleA
                             {format(dateRange.start, 'MMM d, yyyy')} - {format(dateRange.end, 'MMM d, yyyy')} <ChevronDown size={14} className="opacity-40" />
                          </button>
                       </DropdownMenuTrigger>
-                       <DropdownMenuContent align="start" className="p-0 border-none shadow-3xl rounded-[2rem] overflow-hidden flex flex-col md:flex-row min-w-0 w-[95vw] max-w-[600px] bg-white">
+                       <DropdownMenuContent align="start" className="p-0 border-none shadow-2xl rounded-[2rem] overflow-hidden flex flex-col md:flex-row min-w-0 w-[95vw] max-w-[600px] bg-white">
                          {/* Presets Sidebar */}
                          <div className="w-48 bg-white border-r border-gray-100 p-6 flex flex-col gap-1 shrink-0">
                             {[
@@ -516,7 +516,7 @@ export function AppointmentsClient({ initialAppointments, workspaceId, isModuleA
 
       {/* CREATE NEW APPOINTMENT MODAL */}
       <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-         <DialogContent className="sm:max-w-xl bg-white rounded-[2rem] p-0 overflow-hidden border-none shadow-3xl font-sans text-gray-900 max-h-[85vh] !flex !flex-col">
+         <DialogContent className="sm:max-w-xl bg-white rounded-[2rem] p-0 overflow-hidden border-none shadow-2xl font-sans text-gray-900 max-h-[85vh] !flex !flex-col">
             <div className="p-8 border-b border-gray-50 bg-white shrink-0">
                <DialogHeader className="space-y-1 text-left text-gray-900">
                   <DialogTitle className="text-xl font-bold tracking-tight">Create new appointment</DialogTitle>
@@ -692,7 +692,7 @@ export function AppointmentsClient({ initialAppointments, workspaceId, isModuleA
 
       {/* RESCHEDULE DIALOG */}
       <Dialog open={isRescheduleOpen} onOpenChange={setIsRescheduleOpen}>
-        <DialogContent className="sm:max-w-md bg-white rounded-[2rem] p-0 overflow-hidden border-none shadow-3xl font-sans text-gray-900">
+        <DialogContent className="sm:max-w-md bg-white rounded-[2rem] p-0 overflow-hidden border-none shadow-2xl font-sans text-gray-900">
           <div className="p-8 border-b border-gray-50">
             <DialogHeader className="space-y-1 text-left">
               <DialogTitle className="text-xl font-bold tracking-tight">Reschedule Appointment</DialogTitle>
@@ -738,7 +738,7 @@ export function AppointmentsClient({ initialAppointments, workspaceId, isModuleA
 
       {/* Appointment Detail Sheet */}
       <Sheet open={!!selectedAppt} onOpenChange={(open) => !open && setSelectedAppt(null)}>
-        <SheetContent className="sm:max-w-md p-0 overflow-hidden font-sans border-none shadow-3xl">
+        <SheetContent className="sm:max-w-md p-0 overflow-hidden font-sans border-none shadow-2xl">
           <div className="h-full flex flex-col bg-white">
              <div className="p-10 bg-gray-50 border-b border-gray-100 relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-10 opacity-[0.03] pointer-events-none text-gray-900">
