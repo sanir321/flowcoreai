@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useRef, useEffect } from "react"
-import { Send, TrendingUp, Zap, Loader2, BarChart3, Target, ChevronDown, ChevronUp, Brain, Sparkles, MessageSquare, Users, AlertCircle } from "lucide-react"
+import { Send, TrendingUp, Zap, Loader2, BarChart3, Target, ChevronDown, ChevronUp, Brain, MessageSquare, Users, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useWorkspace } from "@/hooks/use-workspace"
@@ -241,7 +241,7 @@ export default function CEOAnalystPage() {
         <div className="h-12 px-5 border-b border-gray-100 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <div className="h-7 w-7 rounded-lg bg-black flex items-center justify-center text-white">
-              <Sparkles size={14} />
+              <TrendingUp size={14} />
             </div>
             <div>
               <h2 className="text-sm font-semibold text-gray-900 tracking-tight">CEO Analyst</h2>
@@ -265,7 +265,7 @@ export default function CEOAnalystPage() {
                 >
                   <div className="text-center space-y-3">
                     <div className="h-12 w-12 rounded-xl bg-black flex items-center justify-center text-white mx-auto shadow-lg">
-                      <Sparkles size={22} />
+                      <TrendingUp size={22} />
                     </div>
                     <h1 className="text-xl font-bold text-gray-900 tracking-tight">Strategy Intelligence</h1>
                     <p className="text-gray-400 text-sm max-w-sm mx-auto leading-relaxed">Ask about performance, leads, or scaling strategy.</p>

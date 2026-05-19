@@ -12,7 +12,7 @@ import {
   MessageSquare,
   Target,
   Zap,
-  Sparkles
+  Terminal
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -206,7 +206,7 @@ export default function TestChatPage() {
                 {messages.length === 0 ? (
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-16 text-center space-y-3">
                     <div className="h-12 w-12 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center mx-auto">
-                      <Sparkles className="h-5 w-5 text-gray-300" />
+                      <Terminal className="h-5 w-5 text-gray-300" />
                     </div>
                     <div className="space-y-1">
                       <p className="text-sm font-semibold text-gray-900">Ready to test</p>
