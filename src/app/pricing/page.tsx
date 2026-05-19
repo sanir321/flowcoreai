@@ -6,7 +6,7 @@ const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
   title: "Pricing",
-  description: "Simple, transparent pricing for Flowcore AI's AI customer service orchestration platform. Pay as you grow.",
+  description: "3 AI assistants free. Pay only for AI responses with credits. No monthly subscription required.",
   openGraph: {
     title: "Pricing - Flowcore AI",
     description: "Simple, transparent pricing for Flowcore AI's AI customer service platform.",
@@ -17,52 +17,50 @@ export const metadata: Metadata = {
 
 const plans = [
   {
-    name: "Starter",
-    price: "₹1,999",
-    period: "/month",
-    desc: "For small businesses getting started with AI-powered customer service.",
+    name: "Free",
+    price: "₹0",
+    period: "",
+    desc: "All core AI assistants included. Pay only for conversations.",
     features: [
-      "1 AI assistant",
-      "Up to 500 conversations/mo",
-      "WhatsApp + Webchat",
-      "Knowledge base (3 docs)",
-      "Email alerts",
-      "Community support",
+      "3 AI assistants (Support, Booking, Sales)",
+      "WhatsApp + Webchat + Gmail",
+      "Knowledge base (unlimited docs)",
+      "Escalation to human agents",
+      "Google Calendar sync",
+      "Google Sheets export",
+      "Email alerts & notifications",
     ],
     cta: "Get Started",
     href: "/login",
   },
   {
-    name: "Pro",
-    price: "₹4,999",
-    period: "/month",
-    desc: "For growing teams that need more capacity and advanced features.",
+    name: "Credit Packs",
+    price: "₹999",
+    period: "/1,000 credits",
+    desc: "Pre-purchase credits and use them across any conversations.",
     popular: true,
     features: [
-      "3 AI assistants",
-      "Up to 2,000 conversations/mo",
-      "WhatsApp + Webchat + Gmail",
-      "Knowledge base (20 docs)",
-      "Escalation to human agents",
-      "Google Calendar sync",
-      "Google Sheets export",
-      "Priority email support",
+      "1 credit = 1 AI response",
+      "No expiry on credits",
+      "Automatic top-up available",
+      "Usage tracked per workspace",
+      "Bulk discounts available",
+      "Team management included",
     ],
-    cta: "Get Started",
+    cta: "Buy Credits",
     href: "/login",
   },
   {
     name: "Enterprise",
-    price: "₹14,999",
-    period: "/month",
-    desc: "For organizations requiring custom solutions and dedicated infrastructure.",
+    price: "Custom",
+    period: "",
+    desc: "For high-volume organizations needing custom solutions.",
     features: [
       "Unlimited AI assistants",
-      "Unlimited conversations",
+      "Volume credit discounts",
       "All channels + Slack",
-      "Knowledge base (unlimited)",
-      "Custom AI persona training",
       "Dedicated GoWA instance",
+      "Custom AI persona training",
       "SLA guarantee (99.9%)",
       "Priority phone & email support",
     ],
@@ -73,20 +71,28 @@ const plans = [
 
 const faqs = [
   {
-    q: "What counts as a conversation?",
-    a: "A conversation is a single customer session on any channel (WhatsApp, webchat, or email). Each session counts once regardless of how many messages are exchanged within it.",
+    q: "What counts as a credit?",
+    a: "One credit is consumed per AI-generated response. Incoming customer messages are free. You only pay when the AI replies.",
   },
   {
-    q: "Can I switch plans at any time?",
-    a: "Yes. You can upgrade or downgrade your plan at any time. Upgrades take effect immediately; downgrades apply at the start of the next billing cycle.",
+    q: "Are the agents really free?",
+    a: "Yes. The Customer Support, Appointment Booking, and Sales assistants are all included at no cost. You only pay for the conversations they handle.",
   },
   {
-    q: "Is there a free trial?",
-    a: "We offer a 7-day free trial on the Starter plan with no credit card required. You'll get full access to all Starter features during the trial period.",
+    q: "Can I add more agents?",
+    a: "Yes. You can deploy unlimited custom agents on any plan. The first 3 are free; additional agents require a small monthly fee.",
+  },
+  {
+    q: "Do credits expire?",
+    a: "No. Credits never expire. Purchase once and use them whenever you need, across any of your workspaces.",
+  },
+  {
+    q: "What happens if I run out of credits?",
+    a: "The AI pauses responses and a fallback message is shown. You can set up automatic top-up so you never run out.",
   },
   {
     q: "Do you offer annual discounts?",
-    a: "Yes. Annual plans come with a 20% discount compared to monthly billing. Contact us at zenosayz05@gmail.com for invoicing and enterprise procurement.",
+    a: "Yes. Annual credit packs come with a 20% bonus. Contact us at zenosayz05@gmail.com for enterprise procurement.",
   },
 ]
 
@@ -121,6 +127,15 @@ export default function PricingPage() {
 
       <main style={{ maxWidth: "1060px", margin: "0 auto", padding: "80px 24px 120px" }}>
         <header style={{ marginBottom: "64px", textAlign: "center" }}>
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: "8px",
+            background: "rgba(198,95,57,0.1)", border: "1px solid rgba(198,95,57,0.2)",
+            borderRadius: "100px", padding: "8px 20px", marginBottom: "32px",
+            fontSize: "13px", color: "#c65f39", fontWeight: 500,
+          }}>
+            <span style={{ fontSize: "16px" }}>🎯</span>
+            3 AI agents included free — pay only per AI response
+          </div>
           <h1 style={{
             fontSize: "54.8345px", fontWeight: 400,
             lineHeight: "63.0597px", letterSpacing: "-0.15667px",
@@ -129,7 +144,7 @@ export default function PricingPage() {
             Pricing
           </h1>
           <p style={{ fontSize: "15.667px", color: "#595859", marginTop: "12px" }}>
-            Simple, transparent pricing. Pay as you grow.
+            3 AI assistants free. Pay only for conversations.
           </p>
         </header>
 
