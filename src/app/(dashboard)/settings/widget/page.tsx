@@ -139,7 +139,7 @@ export default function WidgetPage() {
                     suppressHydrationWarning
                     className="block p-4 bg-white border border-gray-200 rounded-lg text-[11px] text-gray-500 break-all"
                   >
-                     {`<script src="${origin}/widget.js" async></script>`}
+                      {`<script src="${origin}/widget.js" data-workspace="${workspaceId || 'YOUR_WORKSPACE_ID'}" async></script>`}
                   </code>
                </Card>
             </section>

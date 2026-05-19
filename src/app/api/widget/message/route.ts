@@ -112,11 +112,26 @@ export async function POST(req: NextRequest) {
       throw new Error(aiError?.message || "AI Agent failed to respond");
     }
 
+    // 4. Store AI response in DB
+    const reply = aiResponse.response_parts.join("\n\n");
+    await supabaseAdmin.from("messages").insert({
+      workspace_id,
+      session_id: session.id,
+      content: reply,
+      direction: "outbound",
+      role: "agent",
+    }).maybeSingle();
+
+    // Update session metadata
+    await supabaseAdmin.from("conversation_sessions").update({
+      message_count: (session.message_count || 0) + 2,
+      last_message_at: new Date().toISOString(),
+      last_message_preview: reply.substring(0, 100),
+    }).eq("id", session.id);
+
     // Return the combined reply for the widget UI
-    return NextResponse.json({ 
-      reply: aiResponse.response_parts.join("\n\n") 
-    }, {
-      headers: { "Access-Control-Allow-Origin": "*", "Strict-Transport-Security": "max-age=31536000; includeSubDomains", "X-Content-Type-Options": "nosniff", "X-Frame-Options": "DENY" } // Required: widget embedded on external domains
+    return NextResponse.json({ reply }, {
+      headers: corsHeaders,
     });
 
   } catch (error: any) {
@@ -125,16 +140,75 @@ export async function POST(req: NextRequest) {
   }
 }
 
+const PollSchema = z.object({
+  workspace_id: z.string().uuid(),
+  session_token: z.string().uuid(),
+  since: z.string().optional(),
+});
+
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const params = {
+      workspace_id: searchParams.get("workspace_id"),
+      session_token: searchParams.get("session_token"),
+      since: searchParams.get("since") || undefined,
+    };
+    const result = PollSchema.safeParse(params);
+    if (!result.success) {
+      return new Response("Invalid parameters", { status: 400 });
+    }
+
+    const { workspace_id, session_token, since } = result.data;
+
+    const { data: session } = await supabaseAdmin
+      .from("conversation_sessions")
+      .select("id")
+      .eq("workspace_id", workspace_id)
+      .eq("customer_jid", session_token)
+      .eq("channel", "widget")
+      .is("deleted_at", null)
+      .maybeSingle();
+
+    if (!session) {
+      return NextResponse.json({ messages: [] }, { headers: corsHeaders });
+    }
+
+    let query = supabaseAdmin
+      .from("messages")
+      .select("content, direction, role, created_at")
+      .eq("workspace_id", workspace_id)
+      .eq("session_id", session.id)
+      .neq("role", "system")
+      .order("created_at", { ascending: true });
+
+    if (since) {
+      query = query.gt("created_at", since);
+    }
+
+    const { data: messages, error } = await query;
+    if (error) throw error;
+
+    return NextResponse.json({ messages: messages || [] }, {
+      headers: { ...corsHeaders, "Cache-Control": "no-cache" },
+    });
+
+  } catch (error: any) {
+    console.error("Widget Poll Error:", error);
+    return NextResponse.json({ messages: [] }, { status: 500, headers: corsHeaders });
+  }
+}
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+  "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+  "X-Content-Type-Options": "nosniff",
+};
+
 export async function OPTIONS() {
   return new Response(null, {
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Vary": "Origin", // Required: widget embedded on external domains
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
-      "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
-      "X-Content-Type-Options": "nosniff",
-      "X-Frame-Options": "DENY",
-    },
+    headers: corsHeaders,
   });
 }

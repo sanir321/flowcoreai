@@ -36,7 +36,17 @@ export async function GET(req: NextRequest) {
       .select("*")
       .eq("workspace_id", workspaceId)
       .is("deleted_at", null)
-      .single();
+      .maybeSingle();
+
+    // 2. Validate allowed domains
+    const origin = req.headers.get("origin") || req.headers.get("referer") || "";
+    if (config?.allowed_domains && config.allowed_domains.length > 0) {
+      const hostname = origin ? new URL(origin).hostname : "";
+      const allowed = config.allowed_domains.some((d) => hostname === d || hostname.endsWith("." + d));
+      if (!allowed) {
+        return new Response("Domain not allowed", { status: 403 });
+      }
+    }
 
     // 2. Fetch primary agent for name/avatar
     const { data: agent } = await supabaseAdmin
