@@ -306,6 +306,11 @@ Deno.serve(async (req) => {
       })
 
     if (msgError) {
+        // Duplicate key error (unique constraint violation) = GoWA retry, skip gracefully
+        if (msgError.code === '23505') {
+            console.log(`[WEBHOOK] Duplicate message ${gowaMessageId} (race condition), skipping`)
+            return new Response(JSON.stringify({ success: true, message: 'duplicate' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+        }
         console.error(`[WEBHOOK] Message Insert Error:`, msgError)
         throw msgError
     }
