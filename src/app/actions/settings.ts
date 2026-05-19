@@ -149,6 +149,34 @@ export async function updateGoogleConfig(input: unknown): Promise<ActionResponse
     }
   }
 
+export async function disconnectGoogleIntegration(workspace_id: string): Promise<ActionResponse<{ success: true }>> {
+  try {
+    const res = z.string().uuid().safeParse(workspace_id)
+    if (!res.success) return { data: null, error: "Invalid workspace ID" }
+
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { data: null, error: "Unauthorized" }
+
+    if (user.app_metadata.workspace_id !== res.data) {
+      return { data: null, error: "Forbidden: Workspace mismatch" }
+    }
+
+    const { error } = await supabase
+      .from("google_oauth_tokens")
+      .delete()
+      .eq("workspace_id", res.data)
+
+    if (error) throw error
+
+    revalidatePath("/settings/integrations")
+    return { data: { success: true }, error: null }
+  } catch (err: any) {
+    console.error(err)
+    return { data: null, error: err.message || "Failed to disconnect" }
+  }
+}
+
 export async function exportToSheets(workspace_id: string): Promise<ActionResponse<{ exported: number }>> {
     try {
       const res = z.string().uuid().safeParse(workspace_id)

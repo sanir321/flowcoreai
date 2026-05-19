@@ -116,7 +116,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ 
       reply: aiResponse.response_parts.join("\n\n") 
     }, {
-      headers: { "Access-Control-Allow-Origin": "*" } // Required: widget embedded on external domains
+      headers: { "Access-Control-Allow-Origin": "*", "Strict-Transport-Security": "max-age=31536000; includeSubDomains", "X-Content-Type-Options": "nosniff", "X-Frame-Options": "DENY" } // Required: widget embedded on external domains
     });
 
   } catch (error: any) {
@@ -128,9 +128,13 @@ export async function POST(req: NextRequest) {
 export async function OPTIONS() {
   return new Response(null, {
     headers: {
-      "Access-Control-Allow-Origin": "*", // Required: widget embedded on external domains
+      "Access-Control-Allow-Origin": "*",
+      "Vary": "Origin", // Required: widget embedded on external domains
       "Access-Control-Allow-Methods": "POST, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type",
+      "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+      "X-Content-Type-Options": "nosniff",
+      "X-Frame-Options": "DENY",
     },
   });
 }

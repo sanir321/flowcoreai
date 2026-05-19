@@ -13,13 +13,13 @@ export async function GET() {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    const { data: workspace } = await auth.from("workspaces").select("id").eq("owner_id", user.id).eq("status", "active").is("deleted_at", null).maybeSingle()
-    if (!workspace) return NextResponse.json({ error: "No workspace" }, { status: 404 })
+    const workspaceId = user.app_metadata?.workspace_id as string | undefined
+    if (!workspaceId) return NextResponse.json({ error: "No workspace" }, { status: 404 })
 
     const { data: tokens } = await supabase
       .from("google_oauth_tokens")
       .select("access_token, sheet_id, sheet_range, token_expiry, refresh_token")
-      .eq("workspace_id", workspace.id)
+      .eq("workspace_id", workspaceId)
       .is("deleted_at", null)
       .maybeSingle()
 

@@ -11,6 +11,10 @@ import { routeIntent } from "./lib/router.ts"
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+  'Vary': 'Origin',
 }
 
 const TOOL_PERMISSIONS: Record<string, string[]> = {
@@ -154,27 +158,51 @@ Deno.serve(async (req) => {
   const startTime = Date.now();
   const traceId = crypto.randomUUID();
 
+  let supabase: any;
+  let workspace_id: string | undefined;
+  let customer_jid: string | undefined;
+  let message: string | undefined;
+  let channel: string | undefined;
+  let agent_type: string | undefined;
+  let is_test: boolean | undefined;
+  let session: any = null;
+
   try {
-    const supabase = createClient(
+    supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
+    // Validate content-type and body size before parsing
+    const contentType = req.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      return new Response(JSON.stringify({ error: 'Content-Type must be application/json' }), { status: 415, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    const contentLength = parseInt(req.headers.get('content-length') || '0', 10);
+    if (contentLength > 1_000_000) {
+      return new Response(JSON.stringify({ error: 'Request body too large' }), { status: 413, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
     const payload = await req.json()
-    let { workspace_id, customer_jid, message, channel, agent_type, is_test } = payload
+    const vals = payload as { workspace_id?: string; customer_jid?: string; message?: string; channel?: string; agent_type?: string; is_test?: boolean };
+    workspace_id = vals.workspace_id;
+    customer_jid = vals.customer_jid;
+    message = vals.message;
+    channel = vals.channel;
+    agent_type = vals.agent_type;
+    is_test = vals.is_test;
 
     // Auto-generate customer_jid for webchat if missing
     if (!customer_jid && channel === 'webchat') {
       customer_jid = crypto.randomUUID();
     }
 
-    console.log(`[ORCHESTRATOR] Received request for workspace: ${workspace_id}, channel: ${channel}`);
+    console.debug(`[ORCHESTRATOR] Received request for workspace: ${workspace_id}, channel: ${channel}`);
 
     // Sanitize user input
     const sanitizedMessage = sanitizeUserInput(message);
 
     // 1. Load/Create Session
-    const session = await getOrCreateSession(supabase, { workspace_id, customer_jid, channel, agent_type })
+    session = await getOrCreateSession(supabase, { workspace_id, customer_jid, channel, agent_type })
 
     if (!session) {
       console.error(`[ORCHESTRATOR] Failed to create session for workspace: ${workspace_id}`);
@@ -197,7 +225,7 @@ Deno.serve(async (req) => {
     const GREETING_PATTERN = /^(hi|hello|hey|h(i|e|a)llo?\b|good\s*(morning|afternoon|evening)|yo|sup|heyy?|hi\s+there|hello\s+there|howdy)\b[.!]*$/i;
     const welcomeTemplate = session.workspaces?.welcome_template?.trim();
     if (welcomeTemplate && GREETING_PATTERN.test(sanitizedMessage.trim()) && (session.message_count ?? 0) === 0) {
-      console.log(`[ORCHESTRATOR] Greeting detected, returning welcome_template`);
+      console.debug(`[ORCHESTRATOR] Greeting detected, returning welcome_template`);
       await supabase.from('messages').insert({
         workspace_id, session_id: session.id, content: welcomeTemplate, direction: 'outbound', role: 'agent', agent_type: 'customer_support',
         metadata: { trace_id: traceId, greeting: true }
@@ -251,6 +279,9 @@ Deno.serve(async (req) => {
         }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
     }
+
+    // Indicate typing to the caller before starting LLM processing
+    await supabase.from('conversation_sessions').update({ typing_status: 'typing', updated_at: new Date().toISOString() }).eq('id', session.id);
 
     // 1.5 Compute cache hash (check happens after agent loading)
     const isAffirmation = /^(yes|yeah|yep|yeh|ok|okay|sure|correct|right|confirm|proceed|do it|go ahead|process|send it)\b/i.test(sanitizedMessage.trim());
@@ -554,8 +585,10 @@ Deno.serve(async (req) => {
           get_order_status: ["order_id"],
         };
         let matchedTool: string | null = null;
+        let bestScore = 0;
         for (const [tool, reqKeys] of Object.entries(toolSignatures)) {
-          if (reqKeys.some(k => k in parsed)) { matchedTool = tool; break; }
+          const score = reqKeys.filter(k => k in parsed).length;
+          if (score > bestScore) { bestScore = score; matchedTool = tool; }
         }
             if (matchedTool) {
               const allowedTools = getAgentTools(currentAgentType, allAgents || []);
@@ -793,7 +826,7 @@ Deno.serve(async (req) => {
                 const { data: msgs } = await supabase.from('messages').select('id').eq('session_id', session.id).eq('direction', 'outbound').order('created_at', { ascending: false }).limit(1);
                 messageId = msgs?.[0]?.id;
             } catch (_) {}
-            console.log(`[ORCHESTRATOR] GoWA dispatch success for message ${messageId}: gowa_message_ids=${gowaMessageIds.join(',')}`);
+            console.debug(`[ORCHESTRATOR] GoWA dispatch success for message ${messageId}: gowa_message_ids=${gowaMessageIds.join(',')}`);
             if (messageId && gowaMessageIds.length > 0) {
                 try { await supabase.from('messages').update({ gowa_message_id: gowaMessageIds[0] }).eq('id', messageId); } catch (_) {}
             }

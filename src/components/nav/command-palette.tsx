@@ -103,7 +103,7 @@ export function CommandPalette() {
         workspace_id: workspaceId,
         label: file.name,
         file_name: file.name,
-        source_type: fileExt === 'pdf' ? 'pdf' : 'text',
+        source_type: fileExt === 'pdf' ? 'pdf' : 'txt',
         storage_path: storagePath
       })
 

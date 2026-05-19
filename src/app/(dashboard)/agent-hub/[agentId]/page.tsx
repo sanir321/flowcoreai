@@ -186,7 +186,8 @@ export default function AgentConfigurePage() {
     const result = await addUrlSource({
       workspace_id: agent.workspace_id,
       url: newUrl,
-      label: new URL(newUrl).hostname
+      label: new URL(newUrl).hostname,
+      source_type: 'url'
     })
 
     if (result.error) {

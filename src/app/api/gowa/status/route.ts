@@ -11,16 +11,8 @@ export async function GET() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return new NextResponse("Unauthorized", { status: 401 })
 
-    const { data: workspace } = await supabase
-        .from("workspaces")
-        .select("id")
-        .eq("owner_id", user.id)
-        .eq("status", "active")
-        .is("deleted_at", null)
-        .maybeSingle()
-
-    if (!workspace) return new NextResponse("No workspace found for user", { status: 404 })
-    const workspaceId = workspace.id
+    const workspaceId = user.app_metadata?.workspace_id as string | undefined
+    if (!workspaceId) return new NextResponse("No workspace found for user", { status: 404 })
 
     // Check DB session
     const { data: session } = await (supabase

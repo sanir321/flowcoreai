@@ -90,7 +90,7 @@ Deno.serve(async (req) => {
             'X-Device-Id': deviceId,
           },
           body: JSON.stringify({
-            phone: customerJid.replace('@s.whatsapp.net', ''),
+            phone: customerJid.split('@')[0],
             message,
           }),
         })

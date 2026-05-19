@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { createClient } from "@/lib/supabase/client"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import Link from "next/link"
@@ -173,11 +174,48 @@ function ParticleRing() {
 }
 
 export default function OnboardingPage() {
-  const [step, setStep] = useState(1)
-  const [workspaceId, setWorkspaceId] = useState<string | null>(null)
+  const [step, setStep] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = sessionStorage.getItem('onboarding_step')
+      return saved ? parseInt(saved, 10) : 1
+    }
+    return 1
+  })
+  const [workspaceId, setWorkspaceId] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('onboarding_workspace_id')
+    }
+    return null
+  })
   const [selectedAgentIndex, setSelectedAgentIndex] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+
+  // Auth check on mount — redirect if user already has a workspace
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) {
+        router.push('/login')
+        return
+      }
+      const wid = user.app_metadata?.workspace_id as string | undefined
+      if (wid) {
+        router.push('/inbox')
+      }
+    })
+  }, [router])
+
+  // Persist state across refresh
+  useEffect(() => {
+    if (workspaceId) {
+      sessionStorage.setItem('onboarding_workspace_id', workspaceId)
+    }
+  }, [workspaceId])
+
+  useEffect(() => {
+    sessionStorage.setItem('onboarding_step', String(step))
+  }, [step])
 
   const form = useForm({
     resolver: zodResolver(CreateWorkspaceSchema),

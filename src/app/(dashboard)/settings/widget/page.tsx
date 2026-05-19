@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { motion } from "framer-motion"
 import { 
   Palette, 
@@ -12,7 +12,9 @@ import {
   Copy,
   Eye,
   Settings as SettingsIcon,
-  Sparkles
+  Sparkles,
+  Loader2,
+  Save
 } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -20,9 +22,10 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
+import { createClient } from "@/lib/supabase/client"
+import { updateWidgetConfig } from "@/app/actions/settings"
 
 interface WidgetConfig {
-  title: string
   color: string
   greeting: string
 }
@@ -30,15 +33,44 @@ interface WidgetConfig {
 export default function WidgetPage() {
   const [copied, setCopied] = useState(false)
   const [origin, setOrigin] = useState('https://flowcore-ai.com')
+  const [saving, setSaving] = useState(false)
+  const [workspaceId, setWorkspaceId] = useState<string | null>(null)
   const [config, setConfig] = useState<WidgetConfig>({
-    title: "Support Agent",
     color: "#D95E46",
     greeting: "Welcome. How can I help you today?"
   })
 
   useEffect(() => {
     setOrigin(window.location.origin)
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      const wid = user?.app_metadata?.workspace_id as string
+      if (wid) {
+        setWorkspaceId(wid)
+        supabase.from('widget_config').select('accent_color, greeting').eq('workspace_id', wid).maybeSingle().then(({ data }) => {
+          if (data) {
+            setConfig({ color: data.accent_color || '#D95E46', greeting: data.greeting || "Welcome. How can I help you today?" })
+          }
+        })
+      }
+    })
   }, [])
+
+  const handleSave = useCallback(async () => {
+    if (!workspaceId) return
+    setSaving(true)
+    const result = await updateWidgetConfig({
+      workspace_id: workspaceId,
+      accent_color: config.color,
+      greeting: config.greeting,
+    })
+    setSaving(false)
+    if (result.error) {
+      toast.error(result.error)
+    } else {
+      toast.success("Widget config saved")
+    }
+  }, [workspaceId, config])
 
   const copyCode = () => {
     navigator.clipboard.writeText(`<script src="${origin}/widget.js" async></script>`)
@@ -66,16 +98,8 @@ export default function WidgetPage() {
                <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
                   <Palette className="h-4 w-4 text-gray-500" /> Identity & Style
                </h3>
-               <div className="space-y-4">
-                  <div className="space-y-2">
-                     <Label className="text-xs text-gray-700">Widget Title</Label>
-                     <Input 
-                       value={config.title}
-                       onChange={(e) => setConfig({...config, title: e.target.value})}
-                       className="h-10 border-gray-200 focus:border-[#D95E46]"
-                     />
-                  </div>
-                  <div className="space-y-2">
+                <div className="space-y-4">
+                   <div className="space-y-2">
                      <Label className="text-xs text-gray-700">Primary Color</Label>
                      <div className="flex items-center gap-3">
                         <input 
@@ -90,6 +114,12 @@ export default function WidgetPage() {
                </div>
             </section>
 
+            <section className="space-y-6">
+               <Button onClick={handleSave} disabled={saving || !workspaceId} className="h-10 rounded-lg text-xs font-medium gap-2 bg-[#D95E46] hover:bg-[#c04e3a]">
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  {saving ? "Saving..." : "Save Widget Config"}
+               </Button>
+            </section>
             <section className="space-y-6">
                <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
                   <Code className="h-4 w-4 text-gray-500" /> Implementation
@@ -127,7 +157,7 @@ export default function WidgetPage() {
                   <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center">
                      <SettingsIcon className="h-4 w-4" />
                   </div>
-                  <span className="text-sm font-semibold">{config.title}</span>
+                   <span className="text-sm font-semibold">Support Agent</span>
                </div>
                <div className="flex-1 p-6 space-y-4">
                   <div className="bg-gray-50 p-4 rounded-xl rounded-tl-none text-xs text-gray-600 leading-relaxed border border-gray-100">

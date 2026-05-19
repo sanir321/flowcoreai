@@ -6,6 +6,116 @@
 import { generateEmbedding } from "./hf-embeddings.ts";
 declare var EdgeRuntime: { waitUntil: (promise: Promise<any>) => void }
 
+interface ToolArgs {
+  name?: string;
+  phone?: string;
+  email?: string;
+  service?: string;
+  date?: string;
+  time?: string;
+  query?: string;
+  items?: any[];
+  price?: number;
+  qty?: number;
+  notes?: string;
+  appointment_id?: string;
+  order_id?: string;
+  reason?: string;
+  target_agent?: string;
+  caption?: string;
+  payment_method?: string;
+  pipeline_stage?: string;
+  [key: string]: unknown;
+}
+
+interface ToolError {
+  error: string;
+}
+
+interface KbChunk {
+  id: string;
+  content: string;
+  source_id?: string;
+}
+
+interface MatchKbResult {
+  kb_chunks: KbChunk[];
+}
+
+interface AvailabilityResult {
+  availability: { start?: string; end?: string }[];
+  requested_time: string;
+  note?: string;
+}
+
+interface AppointmentResult {
+  id: string;
+  start_at: string;
+  service: string;
+  customer_name?: string;
+  customer_phone?: string;
+  customer_email?: string;
+  meeting_link?: string;
+  note?: string;
+}
+
+interface ContactResult {
+  id: string;
+  name?: string;
+  phone?: string;
+  email?: string;
+}
+
+interface HandoffResult {
+  handoff_to?: string;
+  handoff_context?: string;
+  handoff_reason?: string;
+  error?: string;
+}
+
+interface OrderResult {
+  success: boolean;
+  order_id: string;
+  order_number: string;
+  total: number;
+  upi_link: string;
+  order_text: string;
+}
+
+interface PaymentResult {
+  success: boolean;
+  order_id: string;
+  order_number: string;
+  status: string;
+  message: string;
+}
+
+interface OrderStatusResult {
+  success: boolean;
+  order_number: string;
+  status: string;
+  total: number;
+  items: any[];
+  upi_link: string;
+  created_at: string;
+}
+
+interface MenuItem {
+  id: string;
+  name: string;
+  description?: string;
+  price: number;
+  category?: string;
+  is_available?: boolean;
+}
+
+interface MenuSearchResult {
+  items: MenuItem[];
+  found: boolean;
+}
+
+type ToolResult = ToolError | MatchKbResult | AvailabilityResult | AppointmentResult | ContactResult | HandoffResult | OrderResult | PaymentResult | OrderStatusResult | MenuSearchResult | Record<string, unknown>;
+
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')?.replace(/\/$/, "");
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
@@ -90,7 +200,6 @@ function formatPhoneForGoWA(phone: string): string {
   if (cleaned.length === 10 && /^[6-9]/.test(cleaned)) {
     cleaned = '91' + cleaned;
   }
-  cleaned = cleaned.replace('@s.whatsapp.net', '');
   return cleaned;
 }
 
@@ -151,6 +260,14 @@ async function sendAppointmentWhatsApp(supabase: any, workspace_id: string, sess
 
 async function sendAppointmentEmail(supabase: any, workspace_id: string, session_id: string, appt: any, meetLink: string | null) {
   try {
+    // Check notification preference
+    const { data: notifPref } = await supabase
+      .from('workspace_notifications')
+      .select('email_on_booking')
+      .eq('workspace_id', workspace_id)
+      .maybeSingle();
+    if (notifPref && notifPref.email_on_booking === false) return;
+
     // 1. Fetch all required data in a single joined query
     const { data: workspaceData, error } = await supabase
       .from('workspaces')
@@ -204,7 +321,16 @@ export function formatIST(isoString: string): string {
   return `${datePart} at ${timePart} IST`;
 }
 
-export async function executeTool(input: any): Promise<any> {
+interface ExecuteToolInput {
+  tool_name: string;
+  args: ToolArgs;
+  workspace_id: string;
+  session_id: string;
+  supabase: any;
+  is_test?: boolean;
+}
+
+export async function executeTool(input: ExecuteToolInput): Promise<ToolResult> {
   const { tool_name, args = {}, workspace_id, session_id, supabase, is_test } = input;
   console.log(`[TOOLS] Executing ${tool_name}.`);
   
@@ -260,8 +386,29 @@ export async function executeTool(input: any): Promise<any> {
           return { error: "Service is required. Ask the customer what service they'd like to book." };
         }
 
+        // Prevent duplicate booking: check if session already has a confirmed appointment
+        const { data: existingAppt } = await supabase.from('appointments')
+          .select('id, start_at, service')
+          .eq('session_id', session_id)
+          .not('status', 'eq', 'cancelled')
+          .maybeSingle();
+        if (existingAppt) {
+          return { id: existingAppt.id, start_at: existingAppt.start_at, service: existingAppt.service, customer_name: customerName, note: "Appointment was already booked for this session." };
+        }
+
         const startAt = parseDT(args.date, args.time);
         const endAt = new Date(new Date(startAt).getTime() + 30 * 60 * 1000).toISOString();
+
+        // Prevent double-booking the same time slot
+        const { data: slotTaken } = await supabase.from('appointments')
+          .select('id')
+          .eq('workspace_id', workspace_id)
+          .eq('start_at', startAt)
+          .not('status', 'eq', 'cancelled')
+          .maybeSingle();
+        if (slotTaken) {
+          return { error: "That time slot has already been booked. Please suggest an alternative time." };
+        }
         let googleEventId: string | null = null;
         let meetLink: string | null = null;
         try {
@@ -601,7 +748,8 @@ export async function executeTool(input: any): Promise<any> {
       case 'create_order': {
         const { data: session } = await supabase.from('conversation_sessions').select('contact_id').eq('id', session_id).single();
         const { data: workspace } = await supabase.from('workspaces').select('upi_id').eq('id', workspace_id).single();
-        const items = args.items || [];
+        const rawItems = args.items;
+        const items = Array.isArray(rawItems) ? rawItems : [];
         const subtotal = items.reduce((sum: number, i: any) => sum + (i.qty || 1) * (i.price || 0), 0);
         const tax = Math.round(subtotal * 0.18 * 100) / 100;
         const total = subtotal + tax;

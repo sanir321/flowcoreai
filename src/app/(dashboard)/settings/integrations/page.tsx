@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 import { useWorkspace } from "@/hooks/use-workspace"
-import { getGoogleAuthUrl, updateGoogleConfig } from "@/app/actions/settings"
+import { getGoogleAuthUrl, updateGoogleConfig, disconnectGoogleIntegration } from "@/app/actions/settings"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
 import Link from "next/link"
@@ -78,13 +78,13 @@ export default function IntegrationsPage() {
   const [isActionLoading, setIsActionLoading] = useState<string | null>(null)
   const [config, setConfig] = useState({ calendar_id: 'primary', sheet_id: '', sheet_range: 'Sheet1!A:E' })
   const [isSaving, setIsSaving] = useState(false)
-  
-  const supabase = createClient()
 
   useEffect(() => {
     if (!workspaceId) return
-    
+
     async function fetchData() {
+      const supabase = createClient()
+
       // Fetch active agents
       const { data: agents } = await (supabase
         .from("workspace_agents") as any)
@@ -148,20 +148,17 @@ export default function IntegrationsPage() {
   }
 
   const handleDisconnect = async (id: string) => {
-    if (id !== 'google') return
-    
-    setIsActionLoading(id)
-    const { error } = await supabase
-      .from("google_oauth_tokens")
-      .delete()
-      .eq("workspace_id", workspaceId as string)
+    if (id !== 'google' || !workspaceId) return
 
-    if (error) {
+    setIsActionLoading(id)
+    const result = await disconnectGoogleIntegration(workspaceId)
+
+    if (result.error) {
       toast.error("Failed to disconnect")
       setErrorIds(prev => ({ ...prev, [id]: "Failed to disconnect" }))
     } else {
       setConnectedIds([])
-      router.replace(pathname) // Clear URL parameters like ?connected=google
+      router.replace(pathname)
       toast.success("Disconnected from Google")
     }
     setIsActionLoading(null)

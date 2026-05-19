@@ -6,6 +6,10 @@ declare var EdgeRuntime: { waitUntil: (promise: Promise<any>) => void }
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+  'Vary': 'Origin',
 }
 
 /**
@@ -98,7 +102,7 @@ Deno.serve(async (req) => {
         throw new Error('No data/payload field in root payload')
     }
 
-    const { from, chat_id, message, body, from_name, pushName, id: gowaMessageId } = eventData
+    const { from, chat_id, message, body, from_name, pushName, id: gowaMessageId, mediaPath, mimeType } = eventData
     const isGroup = eventData.isGroup || chat_id?.endsWith('@g.us') || from?.endsWith('@g.us')
     
     if (isGroup) {
@@ -107,14 +111,40 @@ Deno.serve(async (req) => {
     }
 
     const normalizedFrom = normalizeJID(from);
-    // v8 uses 'body', legacy uses 'body' or nested 'message' object
-    const messageText = body || message?.conversation || message?.extendedTextMessage?.text || ''
-    const pushname = from_name || pushName || "Customer"
-    
-    if (!messageText) {
-        console.log(`[WEBHOOK] No text content in message type: ${eventData.type || 'unknown'}`)
-        return new Response(JSON.stringify({ success: true, message: 'no text content' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    const msgType = eventData.type || message?.type || '';
+    const mediaTypes = ['imageMessage', 'videoMessage', 'documentMessage', 'audioMessage', 'stickerMessage', 'ptvMessage', 'voiceMessage'];
+
+    // Extract caption from media messages
+    let mediaCaption = '';
+    let mediaPath = '';
+    let mediaMime = '';
+    for (const mt of mediaTypes) {
+        const mediaObj = message?.[mt];
+        if (mediaObj) {
+            mediaCaption = mediaObj.caption || '';
+            mediaPath = mediaObj.url || mediaObj.mediaPath || eventData.mediaPath || '';
+            mediaMime = mediaObj.mimetype || eventData.mimeType || mt;
+            break;
+        }
     }
+
+    // v8 uses 'body', legacy uses 'body' or nested 'message' object
+    const messageText = body || message?.conversation || message?.extendedTextMessage?.text || mediaCaption || '';
+    const pushname = from_name || pushName || "Customer"
+    const messageMetadata: Record<string, unknown> = {};
+
+    if (!messageText && !mediaPath) {
+        console.log(`[WEBHOOK] Unprocessable message type: ${msgType}`)
+        return new Response(JSON.stringify({ success: true, message: 'unprocessable' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }
+
+    if (mediaPath) {
+        messageMetadata.media_path = mediaPath;
+        messageMetadata.media_mime = mediaMime;
+        messageMetadata.media_type = msgType || mediaMime;
+        if (mediaCaption) messageMetadata.media_caption = mediaCaption;
+    }
+    const hasMedia = !!mediaPath;
 
     // 1. Find Workspace by GoWA Session ID (Check both UUID and JID)
     // GoWA Specification: Device ID vs JID
@@ -262,15 +292,17 @@ Deno.serve(async (req) => {
 
 
     // 5. Store Inbound Message
+    const displayContent = messageText || (hasMedia ? `[${mediaMime.startsWith('image') ? 'Image' : mediaMime.startsWith('video') ? 'Video' : mediaMime.startsWith('audio') ? 'Audio' : 'File'} message]` : '');
     const { error: msgError } = await supabase
       .from('messages')
       .insert({
         workspace_id: workspaceId,
         session_id: activeSession.id,
-        content: messageText,
+        content: displayContent,
         direction: 'inbound',
         role: 'customer',
-        gowa_message_id: gowaMessageId
+        gowa_message_id: gowaMessageId,
+        metadata: Object.keys(messageMetadata).length > 0 ? messageMetadata : {}
       })
 
     if (msgError) {
@@ -284,18 +316,13 @@ Deno.serve(async (req) => {
       .update({
         last_message_at: new Date().toISOString(),
         last_customer_message_at: new Date().toISOString(),
-        last_message_preview: messageText.substring(0, 100),
+        last_message_preview: displayContent.substring(0, 100),
         updated_at: new Date().toISOString()
       })
       .eq('id', activeSession.id)
 
     // 7. Fire and Forget AI processing using EdgeRuntime.waitUntil
-    const deviceId = gowaSession.gowa_session_id;
-    const customerPhone = normalizedFrom.split('@')[0];
-    const gowaBase = (Deno.env.get('GOWA_BASE_URL') ?? '').replace(/\/$/, '');
-    const gowaKey = Deno.env.get('GOWA_API_KEY');
-    const gowaAuth = gowaKey ? btoa(gowaKey) : null;
-
+    // Note: GoWA dispatch is handled by the orchestrator internally
     const processAI = async () => {
         try {
             console.log(`[WEBHOOK] Triggering AI for workspace ${workspaceId}`)
@@ -303,8 +330,9 @@ Deno.serve(async (req) => {
                 workspace_id: workspaceId,
                 session_id: activeSession.id,
                 customer_jid: normalizedFrom,
-                message: messageText,
-                channel: 'whatsapp'
+                message: displayContent,
+                channel: 'whatsapp',
+                ...(hasMedia ? { media_metadata: messageMetadata } : {})
             };
             
             const aiClient = createClient(
@@ -325,44 +353,9 @@ Deno.serve(async (req) => {
             }
 
             const parts: string[] = aiResponse?.response_parts || [];
-            if (parts.length === 0 || !gowaAuth || !gowaBase || !deviceId) {
-                console.log(`[WEBHOOK] No response parts (${parts.length}) or GoWA not configured`)
-                return
-            }
-
-            for (const part of parts) {
-                try {
-                    const msgResp = await fetch(`${gowaBase}/send/message`, {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Basic ${gowaAuth}`,
-                            'Content-Type': 'application/json',
-                            'X-Device-Id': deviceId
-                        },
-                        body: JSON.stringify({ phone: customerPhone, message: part })
-                    });
-
-                    if (msgResp.ok) {
-                        const msgData = await msgResp.json();
-                        const gowaOutboundId = msgData?.results?.message_id || null;
-                        console.log(`[WEBHOOK] Sent response to ${customerPhone}: ${part.substring(0, 50)}...`);
-
-                        await supabase.from('messages').insert({
-                            workspace_id: workspaceId,
-                            session_id: activeSession.id,
-                            content: part,
-                            direction: 'outbound',
-                            role: 'agent',
-                            agent_type: aiResponse?.metadata?.agent_type || 'customer_support',
-                            gowa_message_id: gowaOutboundId
-                        });
-                    } else {
-                        const errText = await msgResp.text().catch(() => "");
-                        console.error(`[WEBHOOK] GoWA send failed (${msgResp.status}): ${errText}`);
-                    }
-                } catch (sendErr) {
-                    console.error(`[WEBHOOK] GoWA send error for part:`, sendErr);
-                }
+            const agentType = aiResponse?.metadata?.agent_type || 'customer_support';
+            if (parts.length > 0) {
+                console.log(`[WEBHOOK] AI responded (${parts.length} parts, agent=${agentType}) — orchestrator handles dispatch`);
             }
         } catch (bgError) {
             console.error("[WEBHOOK] Background AI process failed:", bgError)

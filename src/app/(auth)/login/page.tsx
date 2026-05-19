@@ -56,6 +56,18 @@ export default function LoginPage() {
 
   const handleGoogleLogin = async () => {
     setIsLoading(true)
+    setTermsError("")
+
+    // Try to detect if user exists via their current session or stored preference
+    const { data: { user } } = await supabase.auth.getUser()
+    const isReturningUser = user !== null
+
+    if (!isReturningUser && !acceptedTerms) {
+      setTermsError("You must accept the Privacy Policy and Terms & Conditions")
+      setIsLoading(false)
+      return
+    }
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
@@ -75,6 +87,12 @@ export default function LoginPage() {
 
     // Check if this is a new or existing user
     const result = await checkUserExists(email)
+    if (result.error) {
+      console.error("checkUserExists error:", result.error)
+      toast.error("Unable to verify account. Please try again.")
+      setIsLoading(false)
+      return
+    }
     const isNewUser = !result.data?.exists
 
     if (isNewUser && !acceptedTerms) {
@@ -117,27 +135,14 @@ export default function LoginPage() {
       const { data: { user } } = await supabase.auth.getUser()
       
       if (user) {
+        const isNewUser = !user.last_sign_in_at || (new Date().getTime() - new Date(user.created_at).getTime() < 10000);
         try {
-          const isNewUser = !user.last_sign_in_at || (new Date().getTime() - new Date(user.created_at).getTime() < 10000);
-          
-          const emailRes = await fetch("/api/emails/send", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              to: user.email,
-              subject: isNewUser ? `Welcome to FlowCore!` : "New Sign-in detected",
-              template: isNewUser ? "welcome" : "signin",
-              data: {
-                username: user.user_metadata?.full_name || user.email?.split("@")[0] || "there",
-                time: new Date().toLocaleString(),
-                device: navigator.userAgent.includes("Mobi") ? "Mobile Device" : "Desktop Browser"
-              }
-            })
+          const { sendAuthEmail } = await import("@/app/actions/auth");
+          await sendAuthEmail({
+            email: user.email!,
+            isNewUser,
+            username: user.user_metadata?.full_name || user.email?.split("@")[0] || "there",
           });
-
-          if (!emailRes.ok) {
-            console.warn("Auth notification email failed, but user is logged in.");
-          }
         } catch (emailErr) {
           console.error("Failed to send auth notification email:", emailErr);
         }

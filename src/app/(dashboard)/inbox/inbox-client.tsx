@@ -64,6 +64,7 @@ interface Message {
   created_at: string
   direction?: 'inbound' | 'outbound'
   agent_type?: string
+  metadata?: Record<string, unknown>
 }
 
 interface InboxClientProps {
@@ -494,14 +495,29 @@ export function InboxClient({
                   <div className="max-w-3xl mx-auto space-y-10 py-12 px-6">
                      {messages.map((m) => (
                        <div key={m.id} className={cn("flex flex-col gap-2", m.role === 'customer' ? "items-start" : "items-end")}>
-                          <div className={cn(
-                            "group relative px-5 py-3.5 rounded-2xl text-[14px] font-normal leading-relaxed max-w-[85%] transition-all",
-                            m.role === 'customer' 
-                              ? "bg-[#F5F5F5] text-gray-900" 
-                              : "bg-white border border-gray-100 text-gray-900 shadow-sm"
-                          )}>
-                             {m.content}
-                          </div>
+                           <div className={cn(
+                             "group relative px-5 py-3.5 rounded-2xl text-[14px] font-normal leading-relaxed max-w-[85%] transition-all",
+                             m.role === 'customer' 
+                               ? "bg-[#F5F5F5] text-gray-900" 
+                               : "bg-white border border-gray-100 text-gray-900 shadow-sm"
+                           )}>
+                              {m.metadata?.media_path ? (
+                                <div className="flex flex-col gap-2">
+                                  {(m.metadata.media_mime as string)?.startsWith('image') ? (
+                                    <img src={m.metadata.media_path as string} alt="Image" className="max-w-full rounded-lg" />
+                                  ) : (m.metadata.media_mime as string)?.startsWith('video') ? (
+                                    <video src={m.metadata.media_path as string} controls className="max-w-full rounded-lg" />
+                                  ) : (m.metadata.media_mime as string)?.startsWith('audio') ? (
+                                    <audio src={m.metadata.media_path as string} controls className="w-full" />
+                                  ) : (
+                                    <a href={m.metadata.media_path as string} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">View file</a>
+                                  )}
+                                  {m.content && !m.content.startsWith('[') && <span>{m.content}</span>}
+                                </div>
+                              ) : (
+                                m.content
+                              )}
+                           </div>
                           
                            <div className="flex items-center gap-3 px-1 text-gray-500 font-semibold">
                               <span className="text-[9px]">{m.role === 'customer' ? 'Customer' : 'Assistant'}</span>

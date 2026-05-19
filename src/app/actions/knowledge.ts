@@ -5,6 +5,7 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 import { revalidatePath } from "next/cache"
 import { ActionResponse } from "./workspace"
 import { z } from "zod"
+import { logAudit } from "@/lib/audit"
 
 // Admin client for triggering background tasks
 const supabaseAdmin = createSupabaseClient(
@@ -62,6 +63,15 @@ export async function addUrlSource(input: unknown): Promise<ActionResponse<{ id:
     }
 
     revalidatePath("/knowledge")
+
+    await logAudit({
+      workspace_id,
+      action: 'add_kb_source',
+      entity_type: 'kb_source',
+      entity_id: data.id,
+      payload: { url, source_type, label }
+    })
+
     return { data: { id: data.id }, error: null }
   } catch (err: any) {
     console.error(err)
@@ -78,6 +88,10 @@ export async function deleteSource(id: string): Promise<ActionResponse<{ success
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
 
+    // Fetch workspace_id for logging and verification
+    const { data: source } = await supabase.from("kb_sources").select("workspace_id").eq("id", res.data).maybeSingle()
+    if (!source) return { data: null, error: "Source not found" }
+
     // Delete chunks first, then soft-delete the source
     const { error: chunkError } = await supabase
       .from("kb_chunks")
@@ -92,6 +106,13 @@ export async function deleteSource(id: string): Promise<ActionResponse<{ success
       .eq("id", res.data)
 
     if (error) throw error
+
+    await logAudit({
+      workspace_id: source.workspace_id,
+      action: 'delete_kb_source',
+      entity_type: 'kb_source',
+      entity_id: res.data
+    })
 
     revalidatePath("/knowledge")
     return { data: { success: true }, error: null }

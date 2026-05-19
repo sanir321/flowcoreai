@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
+import { logAudit } from "@/lib/audit"
 
 export interface Workspace {
   id: string
@@ -65,6 +66,13 @@ export async function createWorkspace(input: unknown): Promise<ActionResponse<{ 
 
     if (error) throw error
 
+    // Set workspace_id in app_metadata immediately so the user can access the workspace
+    // even if finalizeOnboarding fails later
+    const admin = createAdminClient()
+    await admin.auth.admin.updateUserById(user.id, {
+      app_metadata: { workspace_id: data.id }
+    }).catch(e => console.error("[WORKSPACE_METADATA_UPDATE_FAILED]", e))
+
     return { data: { workspace_id: data.id }, error: null }
   } catch (err) {
     console.error(err)
@@ -106,6 +114,14 @@ export async function updateWorkspace(input: unknown): Promise<ActionResponse<{ 
 
     if (error) throw error
 
+    await logAudit({
+      workspace_id: result.data.id,
+      action: 'update_workspace',
+      entity_type: 'workspace',
+      entity_id: result.data.id,
+      payload: result.data
+    })
+
     revalidatePath("/settings")
     return { data: { success: true }, error: null }
   } catch (err) {
@@ -136,6 +152,14 @@ export async function updateWelcomeTemplate(workspace_id: string, template: stri
       .eq("owner_id", user.id)
 
     if (error) throw error
+
+    await logAudit({
+      workspace_id: result.data.workspace_id,
+      action: 'update_welcome_template',
+      entity_type: 'workspace',
+      entity_id: result.data.workspace_id,
+      payload: { template_length: result.data.template.length }
+    })
 
     revalidatePath("/settings")
     return { data: { success: true }, error: null }

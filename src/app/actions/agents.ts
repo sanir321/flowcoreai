@@ -1,10 +1,10 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
-import { createAdminClient } from "@/lib/supabase/admin"
 import { FinalizeOnboardingSchema, SetAgentStatusSchema, AddAgentSchema, UpdateAgentConfigSchema, DeleteAgentSchema } from "@/lib/schemas"
 import { revalidatePath } from "next/cache"
 import { ActionResponse } from "./workspace"
+import { logAudit } from "@/lib/audit"
 
 export async function finalizeOnboarding(input: unknown): Promise<ActionResponse<{ success: true }>> {
   try {
@@ -28,17 +28,6 @@ export async function finalizeOnboarding(input: unknown): Promise<ActionResponse
     const { error: agentError } = await supabase.from("workspace_agents").insert(agentsToInsert)
 
     if (agentError) throw agentError
-
-    // CRITICAL: Update user app_metadata so middleware knows they have a workspace
-    const admin = createAdminClient()
-    const { error: authError } = await admin.auth.admin.updateUserById(user.id, {
-      app_metadata: { workspace_id: workspace_id }
-    })
-
-    if (authError) {
-      console.error("[AUTH_METADATA_UPDATE_FAILED]", authError)
-      // We don't throw here because the DB part succeeded, but it might cause redirection issues until next sign-in
-    }
 
     revalidatePath("/agent-hub")
     return { data: { success: true }, error: null }
@@ -126,6 +115,17 @@ export async function deleteAgent(input: unknown): Promise<ActionResponse<{ succ
 
     if (error) throw error
 
+    // Fetch workspace_id for audit logging
+    const { data: agent } = await supabase.from("workspace_agents").select("workspace_id").eq("id", agent_id).maybeSingle()
+    if (agent) {
+      await logAudit({
+        workspace_id: agent.workspace_id,
+        action: 'delete_agent',
+        entity_type: 'agent',
+        entity_id: agent_id
+      })
+    }
+
     revalidatePath("/agent-hub")
     return { data: { success: true }, error: null }
   } catch (err) {
@@ -146,7 +146,7 @@ export async function updateAgentConfig(input: unknown): Promise<ActionResponse<
     if (!user) return { data: null, error: "Unauthorized" }
 
     // Fetch existing config to merge
-    const { data: agent } = await supabase.from("workspace_agents").select("config").eq("id", agent_id).single()
+    const { data: agent } = await supabase.from("workspace_agents").select("workspace_id, config").eq("id", agent_id).single()
     const mergedConfig = { ...(agent?.config as any || {}), ...config }
 
     const { error } = await supabase
@@ -155,6 +155,16 @@ export async function updateAgentConfig(input: unknown): Promise<ActionResponse<
       .eq("id", agent_id)
 
     if (error) throw error
+
+    if (agent) {
+      await logAudit({
+        workspace_id: agent.workspace_id,
+        action: 'update_agent_config',
+        entity_type: 'agent',
+        entity_id: agent_id,
+        payload: config
+      })
+    }
 
     revalidatePath(`/agents/${agent_id}`)
     return { data: { success: true }, error: null }

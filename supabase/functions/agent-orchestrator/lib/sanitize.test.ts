@@ -116,7 +116,7 @@ describe('checkTokenBudget', () => {
       from: () => ({
         select: () => ({
           eq: () => ({
-            single: async () => ({ data: { total_tokens_used: 14900, message_count: 10 }, error: null })
+            single: async () => ({ data: { total_tokens_used: 99900, message_count: 10 }, error: null })
           })
         }),
         update: () => ({
@@ -126,7 +126,7 @@ describe('checkTokenBudget', () => {
     }
     const result = await checkTokenBudget(mockSupabase as any, 'session-1', 200)
     expect(result.allowed).toBe(false)
-    expect(result.usage).toBe(14900)
+    expect(result.usage).toBe(99900)
   })
 
   it('allows exactly at limit', async () => {

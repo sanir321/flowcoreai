@@ -9,8 +9,12 @@ if (!email || !pass) {
 
 let transporter: nodemailer.Transporter;
 if (email && pass) {
+  const host = process.env.SMTP_HOST || 'smtp.gmail.com';
+  const port = parseInt(process.env.SMTP_PORT || '587', 10);
   transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host,
+    port,
+    secure: port === 465,
     auth: { user: email, pass },
   });
 }

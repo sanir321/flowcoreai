@@ -102,7 +102,7 @@ create table kb_chunks (
   workspace_id    uuid not null references workspaces(id) on delete cascade,
   source_id       uuid not null references kb_sources(id) on delete cascade,
   content         text not null,
-  embedding       vector(1536),
+  embedding       vector(384),
   token_count     integer,
   chunk_index     integer not null,
   metadata        jsonb not null default '{}',
@@ -376,10 +376,40 @@ on conflict (id) do nothing;
 
 create policy "kb_docs_tenant" on storage.objects for all
   using (bucket_id = 'kb-documents'
-    and (storage.foldername(name))[1] = auth.uid()::text);
+    and exists (
+      select 1 from workspaces w
+      where w.id::text = (storage.foldername(name))[1]
+      and w.owner_id = auth.uid()
+      and w.deleted_at is null
+    ));
 
 create policy "avatars_public_read" on storage.objects for select
   using (bucket_id = 'avatars');
 create policy "avatars_owner_write" on storage.objects for insert
   with check (bucket_id = 'avatars'
     and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- Vector search RPC for knowledge base chunks
+create or replace function match_kb_chunks(
+  query_embedding vector(384),
+  match_threshold float,
+  match_count int,
+  p_workspace_id uuid default null
+)
+returns table(id uuid, content text, similarity float)
+language plpgsql
+as $$
+begin
+  return query
+  select kc.id, kc.content, 1 - (kc.embedding <=> query_embedding) as similarity
+  from public.kb_chunks kc
+  join public.kb_sources ks on ks.id = kc.source_id
+  where (p_workspace_id is null or kc.workspace_id = p_workspace_id)
+    and kc.deleted_at is null
+    and ks.deleted_at is null
+    and ks.status = 'active'
+    and (kc.embedding <=> query_embedding) < 1 - match_threshold
+  order by kc.embedding <=> query_embedding
+  limit match_count;
+end;
+$$;
