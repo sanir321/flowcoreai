@@ -65,6 +65,10 @@
     return '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>';
   }
 
+  function svgBubbleSmall() {
+    return '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>';
+  }
+
   function svgSend() {
     return '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19V5m0 0l-7 7m7-7l7 7"/></svg>';
   }
@@ -85,7 +89,7 @@
     var hdr = ce('div');
     hdr.id = 'fw-hdr';
     hdr.innerHTML =
-      '<div id="fw-av">&#x1f916;</div>' +
+      '<div id="fw-av">' + svgBubbleSmall() + '</div>' +
       '<div id="fw-hdr-txt">' + (state.config.agent_name || 'Support') + '</div>' +
       '<button id="fw-cls">' + svgClose() + '</button>';
     hdr.querySelector('#fw-cls').addEventListener('click', toggle);

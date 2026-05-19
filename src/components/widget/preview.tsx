@@ -99,8 +99,8 @@ export default function WidgetPreview({ workspaceId, accentColor, greeting }: Pr
       ) : (
         <div className="rounded-2xl overflow-hidden shadow-2xl border border-gray-200 flex flex-col" style={{ height: 480 }}>
           <div className="flex items-center gap-3 px-5 py-4 text-white" style={{ background: c }}>
-            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-sm">
-              🤖
+            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+              <MessageCircle className="w-4 h-4" />
             </div>
             <span className="text-sm font-semibold flex-1">{name}</span>
             <button onClick={() => setOpen(false)} className="text-white/70 hover:text-white">
