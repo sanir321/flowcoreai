@@ -6,8 +6,8 @@ const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
   title: "Acceptable Use Policy",
-  description: "Flowter's Acceptable Use Policy (AUP) defining prohibited activities and proper use of our AI platform.",
-  openGraph: { title: "AUP - Flowter", url: `${siteUrl}/legal/aup` },
+  description: "Flowcore AI's Acceptable Use Policy (AUP) defining prohibited activities and proper use of our AI platform.",
+  openGraph: { title: "AUP - Flowcore AI", url: `${siteUrl}/legal/aup` },
   alternates: { canonical: `${siteUrl}/legal/aup` },
 }
 

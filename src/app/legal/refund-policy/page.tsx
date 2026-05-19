@@ -6,8 +6,8 @@ const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
   title: "Refund Policy",
-  description: "Flowter's refund and cancellation policy for our AI customer service platform subscriptions.",
-  openGraph: { title: "Refund Policy - Flowter", url: `${siteUrl}/legal/refund-policy` },
+  description: "Flowcore AI's refund and cancellation policy for our AI customer service platform subscriptions.",
+  openGraph: { title: "Refund Policy - Flowcore AI", url: `${siteUrl}/legal/refund-policy` },
   alternates: { canonical: `${siteUrl}/legal/refund-policy` },
 }
 

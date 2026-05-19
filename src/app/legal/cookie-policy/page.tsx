@@ -6,8 +6,8 @@ const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
   title: "Cookie Policy",
-  description: "Flowter's cookie policy explains how we use essential cookies for authentication and preferences.",
-  openGraph: { title: "Cookie Policy - Flowter", url: `${siteUrl}/legal/cookie-policy` },
+  description: "Flowcore AI's cookie policy explains how we use essential cookies for authentication and preferences.",
+  openGraph: { title: "Cookie Policy - Flowcore AI", url: `${siteUrl}/legal/cookie-policy` },
   alternates: { canonical: `${siteUrl}/legal/cookie-policy` },
 }
 

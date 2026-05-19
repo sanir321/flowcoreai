@@ -6,10 +6,10 @@ const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
   title: "Frequently Asked Questions",
-  description: "Answers to common questions about Flowter's AI customer service platform, WhatsApp integration, pricing, and features.",
+  description: "Answers to common questions about Flowcore AI's AI customer service platform, WhatsApp integration, pricing, and features.",
   openGraph: {
-    title: "FAQ - Flowter",
-    description: "Answers to common questions about Flowter's AI customer service platform.",
+    title: "FAQ - Flowcore AI",
+    description: "Answers to common questions about Flowcore AI's AI customer service platform.",
     url: `${siteUrl}/faq`,
   },
   alternates: { canonical: `${siteUrl}/faq` },

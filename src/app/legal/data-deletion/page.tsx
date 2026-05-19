@@ -6,8 +6,8 @@ const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
   title: "Data Deletion & Export",
-  description: "How to request data deletion or export from Flowter in compliance with DPDP Act 2023 and GDPR.",
-  openGraph: { title: "Data Deletion - Flowter", url: `${siteUrl}/legal/data-deletion` },
+  description: "How to request data deletion or export from Flowcore AI in compliance with DPDP Act 2023 and GDPR.",
+  openGraph: { title: "Data Deletion - Flowcore AI", url: `${siteUrl}/legal/data-deletion` },
   alternates: { canonical: `${siteUrl}/legal/data-deletion` },
 }
 

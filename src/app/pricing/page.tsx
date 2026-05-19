@@ -6,10 +6,10 @@ const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
   title: "Pricing",
-  description: "Simple, transparent pricing for Flowter's AI customer service orchestration platform. Pay as you grow.",
+  description: "Simple, transparent pricing for Flowcore AI's AI customer service orchestration platform. Pay as you grow.",
   openGraph: {
-    title: "Pricing - Flowter",
-    description: "Simple, transparent pricing for Flowter's AI customer service platform.",
+    title: "Pricing - Flowcore AI",
+    description: "Simple, transparent pricing for Flowcore AI's AI customer service platform.",
     url: `${siteUrl}/pricing`,
   },
   alternates: { canonical: `${siteUrl}/pricing` },

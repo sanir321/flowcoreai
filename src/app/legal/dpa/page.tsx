@@ -6,8 +6,8 @@ const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
   title: "Data Processing Agreement",
-  description: "Flowter's Data Processing Agreement (DPA) governing how we process customer data as a processor under DPDP Act 2023.",
-  openGraph: { title: "DPA - Flowter", url: `${siteUrl}/legal/dpa` },
+  description: "Flowcore AI's Data Processing Agreement (DPA) governing how we process customer data as a processor under DPDP Act 2023.",
+  openGraph: { title: "DPA - Flowcore AI", url: `${siteUrl}/legal/dpa` },
   alternates: { canonical: `${siteUrl}/legal/dpa` },
 }
 

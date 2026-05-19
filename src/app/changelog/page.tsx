@@ -6,9 +6,9 @@ const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
   title: "Changelog",
-  description: "Release history and product updates for Flowter's AI customer service orchestration platform.",
+  description: "Release history and product updates for Flowcore AI's AI customer service orchestration platform.",
   openGraph: {
-    title: "Changelog - Flowter",
+    title: "Changelog - Flowcore AI",
     description: "Release history and product updates.",
     url: `${siteUrl}/changelog`,
   },

@@ -6,8 +6,8 @@ const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
-  description: "Flowter's privacy policy explains how we collect, use, store, and protect your data in compliance with DPDP Act 2023 and IT Act 2000.",
-  openGraph: { title: "Privacy Policy - Flowter", url: `${siteUrl}/legal/privacy-policy` },
+  description: "Flowcore AI's privacy policy explains how we collect, use, store, and protect your data in compliance with DPDP Act 2023 and IT Act 2000.",
+  openGraph: { title: "Privacy Policy - Flowcore AI", url: `${siteUrl}/legal/privacy-policy` },
   alternates: { canonical: `${siteUrl}/legal/privacy-policy` },
 }
 

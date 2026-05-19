@@ -21,7 +21,7 @@ export function StructuredData() {
   const softwareSchema = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    "name": "Flowter",
+    "name": "Flowcore AI",
     "operatingSystem": "Web",
     "applicationCategory": "BusinessApplication",
     "offers": {
@@ -34,7 +34,7 @@ export function StructuredData() {
   const websiteSchema = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    "name": "Flowter",
+    "name": "Flowcore AI",
     "url": siteUrl,
     "potentialAction": {
       "@type": "SearchAction",
@@ -49,26 +49,26 @@ export function StructuredData() {
     "mainEntity": [
       {
         "@type": "Question",
-        "name": "What is Flowter?",
+        "name": "What is Flowcore AI?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Flowter is an AI-powered customer service orchestration platform. It connects WhatsApp and webchat to a single AI inbox, automating responses while keeping a human in the loop when needed."
+          "text": "Flowcore AI is an AI-powered customer service orchestration platform. It connects WhatsApp and webchat to a single AI inbox, automating responses while keeping a human in the loop when needed."
         }
       },
       {
         "@type": "Question",
-        "name": "Does Flowter require Meta/WhatsApp Business API approval?",
+        "name": "Does Flowcore AI require Meta/WhatsApp Business API approval?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "No. Flowter uses GoWA (self-hosted WhatsApp Web API), which connects via QR code like WhatsApp Web. No Meta Business API approval or WABA number required."
+          "text": "No. Flowcore AI uses GoWA (self-hosted WhatsApp Web API), which connects via QR code like WhatsApp Web. No Meta Business API approval or WABA number required."
         }
       },
       {
         "@type": "Question",
-        "name": "What AI model does Flowter use?",
+        "name": "What AI model does Flowcore AI use?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Flowter uses Groq AI (llama-3.3-70b-versatile) for fast inference with temperature set to 0.3 for consistent professional responses."
+          "text": "Flowcore AI uses Groq AI (llama-3.3-70b-versatile) for fast inference with temperature set to 0.3 for consistent professional responses."
         }
       },
       {
@@ -76,15 +76,15 @@ export function StructuredData() {
         "name": "Can human agents take over from the AI?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Yes. Flowter includes a manual takeover feature that lets human operators pause the AI and handle conversations directly through the unified inbox."
+          "text": "Yes. Flowcore AI includes a manual takeover feature that lets human operators pause the AI and handle conversations directly through the unified inbox."
         }
       },
       {
         "@type": "Question",
-        "name": "Does Flowter support Google Calendar and Sheets?",
+        "name": "Does Flowcore AI support Google Calendar and Sheets?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Yes. Flowter integrates with Google Calendar for appointment booking and Google Sheets for automated lead capture and CRM synchronization."
+          "text": "Yes. Flowcore AI integrates with Google Calendar for appointment booking and Google Sheets for automated lead capture and CRM synchronization."
         }
       },
       {
