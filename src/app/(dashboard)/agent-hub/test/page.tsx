@@ -11,8 +11,7 @@ import {
   ChevronDown,
   MessageSquare,
   Target,
-  Zap,
-  Terminal
+  Zap
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
