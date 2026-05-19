@@ -293,6 +293,25 @@ Deno.serve(async (req) => {
 
     // 5. Store Inbound Message
     const displayContent = messageText || (hasMedia ? `[${mediaMime.startsWith('image') ? 'Image' : mediaMime.startsWith('video') ? 'Video' : mediaMime.startsWith('audio') ? 'Audio' : 'File'} message]` : '');
+
+    // Secondary dedup: check for identical message from same contact within last 3 seconds
+    // This catches GoWA retries that assign different message IDs
+    const threeSecondsAgo = new Date(Date.now() - 3000).toISOString()
+    const { data: recentDuplicate } = await supabase
+      .from('messages')
+      .select('id')
+      .eq('workspace_id', workspaceId)
+      .eq('session_id', activeSession.id)
+      .eq('direction', 'inbound')
+      .eq('content', displayContent)
+      .gte('created_at', threeSecondsAgo)
+      .maybeSingle()
+
+    if (recentDuplicate) {
+      console.log(`[WEBHOOK] Duplicate message detected (same content within 3s), skipping AI`)
+      return new Response(JSON.stringify({ success: true, message: 'duplicate' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }
+
     const { error: msgError } = await supabase
       .from('messages')
       .insert({
