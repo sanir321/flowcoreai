@@ -2,12 +2,11 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { motion, useScroll, useTransform, useSpring, AnimatePresence } from "framer-motion"
-import { useRef, useState } from "react"
+import { motion, useScroll, useTransform, useSpring, useMotionValue } from "framer-motion"
+import { useRef, useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { 
   ArrowRight, 
-  ChevronDown, 
   Globe, 
   ShieldCheck, 
   CheckCircle2, 
@@ -68,7 +67,8 @@ const GoogleSheetsLogo = ({ className }: { className?: string }) => (
 export default function LandingPage() {
   const [email, setEmail] = useState("")
   const router = useRouter()
-  const containerRef = useRef(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const heroRef = useRef<HTMLDivElement>(null)
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -86,13 +86,40 @@ export default function LandingPage() {
   const dashboardY = useTransform(smoothProgress, [0, 0.3], [0, -150])
   const mockupContentY = useTransform(smoothProgress, [0.05, 0.4], [40, -100])
   const dashboardScale = useTransform(smoothProgress, [0, 0.2], [1, 1.05])
-  
+  const featuresY = useTransform(smoothProgress, [0.15, 0.5], [0, -60])
+  const integrationsY = useTransform(smoothProgress, [0.35, 0.7], [0, -40])
+  const footerY = useTransform(smoothProgress, [0.7, 1], [0, -20])
+
+  // Interactive mouse glow
+  const mouseX = useMotionValue(0)
+  const mouseY = useMotionValue(0)
+  useEffect(() => {
+    const handleMouse = (e: MouseEvent) => {
+      mouseX.set(e.clientX)
+      mouseY.set(e.clientY)
+    }
+    window.addEventListener('mousemove', handleMouse)
+    return () => window.removeEventListener('mousemove', handleMouse)
+  }, [mouseX, mouseY])
+
+  const glowX = useTransform(mouseX, (x) => x - 500)
+  const glowY = useTransform(mouseY, (y) => y - 500)
+
   const fadeInUp = {
     initial: { opacity: 0, y: 30 },
     whileInView: { opacity: 1, y: 0 },
-    viewport: { once: true },
+    viewport: { once: true, margin: "-80px" },
     transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] as any }
   }
+
+  const stagger = {
+    initial: { opacity: 0, y: 20 },
+    whileInView: { opacity: 1, y: 0 },
+    viewport: { once: true, margin: "-60px" },
+    transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] as any }
+  }
+
+  const scaleOnHover = { whileHover: { scale: 1.02 }, transition: { type: "spring", stiffness: 300, damping: 15 } }
 
   return (
     <div ref={containerRef} className="min-h-screen bg-[#1F1A1A] text-white font-sans selection:bg-[#D95E46] selection:text-white overflow-x-hidden scroll-smooth text-gray-300">
@@ -107,14 +134,10 @@ export default function LandingPage() {
         </div>
         
         <nav className="hidden lg:flex flex-1 items-center justify-center gap-10">
-          <button className="text-[13px] font-semibold text-gray-400 flex items-center gap-1.5 hover:text-white transition-colors group">
-            Industries <ChevronDown className="h-3 w-3 opacity-40 group-hover:opacity-100 transition-opacity" />
-          </button>
-          <Link href="#" className="text-[13px] font-semibold text-gray-400 hover:text-white transition-colors">Customers</Link>
-          <Link href="#" className="text-[13px] font-semibold text-gray-400 hover:text-white transition-colors">Pricing</Link>
-          <button className="text-[13px] font-semibold text-gray-400 flex items-center gap-1.5 hover:text-white transition-colors group">
-            Resources <ChevronDown className="h-3 w-3 opacity-40 group-hover:opacity-100 transition-opacity" />
-          </button>
+          <Link href="/pricing" className="text-[13px] font-semibold text-gray-400 hover:text-white transition-colors">Pricing</Link>
+          <Link href="/faq" className="text-[13px] font-semibold text-gray-400 hover:text-white transition-colors">FAQ</Link>
+          <Link href="/changelog" className="text-[13px] font-semibold text-gray-400 hover:text-white transition-colors">Changelog</Link>
+          <Link href="/legal" className="text-[13px] font-semibold text-gray-400 hover:text-white transition-colors">Legal</Link>
         </nav>
 
         <div className="flex-1 flex items-center justify-end gap-6">
@@ -129,7 +152,7 @@ export default function LandingPage() {
         {/* Primary Hero Section */}
         <section className="relative bg-[#1F1412] pt-32 pb-40 px-6 lg:px-12 overflow-hidden border-b border-white/5 flex flex-col items-center">
           <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, #fff 1px, transparent 0)', backgroundSize: '48px 48px' }} />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[800px] bg-[#D95E46]/10 blur-[160px] rounded-full pointer-events-none" />
+          <motion.div style={{ x: glowX, y: glowY }} className="absolute top-1/2 left-1/2 w-[1000px] h-[800px] bg-[#D95E46]/10 blur-[160px] rounded-full pointer-events-none" />
 
           <motion.div style={{ y: heroY }} className="max-w-4xl mx-auto text-center relative z-10 space-y-12 mb-32">
             <div className="space-y-6">
@@ -261,8 +284,8 @@ export default function LandingPage() {
           </motion.div>
         </section>
 
-        {/* Core Functions - Refined Contrast */}
-        <section className="py-56 px-6 lg:px-12 bg-[#0A0A0A] relative z-40 -mt-20">
+         {/* Core Functions - Refined Contrast */}
+         <motion.section style={{ y: featuresY }} className="py-56 px-6 lg:px-12 bg-[#0A0A0A] relative z-40 -mt-20">
            <div className="max-w-7xl mx-auto space-y-48">
               {/* Function 1 & 2: Agents & Knowledge */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-32 items-center">
@@ -352,13 +375,13 @@ export default function LandingPage() {
                        </Button>
                     </div>
                  </motion.div>
-              </div>
-           </div>
-        </section>
+               </div>
+            </div>
+         </motion.section>
 
-        {/* FAQ Section - Critical for AEO/GEO */}
-        <section className="py-56 px-6 lg:px-12 bg-[#0A0A0A] border-t border-white/5 relative overflow-hidden">
-           <div className="absolute bottom-0 right-0 w-[800px] h-[800px] bg-[#D95E46]/5 blur-[160px] rounded-full translate-x-1/2 translate-y-1/2 pointer-events-none" />
+         {/* FAQ Section */}
+         <motion.section style={{ y: integrationsY }} className="py-56 px-6 lg:px-12 bg-[#0A0A0A] border-t border-white/5 relative overflow-hidden">
+            <div className="absolute bottom-0 right-0 w-[800px] h-[800px] bg-[#D95E46]/5 blur-[160px] rounded-full translate-x-1/2 translate-y-1/2 pointer-events-none" />
            <div className="max-w-4xl mx-auto space-y-24 relative z-10 text-gray-900">
               <div className="space-y-6 text-center">
                  <h2 className="text-5xl font-bold text-white tracking-tight">Intelligence Briefing</h2>
@@ -379,9 +402,9 @@ export default function LandingPage() {
                        <p className="text-neutral-500 leading-relaxed font-medium text-lg border-l-2 border-[#D95E46]/20 pl-6 ml-1">{faq.a}</p>
                     </motion.div>
                  ))}
-              </div>
-           </div>
-        </section>
+               </div>
+            </div>
+         </motion.section>
       </main>
 
       {/* NEW PROFESSIONAL FOOTER */}
@@ -399,43 +422,43 @@ export default function LandingPage() {
                </div>
             </div>
             
-            <div className="space-y-10 text-gray-400">
-               <h4 className="text-[11px] font-semibold text-white">Products</h4>
-               <nav className="flex flex-col gap-5 font-semibold">
-                  <Link href="#" className="hover:text-white transition-colors text-neutral-500">Assistants Hub</Link>
-                  <Link href="#" className="hover:text-white transition-colors text-neutral-500">Knowledge Base</Link>
-                  <Link href="#" className="hover:text-white transition-colors text-neutral-500">Security Layer</Link>
-                  <Link href="#" className="hover:text-white transition-colors text-neutral-500">API Documentation</Link>
-               </nav>
-            </div>
+             <div className="space-y-10 text-gray-400">
+                <h4 className="text-[11px] font-semibold text-white">Platform</h4>
+                <nav className="flex flex-col gap-5 font-semibold">
+                   <Link href="/agent-hub" className="hover:text-white transition-colors text-neutral-500">Agent Hub</Link>
+                   <Link href="/knowledge" className="hover:text-white transition-colors text-neutral-500">Knowledge Base</Link>
+                   <Link href="/pricing" className="hover:text-white transition-colors text-neutral-500">Pricing</Link>
+                   <Link href="/changelog" className="hover:text-white transition-colors text-neutral-500">Changelog</Link>
+                </nav>
+             </div>
 
-            <div className="space-y-10 text-gray-400">
-               <h4 className="text-[11px] font-semibold text-white">Ecosystem</h4>
-               <nav className="flex flex-col gap-5 font-semibold">
-                  <Link href="#" className="hover:text-white transition-colors text-neutral-500">WhatsApp Bridge</Link>
-                  <Link href="#" className="hover:text-white transition-colors text-neutral-500">Google Sync</Link>
-                  <Link href="#" className="hover:text-white transition-colors text-neutral-500">Integration Nodes</Link>
-                  <Link href="#" className="hover:text-white transition-colors text-neutral-500">Service Marketplace</Link>
-               </nav>
-            </div>
+             <div className="space-y-10 text-gray-400">
+                <h4 className="text-[11px] font-semibold text-white">Connect</h4>
+                <nav className="flex flex-col gap-5 font-semibold">
+                   <Link href="/login" className="hover:text-white transition-colors text-neutral-500">Sign In</Link>
+                   <Link href="/faq" className="hover:text-white transition-colors text-neutral-500">FAQ</Link>
+                   <Link href="/settings/integrations" className="hover:text-white transition-colors text-neutral-500">Integrations</Link>
+                   <Link href="/legal" className="hover:text-white transition-colors text-neutral-500">Legal</Link>
+                </nav>
+             </div>
 
-            <div className="space-y-10 text-gray-400">
-               <h4 className="text-[11px] font-semibold text-white">Company</h4>
-               <nav className="flex flex-col gap-5 font-semibold">
-                  <Link href="/login" className="hover:text-white transition-colors text-neutral-500">System Access</Link>
-                  <Link href="#" className="hover:text-white transition-colors text-neutral-500">Subscription Plans</Link>
-                  <Link href="#" className="hover:text-white transition-colors text-neutral-500">Case Studies</Link>
-                  <Link href="#" className="hover:text-white transition-colors text-neutral-500">Network Status</Link>
-               </nav>
-            </div>
+             <div className="space-y-10 text-gray-400">
+                <h4 className="text-[11px] font-semibold text-white">Company</h4>
+                <nav className="flex flex-col gap-5 font-semibold">
+                   <Link href="/login" className="hover:text-white transition-colors text-neutral-500">Get Started</Link>
+                   <Link href="/pricing" className="hover:text-white transition-colors text-neutral-500">Subscription Plans</Link>
+                   <Link href="/faq" className="hover:text-white transition-colors text-neutral-500">Case Studies</Link>
+                   <Link href="/changelog" className="hover:text-white transition-colors text-neutral-500">Network Status</Link>
+                </nav>
+             </div>
          </div>
 
          <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center border-t border-white/5 pt-16 gap-10 text-xs font-semibold text-neutral-600">
-            <nav className="flex gap-10">
-               <Link href="#" className="hover:text-white transition-colors">Privacy</Link>
-               <Link href="#" className="hover:text-white transition-colors">Terms</Link>
-               <Link href="#" className="hover:text-white transition-colors">Security</Link>
-            </nav>
+             <nav className="flex gap-10">
+                <Link href="/legal/privacy-policy" className="hover:text-white transition-colors">Privacy</Link>
+                <Link href="/legal/terms" className="hover:text-white transition-colors">Terms</Link>
+                <Link href="/legal/cookie-policy" className="hover:text-white transition-colors">Cookies</Link>
+             </nav>
             <div className="flex items-center gap-8">
                <div className="flex items-center gap-4 text-emerald-500/60 font-semibold tracking-tight">
                   <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_#10b981]" />
