@@ -210,7 +210,7 @@
     if (!msgs || !msgs.length) return;
     var existing = els.msgs.querySelectorAll('.fw-msg.user, .fw-msg.bot');
     var known = {};
-    existing.forEach(function (el) { known[el.textContent + el.className] = true; });
+    existing.forEach(function (el) { known[el.textContent + ' ' + el.className] = true; });
     var newCount = 0;
     msgs.forEach(function (m) {
       var key = m.content + (m.role === 'customer' ? ' fw-msg user' : ' fw-msg bot');
