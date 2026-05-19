@@ -1,7 +1,7 @@
 "use client"
 
 import { usePathname, useRouter } from "next/navigation"
-import { LayoutGrid, Zap, Plus, Bot, MessageSquare, Target } from "lucide-react"
+import { LayoutGrid, Zap, Plus, Bot, MessageSquare, Target, Terminal } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useState, useEffect, useCallback } from "react"
@@ -99,6 +99,28 @@ export function AssistantsSidebar({ onAddAssistant }: AssistantsSidebarProps) {
             {pathname === '/ceo' && (
               <motion.div 
                 layoutId="active-dot-ceo"
+                className="ml-auto h-1.5 w-1.5 rounded-full bg-[#c65f39] shadow-[0_0_8px_rgba(198,95,57,0.3)]" 
+              />
+            )}
+          </button>
+
+          <button 
+            onClick={() => router.push('/agent-hub/test')}
+            className={cn(
+              "w-full flex items-center gap-3 px-5 py-4 rounded-2xl transition-all duration-300 group text-left",
+              pathname === '/agent-hub/test'
+                ? "bg-white text-gray-900 border border-gray-100 shadow-lg shadow-black/5 ring-1 ring-black/5"
+                : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+            )}
+          >
+            <Terminal className={cn(
+              "h-4 w-4 transition-colors",
+              pathname === '/agent-hub/test' ? "text-[#c65f39]" : "text-gray-400 group-hover:text-[#c65f39]"
+            )} />
+            <span className="text-[13px] font-bold tracking-tight">Test Chat</span>
+            {pathname === '/agent-hub/test' && (
+              <motion.div 
+                layoutId="active-dot-test"
                 className="ml-auto h-1.5 w-1.5 rounded-full bg-[#c65f39] shadow-[0_0_8px_rgba(198,95,57,0.3)]" 
               />
             )}
