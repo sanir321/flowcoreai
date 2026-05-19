@@ -1,9 +1,9 @@
 (function () {
   'use strict';
 
-  var SCRIPT = document.currentScript || document.scripts[document.scripts.length - 1];
-  var WORKSPACE_ID = SCRIPT.getAttribute('data-workspace');
-  var BASE = SCRIPT.src.substring(0, SCRIPT.src.lastIndexOf('/'));
+  var SCRIPT = document.currentScript || document.querySelector('script[data-workspace]');
+  var WORKSPACE_ID = SCRIPT ? SCRIPT.getAttribute('data-workspace') : null;
+  var BASE = SCRIPT ? SCRIPT.src.substring(0, SCRIPT.src.lastIndexOf('/')) : '';
   var SESSION_KEY = 'fw_sesh_' + WORKSPACE_ID;
   var POLL_INTERVAL = 3000;
   var pollTimer = null;
@@ -16,7 +16,8 @@
     });
   }
 
-  var sessionToken = localStorage.getItem(SESSION_KEY) || uuid();
+  var sessionToken;
+  try { sessionToken = localStorage.getItem(SESSION_KEY) || uuid(); } catch(e) { sessionToken = uuid(); }
 
   var state = { config: null, open: false, messages: [], loading: false, sending: false };
   var els = {};
@@ -299,7 +300,7 @@
       console.warn('[FlowWidget] Missing data-workspace attribute on script tag.');
       return;
     }
-    localStorage.setItem(SESSION_KEY, sessionToken);
+    try { localStorage.setItem(SESSION_KEY, sessionToken); } catch(e) {}
     fetchConfig(function (cfg) {
       if (!cfg) cfg = {};
       state.config = cfg;
