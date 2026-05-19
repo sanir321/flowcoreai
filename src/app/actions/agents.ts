@@ -92,8 +92,8 @@ export async function addAgent(input: unknown): Promise<ActionResponse<{ agent_i
     return { data: { agent_id: agent.id }, error: null }
 
   } catch (err) {
-    console.error(err)
-    return { data: null, error: "Failed to add agent" }
+    console.error("[addAgent] Error:", err)
+    return { data: null, error: err instanceof Error ? err.message : "Failed to add agent" }
   }
 }
 
