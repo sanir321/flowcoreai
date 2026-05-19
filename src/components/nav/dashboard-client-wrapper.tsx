@@ -26,11 +26,11 @@ export function DashboardClientWrapper({
   const pathname = usePathname()
 
   const isDashboardRoute = useMemo(() => {
-    return ['/inbox', '/agent-hub', '/settings', '/contacts', '/knowledge', '/insights', '/appointments', '/ceo'].some(r => pathname.startsWith(r))
+    return ['/inbox', '/agent-hub', '/settings', '/contacts', '/knowledge', '/insights', '/appointments', '/ceo', '/agent-hub/test'].some(r => pathname.startsWith(r))
   }, [pathname])
 
   const isFullBleed = useMemo(() => {
-    const fullBleedRoutes = ['/inbox', '/insights', '/agent-hub', '/ceo']
+    const fullBleedRoutes = ['/inbox', '/insights', '/agent-hub', '/ceo', '/agent-hub/test']
     return fullBleedRoutes.some(route => pathname.startsWith(route))
   }, [pathname])
 

@@ -128,32 +128,30 @@ export default function TestChatPage() {
   const selectedAgentData = AGENT_TYPES.find(a => a.id === selectedAgent)
 
   return (
-    <div className="h-[calc(100vh-120px)] flex flex-col font-sans">
+    <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center justify-between pb-4 border-b border-gray-100">
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-100 shrink-0">
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.back()}
-            className="h-9 w-9 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 transition-all flex items-center justify-center"
+            className="h-8 w-8 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 transition-all flex items-center justify-center"
           >
             <ArrowLeft className="h-3.5 w-3.5 text-gray-600" />
           </button>
           <div>
-            <h1 className="text-lg font-semibold text-gray-900 tracking-tight">Test Chat</h1>
-            <p className="text-[11px] text-gray-500 font-medium">Simulate conversations with your AI agents</p>
+            <h1 className="text-sm font-semibold text-gray-900 tracking-tight">Test Chat</h1>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Agent Selector */}
           <div className="relative">
             <button
               onClick={() => setShowAgentMenu(!showAgentMenu)}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-gray-200 hover:border-gray-300 transition-all text-xs font-medium text-gray-700"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 hover:border-gray-300 transition-all text-xs font-medium text-gray-700"
             >
-              {selectedAgentData && <selectedAgentData.icon className="h-3.5 w-3.5 text-gray-400" />}
+              {selectedAgentData && <selectedAgentData.icon className="h-3 w-3 text-gray-400" />}
               <span>{selectedAgentData?.name}</span>
-              <ChevronDown className={cn("h-3 w-3 text-gray-400 transition-transform", showAgentMenu && "rotate-180")} />
+              <ChevronDown className={cn("h-2.5 w-2.5 text-gray-400 transition-transform", showAgentMenu && "rotate-180")} />
             </button>
 
             <AnimatePresence>
@@ -162,7 +160,7 @@ export default function TestChatPage() {
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 6 }}
-                  className="absolute right-0 top-full mt-1.5 w-56 bg-white border border-gray-100 rounded-xl shadow-lg shadow-black/5 z-50 overflow-hidden"
+                  className="absolute right-0 top-full mt-1.5 w-52 bg-white border border-gray-100 rounded-xl shadow-lg shadow-black/5 z-50 overflow-hidden"
                 >
                   <div className="p-1.5 space-y-0.5">
                     {AGENT_TYPES.map(agent => (
@@ -170,13 +168,11 @@ export default function TestChatPage() {
                         key={agent.id}
                         onClick={() => { setSelectedAgent(agent.id); setShowAgentMenu(false) }}
                         className={cn(
-                          "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-all text-xs",
-                          selectedAgent === agent.id
-                            ? "bg-gray-100 text-gray-900"
-                            : "text-gray-600 hover:bg-gray-50"
+                          "w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left transition-all text-xs",
+                          selectedAgent === agent.id ? "bg-gray-100 text-gray-900" : "text-gray-600 hover:bg-gray-50"
                         )}
                       >
-                        <agent.icon className="h-3.5 w-3.5 text-gray-400" />
+                        <agent.icon className="h-3 w-3 text-gray-400" />
                         <span className="font-medium">{agent.name}</span>
                         {selectedAgent === agent.id && <Check className="h-3 w-3 text-[#c65f39] ml-auto" />}
                       </button>
@@ -191,7 +187,7 @@ export default function TestChatPage() {
             variant="ghost"
             size="sm"
             onClick={() => { setMessages([]); toast.info("Chat cleared") }}
-            className="h-9 px-3 rounded-lg text-xs font-medium text-gray-500 hover:text-gray-900"
+            className="h-8 px-2 rounded-lg text-xs font-medium text-gray-500 hover:text-gray-900"
             disabled={messages.length === 0}
           >
             Clear
@@ -199,33 +195,29 @@ export default function TestChatPage() {
         </div>
       </div>
 
-      {/* Main Layout */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4 min-h-0 pt-4">
+      {/* Main */}
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-3 min-h-0 p-3">
         {/* Chat */}
         <div className="lg:col-span-2 flex flex-col border border-gray-200 rounded-xl overflow-hidden bg-white">
           {/* Messages */}
           <ScrollArea className="flex-1">
-            <div className="px-6 py-5 space-y-4">
+            <div className="px-5 py-4 space-y-3">
               <AnimatePresence initial={false}>
                 {messages.length === 0 ? (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="py-20 text-center space-y-4"
-                  >
-                    <div className="h-14 w-14 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center mx-auto">
-                      <Sparkles className="h-6 w-6 text-gray-300" />
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-16 text-center space-y-3">
+                    <div className="h-12 w-12 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center mx-auto">
+                      <Sparkles className="h-5 w-5 text-gray-300" />
                     </div>
                     <div className="space-y-1">
                       <p className="text-sm font-semibold text-gray-900">Ready to test</p>
                       <p className="text-xs text-gray-500">Send a message to simulate your agent</p>
                     </div>
-                    <div className="flex flex-wrap justify-center gap-2 pt-2">
+                    <div className="flex flex-wrap justify-center gap-1.5 pt-1">
                       {["What are your business hours?", "I need to book an appointment", "Tell me about your pricing"].map(s => (
                         <button
                           key={s}
                           onClick={() => { setInputText(s); inputRef.current?.focus() }}
-                          className="px-3 py-1.5 rounded-full bg-gray-50 border border-gray-100 text-[11px] font-medium text-gray-600 hover:bg-gray-100 transition-all"
+                          className="px-2.5 py-1 rounded-full bg-gray-50 border border-gray-100 text-[11px] font-medium text-gray-600 hover:bg-gray-100 transition-all"
                         >
                           {s}
                         </button>
@@ -236,15 +228,12 @@ export default function TestChatPage() {
                   messages.map((m) => (
                     <motion.div
                       key={m.id}
-                      initial={{ opacity: 0, y: 8 }}
+                      initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.2 }}
-                      className={cn(
-                        "flex flex-col",
-                        m.role === 'customer' ? "items-end" : "items-start"
-                      )}
+                      className={cn("flex flex-col", m.role === 'customer' ? "items-end" : "items-start")}
                     >
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center gap-2 mb-0.5">
                         <span className="text-[10px] font-semibold text-gray-400">
                           {m.role === 'customer' ? 'You' : m.agentType?.replace(/_/g, ' ') || 'Agent'}
                         </span>
@@ -257,7 +246,7 @@ export default function TestChatPage() {
                       </div>
                       <div className="group relative">
                         <div className={cn(
-                          "px-4 py-2.5 rounded-xl text-[13px] leading-relaxed max-w-[80%]",
+                          "px-3.5 py-2 rounded-xl text-[13px] leading-relaxed max-w-[80%]",
                           m.role === 'customer'
                             ? "bg-gray-900 text-white rounded-tr-sm"
                             : m.error
@@ -269,7 +258,7 @@ export default function TestChatPage() {
                         {m.role === 'agent' && !m.error && (
                           <button
                             onClick={() => handleCopy(m.content, m.id)}
-                            className="absolute -right-7 top-2 h-5 w-5 rounded bg-white border border-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 opacity-0 group-hover:opacity-100 transition-all"
+                            className="absolute -right-6 top-1.5 h-5 w-5 rounded bg-white border border-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 opacity-0 group-hover:opacity-100 transition-all"
                           >
                             {copiedId === m.id ? <Check className="h-2.5 w-2.5 text-emerald-500" /> : <Copy className="h-2.5 w-2.5" />}
                           </button>
@@ -285,17 +274,12 @@ export default function TestChatPage() {
                 )}
               </AnimatePresence>
 
-              {/* Typing Indicator */}
               {isSending && (
-                <motion.div
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="flex items-start"
-                >
-                  <div className="flex items-center gap-1.5 px-4 py-3 rounded-xl rounded-tl-sm bg-gray-100">
-                    <motion.div className="h-1.5 w-1.5 rounded-full bg-gray-400" animate={{ y: [0, -4, 0] }} transition={{ duration: 0.6, repeat: Infinity }} />
-                    <motion.div className="h-1.5 w-1.5 rounded-full bg-gray-400" animate={{ y: [0, -4, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }} />
-                    <motion.div className="h-1.5 w-1.5 rounded-full bg-gray-400" animate={{ y: [0, -4, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }} />
+                <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="flex items-start">
+                  <div className="flex items-center gap-1 px-3 py-2 rounded-xl rounded-tl-sm bg-gray-100">
+                    <motion.div className="h-1 w-1 rounded-full bg-gray-400" animate={{ y: [0, -4, 0] }} transition={{ duration: 0.6, repeat: Infinity }} />
+                    <motion.div className="h-1 w-1 rounded-full bg-gray-400" animate={{ y: [0, -4, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }} />
+                    <motion.div className="h-1 w-1 rounded-full bg-gray-400" animate={{ y: [0, -4, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }} />
                   </div>
                 </motion.div>
               )}
@@ -303,8 +287,8 @@ export default function TestChatPage() {
             </div>
           </ScrollArea>
 
-          {/* Input Bar */}
-          <div className="px-4 py-3 border-t border-gray-100 bg-white">
+          {/* Input */}
+          <div className="px-3 py-2 border-t border-gray-100 bg-white shrink-0">
             <form onSubmit={handleSend} className="flex gap-2">
               <input
                 ref={inputRef}
@@ -312,7 +296,7 @@ export default function TestChatPage() {
                 placeholder="Type a message..."
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
-                className="flex-1 h-10 px-3 rounded-lg bg-gray-50 border border-gray-200 text-[13px] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#c65f39]/20 focus:border-[#c65f39]/30 transition-all"
+                className="flex-1 h-9 px-3 rounded-lg bg-gray-50 border border-gray-200 text-[13px] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#c65f39]/20 focus:border-[#c65f39]/30 transition-all"
                 disabled={isSending}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
@@ -324,30 +308,30 @@ export default function TestChatPage() {
               <Button
                 type="submit"
                 size="icon"
-                className="h-10 w-10 rounded-lg bg-gray-900 text-white hover:bg-gray-800 transition-all shrink-0 disabled:opacity-50"
+                className="h-9 w-9 rounded-lg bg-gray-900 text-white hover:bg-gray-800 transition-all shrink-0 disabled:opacity-50"
                 disabled={isSending || !inputText.trim()}
               >
-                {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                {isSending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
               </Button>
             </form>
           </div>
         </div>
 
-        {/* Debug Panel */}
+        {/* Debug */}
         <div className="lg:col-span-1 flex flex-col border border-gray-200 rounded-xl overflow-hidden bg-white min-h-0">
-          <div className="h-10 px-4 flex items-center gap-2 border-b border-gray-100">
-            <Terminal className="h-3.5 w-3.5 text-gray-400" />
+          <div className="h-9 px-3 flex items-center gap-2 border-b border-gray-100 shrink-0">
+            <Terminal className="h-3 w-3 text-gray-400" />
             <span className="text-xs font-semibold text-gray-900">Debug</span>
           </div>
           <ScrollArea className="flex-1">
             {messages.length === 0 ? (
-              <div className="py-12 text-center">
+              <div className="py-10 text-center">
                 <p className="text-[11px] text-gray-400 font-medium">No activity yet</p>
               </div>
             ) : (
-              <div className="p-3 space-y-2">
+              <div className="p-2 space-y-1.5">
                 {messages.filter(m => m.role === 'agent').map((m) => (
-                  <div key={m.id} className="p-2.5 rounded-lg bg-gray-50 border border-gray-100 space-y-1.5">
+                  <div key={m.id} className="p-2 rounded-lg bg-gray-50 border border-gray-100 space-y-1">
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] font-medium text-gray-500">
                         {m.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

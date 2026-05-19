@@ -124,7 +124,7 @@ GUIDELINES:
           { role: "user", content: message }
         ],
         temperature: 0.3,
-        max_tokens: 300
+        max_tokens: 1500
       })
     });
 
