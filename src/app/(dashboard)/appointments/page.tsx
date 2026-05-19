@@ -1,6 +1,9 @@
+import type { Metadata } from "next"
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { AppointmentsClient } from "@/components/appointments/appointments-client"
+
+export const metadata: Metadata = { title: "Appointments" }
 
 export default async function AppointmentsPage() {
   const supabase = await createClient()

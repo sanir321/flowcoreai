@@ -1,6 +1,9 @@
+import type { Metadata } from "next"
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { InboxClient } from "./inbox-client"
+
+export const metadata: Metadata = { title: "Inbox" }
 
 export default async function InboxPage() {
   const supabase = await createClient()

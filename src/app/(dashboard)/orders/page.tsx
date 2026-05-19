@@ -1,6 +1,9 @@
+import type { Metadata } from "next"
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { OrdersClient } from "./orders-client"
+
+export const metadata: Metadata = { title: "Orders" }
 
 export default async function OrdersPage() {
   const supabase = await createClient()

@@ -1,6 +1,9 @@
+import type { Metadata } from "next"
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { KnowledgeClient } from "@/components/knowledge/knowledge-client"
+
+export const metadata: Metadata = { title: "Knowledge Base" }
 
 export default async function KnowledgePage() {
   const supabase = await createClient()

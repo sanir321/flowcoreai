@@ -1,6 +1,9 @@
+import type { Metadata } from "next"
 import { createClient } from "@/lib/supabase/server"
 import { AgentHubClient, type Agent } from "./agent-hub-client"
 import { redirect } from "next/navigation"
+
+export const metadata: Metadata = { title: "Agent Hub" }
 
 export default async function AgentHubPage() {
   const supabase = await createClient()
