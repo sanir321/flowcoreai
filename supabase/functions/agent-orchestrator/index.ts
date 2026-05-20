@@ -19,9 +19,105 @@ const corsHeaders = {
 
 const CREDITS_PER_MESSAGE = 1;
 const TOOL_PERMISSIONS: Record<string, string[]> = {
-  customer_support: ["match_kb_chunks", "get_contact_history", "update_contact", "request_handoff", "escalation_request"],
-  appointment_booking: ["check_availability", "create_appointment", "update_appointment", "cancel_appointment", "get_contact_history", "request_handoff", "escalation_request"],
-  sales: ["capture_lead", "get_contact_history", "update_contact", "update_lead_stage", "get_pipeline", "schedule_follow_up", "generate_quote", "search_menu", "send_menu_media", "create_order", "confirm_payment", "get_order_status", "request_handoff", "escalation_request"],
+  customer_support: ["match_kb_chunks", "get_contact_history", "update_contact", "request_handoff"],
+  appointment_booking: ["check_availability", "create_appointment", "update_appointment", "cancel_appointment", "get_contact_history", "update_contact", "request_handoff"],
+  sales: ["capture_lead", "get_contact_history", "update_contact", "update_lead_stage", "get_pipeline", "schedule_follow_up", "generate_quote", "search_menu", "send_menu_media", "create_order", "confirm_payment", "get_order_status", "request_handoff"],
+}
+
+async function dispatchToGoWA(supabase: any, workspace_id: string, customer_jid: string, channel: string, is_test: boolean, session_id: string, responseText: string): Promise<boolean> {
+  if (channel !== 'whatsapp' || is_test) return false;
+
+  const { data: gowaSession } = await supabase.from('gowa_sessions').select('gowa_session_id').eq('workspace_id', workspace_id).maybeSingle();
+  const deviceId = gowaSession?.gowa_session_id;
+  const gowaBase = Deno.env.get('GOWA_BASE_URL')?.replace(/\/$/, "");
+  const gowaKey = Deno.env.get('GOWA_API_KEY');
+  const auth = btoa(gowaKey || '');
+  const phone = customer_jid?.split('@')[0];
+
+  if (!deviceId || !phone || !gowaBase) return false;
+
+  try {
+    await fetch(`${gowaBase}/send/presence`, {
+      method: 'POST',
+      headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/json', 'X-Device-Id': deviceId },
+      body: JSON.stringify({ phone, type: 'available' })
+    });
+  } catch (_) {}
+
+  const delayMs = calculateTypingDelay(responseText);
+  await new Promise(resolve => setTimeout(resolve, delayMs));
+
+  try {
+    await fetch(`${gowaBase}/send/presence`, {
+      method: 'POST',
+      headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/json', 'X-Device-Id': deviceId },
+      body: JSON.stringify({ phone, type: 'unavailable' })
+    });
+  } catch (_) {}
+
+  const maxLen = 1000;
+  const parts: string[] = [];
+  let remaining = responseText;
+  while (remaining.length > maxLen) {
+    let splitAt = remaining.lastIndexOf('. ', maxLen);
+    if (splitAt < maxLen / 2) splitAt = remaining.lastIndexOf(' ', maxLen);
+    if (splitAt < maxLen / 2) splitAt = maxLen;
+    parts.push(remaining.slice(0, splitAt + 1).trim());
+    remaining = remaining.slice(splitAt + 1).trim();
+  }
+  if (remaining) parts.push(remaining);
+
+  let lastError = "";
+  let dispatched = false;
+  let gowaMessageIds: string[] = [];
+  for (const part of parts) {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      if (attempt > 0) {
+        const backoff = 1000 * Math.pow(2, attempt) + Math.random() * 500;
+        await new Promise(res => setTimeout(res, backoff));
+      }
+      try {
+        const resp = await fetch(`${gowaBase}/send/message`, {
+          method: 'POST',
+          headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/json', 'X-Device-Id': deviceId },
+          body: JSON.stringify({ phone, message: part })
+        });
+        if (resp.ok) {
+          const body = await resp.json();
+          const msgId = body?.results?.message_id || body?.message_id || '';
+          if (msgId) gowaMessageIds.push(msgId);
+          dispatched = true;
+          break;
+        }
+        lastError = `HTTP ${resp.status}: ${await resp.text().catch(() => '')}`;
+      } catch (err: any) {
+        lastError = err.message;
+      }
+      console.warn(`[ORCHESTRATOR] GoWA dispatch attempt ${attempt + 1}/3 for part failed: ${lastError}`);
+    }
+  }
+
+  if (dispatched) {
+    try {
+      const { data: msgs } = await supabase.from('messages').select('id').eq('session_id', session_id).eq('direction', 'outbound').order('created_at', { ascending: false }).limit(1);
+      const messageId = msgs?.[0]?.id;
+      if (messageId && gowaMessageIds.length > 0) {
+        await supabase.from('messages').update({ gowa_message_id: gowaMessageIds[0] }).eq('id', messageId);
+      }
+      console.debug(`[ORCHESTRATOR] GoWA dispatch success for message ${messageId}: gowa_message_ids=${gowaMessageIds.join(',')}`);
+    } catch (_) {}
+  } else {
+    try { await supabase.from('failed_messages').insert({
+      workspace_id,
+      session_id,
+      raw_message: responseText,
+      failure_reason: lastError,
+      retry_count: 3,
+      resolved: false
+    }); } catch (_) {}
+  }
+
+  return dispatched;
 }
 
 function getAgentTools(agentType: string, allAgents: any[]): string[] {
@@ -56,6 +152,7 @@ function buildTeamPrompt(agents: any[], workspace_name: string, currentAgentType
   const customPersona = current?.config?.persona?.trim()
   const hasTeam = agents.length > 1
   const hasBookingAgent = agents.some(a => a.agent_type === 'appointment_booking')
+  const hasSalesAgent = agents.some(a => a.agent_type === 'sales')
 
   const teamSection = hasTeam
     ? agents
@@ -73,50 +170,62 @@ function buildTeamPrompt(agents: any[], workspace_name: string, currentAgentType
     : ''
 
   const noTeamNotice = !hasTeam
-    ? `\n\nNOTE: You are the only agent for this workspace. Handle everything within your capabilities. If you cannot help, escalate to a human using \`escalation_request\`.`
+    ? `\n\nNOTE: You are the only agent for this workspace. Handle everything within your capabilities. If you truly cannot help, apologize and let them know a human will follow up.`
     : ''
 
   const noBookingNotice = (!hasBookingAgent && currentAgentType === 'customer_support')
-    ? `\n\nNOTE: Appointment booking is not configured for this workspace. If the user asks to book or manage appointments, politely let them know this feature isn't available yet and offer to pass their details to the team. Do NOT attempt to book or hand off for booking.`
+    ? `\n\nNOTE: Appointment booking is not configured for this workspace. If the user asks to book or manage appointments, politely let them know this feature isn't available yet.`
     : ''
 
-  const mustHandoffBooking = (hasBookingAgent && currentAgentType === 'customer_support')
+  const noSalesNotice = (!hasSalesAgent && currentAgentType === 'customer_support')
+    ? `\n\nNOTE: There is no Sales agent for this workspace. If the user asks about menu, pricing, or ordering, search the knowledge base (\`match_kb_chunks\`) for that information. If the KB doesn't have it, apologize and say the details aren't available right now. Do NOT hand off for sales.`
+    : ''
+
+  const mustHandoffBooking = (hasBookingAgent && hasTeam && currentAgentType === 'customer_support')
     ? `\n\nIMPORTANT: You CANNOT book or check appointment availability. Only the Appointment Booker teammate can do that. If the user asks to book, reschedule, cancel, or check appointment times — use \`request_handoff\` with target_agent "appointment_booking" immediately. Do NOT try to handle it yourself.`
     : ''
   
-  const mustHandoffMenu = (currentAgentType === 'customer_support')
+  const mustHandoffMenu = (hasSalesAgent && hasTeam && currentAgentType === 'customer_support')
     ? `\n\nIMPORTANT: You CANNOT browse, show, or provide pricing for the menu/services. Only the Sales teammate can do that. If the user asks about menu, services, pricing, ordering, or what's available — use \`request_handoff\` with target_agent "sales" immediately. Do NOT try to handle it yourself.`
     : ''
 
   const bookingRules = (hasBookingAgent && currentAgentType === 'appointment_booking')
-    ? `\n\nBOOKING RULES:
-1. Collect EACH detail one at a time: service → date → time → name → email. Ask ONE question per message.
-2. If the customer already provided some details (e.g. from conversation history), do NOT ask again.
-3. ${channel === 'whatsapp' ? "The customer's phone is already available from WhatsApp — do NOT ask for it." : "phone is MANDATORY — keep asking if not provided."}
-4. Before booking, ALWAYS summarize ALL collected details and ask the customer to confirm.
-5. Only call \`create_appointment\` AFTER the customer explicitly confirms.
-6. After successful booking, tell the customer the full details: service, date, time, and any meeting link. Do NOT say "you'll receive a message" — the details are in this message itself.
-7. Include the booking summary (service, date, time, name) in your confirmation message.
-8. CRITICAL: NEVER claim an appointment is booked, confirmed, or scheduled unless you have actually called the \`create_appointment\` tool and it succeeded.
-9. When a customer gives you a date and time, ALWAYS call \`check_availability\` immediately — do NOT just say "let me check" without actually calling the tool. If available, tell the customer the slot is free. If not, suggest alternatives.`
+    ? `\n\nBOOKING FLOW — COLLECT DETAILS ONE AT A TIME:
+Step 1: Ask "What service would you like to book?" Wait for answer.
+Step 2: Ask "What date would you like?" Wait for answer.
+Step 3: Ask "What time works for you?" (If they gave date+time together, skip to Step 4.)
+Step 4: Call \`check_availability\` with the date and time. Tell them if the slot is free or suggest alternatives.
+Step 5: Ask "What's your full name?" Wait for answer.
+Step 6: Ask "What's your email address for the confirmation?" Wait for answer.
+Step 7: Summarize ALL 5 details from the conversation history above. Say: "Here are your details: Service: [what they said for service], Date: [what they said for date], Time: [what they said for time], Name: [what they said for name], Email: [what they said for email]. Shall I book this?" Wait for confirmation.
+Step 8: When they say yes: call \`create_appointment\` with those exact values.
+RULES:
+- Ask ONE question per message. Never skip steps.
+- After Step 4 (availability confirmed), you MUST collect name (Step 5) then email (Step 6) before confirming.
+- Step 7: Look at the conversation history above to find what the customer said for service, date, time, name, and email. Use their EXACT words.
+- Step 8: Use EXACT values from the customer. Never use placeholder names or emails.
+- ${channel === 'whatsapp' ? "Phone is already known from WhatsApp." : "Ask for phone."}`
     : ''
 
   const salesRules = (currentAgentType === 'sales')
-    ? `\n\nSALES ORDERING FLOW:
-When a customer asks about your menu/services:
-1. Call \`send_menu_media\` to send the uploaded menu image/PDF via WhatsApp. The image/PDF IS the menu — it contains all available items and prices.
-2. If \`send_menu_media\` succeeds, tell the customer the menu has been sent and ask what they'd like to order. Do NOT call \`search_menu\` — the customer can see everything in the image.
-3. Only call \`search_menu\` if the customer asks about something specific (e.g. "what are your prices for X?" or "do you have Y?").
-4. Ask what they'd like to order. Collect items and quantities one at a time.
-5. Before creating the order, summarize everything and ask the customer to confirm.
-6. Only call \`create_order\` AFTER the customer confirms.
-7. Send the UPI payment link and tell them to pay and reply with confirmation.
-8. When they confirm payment, call \`confirm_payment\` to mark it paid.
+    ? `\n\nSALES FLOW — FOLLOW IN ORDER:
+Step 1: When customer asks about menu/services/pricing: Call \`send_menu_media\` FIRST. The uploaded image/PDF IS the menu.
+Step 2: If \`send_menu_media\` succeeds: Tell them the menu was sent. Ask what they'd like to order. Do NOT call \`search_menu\`.
+Step 3: If \`send_menu_media\` fails (no menu uploaded): Call \`search_menu\` with empty query to list items. Present items with prices.
+Step 4: Collect order items and quantities ONE AT A TIME. Wait for each answer.
+Step 5: After collecting all items: Summarize the order with total price. Ask "Shall I create this order?"
+Step 6: ONLY after they confirm: Call \`create_order\`. This generates a UPI payment link.
+Step 7: Send them the payment link and tell them to pay and reply with confirmation.
+Step 8: When they confirm payment: Call \`confirm_payment\` with the order_id.
+
+LEAD CAPTURE:
+- If the customer shows interest but isn't ready to order, call \`capture_lead\` with their name and interest.
+- If they ask for a quote, call \`generate_quote\` with the items discussed.
 
 CRITICAL RULES:
-- Never list or describe menu items from memory.
-- If \`send_menu_media\` fails: apologize and say the menu is being updated, then offer to help with other questions.
-- If \`send_menu_media\` succeeds: DO NOT say the menu is unavailable or being updated — the image IS the menu. Just ask what they'd like.`
+- NEVER list menu items from memory. Always use \`send_menu_media\` or \`search_menu\`.
+- NEVER hand off during an active order. Complete the flow.
+- If \`send_menu_media\` succeeds, DO NOT say the menu is unavailable — the image IS the menu.`
     : ''
 
   const customSection = customPersona
@@ -126,8 +235,8 @@ CRITICAL RULES:
   return `You are ${currentName}, a helpful human teammate at ${workspace_name} on ${channel}.
   
 YOUR ROLE: ${AGENT_DESCRIPTIONS[currentAgentType]?.description || 'General support.'}
-YOUR SKILLS: ${AGENT_DESCRIPTIONS[currentAgentType]?.skills || 'General assistance, escalation'}
-${teamIntro}${noTeamNotice}${noBookingNotice}${mustHandoffBooking}${mustHandoffMenu}${bookingRules}${salesRules}${customSection}
+YOUR SKILLS: ${AGENT_DESCRIPTIONS[currentAgentType]?.skills || 'General assistance'}
+${teamIntro}${noTeamNotice}${noBookingNotice}${noSalesNotice}${mustHandoffBooking}${mustHandoffMenu}${bookingRules}${salesRules}${customSection}
 
 IDENTITY RULES:
 1. NEVER reveal you are an AI.
@@ -141,16 +250,17 @@ STYLE RULES:
 - Keep responses brief — 2-3 sentences max unless the customer asks for details.
 
 GUIDELINES:
-- Search the knowledge base for business info.${hasTeam ? "\n- If they want pricing or sales, capture the lead or hand off to the Sales teammate." : "\n- If they want pricing or sales, capture the lead directly."}
-- If you cannot help, use \`escalation_request\` to transfer to a human.
+- Search the knowledge base (\`match_kb_chunks\`) for business info. Always try KB first before saying you don't know.
+- If the user asks about menu, pricing, or ordering and there's no Sales agent: search KB first. If KB has no info, say "I don't have those details right now, but our team can help — would you like me to pass your question along?"
+- If you truly cannot help after trying your best, apologize and let them know a human will follow up.
 - NEVER make up information you don't know.
 
 ${hasTeam
   ? `HANDOFF RULES:\n- If the customer asks about a service or topic outside your role, use \`request_handoff\` to transfer to the right teammate. Include a summary of what was already discussed.\n- NEVER try to handle a task that belongs to another role. If unsure, hand off.`
-  : `SINGLE AGENT RULES:\n- You are handling all requests. Use \`escalation_request\` only for issues you truly cannot resolve.`}
+  : `SINGLE AGENT RULES:\n- You are handling all requests. Do your best to help the customer directly using your available tools.`}
 
 AVAILABLE FUNCTIONS:
-- You have functions available to perform actions. When you need to do something (check availability, book, look up info), use the appropriate function instead of just describing what you would do.`
+- You have functions available to perform actions. When you need to do something (check availability, book, look up info, search KB), use the appropriate function instead of just describing what you would do.`
 }
 
 Deno.serve(async (req) => {
@@ -184,7 +294,7 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Request body too large' }), { status: 413, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
     const payload = await req.json()
-    const vals = payload as { workspace_id?: string; customer_jid?: string; message?: string; channel?: string; agent_type?: string; is_test?: boolean };
+    const vals = payload as { workspace_id?: string; customer_jid?: string; message?: string; channel?: string; agent_type?: string; is_test?: boolean; session_id?: string };
     workspace_id = vals.workspace_id;
     customer_jid = vals.customer_jid;
     message = vals.message;
@@ -202,8 +312,19 @@ Deno.serve(async (req) => {
     // Sanitize user input
     const sanitizedMessage = sanitizeUserInput(message);
 
-    // 1. Load/Create Session
-    session = await getOrCreateSession(supabase, { workspace_id, customer_jid, channel, agent_type })
+    // 1. Load/Create Session — use session_id from webhook if provided
+    if (vals.session_id) {
+      const { data: existingSession } = await supabase
+        .from('conversation_sessions')
+        .select('*, workspaces(name, is_ai_enabled, credits_balance, owner_personal_phone, owner_id, welcome_template, guardrail_config)')
+        .eq('id', vals.session_id)
+        .eq('workspace_id', workspace_id)
+        .maybeSingle();
+      session = existingSession;
+    }
+    if (!session) {
+      session = await getOrCreateSession(supabase, { workspace_id, customer_jid, channel, agent_type })
+    }
 
     if (!session) {
       console.error(`[ORCHESTRATOR] Failed to create session for workspace: ${workspace_id}`);
@@ -232,7 +353,22 @@ Deno.serve(async (req) => {
         metadata: { trace_id: traceId, greeting: true }
       });
       await updateSessionState(supabase, session.id, { last_message_at: new Date().toISOString(), last_message_preview: welcomeTemplate.slice(0, 100), typing_status: 'idle', message_count: 1 });
+      await dispatchToGoWA(supabase, workspace_id!, customer_jid!, channel!, is_test ?? false, session.id, welcomeTemplate);
       return new Response(JSON.stringify({ response_parts: [welcomeTemplate], metadata: { greeting: true } }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // Escalation Keyword Check — only escalate if user explicitly asks for human
+    const ESCALATION_KEYWORDS = ["human", "agent", "manager", "supervisor", "real person", "talk to someone", "speak to someone", "customer service rep", "live agent", "human agent"];
+    const isEscalation = ESCALATION_KEYWORDS.some(kw => sanitizedMessage.toLowerCase().includes(kw));
+    if (isEscalation) {
+      await supabase.from('conversation_sessions').update({ status: 'escalated', updated_at: new Date().toISOString() }).eq('id', session.id);
+      await supabase.from('messages').insert({
+        workspace_id, session_id: session.id, content: "I've notified our team and a human will get back to you shortly. Thank you for your patience!", direction: 'outbound', role: 'agent', agent_type: 'customer_support',
+        metadata: { trace_id: traceId, escalated: true }
+      });
+      await updateSessionState(supabase, session.id, { last_message_at: new Date().toISOString(), last_message_preview: "Escalated to human", typing_status: 'idle' });
+      await dispatchToGoWA(supabase, workspace_id!, customer_jid!, channel!, is_test ?? false, session.id, "I've notified our team and a human will get back to you shortly. Thank you for your patience!");
+      return new Response(JSON.stringify({ response_parts: ["I've notified our team and a human will get back to you shortly. Thank you for your patience!"], metadata: { escalated: true } }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     // Blocked Topics Check
@@ -323,6 +459,7 @@ Deno.serve(async (req) => {
           metadata: { trace_id: traceId, cached: true }
         });
         await updateSessionState(supabase, session.id, { last_message_at: new Date().toISOString(), last_message_preview: cached.response_text.slice(0, 100), typing_status: 'idle' });
+        await dispatchToGoWA(supabase, workspace_id!, customer_jid!, channel!, is_test ?? false, session.id, cached.response_text);
         return new Response(JSON.stringify({ response_parts: [cached.response_text], cached: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
     }
@@ -330,12 +467,45 @@ Deno.serve(async (req) => {
     // 3. Determine initial agent via routing
     const validAgentTypes = allAgents.map(a => a.agent_type);
 
+    // Intent keywords for agent switching
+    const SALES_KEYWORDS = ["menu", "price", "pricing", "cost", "order", "buy", "purchase", "quote", "rate", "catalog", "service list"];
+    const BOOKING_KEYWORDS = ["book", "appointment", "schedule", "cancel appointment", "reschedule", "availability", "slot"];
+    const isSalesIntent = SALES_KEYWORDS.some(kw => sanitizedMessage.toLowerCase().includes(kw));
+    const isBookingIntent = BOOKING_KEYWORDS.some(kw => sanitizedMessage.toLowerCase().includes(kw));
+
     // If agent_type explicitly provided and not a follow-up, use it directly
     // This lets callers (webhook) override stale session agent_type
     let currentAgentType;
     if (agent_type && validAgentTypes.includes(agent_type) && !isAffirmation) {
       currentAgentType = agent_type;
       session.agent_type = agent_type;
+    } else if (session.agent_type && validAgentTypes.includes(session.agent_type)) {
+      const { count: msgCount } = await supabase.from('messages').select('*', { count: 'exact', head: true }).eq('session_id', session.id);
+      if ((msgCount ?? 0) > 1) {
+        // Check if user is switching to a different agent's domain
+        if (isSalesIntent && validAgentTypes.includes('sales') && session.agent_type !== 'sales') {
+          currentAgentType = 'sales';
+        } else if (isBookingIntent && validAgentTypes.includes('appointment_booking') && session.agent_type !== 'appointment_booking') {
+          currentAgentType = 'appointment_booking';
+        } else {
+          currentAgentType = session.agent_type;
+        }
+      } else {
+        const { data: history } = await supabase.from('messages').select('*').eq('session_id', session.id).order('created_at', { ascending: false }).limit(10);
+        const lastAgentMsg = (history || []).find(m => m.role === 'agent');
+        const isBookingFlow = lastAgentMsg && /what\s+(service|date|time|would you like|works for you|your\s+(full\s+)?name|email)/i.test(lastAgentMsg.content);
+        const isSalesFlow = lastAgentMsg && /what\s+(would you like|do you think|can i get|would you like to order)/i.test(lastAgentMsg.content);
+        
+        if (isBookingFlow && validAgentTypes.includes('appointment_booking')) {
+          currentAgentType = 'appointment_booking';
+        } else if (isSalesFlow && validAgentTypes.includes('sales')) {
+          currentAgentType = 'sales';
+        } else {
+          const routeResult = isAffirmation ? { agent: session.agent_type, intent: 'general', urgency: 'low', entities: {} } : await routeIntent(sanitizedMessage, history || []);
+          currentAgentType = routeResult.agent;
+          if (!validAgentTypes.includes(currentAgentType)) currentAgentType = session.agent_type;
+        }
+      }
     } else {
       const { data: history } = await supabase.from('messages')
           .select('*')
@@ -343,14 +513,24 @@ Deno.serve(async (req) => {
           .order('created_at', { ascending: false })
           .limit(10);
 
-      const routeResult = isAffirmation && session.agent_type
-        ? { agent: session.agent_type, intent: 'general', urgency: 'low', entities: {} }
-        : await routeIntent(sanitizedMessage, history || []);
-      currentAgentType = routeResult.agent;
-      if (!validAgentTypes.includes(currentAgentType)) {
-        currentAgentType = (session.agent_type && validAgentTypes.includes(session.agent_type))
-          ? session.agent_type
-          : allAgents[0].agent_type;
+      const lastAgentMsg = (history || []).find(m => m.role === 'agent');
+      const isBookingFlow = lastAgentMsg && /what\s+(service|date|time|would you like|works for you|your\s+(full\s+)?name|email)/i.test(lastAgentMsg.content);
+      const isSalesFlow = lastAgentMsg && /what\s+(would you like|do you think|can i get|would you like to order)/i.test(lastAgentMsg.content);
+
+      if (isBookingFlow && validAgentTypes.includes('appointment_booking')) {
+        currentAgentType = 'appointment_booking';
+      } else if (isSalesFlow && validAgentTypes.includes('sales')) {
+        currentAgentType = 'sales';
+      } else {
+        const routeResult = isAffirmation && session.agent_type
+          ? { agent: session.agent_type, intent: 'general', urgency: 'low', entities: {} }
+          : await routeIntent(sanitizedMessage, history || []);
+        currentAgentType = routeResult.agent;
+        if (!validAgentTypes.includes(currentAgentType)) {
+          currentAgentType = (session.agent_type && validAgentTypes.includes(session.agent_type))
+            ? session.agent_type
+            : allAgents[0].agent_type;
+        }
       }
     }
 
@@ -366,6 +546,68 @@ Deno.serve(async (req) => {
     let kbToolUsed = false;
     let bookingToolCalled = false;
     let lastAppointment: any = null;
+
+    // Build booking context from session metadata
+    let bookingContext = "";
+    let bookingData: any = {};
+    if (currentAgentType === 'appointment_booking') {
+      try {
+        const raw = session.booking_data;
+        if (typeof raw === 'string') {
+          bookingData = raw ? JSON.parse(raw) : {};
+        } else if (raw && typeof raw === 'object') {
+          bookingData = { ...raw };
+        }
+      } catch {
+        bookingData = {};
+      }
+      const lowerMsg = sanitizedMessage.toLowerCase().trim();
+      const skipMsgs = ['hii','hi','hello','hey','book appointment','book','appointment','hey there','good morning','good evening'];
+      
+      let extracted = { service: false, date: false, time: false, name: false, email: false };
+      
+      if (!bookingData.service && !skipMsgs.includes(lowerMsg)) {
+        bookingData.service = sanitizedMessage;
+        extracted.service = true;
+      }
+      if (!bookingData.date && !bookingData.time) {
+        const hasDate = /\b(tomorrow|today|monday|tuesday|wednesday|thursday|friday|saturday|sunday|\d{1,2}[\/\-]\d{1,2}|\d{4}[\/\-]\d{2}[\/\-]\d{2}|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\b/i.test(lowerMsg);
+        const hasTime = /\b(\d{1,2}\s*(am|pm)|morning|afternoon|evening|noon|night)\b/i.test(lowerMsg);
+        if (hasDate || hasTime) {
+          if (hasDate) {
+            const dm = lowerMsg.match(/\b(tomorrow|today|monday|tuesday|wednesday|thursday|friday|saturday|sunday|\d{1,2}[\/\-]\d{1,2}|\d{4}[\/\-]\d{2}[\/\-]\d{2}|jan\w*|feb\w*|mar\w*|apr\w*|may|jun\w*|jul\w*|aug\w*|sep\w*|oct\w*|nov\w*|dec\w*)\b/i);
+            if (dm) bookingData.date = dm[0];
+          }
+          if (hasTime) {
+            const tm = lowerMsg.match(/\b(\d{1,2}\s*(?:am|pm)|morning|afternoon|evening|noon|night)\b/i);
+            if (tm) bookingData.time = tm[0];
+          }
+          if (!bookingData.date && !bookingData.time) bookingData.date = sanitizedMessage;
+          extracted.date = true;
+          extracted.time = true;
+        }
+      }
+      if (!bookingData.name && !extracted.service && !extracted.date && !extracted.time && !/\S+@\S+\.\S+/.test(sanitizedMessage)) {
+        if (sanitizedMessage.length >= 2 && sanitizedMessage.length <= 40 && !/\b(book|appointment|service|date|time|tomorrow|today|yes|no|confirm|ok|okay)\b/i.test(lowerMsg)) {
+          bookingData.name = sanitizedMessage;
+          extracted.name = true;
+        }
+      }
+      if (!bookingData.email && /\S+@\S+\.\S+/.test(sanitizedMessage)) {
+        bookingData.email = sanitizedMessage;
+        extracted.email = true;
+      }
+      
+      await supabase.from('conversation_sessions').update({ booking_data: bookingData }).eq('id', session.id);
+      
+      const parts: string[] = [];
+      if (bookingData.service) parts.push(`Service: ${bookingData.service}`);
+      if (bookingData.date) parts.push(`Date: ${bookingData.date}`);
+      if (bookingData.time) parts.push(`Time: ${bookingData.time}`);
+      if (bookingData.name) parts.push(`Name: ${bookingData.name}`);
+      if (bookingData.email) parts.push(`Email: ${bookingData.email}`);
+      if (parts.length > 0) bookingContext = `\n\nCOLLECTED BOOKING DETAILS:\n${parts.join('\n')}\n\nUse these EXACT values when summarizing or booking.`;
+    }
 
     // 4. Multi-Agent LLM Loop (handoff-aware)
     let handoffCount = 0;
@@ -389,7 +631,7 @@ Deno.serve(async (req) => {
           .limit(15);
 
       const messages: any[] = [
-        { role: "system", content: systemPrompt }
+        { role: "system", content: systemPrompt + bookingContext }
       ];
 
       if (handoffContext) {
@@ -749,99 +991,8 @@ Deno.serve(async (req) => {
         metadata: { trace_id: traceId, handoff_count: handoffCount }
     });
 
-    let messageId: string | undefined;
-
-    // 7. GoWA Dispatch with retry + failed queue
-    const { data: gowaSession } = await supabase.from('gowa_sessions').select('gowa_session_id').eq('workspace_id', workspace_id).maybeSingle();
-    const deviceId = gowaSession?.gowa_session_id;
-    const gowaBase = Deno.env.get('GOWA_BASE_URL')?.replace(/\/$/, "");
-    const gowaKey = Deno.env.get('GOWA_API_KEY');
-    const auth = btoa(gowaKey || '');
-    const phone = customer_jid?.split('@')[0];
-
-    if (channel === 'whatsapp' && deviceId && phone && !is_test) {
-        try {
-            await fetch(`${gowaBase}/send/presence`, {
-                method: 'POST',
-                headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/json', 'X-Device-Id': deviceId },
-                body: JSON.stringify({ phone, type: 'available' })
-            });
-        } catch (_) {}
-
-        const delayMs = calculateTypingDelay(finalResponse);
-        await new Promise(resolve => setTimeout(resolve, delayMs));
-
-        try {
-            await fetch(`${gowaBase}/send/presence`, {
-                method: 'POST',
-                headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/json', 'X-Device-Id': deviceId },
-                body: JSON.stringify({ phone, type: 'unavailable' })
-            });
-        } catch (_) {}
-
-        // Split long messages at sentence boundaries
-        const maxLen = 1000;
-        const parts: string[] = [];
-        let remaining = finalResponse;
-        while (remaining.length > maxLen) {
-            let splitAt = remaining.lastIndexOf('. ', maxLen);
-            if (splitAt < maxLen / 2) splitAt = remaining.lastIndexOf(' ', maxLen);
-            if (splitAt < maxLen / 2) splitAt = maxLen;
-            parts.push(remaining.slice(0, splitAt + 1).trim());
-            remaining = remaining.slice(splitAt + 1).trim();
-        }
-        if (remaining) parts.push(remaining);
-
-        let lastError = "";
-        let dispatched = false;
-        let gowaMessageIds: string[] = [];
-        for (const part of parts) {
-            for (let attempt = 0; attempt < 3; attempt++) {
-                if (attempt > 0) {
-                    const backoff = 1000 * Math.pow(2, attempt) + Math.random() * 500;
-                    await new Promise(res => setTimeout(res, backoff));
-                }
-                try {
-                    const resp = await fetch(`${gowaBase}/send/message`, {
-                        method: 'POST',
-                        headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/json', 'X-Device-Id': deviceId },
-                        body: JSON.stringify({ phone, message: part })
-                    });
-                    if (resp.ok) {
-                        const body = await resp.json();
-                        const msgId = body?.results?.message_id || body?.message_id || '';
-                        if (msgId) gowaMessageIds.push(msgId);
-                        dispatched = true;
-                        break;
-                    }
-                    lastError = `HTTP ${resp.status}: ${await resp.text().catch(() => '')}`;
-                } catch (err: any) {
-                    lastError = err.message;
-                }
-                console.warn(`[ORCHESTRATOR] GoWA dispatch attempt ${attempt + 1}/3 for part failed: ${lastError}`);
-            }
-        }
-
-        if (dispatched) {
-            try {
-                const { data: msgs } = await supabase.from('messages').select('id').eq('session_id', session.id).eq('direction', 'outbound').order('created_at', { ascending: false }).limit(1);
-                messageId = msgs?.[0]?.id;
-            } catch (_) {}
-            console.debug(`[ORCHESTRATOR] GoWA dispatch success for message ${messageId}: gowa_message_ids=${gowaMessageIds.join(',')}`);
-            if (messageId && gowaMessageIds.length > 0) {
-                try { await supabase.from('messages').update({ gowa_message_id: gowaMessageIds[0] }).eq('id', messageId); } catch (_) {}
-            }
-        } else {
-            try { await supabase.from('failed_messages').insert({
-                workspace_id,
-                session_id: session.id,
-                raw_message: finalResponse,
-                failure_reason: lastError,
-                retry_count: 3,
-                resolved: false
-            }); } catch (_) {}
-        }
-    }
+    // 7. GoWA Dispatch
+    await dispatchToGoWA(supabase, workspace_id!, customer_jid!, channel!, is_test ?? false, session.id, finalResponse);
 
     // 8. Update Session State (persist routed agent_type)
     await updateSessionState(supabase, session.id, { 
@@ -864,7 +1015,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    return new Response(JSON.stringify({ response_parts: [finalResponse], metadata: { handoff_count: handoffCount, agent_type: currentAgentType } }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify({ response_parts: [finalResponse], metadata: { handoff_count: handoffCount, agent_type: currentAgentType, booking_data: bookingData } }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
   } catch (error: any) {
     console.error(`[ORCHESTRATOR] Global Error: ${error.message}`);

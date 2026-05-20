@@ -45,13 +45,13 @@ export const TOOL_DEFINITIONS = [
     type: "function",
     function: {
       name: "create_appointment",
-      description: "Book a new appointment for a customer. Only call AFTER collecting ALL required details (name + email + service + date + time) and getting explicit confirmation.",
+      description: "Book a new appointment for a customer. Only call AFTER collecting ALL required details (name + service + date + time) and getting explicit confirmation.",
       parameters: {
         type: "object",
         properties: {
-          name: { type: "string", description: "Customer's full name." },
+          name: { type: "string", description: "The customer's actual name they provided in the conversation. Use EXACTLY what they said. NEVER use placeholder names like 'John Doe' or 'Customer'." },
           phone: { type: "string", description: "Customer's phone number (optional — already known on WhatsApp). Pass null if unknown." },
-          email: { type: "string", description: "Customer's email address for sending appointment confirmation. Pass null if unknown. NEVER make up placeholder values." },
+          email: { type: "string", description: "The customer's actual email address they provided in the conversation. Use EXACTLY what they said. NEVER use placeholder emails like 'johndoe@example.com'." },
           service: { type: "string", description: "The service being booked." },
           date: { type: "string", description: "Date of appointment (e.g. '2026-05-20' or 'tomorrow')." },
           time: { type: "string", description: "Time of appointment (e.g. '10am' or '14:00')." }
@@ -191,7 +191,7 @@ export const TOOL_DEFINITIONS = [
     type: "function",
     function: {
       name: "update_lead_stage",
-      description: "Move a lead through the sales pipeline. Stages: new → contacted → qualified → proposal → negotiation → won/lost.",
+      description: "Move the current contact through the sales pipeline. Stages: new → contacted → qualified → proposal → negotiation → won/lost.",
       parameters: {
         type: "object",
         properties: {
@@ -221,7 +221,7 @@ export const TOOL_DEFINITIONS = [
     type: "function",
     function: {
       name: "schedule_follow_up",
-      description: "Schedule an automated WhatsApp follow-up message for a lead after a specified number of hours.",
+      description: "Schedule an automated WhatsApp follow-up message for the current contact after a specified number of hours.",
       parameters: {
         type: "object",
         properties: {
@@ -242,7 +242,7 @@ export const TOOL_DEFINITIONS = [
     type: "function",
     function: {
       name: "generate_quote",
-      description: "Generate and send a price quote to the customer via WhatsApp.",
+      description: "Generate a price quote for the current contact via WhatsApp.",
       parameters: {
         type: "object",
         properties: {
