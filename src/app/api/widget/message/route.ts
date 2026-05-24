@@ -33,15 +33,40 @@ export async function POST(req: NextRequest) {
 
     const { workspace_id, session_token, message } = result.data;
 
-    // 0.5 Validate Workspace exists
+    // 0.5 Validate Workspace exists and widget is enabled for it
     const { data: workspace } = await supabaseAdmin
       .from("workspaces")
-      .select("is_ai_enabled")
+      .select("id, is_ai_enabled")
       .eq("id", workspace_id)
+      .is("deleted_at", null)
       .maybeSingle();
 
     if (!workspace) {
       return new Response("Workspace not found", { status: 404 });
+    }
+
+    // Verify widget is configured and active for this workspace
+    const { data: widgetConfig } = await supabaseAdmin
+      .from("widget_config")
+      .select("id, is_active, allowed_domains")
+      .eq("workspace_id", workspace_id)
+      .is("deleted_at", null)
+      .maybeSingle();
+
+    if (!widgetConfig) {
+      return new Response("Widget not configured for this workspace", { status: 403 });
+    }
+
+    // Optional domain allowlist check (Origin header vs configured domains)
+    const origin = req.headers.get("origin") || req.headers.get("referer") || "";
+    if (widgetConfig.allowed_domains && Array.isArray(widgetConfig.allowed_domains) && widgetConfig.allowed_domains.length > 0) {
+      const originDomain = new URL(origin).hostname;
+      const allowed = (widgetConfig.allowed_domains as string[]).some(d => 
+        originDomain === d || originDomain.endsWith("." + d)
+      );
+      if (!allowed && origin) {
+        return new Response("Domain not allowed", { status: 403 });
+      }
     }
 
     // 1. Resolve/Upsert Session

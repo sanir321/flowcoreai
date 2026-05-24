@@ -40,6 +40,37 @@ async function verifySignature(payload: string, signature: string | null, secret
   }
 }
 
+async function resolveWorkspace(supabase: any, rootPayload: any, sessionIdentifier: string | undefined): Promise<string | null> {
+  // Lookup by stored session ID or phone JID
+  if (sessionIdentifier) {
+    // SECURITY: Use parameterized eq filters instead of string interpolation in .or()
+    let query = supabase.from('gowa_sessions').select('workspace_id, gowa_session_id, phone_jid')
+    // Try both filters separately (safer than string interpolation)
+    const { data: bySession } = await query.eq('gowa_session_id', sessionIdentifier).maybeSingle()
+    if (bySession) return bySession.workspace_id
+    const { data: byPhone } = await supabase.from('gowa_sessions').select('workspace_id, gowa_session_id, phone_jid').eq('phone_jid', sessionIdentifier).maybeSingle()
+    if (byPhone) return byPhone.workspace_id
+  }
+
+  // Auto-recover from incoming device_id
+  const rawDeviceId = rootPayload.device_id || rootPayload.session || rootPayload.deviceId
+  if (rawDeviceId) {
+    const { data: existing } = await supabase.from('gowa_sessions').select('workspace_id').maybeSingle()
+    if (existing) {
+      const isJid = rawDeviceId.includes('@')
+      await supabase.from('gowa_sessions').update({
+        gowa_session_id: isJid ? null : rawDeviceId,
+        phone_jid: isJid ? rawDeviceId : null,
+        status: 'connected',
+        updated_at: new Date().toISOString()
+      }).eq('workspace_id', existing.workspace_id)
+      return existing.workspace_id
+    }
+  }
+
+  return null
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -71,91 +102,80 @@ Deno.serve(async (req) => {
     }
 
     const normalizedFrom = normalizeJID(from)
+    const pushname = from_name || pushName || 'Customer'
+
+    // Extract media
     const mediaTypes = ['imageMessage', 'videoMessage', 'documentMessage', 'audioMessage', 'stickerMessage', 'ptvMessage', 'voiceMessage']
-    let mediaCaption = '', mediaPath = '', mediaMime = ''
+    let mediaCaption = '', mediaPath = '', mediaMime = '', mediaType = ''
     for (const mt of mediaTypes) {
       const mediaObj = message?.[mt]
       if (mediaObj) {
         mediaCaption = mediaObj.caption || ''
         mediaPath = mediaObj.url || mediaObj.mediaPath || eventData.mediaPath || ''
         mediaMime = mediaObj.mimetype || eventData.mimeType || mt
+        mediaType = eventData.type || mt
         break
       }
     }
 
     const messageText = body || message?.conversation || message?.extendedTextMessage?.text || mediaCaption || ''
-    const pushname = from_name || pushName || 'Customer'
-    const messageMetadata: Record<string, unknown> = {}
-    if (mediaPath) {
-      messageMetadata.media_path = mediaPath
-      messageMetadata.media_mime = mediaMime
-      messageMetadata.media_type = eventData.type || mediaMime
-      if (mediaCaption) messageMetadata.media_caption = mediaCaption
-    }
     const hasMedia = !!mediaPath
 
+    // Resolve workspace
     let sessionIdentifier = rootPayload.device_id || rootPayload.session || rootPayload.deviceId || rootPayload.jid
     if (sessionIdentifier && typeof sessionIdentifier === 'string') {
       sessionIdentifier = sessionIdentifier.replace(/:\d+@/, '@')
     }
-
-    const { data: gowaSession } = await supabase.from('gowa_sessions').select('workspace_id, gowa_session_id').or(`gowa_session_id.eq."${sessionIdentifier}",phone_jid.eq."${sessionIdentifier}"`).maybeSingle()
-    if (!gowaSession) {
+    const workspaceId = await resolveWorkspace(supabase, rootPayload, sessionIdentifier)
+    if (!workspaceId) {
       return new Response(JSON.stringify({ success: false, error: 'Workspace not found' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
-    const workspaceId = gowaSession.workspace_id
 
-    // Dedup check by gowa_message_id
-    const { data: existingMsg } = await supabase.from('messages').select('id').eq('gowa_message_id', gowaMessageId).eq('workspace_id', workspaceId).maybeSingle()
-    if (existingMsg) {
-      return new Response(JSON.stringify({ success: true, message: 'duplicate' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    // Atomic webhook processing via RPC (advisory lock prevents duplicate webhook race)
+    const { data: result, error: rpcError } = await supabase.rpc('process_webhook_message', {
+      p_workspace_id: workspaceId,
+      p_customer_jid: normalizedFrom,
+      p_customer_name: pushname,
+      p_content: messageText,
+      p_gowa_message_id: gowaMessageId || null,
+      p_metadata: {},
+      p_media_path: mediaPath || null,
+      p_media_mime: mediaMime || null,
+      p_media_type: mediaType || null,
+      p_media_caption: mediaCaption || null,
+    })
+
+    if (rpcError) throw rpcError
+    if (result.status === 'duplicate') {
+      return new Response(JSON.stringify({ success: true, message: 'duplicate', reason: result.reason }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
-
-    // Resolve or Create Contact
-    const { data: contact } = await supabase.from('contacts').upsert({ workspace_id: workspaceId, whatsapp_jid: normalizedFrom, name: pushname, phone: normalizedFrom.split('@')[0], channel: 'whatsapp' }, { onConflict: 'workspace_id, phone' }).select().single()
-
-    // Resolve or Create Active Session
-    let { data: activeSession } = await supabase.from('conversation_sessions').select('*').eq('workspace_id', workspaceId).eq('customer_jid', normalizedFrom).eq('status', 'active').maybeSingle()
-    if (!activeSession) {
-      const { data: newSession } = await supabase.from('conversation_sessions').insert({ workspace_id: workspaceId, contact_id: contact.id, customer_jid: normalizedFrom, customer_name: pushname, channel: 'whatsapp', status: 'active' }).select().single()
-      activeSession = newSession
+    if (result.status === 'error') {
+      throw new Error(result.reason)
     }
-
-    const displayContent = messageText || (hasMedia ? '[Media message]' : '')
-
-    // Secondary dedup: same content within 3 seconds
-    const threeSecondsAgo = new Date(Date.now() - 3000).toISOString()
-    const { data: recentDup } = await supabase.from('messages').select('id').eq('workspace_id', workspaceId).eq('session_id', activeSession.id).eq('direction', 'inbound').eq('content', displayContent).gte('created_at', threeSecondsAgo).maybeSingle()
-    if (recentDup) {
-      return new Response(JSON.stringify({ success: true, message: 'duplicate' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
-    }
-
-    // Store inbound message
-    const { error: msgError } = await supabase.from('messages').insert({ workspace_id: workspaceId, session_id: activeSession.id, content: displayContent, direction: 'inbound', role: 'customer', gowa_message_id: gowaMessageId, metadata: Object.keys(messageMetadata).length > 0 ? messageMetadata : {} })
-    if (msgError) {
-      if (msgError.code === '23505') {
-        return new Response(JSON.stringify({ success: true, message: 'duplicate' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
-      }
-      throw msgError
-    }
-
-    // Update session
-    await supabase.from('conversation_sessions').update({ last_message_at: new Date().toISOString(), last_customer_message_at: new Date().toISOString(), last_message_preview: displayContent.substring(0, 100), updated_at: new Date().toISOString() }).eq('id', activeSession.id)
 
     // Fire AI processing
-    const processAI = async () => {
+    const sessionId = result.session_id
+    EdgeRuntime.waitUntil((async () => {
       try {
         const aiClient = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '')
-        const { data: aiResponse, error: aiError } = await aiClient.functions.invoke('agent-orchestrator', {
-          body: { workspace_id: workspaceId, session_id: activeSession.id, customer_jid: normalizedFrom, message: displayContent, channel: 'whatsapp', ...(hasMedia ? { media_metadata: messageMetadata } : {}) },
+        const { error: aiError } = await aiClient.functions.invoke('agent-orchestrator', {
+          body: {
+            workspace_id: workspaceId,
+            session_id: sessionId,
+            customer_jid: normalizedFrom,
+            message: messageText,
+            message_type: hasMedia ? 'image' : 'text',
+            gowa_message_id: gowaMessageId,
+            channel: 'whatsapp',
+            ...(hasMedia ? { media_metadata: { media_path: mediaPath, media_mime: mediaMime, media_type: mediaType } } : {}),
+          },
           headers: { 'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}` }
         })
         if (aiError) console.error('[WEBHOOK] Orchestrator error:', aiError)
       } catch (e) {
         console.error('[WEBHOOK] Background AI failed:', e)
       }
-    }
-    EdgeRuntime.waitUntil(processAI())
+    })())
 
     return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
   } catch (error: any) {

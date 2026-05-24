@@ -5,10 +5,10 @@ import { getDevices } from "@/lib/gowa";
 // Protected internal route for pg_cron / Vercel Cron Jobs
 export async function GET(req: NextRequest) {
   try {
-    const isVercelCron = req.headers.get("x-vercel-cron") === "1";
+    // Auth: verify Bearer token against INTERNAL_CRON_SECRET
+    // NOTE: x-vercel-cron header is NOT trusted for auth (any client can set it)
     const authHeader = req.headers.get("Authorization");
-    const isValidToken = authHeader === `Bearer ${process.env.INTERNAL_CRON_SECRET}`;
-    if (!isVercelCron && !isValidToken) {
+    if (authHeader !== `Bearer ${process.env.INTERNAL_CRON_SECRET}`) {
       return new Response("Unauthorized", { status: 401 });
     }
 

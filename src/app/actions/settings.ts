@@ -94,7 +94,14 @@ export async function getGoogleAuthUrl(workspace_id: string): Promise<ActionResp
     "openid https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/spreadsheets"
   );
 
-  const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${client_id}&redirect_uri=${redirect_uri}&response_type=code&scope=${scope}&access_type=offline&prompt=consent&state=${result.data}`;
+  // Sign the state parameter to prevent IDOR during OAuth callback
+  const { createHmac } = await import('node:crypto');
+  const hmac = createHmac('sha256', process.env.INTERNAL_CRON_SECRET || 'fallback-secret');
+  hmac.update(result.data);
+  const stateSig = hmac.digest('hex');
+  const state = `${result.data}.${stateSig}`;
+
+  const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${client_id}&redirect_uri=${redirect_uri}&response_type=code&scope=${scope}&access_type=offline&prompt=consent&state=${state}`;
 
   return { data: { url }, error: null };
 }

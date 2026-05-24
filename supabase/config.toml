@@ -1,20 +1,27 @@
 [functions.agent-orchestrator]
+# Auth: Manual Bearer token check against SUPABASE_SERVICE_ROLE_KEY or INTERNAL_CRON_SECRET
 verify_jwt = false
 
 [functions.gowa-webhook]
+# Auth: HMAC-SHA256 signature verification on webhook payloads
 verify_jwt = false
 
 [functions.crm-export]
+# Auth: Manual Bearer token check against INTERNAL_CRON_SECRET
 verify_jwt = false
 
 [functions.gowa-cleanup]
+# Auth: Manual Bearer token check against INTERNAL_CRON_SECRET
 verify_jwt = false
 
 [functions.tool-executor]
+# Auth: JWT verification via supabase.auth.getUser() (manual in code)
 verify_jwt = false
 
 [functions.ingest-url]
+# Auth: Manual Bearer token check against INTERNAL_CRON_SECRET or JWT via auth.getUser()
 verify_jwt = false
 
 [functions.ingest-document]
+# Auth: Manual Bearer token check against INTERNAL_CRON_SECRET or JWT via auth.getUser()
 verify_jwt = false

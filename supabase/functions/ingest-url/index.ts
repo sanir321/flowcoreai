@@ -6,6 +6,44 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// SSRF blocklist: internal/private IP ranges
+const PRIVATE_CIDRS = [
+  { prefix: [10], mask: 8 },           // 10.0.0.0/8
+  { prefix: [172, 16], mask: 12 },      // 172.16.0.0/12
+  { prefix: [192, 168], mask: 16 },     // 192.168.0.0/16
+  { prefix: [127], mask: 8 },           // 127.0.0.0/8
+  { prefix: [169, 254], mask: 16 },     // 169.254.0.0/16
+  { prefix: [0], mask: 8 },             // 0.0.0.0/8
+  { prefix: [100, 64], mask: 10 },      // 100.64.0.0/10 (CGNAT)
+]
+
+function isPrivateIP(hostname: string): boolean {
+  try {
+    // Resolve hostname to IP addresses via DNS
+    // Since Deno doesn't have dns.lookup, parse IP directly
+    const isIPv4 = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname)
+    if (!isIPv4) return false // hostnames pass, IPs are checked
+    const parts = hostname.split('.').map(Number)
+    if (parts.some(p => p < 0 || p > 255)) return true
+    for (const cidr of PRIVATE_CIDRS) {
+      let match = true
+      for (let i = 0; i < cidr.prefix.length; i++) {
+        if (parts[i] !== cidr.prefix[i]) { match = false; break }
+      }
+      if (match) return true
+    }
+    return false
+  } catch { return true } // deny on resolve failure
+}
+
+function validateUrl(raw: string): URL {
+  let url: URL
+  try { url = new URL(raw) } catch { throw new Error('Invalid URL format') }
+  if (url.protocol !== 'https:') throw new Error('Only HTTPS URLs are allowed')
+  if (isPrivateIP(url.hostname)) throw new Error(`Access to ${url.hostname} is not allowed`)
+  return url
+}
+
 // Initialize the local embedding model — loaded once, reused across invocations
 const model = new Supabase.ai.Session('gte-small')
 
@@ -13,12 +51,30 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
   try {
+    // Auth: verify JWT or internal secret
+    const authHeader = req.headers.get('Authorization') || ''
+    const token = authHeader.replace('Bearer ', '')
+    const internalSecret = Deno.env.get('INTERNAL_CRON_SECRET')
+    if (!token || (token !== internalSecret)) {
+      const verifyClient = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      )
+      const { data: { user }, error: authError } = await verifyClient.auth.getUser(token)
+      if (authError || !user) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      }
+    }
+
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { workspace_id, source_id, url } = await req.json()
+    const { workspace_id, source_id, url: rawUrl } = await req.json()
+
+    // SSRF GUARD: validate URL before any network operation
+    const url = validateUrl(rawUrl)
 
     // 0. Update status to processing
     await supabase.from('kb_sources').update({ 
@@ -26,8 +82,11 @@ Deno.serve(async (req) => {
       error_message: 'Fetching website content...' 
     }).eq('id', source_id)
 
-    // 1. Fetch and process URL
-    const response = await fetch(url)
+    // 1. Fetch and process URL (with timeout)
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 15000) // 15s timeout
+    const response = await fetch(url, { signal: controller.signal })
+    clearTimeout(timeout)
     if (!response.ok) throw new Error(`Failed to fetch URL: ${response.statusText}`)
     
     const html = await response.text()

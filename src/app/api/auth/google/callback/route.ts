@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
+import { createHmac } from "node:crypto";
 
 export const runtime = "nodejs";
 
@@ -11,10 +12,24 @@ const supabaseAdmin = createClient(
 export async function GET(req: NextRequest) {
   const { searchParams, origin } = new URL(req.url);
   const code = searchParams.get("code");
-  const state = searchParams.get("state"); // Contains workspace_id
+  const state = searchParams.get("state"); // Contains signed workspace_id
 
   if (!code || !state) {
     return NextResponse.redirect(`${origin}/settings/integrations?error=No code provided`);
+  }
+
+  // Verify signed state parameter (prevents IDOR where attacker swaps workspace_id)
+  const dotIndex = state.lastIndexOf(".");
+  if (dotIndex === -1) {
+    return NextResponse.redirect(`${origin}/settings/integrations?error=Invalid state parameter`);
+  }
+  const workspaceId = state.substring(0, dotIndex);
+  const signature = state.substring(dotIndex + 1);
+  const hmac = createHmac("sha256", process.env.INTERNAL_CRON_SECRET || "fallback-secret");
+  hmac.update(workspaceId);
+  const expectedSig = hmac.digest("hex");
+  if (signature !== expectedSig) {
+    return NextResponse.redirect(`${origin}/settings/integrations?error=Invalid state signature`);
   }
 
   try {
@@ -51,7 +66,7 @@ export async function GET(req: NextRequest) {
     await supabaseAdmin
       .from("google_oauth_tokens")
       .upsert({
-        workspace_id: state,
+        workspace_id: workspaceId,
         access_token: data.access_token,
         refresh_token: data.refresh_token,
         token_expiry: expiry,
