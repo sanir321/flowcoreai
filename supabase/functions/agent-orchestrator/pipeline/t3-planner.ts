@@ -16,6 +16,28 @@ const AGENT_SYSTEM_PROMPTS: Record<string, (ctx: PipelineContext) => string> = {
 export async function runT3(ctx: PipelineContext): Promise<TierResult> {
   const agentType = ctx.agentType || "customer_support";
 
+  // 0. Escalation check: if session was escalated by T0, bypass LLM and hand off directly
+  const { data: sessionStatus } = await ctx.supabase
+    .from("conversation_sessions")
+    .select("status")
+    .eq("id", ctx.session.id)
+    .single();
+  if (sessionStatus?.status === "escalated") {
+    // Use request_handoff tool directly — DO NOT use handleHandoff() which does LLM call
+    const handoffResult = await toolExecutor.run("request_handoff", {
+      target_agent: "customer_support",
+      reason: "escalation"
+    }, ctx);
+    const response = handoffResult?.response
+      ?? "I completely understand why this is frustrating. I am escalating your profile to our management team right now so they can resolve this.";
+    await ctx.supabase.from("conversation_sessions")
+      .update({ agent_type: "customer_support", updated_at: new Date().toISOString() })
+      .eq("id", ctx.session.id);
+    ctx.agentType = "customer_support";
+    await postProcess(ctx, null, null, response, "customer_support");
+    return { handled: true, response, reason: "t3_escalation_handoff" };
+  }
+
   // 1. Initial message count for staleness detection
   if (ctx._msgCount === undefined) {
     const { count } = await ctx.supabase
