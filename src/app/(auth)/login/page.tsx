@@ -25,34 +25,9 @@ export default function LoginPage() {
   const router = useRouter()
   const supabase = createClient()
 
-  // Auto-detect authentication from other tabs (e.g. Magic Link click)
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === "SIGNED_IN" && session) {
-        const workspaceId = session.user.app_metadata?.workspace_id
-        if (workspaceId) {
-          router.push("/inbox")
-        } else {
-          // Double check DB
-          const { data: workspace } = await supabase
-            .from("workspaces")
-            .select("id")
-            .eq("owner_id", session.user.id)
-            .eq("status", "active")
-            .is("deleted_at", null)
-            .maybeSingle()
-          
-          if (workspace) {
-            router.push("/inbox")
-          } else {
-            router.push("/onboarding")
-          }
-        }
-      }
-    })
-
-    return () => subscription.unsubscribe()
-  }, [router, supabase])
+  // Note: Magic link sign-in is handled by /auth/callback route directly.
+  // We do NOT auto-redirect on auth state change here to avoid confusing UX
+  // when email clients prefetch magic links while the OTP form is visible.
 
   const handleGoogleLogin = async () => {
     setIsLoading(true)

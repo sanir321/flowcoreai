@@ -1,21 +1,88 @@
-/**
- * /types/agent.ts
- */
-
 export interface RouterResult {
-  agent: 'customer_support' | 'sales' | 'appointment_booking';
+  agent: "customer_support" | "sales" | "appointment_booking";
   intent: string;
-  urgency: 'low' | 'medium' | 'high';
+  urgency: "low" | "medium" | "high";
   entities: Record<string, any>;
 }
 
 export interface AgentPayload {
-  messages: { role: string; content: string }[];
   model?: string;
+  messages: { role: string; content: string }[];
+  system?: string;
   response_format?: { type: string };
+  tools?: object[];
+  tool_choice?: object | string;
+  temperature?: number;
+  max_tokens?: number;
 }
 
-export interface AgentResponse {
-  response_parts: string[];
-  metadata: Record<string, any>;
+export interface ToolDefinition {
+  name: string;
+  description: string;
+  parameters: {
+    type: string;
+    properties: Record<string, any>;
+    required?: string[];
+  };
 }
+
+export interface WebhookPayload {
+  workspace_id: string;
+  customer_jid: string;
+  customer_phone: string;
+  message: string;
+  message_type: "text" | "image" | "audio" | "document" | "sticker" | "reaction";
+  gowa_message_id: string;
+  timestamp: number;
+  source: "whatsapp" | "widget";
+  is_test?: boolean;
+}
+
+export interface PipelineContext {
+  supabase: any;
+  session: any;
+  payload: WebhookPayload;
+  workspace?: any;
+  contact?: any;
+  agentType?: string;
+  routingReason?: string;
+  bookingSession?: any;
+  _msgCount?: number;
+  embedding?: number[];
+  kbSearchPromise?: Promise<any>;
+  pricingBlocked?: boolean;
+  salesBlocked?: boolean;
+}
+
+export interface AgentPlan {
+  response: string;
+  actions: { tool: string; params: object; required: boolean; result_key?: string }[];
+  fallback: string;
+  needs_second_pass: boolean;
+}
+
+export interface TierResult {
+  handled: boolean;
+  response?: string | null;
+  reason?: string;
+}
+
+export type AgentType = "customer_support" | "appointment_booking" | "sales";
+
+export const AGENT_DESCRIPTIONS: Record<string, { label: string; description: string; skills: string }> = {
+  customer_support: {
+    label: "Customer Support",
+    description: "Answers general questions about the business, services, hours, or policies.",
+    skills: "knowledge base search, general Q&A, escalation to human"
+  },
+  appointment_booking: {
+    label: "Appointment Booker",
+    description: "Handles scheduling, changing, or cancelling appointments.",
+    skills: "Google Calendar availability check, appointment creation, rescheduling, cancellations"
+  },
+  sales: {
+    label: "Sales Assistant",
+    description: "Handles pricing inquiries, lead capture, qualification, menu browsing, order taking, and payment.",
+    skills: "lead capture, pipeline management, follow-ups, quotes, menu, ordering, UPI payments"
+  }
+};
