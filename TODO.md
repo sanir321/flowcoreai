@@ -3,7 +3,7 @@
 ## Remaining (requires manual action)
 - [ ] **Google OAuth re-auth** — Re-authorize Google for workspaces with expired tokens via `/settings/integrations`. "scluptdental" has refresh_token (auto-refresh working). If auto-refresh fails, user will see "Google session expired" and must re-connect.
 - [ ] **Uptime monitoring** — Set up Better Uptime / Pingdom pointing at `https://flowter-bay.vercel.app/api/health` (endpoint returns `{"status":"ok"}`)
-- [ ] **Separate shared secrets** — `GOWA_WEBHOOK_SECRET` and `INTERNAL_CRON_SECRET` currently share the same value (`flowcoresecret2026`). Rotate one to a different value in `.env.local` and deployed env vars.
+- [x] **Separate shared secrets** — `INTERNAL_CRON_SECRET` rotated to new random value (different from `GOWA_WEBHOOK_SECRET`). Needs Vercel env var update on deploy.
 - [ ] **npm audit** — 2 moderate vulns remain (PostCSS via Next.js). Requires Next.js upgrade.
 
 ## Deferred
