@@ -1,26 +1,43 @@
 import { sendEmail } from "@/lib/mail";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { render } from "@react-email/components";
 import { AppointmentConfirmationEmail } from "@/components/emails/appointment-confirmation";
 import { EscalationAlertEmail } from "@/components/emails/escalation-alert";
 import { WelcomeEmail } from "@/components/emails/welcome";
 import { SignInNotificationEmail } from "@/components/emails/sign-in-notification";
 import { ReEngagementEmail } from "@/components/emails/re-engagement";
+import { z } from "zod";
+import { rateLimit } from "@/lib/rate-limit";
 import * as React from "react";
 
-export async function POST(req: Request) {
+const EmailBodySchema = z.object({
+  to: z.string().email(),
+  subject: z.string().min(1).max(200),
+  template: z.enum(["escalation", "welcome", "signin", "appointment", "re-engagement"]).optional(),
+  data: z.any().optional(),
+});
+
+export async function POST(req: NextRequest) {
   try {
+    const ip = req.headers.get("x-forwarded-for") || "127.0.0.1";
+    const { success: isAllowed } = await rateLimit(ip);
+    if (!isAllowed) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
     const authHeader = req.headers.get("Authorization");
     const isValidRequest = authHeader === `Bearer ${process.env.INTERNAL_CRON_SECRET}`;
     if (!isValidRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { to, subject, template, data } = await req.json();
-
-    if (!to || !subject) {
-      return NextResponse.json({ error: "Missing required fields (to, subject)" }, { status: 400 });
+    const body = await req.json();
+    const parsed = EmailBodySchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
     }
+
+    const { to, subject, template, data } = parsed.data;
 
     console.log(`[EMAIL_API] Sending SMTP email to: ${to}, Template: ${template || 'default'}`);
 

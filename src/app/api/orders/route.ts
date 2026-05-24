@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
+import { rateLimit } from "@/lib/rate-limit";
 
 const UpdateSchema = z.object({
   id: z.string().uuid(),
@@ -9,6 +10,12 @@ const UpdateSchema = z.object({
 
 export async function PUT(req: NextRequest) {
   try {
+    const ip = req.headers.get("x-forwarded-for") || "127.0.0.1";
+    const { success: isAllowed } = await rateLimit(ip);
+    if (!isAllowed) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

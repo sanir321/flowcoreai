@@ -1,9 +1,16 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { createClient as createServerClient } from "@/lib/supabase/server"
+import { rateLimit } from "@/lib/rate-limit"
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const ip = req.headers.get("x-forwarded-for") || "127.0.0.1";
+    const { success: isAllowed } = await rateLimit(ip);
+    if (!isAllowed) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
     const auth = await createServerClient()
     const { data: { user } } = await auth.auth.getUser()
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -48,7 +55,7 @@ export async function GET() {
         await supabase.from("google_oauth_tokens").update({
           access_token: t.access_token,
           token_expiry: new Date(Date.now() + t.expires_in * 1000).toISOString(),
-        }).limit(1)
+        }).eq("workspace_id", workspaceId)
       }
     }
 

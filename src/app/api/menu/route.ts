@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { z } from "zod";
+import { rateLimit } from "@/lib/rate-limit";
 
 const CreateSchema = z.object({
   name: z.string().min(1).max(200),
@@ -9,6 +10,16 @@ const CreateSchema = z.object({
   price: z.number().positive(),
   category: z.string().optional(),
   is_available: z.boolean().optional().default(true),
+});
+
+const MenuGetSchema = z.object({
+  category: z.string().optional(),
+  type: z.enum(["media", "items"]).optional(),
+});
+
+const MenuDeleteSchema = z.object({
+  id: z.string().uuid(),
+  type: z.enum(["media"]).optional(),
 });
 
 const UpdateSchema = z.object({
@@ -22,6 +33,12 @@ const UpdateSchema = z.object({
 
 export async function GET(req: NextRequest) {
   try {
+    const ip = req.headers.get("x-forwarded-for") || "127.0.0.1";
+    const { success: isAllowed } = await rateLimit(ip);
+    if (!isAllowed) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -30,8 +47,14 @@ export async function GET(req: NextRequest) {
     if (!workspaceId) return NextResponse.json({ error: "No workspace" }, { status: 400 });
 
     const { searchParams } = new URL(req.url);
-    const category = searchParams.get("category");
-    const type = searchParams.get("type");
+    const getParsed = MenuGetSchema.safeParse({
+      category: searchParams.get("category"),
+      type: searchParams.get("type"),
+    });
+    if (!getParsed.success) {
+      return NextResponse.json({ error: getParsed.error.flatten() }, { status: 400 });
+    }
+    const { category, type } = getParsed.data;
 
     if (type === "media") {
       const admin = createAdminClient();
@@ -68,6 +91,12 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = req.headers.get("x-forwarded-for") || "127.0.0.1";
+    const { success: isAllowed } = await rateLimit(ip);
+    if (!isAllowed) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -95,6 +124,12 @@ export async function POST(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   try {
+    const ip = req.headers.get("x-forwarded-for") || "127.0.0.1";
+    const { success: isAllowed } = await rateLimit(ip);
+    if (!isAllowed) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -125,6 +160,12 @@ export async function PUT(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
+    const ip = req.headers.get("x-forwarded-for") || "127.0.0.1";
+    const { success: isAllowed } = await rateLimit(ip);
+    if (!isAllowed) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -133,11 +174,16 @@ export async function DELETE(req: NextRequest) {
     if (!workspaceId) return NextResponse.json({ error: "No workspace" }, { status: 400 });
 
     const { searchParams } = new URL(req.url);
-    const id = searchParams.get("id");
-    const type = searchParams.get("type");
+    const deleteParsed = MenuDeleteSchema.safeParse({
+      id: searchParams.get("id"),
+      type: searchParams.get("type"),
+    });
+    if (!deleteParsed.success) {
+      return NextResponse.json({ error: deleteParsed.error.flatten() }, { status: 400 });
+    }
+    const { id, type } = deleteParsed.data;
 
     if (type === "media") {
-      if (!id) return NextResponse.json({ error: "Missing media id" }, { status: 400 });
       const admin = createAdminClient();
       const { data: media } = await (admin as any).from("menu_media").select("file_path").eq("id", id).eq("workspace_id", workspaceId).single();
       if (media) {
