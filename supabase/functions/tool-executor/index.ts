@@ -2,20 +2,18 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7"
 import { executeTool } from "../agent-orchestrator/lib/tools.ts"
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+// NOTE: No CORS — this is an internal function, not called from browsers
+// Auth via JWT verification (supabase.auth.getUser) in the handler below
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
+  if (req.method === 'OPTIONS') return new Response('ok', { status: 204 })
 
   try {
     const authHeader = req.headers.get('Authorization') || ''
     const token = authHeader.replace('Bearer ', '')
     if (!token) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        status: 401, headers: { 'Content-Type': 'application/json' }
       })
     }
 
@@ -27,7 +25,7 @@ Deno.serve(async (req) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser(token)
     if (authError || !user) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        status: 401, headers: { 'Content-Type': 'application/json' }
       })
     }
 
@@ -35,7 +33,7 @@ Deno.serve(async (req) => {
 
     if (!tool_name || !workspace_id) {
       return new Response(JSON.stringify({ error: "tool_name and workspace_id are required" }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        status: 400, headers: { 'Content-Type': 'application/json' }
       })
     }
 
@@ -48,11 +46,11 @@ Deno.serve(async (req) => {
     })
 
     return new Response(JSON.stringify({ result }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' }
     })
   } catch (error: any) {
     return new Response(JSON.stringify({ error: "Tool execution failed" }), {
-      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      status: 500, headers: { 'Content-Type': 'application/json' }
     })
   }
 })

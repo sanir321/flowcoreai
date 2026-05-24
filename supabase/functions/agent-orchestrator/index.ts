@@ -8,17 +8,15 @@ import { dispatch } from "./lib/dispatch.ts"
 import { getOrCreateSession, touchSession } from "./lib/session.ts"
 import { WebhookPayload, PipelineContext } from "./lib/types.ts"
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+// Restricted CORS — internal function, not browser-facing
+const responseHeaders = {
+  "Content-Type": "application/json",
   "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
   "X-Content-Type-Options": "nosniff",
-  "X-Frame-Options": "DENY",
-  "Vary": "Origin",
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders })
+  if (req.method === "OPTIONS") return new Response("ok", { status: 204 })
 
   try {
     // AUTH: Verify Bearer token is the service role key (what all internal callers send)
@@ -30,7 +28,7 @@ Deno.serve(async (req) => {
     if (!token || (token !== serviceRoleKey && token !== internalSecret)) {
       console.error("[ORCHESTRATOR] Unauthorized invocation attempt")
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" }
+        status: 401, headers: responseHeaders
       })
     }
 
@@ -42,7 +40,7 @@ Deno.serve(async (req) => {
   } catch (e: any) {
     console.error("[ORCHESTRATOR] Parse error:", e.message)
     return new Response(JSON.stringify({ error: e.message }), {
-      status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" }
+      status: 200, headers: responseHeaders
     })
   }
 })

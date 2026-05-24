@@ -1,19 +1,19 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7"
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+const responseHeaders = {
+  'Content-Type': 'application/json',
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders, status: 204 })
+  if (req.method === 'OPTIONS') return new Response(null, { status: 204 })
 
   try {
+    // Auth: REQUIRED Bearer token against INTERNAL_CRON_SECRET
     const auth = req.headers.get('authorization') || ''
     const cronSecret = Deno.env.get('INTERNAL_CRON_SECRET')
-    if (cronSecret && auth !== `Bearer ${cronSecret}`) {
-      return new Response(JSON.stringify({ error: 'unauthorized' }), { headers: corsHeaders, status: 401 })
+    if (!cronSecret || auth !== `Bearer ${cronSecret}`) {
+      return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401, headers: responseHeaders })
     }
 
     const supaUrl = Deno.env.get('SUPABASE_URL')?.replace(/\/$/, '')
@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
 
     if (error) throw error
     if (!followUps || followUps.length === 0) {
-      return new Response(JSON.stringify({ sent: 0, message: 'No pending follow-ups' }), { headers: corsHeaders })
+      return new Response(JSON.stringify({ sent: 0, message: 'No pending follow-ups' }), { headers: responseHeaders })
     }
 
     const workspaceIds = [...new Set(followUps.map(f => f.workspace_id))]
@@ -121,9 +121,9 @@ Deno.serve(async (req) => {
     }
 
     return new Response(JSON.stringify({ sent, failed, total: followUps.length, results }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: responseHeaders,
     })
   } catch (e: any) {
-    return new Response(JSON.stringify({ error: e.message }), { headers: corsHeaders, status: 500 })
+    return new Response(JSON.stringify({ error: e.message }), { headers: responseHeaders, status: 500 })
   }
 })
