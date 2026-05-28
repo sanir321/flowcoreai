@@ -192,17 +192,25 @@ export default function OnboardingPage() {
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
-  // Auth check on mount — redirect if user already has a workspace
+  // Auth check on mount — redirect if user already has a valid workspace
   useEffect(() => {
     const supabase = createClient()
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) {
         router.push('/login')
         return
       }
       const wid = user.app_metadata?.workspace_id as string | undefined
       if (wid) {
-        router.push('/inbox')
+        const { data: ws } = await supabase
+          .from("workspaces")
+          .select("id")
+          .eq("id", wid)
+          .is("deleted_at", null)
+          .single()
+        if (ws) {
+          router.push('/inbox')
+        }
       }
     })
   }, [router])

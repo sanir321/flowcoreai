@@ -124,8 +124,16 @@ export default function LoginPage() {
 
         const workspaceId = user.app_metadata?.workspace_id
         if (workspaceId) {
-          router.push("/inbox")
-          return
+          const { data: ws } = await supabase
+            .from("workspaces")
+            .select("id")
+            .eq("id", workspaceId)
+            .is("deleted_at", null)
+            .maybeSingle()
+          if (ws) {
+            router.push("/inbox")
+            return
+          }
         }
 
         const { data: workspace } = await supabase
