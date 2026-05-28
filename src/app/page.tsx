@@ -54,8 +54,8 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="min-h-screen overflow-x-hidden scroll-smooth" style={sf}>
-      <header className="h-16 flex items-center justify-between px-6 lg:px-12 sticky top-0 z-[100]" style={{ background: "rgba(5, 5, 5, 0.9)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+    <div className="min-h-screen scroll-smooth" style={sf}>
+      <header className="h-16 flex items-center justify-between px-6 lg:px-12 fixed top-0 left-0 right-0 z-[100]" style={{ background: "rgba(5, 5, 5, 0.9)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
         <div className="flex items-center gap-3">
           <Link href="/" className="h-8 w-8 rounded-lg flex items-center justify-center" style={{ background: "#c65f39" }}>
             <span className="text-white font-bold text-sm tracking-tighter">F</span>
@@ -79,8 +79,8 @@ export default function LandingPage() {
         </div>
       </header>
 
-      <main>
-        <section className="relative pt-32 pb-48 px-6 overflow-hidden flex flex-col items-center" style={{ background: "#050505" }}>
+      <main className="relative">
+        <section className="sticky top-0 z-10 min-h-screen pt-32 pb-48 px-6 overflow-hidden flex flex-col items-center" style={{ background: "#050505" }}>
           <div className="absolute top-[3%] left-1/2 -translate-x-1/2 w-[1000px] h-[650px] rounded-full pointer-events-none z-0" style={{ background: "radial-gradient(ellipse at center, rgba(198, 95, 57, 0.28) 0%, rgba(198, 95, 57, 0.1) 35%, rgba(198, 95, 57, 0.03) 60%, transparent 80%)" }} />
 
           <div className="max-w-[820px] mx-auto text-center relative z-10 space-y-8">
@@ -179,7 +179,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="py-16 px-6 flex flex-col items-center" style={{ background: "#ffffff", borderTop: "1px solid #e5e5e5" }}>
+        <section className="sticky top-0 z-20 min-h-screen flex flex-col items-center justify-center px-6" style={{ background: "#ffffff" }}>
           <div className="text-sm font-normal" style={{ color: "#a3a3a3", letterSpacing: "0.05em" }}>
             500+ teams supercharge their service with FlowCore
           </div>
@@ -192,20 +192,20 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="py-24 px-6 lg:px-12" style={{ background: "#ffffff", borderTop: "1px solid #e5e5e5" }}>
-          <div className="max-w-[820px] mx-auto">
+        <section className="sticky top-0 z-30 min-h-screen flex flex-col items-center justify-center px-6 lg:px-12" style={{ background: "#ffffff" }}>
+          <div className="max-w-[820px] mx-auto text-center">
             <p className="text-sm font-normal mb-4" style={{ color: "#c65f39" }}>Platform</p>
             <h2 className="font-normal tracking-tight" style={{ fontSize: "35.2508px", lineHeight: "44.0635px", letterSpacing: "-0.15667px", color: "#171717" }}>
               Handle communication end-to-end
             </h2>
-            <p className="max-w-lg mt-4 leading-relaxed font-normal" style={{ fontSize: "15.667px", color: "#737373" }}>
+            <p className="max-w-lg mx-auto mt-4 leading-relaxed font-normal" style={{ fontSize: "15.667px", color: "#737373" }}>
               FlowCore keeps your team focused by intelligently handling communications and escalating only the critical moments.
             </p>
           </div>
         </section>
 
-        <section className="py-24 px-6 lg:px-12" style={{ background: "#ffffff", borderTop: "1px solid #e5e5e5" }}>
-          <div className="max-w-[820px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+        <section className="sticky top-0 z-40 min-h-screen flex items-center px-6 lg:px-12" style={{ background: "#ffffff" }}>
+          <div className="w-full max-w-[1060px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <motion.div {...fadeInUp} className="space-y-6">
               <p className="text-sm font-normal" style={{ color: "#c65f39" }}>Reporting</p>
               <h2 className="font-normal tracking-tight" style={{ fontSize: "35.2508px", lineHeight: "44.0635px", letterSpacing: "-0.15667px", color: "#171717" }}>
@@ -283,13 +283,13 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="py-24 px-6 lg:px-12" style={{ background: "#ffffff", borderTop: "1px solid #e5e5e5" }}>
-          <div className="max-w-[820px] mx-auto">
+        <section className="sticky top-0 z-50 min-h-screen flex flex-col items-center justify-center px-6 lg:px-12" style={{ background: "#ffffff" }}>
+          <div className="max-w-[820px] mx-auto text-center">
             <p className="text-sm font-normal mb-4" style={{ color: "#c65f39" }}>Unified Inbox</p>
             <h2 className="font-normal tracking-tight" style={{ fontSize: "35.2508px", lineHeight: "44.0635px", letterSpacing: "-0.15667px", color: "#171717" }}>
               Everything in one place
             </h2>
-            <p className="max-w-lg mt-4 leading-relaxed font-normal" style={{ fontSize: "15.667px", color: "#737373" }}>
+            <p className="max-w-lg mx-auto mt-4 leading-relaxed font-normal" style={{ fontSize: "15.667px", color: "#737373" }}>
               When automation ends, your control begins — streamline every conversation your AI can't handle in one place.
             </p>
             <Button asChild className="h-11 px-5 rounded-[100px] text-sm font-normal flex items-center gap-1 mt-6" style={{ background: "#c65f39", color: "#fff" }}>
@@ -298,7 +298,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="py-24 px-6 lg:px-12 text-center" style={{ background: "#ffffff", borderTop: "1px solid #e5e5e5" }}>
+        <section className="sticky top-0 z-60 min-h-screen flex items-center justify-center px-6 lg:px-12 text-center" style={{ background: "#ffffff" }}>
           <div className="max-w-[820px] mx-auto space-y-12">
             <div className="space-y-6">
               <p className="text-sm font-normal" style={{ color: "#c65f39" }}>Integrations</p>
@@ -330,9 +330,9 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="py-24 px-6 lg:px-12 relative overflow-hidden" style={{ background: "#050505", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+        <section className="sticky top-0 z-70 min-h-screen flex items-center px-6 lg:px-12 relative overflow-hidden" style={{ background: "#050505" }}>
           <div className="absolute top-1/2 right-0 w-[400px] h-[400px] rounded-full translate-x-1/2 pointer-events-none" style={{ background: "radial-gradient(circle, rgba(198, 95, 57, 0.08) 0%, transparent 60%)" }} />
-          <div className="max-w-[820px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+          <div className="max-w-[1060px] mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div className="space-y-6">
               <p className="text-sm font-normal" style={{ color: "#c65f39" }}>Enterprise</p>
               <h2 className="font-normal tracking-tight text-white" style={{ fontSize: "35.2508px", lineHeight: "44.0635px", letterSpacing: "-0.15667px" }}>
@@ -363,14 +363,14 @@ export default function LandingPage() {
         </section>
       </main>
 
-      <footer className="pt-16 pb-10 px-4 lg:px-12" style={{ background: "#ffffff", borderTop: "1px solid #e5e5e5" }}>
-        <div className="max-w-[820px] mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-16">
-            <div className="col-span-2 md:col-span-1 space-y-4">
-              <Link href="/" className="text-base font-medium tracking-tight" style={{ color: "#171717", letterSpacing: "-0.01em" }}>
+      <footer className="relative z-80 pt-20 pb-12 px-8 lg:px-16" style={{ background: "#ffffff" }}>
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-12 mb-16">
+            <div className="col-span-2 md:col-span-1 space-y-5">
+              <Link href="/" className="text-lg font-medium tracking-tight" style={{ color: "#171717", letterSpacing: "-0.01em" }}>
                 FlowCore
               </Link>
-              <p className="text-sm leading-relaxed font-normal" style={{ color: "#737373" }}>
+              <p className="text-sm leading-relaxed font-normal max-w-[200px]" style={{ color: "#737373" }}>
                 AI automation that transforms business communication.
               </p>
               <p className="text-sm font-normal" style={{ color: "#737373" }}>
@@ -378,36 +378,36 @@ export default function LandingPage() {
               </p>
             </div>
 
-            <div className="space-y-3">
-              <h4 className="text-sm font-normal" style={{ color: "#a3a3a3" }}>Product</h4>
-              <nav className="flex flex-col gap-2">
-                <Link href="/login" className="text-sm font-normal" style={{ color: "#525252" }}>Features</Link>
-                <Link href="/pricing" className="text-sm font-normal" style={{ color: "#525252" }}>Pricing</Link>
-                <Link href="/changelog" className="text-sm font-normal" style={{ color: "#525252" }}>Changelog</Link>
-                <Link href="/faq" className="text-sm font-normal" style={{ color: "#525252" }}>FAQ</Link>
+            <div className="space-y-4">
+              <h4 className="text-xs font-semibold tracking-wider uppercase" style={{ color: "#a3a3a3" }}>Product</h4>
+              <nav className="flex flex-col gap-3">
+                <Link href="/login" className="text-sm font-normal transition-colors" style={{ color: "#525252" }}>Features</Link>
+                <Link href="/pricing" className="text-sm font-normal transition-colors" style={{ color: "#525252" }}>Pricing</Link>
+                <Link href="/changelog" className="text-sm font-normal transition-colors" style={{ color: "#525252" }}>Changelog</Link>
+                <Link href="/faq" className="text-sm font-normal transition-colors" style={{ color: "#525252" }}>FAQ</Link>
               </nav>
             </div>
 
-            <div className="space-y-3">
-              <h4 className="text-sm font-normal" style={{ color: "#a3a3a3" }}>Company</h4>
-              <nav className="flex flex-col gap-2">
-                <Link href="/legal/privacy-policy" className="text-sm font-normal" style={{ color: "#525252" }}>Privacy Policy</Link>
-                <Link href="/legal/terms" className="text-sm font-normal" style={{ color: "#525252" }}>Terms</Link>
-                <Link href="/legal/cookie-policy" className="text-sm font-normal" style={{ color: "#525252" }}>Cookies</Link>
-                <Link href="/legal" className="text-sm font-normal" style={{ color: "#525252" }}>Legal</Link>
+            <div className="space-y-4">
+              <h4 className="text-xs font-semibold tracking-wider uppercase" style={{ color: "#a3a3a3" }}>Company</h4>
+              <nav className="flex flex-col gap-3">
+                <Link href="/legal/privacy-policy" className="text-sm font-normal transition-colors" style={{ color: "#525252" }}>Privacy Policy</Link>
+                <Link href="/legal/terms" className="text-sm font-normal transition-colors" style={{ color: "#525252" }}>Terms</Link>
+                <Link href="/legal/cookie-policy" className="text-sm font-normal transition-colors" style={{ color: "#525252" }}>Cookies</Link>
+                <Link href="/legal" className="text-sm font-normal transition-colors" style={{ color: "#525252" }}>Legal</Link>
               </nav>
             </div>
 
-            <div className="space-y-3">
-              <h4 className="text-sm font-normal" style={{ color: "#a3a3a3" }}>Compliance</h4>
-              <nav className="flex flex-col gap-2">
+            <div className="space-y-4">
+              <h4 className="text-xs font-semibold tracking-wider uppercase" style={{ color: "#a3a3a3" }}>Compliance</h4>
+              <nav className="flex flex-col gap-3">
                 <span className="text-sm font-normal" style={{ color: "#525252" }}>SOC 2 Type II</span>
                 <span className="text-sm font-normal" style={{ color: "#525252" }}>HIPAA Compliant</span>
               </nav>
             </div>
           </div>
 
-          <div className="flex flex-col md:flex-row justify-between items-center pt-6 gap-6" style={{ borderTop: "1px solid #e5e5e5" }}>
+          <div className="flex flex-col md:flex-row justify-between items-center pt-8 gap-6" style={{ borderTop: "1px solid #e5e5e5" }}>
             <span className="text-sm font-normal" style={{ color: "#a3a3a3" }}>&copy; 2026 FlowCore Systems. All rights reserved.</span>
           </div>
         </div>
