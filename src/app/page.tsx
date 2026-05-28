@@ -40,17 +40,31 @@ const GoogleSheetsLogo = ({ className }: { className?: string }) => (
 const sf = { fontFamily: "'Söhne', 'Inter', ui-sans-serif, system-ui, sans-serif" }
 
 const sectionAnim = {
-  initial: { opacity: 0, y: 50 },
+  initial: { opacity: 0, y: 60 },
   whileInView: { opacity: 1, y: 0 },
   viewport: { once: true, margin: "-120px" },
-  transition: { duration: 1, ease: [0.16, 1, 0.3, 1] as const }
+  transition: { duration: 0.9, ease: [0.16, 1, 0.3, 1] as const }
 }
 
-const staggerItem = {
-  initial: { opacity: 0, y: 30 },
-  whileInView: { opacity: 1, y: 0 },
+const slideLeft = {
+  initial: { opacity: 0, x: -40 },
+  whileInView: { opacity: 1, x: 0 },
   viewport: { once: true, margin: "-80px" },
-  transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] as const }
+  transition: { duration: 0.9, ease: [0.16, 1, 0.3, 1] as const }
+}
+
+const slideRight = {
+  initial: { opacity: 0, x: 40 },
+  whileInView: { opacity: 1, x: 0 },
+  viewport: { once: true, margin: "-80px" },
+  transition: { duration: 0.9, ease: [0.16, 1, 0.3, 1] as const }
+}
+
+const scaleIn = {
+  initial: { opacity: 0, scale: 0.95 },
+  whileInView: { opacity: 1, scale: 1 },
+  viewport: { once: true, margin: "-80px" },
+  transition: { duration: 0.9, ease: [0.16, 1, 0.3, 1] as const }
 }
 
 export default function LandingPage() {
@@ -58,8 +72,11 @@ export default function LandingPage() {
   const router = useRouter()
   const heroRef = useRef(null)
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] })
-  const dashboardY = useTransform(scrollYProgress, [0, 1], [0, 120])
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0.4])
+  const dashboardY = useTransform(scrollYProgress, [0, 1], [0, 180])
+  const heroOpacity = useTransform(scrollYProgress, [0, 0.6], [1, 0.3])
+  const heroScale = useTransform(scrollYProgress, [0, 1], [1, 0.92])
+  const glowScale = useTransform(scrollYProgress, [0, 1], [1, 1.3])
+  const glowOpacity = useTransform(scrollYProgress, [0, 1], [1, 0.4])
 
   return (
     <div className="min-h-screen scroll-smooth" style={sf}>
@@ -88,11 +105,16 @@ export default function LandingPage() {
       </header>
 
       <main ref={heroRef}>
-        <section className="relative pt-32 pb-48 px-6 overflow-hidden flex flex-col items-center" style={{ background: "#050505" }}>
-          <div className="absolute top-[3%] left-1/2 -translate-x-1/2 w-[1000px] h-[650px] rounded-full pointer-events-none z-0" style={{ background: "radial-gradient(ellipse at center, rgba(198, 95, 57, 0.28) 0%, rgba(198, 95, 57, 0.1) 35%, rgba(198, 95, 57, 0.03) 60%, transparent 80%)" }} />
+        <section className="relative min-h-screen pt-32 pb-48 px-6 overflow-hidden flex flex-col items-center" style={{ background: "#050505" }}>
+          <motion.div className="absolute top-[3%] left-1/2 -translate-x-1/2 w-[1000px] h-[650px] rounded-full pointer-events-none z-0" style={{ scale: glowScale, opacity: glowOpacity, background: "radial-gradient(ellipse at center, rgba(198, 95, 57, 0.28) 0%, rgba(198, 95, 57, 0.1) 35%, rgba(198, 95, 57, 0.03) 60%, transparent 80%)" }} />
 
-          <motion.div className="max-w-[820px] mx-auto text-center relative z-10 space-y-8" style={{ opacity: heroOpacity }}>
-            <div className="space-y-5">
+          <motion.div className="max-w-[820px] mx-auto text-center relative z-10 space-y-8" style={{ opacity: heroOpacity, scale: heroScale }}>
+            <motion.div
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] as const }}
+              className="space-y-5"
+            >
               <h1 className="font-normal leading-[1.1] tracking-tight text-white" style={{ fontSize: "54.8345px", lineHeight: "63.0597px", letterSpacing: "-0.15667px" }}>
                 Automated customer<br/>
                 service <span style={{ color: "#c65f39" }}>assistants</span>
@@ -100,9 +122,14 @@ export default function LandingPage() {
               <p className="max-w-xl mx-auto leading-relaxed font-normal" style={{ fontSize: "15.667px", color: "#595859" }}>
                 Connect specialized AI to manage and resolve your customer conversations with business precision.
               </p>
-            </div>
+            </motion.div>
 
-            <div className="max-w-sm mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, delay: 0.3, ease: [0.16, 1, 0.3, 1] as const }}
+              className="max-w-sm mx-auto"
+            >
               <form
                 onSubmit={(e) => {
                   e.preventDefault()
@@ -122,11 +149,15 @@ export default function LandingPage() {
                   Get Started <ArrowUpRight className="h-4 w-4" />
                 </Button>
               </form>
-            </div>
+            </motion.div>
           </motion.div>
 
           <motion.div className="w-full max-w-[980px] px-6 relative z-30 mt-32" style={{ y: dashboardY }}>
-            <div className="rounded-2xl overflow-hidden shadow-xl" style={{ background: "#ffffff", border: "1px solid #e5e5e5" }}>
+            <motion.div
+              initial={{ opacity: 0, y: 60 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1.2, delay: 0.6, ease: [0.16, 1, 0.3, 1] as const }}
+              className="rounded-2xl overflow-hidden shadow-xl" style={{ background: "#ffffff", border: "1px solid #e5e5e5" }}>
               <div className="flex items-center justify-between h-10 px-5" style={{ borderBottom: "1px solid #e5e5e5", background: "#fafafa" }}>
                 <div className="flex items-center gap-2">
                   <div className="h-2 w-2 rounded-full" style={{ background: "#d4d4d4" }} />
@@ -183,7 +214,7 @@ export default function LandingPage() {
                   </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
           </motion.div>
         </section>
 
@@ -214,7 +245,7 @@ export default function LandingPage() {
 
         <motion.section {...sectionAnim} className="py-24 px-6 lg:px-12" style={{ background: "#ffffff" }}>
           <div className="max-w-[1060px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            <motion.div {...staggerItem} className="space-y-6">
+            <motion.div {...slideLeft} className="space-y-6">
               <p className="text-sm font-normal" style={{ color: "#c65f39" }}>Reporting</p>
               <h2 className="font-normal tracking-tight" style={{ fontSize: "35.2508px", lineHeight: "44.0635px", letterSpacing: "-0.15667px", color: "#171717" }}>
                 See ROI in 30 days
@@ -227,7 +258,7 @@ export default function LandingPage() {
               </Button>
             </motion.div>
 
-            <motion.div {...staggerItem} className="p-6 rounded-2xl overflow-hidden" style={{ background: "#fafafa", border: "1px solid #e5e5e5" }}>
+            <motion.div {...slideRight} className="p-6 rounded-2xl overflow-hidden" style={{ background: "#fafafa", border: "1px solid #e5e5e5" }}>
               <div className="space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4" style={{ borderBottom: "1px solid #e5e5e5" }}>
                   <div className="flex items-center gap-2" style={{ fontSize: "13px", color: "#525252" }}>
@@ -325,7 +356,7 @@ export default function LandingPage() {
                 { logo: GoogleCalendarLogo, label: "Google Calendar" },
                 { logo: () => <Globe className="h-full w-full" style={{ color: "#a3a3a3" }} />, label: "Webchat" }
               ].map((node, i) => (
-                <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }} className="p-6 rounded-xl flex flex-col items-center gap-4 transition-all duration-300" style={{ background: "#fafafa", border: "1px solid #e5e5e5" }}>
+                <motion.div key={i} {...scaleIn} transition={{ duration: 0.9, delay: i * 0.15, ease: [0.16, 1, 0.3, 1] as const }} className="p-6 rounded-xl flex flex-col items-center gap-4 transition-all duration-300 hover:scale-105" style={{ background: "#fafafa", border: "1px solid #e5e5e5" }}>
                   <div className="h-12 w-12 rounded-lg flex items-center justify-center p-2.5" style={{ background: "#ffffff", border: "1px solid #e5e5e5" }}>
                     <node.logo className="h-full w-full" />
                   </div>
@@ -339,9 +370,16 @@ export default function LandingPage() {
         </motion.section>
 
         <motion.section {...sectionAnim} className="py-24 px-6 lg:px-12 relative overflow-hidden" style={{ background: "#050505" }}>
-          <div className="absolute top-1/2 right-0 w-[400px] h-[400px] rounded-full translate-x-1/2 pointer-events-none" style={{ background: "radial-gradient(circle, rgba(198, 95, 57, 0.08) 0%, transparent 60%)" }} />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] as const }}
+            className="absolute top-1/2 right-0 w-[500px] h-[500px] rounded-full translate-x-1/3 pointer-events-none"
+            style={{ background: "radial-gradient(circle, rgba(198, 95, 57, 0.1) 0%, transparent 60%)" }}
+          />
           <div className="max-w-[1060px] mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            <motion.div {...staggerItem} className="space-y-6">
+            <motion.div {...slideLeft} className="space-y-6">
               <p className="text-sm font-normal" style={{ color: "#c65f39" }}>Enterprise</p>
               <h2 className="font-normal tracking-tight text-white" style={{ fontSize: "35.2508px", lineHeight: "44.0635px", letterSpacing: "-0.15667px" }}>
                 Built for Enterprise Security and Privacy
@@ -353,19 +391,33 @@ export default function LandingPage() {
               </div>
             </motion.div>
 
-            <motion.div {...staggerItem} className="grid grid-cols-1 gap-4">
-              <div className="p-5 rounded-2xl space-y-3" style={{ background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.06)" }}>
+            <motion.div {...slideRight} className="grid grid-cols-1 gap-4">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] as const }}
+                className="p-5 rounded-2xl space-y-3"
+                style={{ background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.06)" }}
+              >
                 <h3 className="text-base font-normal" style={{ color: "#fff" }}>SOC Type II</h3>
                 <p className="text-sm leading-relaxed font-normal" style={{ color: "#595859" }}>
                   FlowCore meets SOC 2 Type II standards for secure handling of customer data across all AI-powered operations.
                 </p>
-              </div>
-              <div className="p-5 rounded-2xl space-y-3" style={{ background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.06)" }}>
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8, delay: 0.35, ease: [0.16, 1, 0.3, 1] as const }}
+                className="p-5 rounded-2xl space-y-3"
+                style={{ background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.06)" }}
+              >
                 <h3 className="text-base font-normal" style={{ color: "#fff" }}>HIPAA & Enterprise Security</h3>
                 <p className="text-sm leading-relaxed font-normal" style={{ color: "#595859" }}>
                   End-to-end encryption, role-based access, audit logs, and secure model orchestration across all AI agents.
                 </p>
-              </div>
+              </motion.div>
             </motion.div>
           </div>
         </motion.section>
