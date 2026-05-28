@@ -40,15 +40,17 @@ function MobileMoreMenu({ pathname }: { pathname: string }) {
   const [open, setOpen] = useState(false)
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        <button className={cn(
-          "flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg transition-all min-w-0",
-          "text-gray-400 hover:text-gray-900"
-        )}>
-          <Menu className="h-4 w-4" />
-          <span className="text-[8px] font-bold">More</span>
-        </button>
-      </SheetTrigger>
+      <SheetTrigger
+        render={
+          <button className={cn(
+            "flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg transition-all min-w-0",
+            "text-gray-400 hover:text-gray-900"
+          )}>
+            <Menu className="h-4 w-4" />
+            <span className="text-[8px] font-bold">More</span>
+          </button>
+        }
+      />
       <SheetContent side="bottom" className="bg-white border-t border-gray-100 rounded-t-2xl p-0 pt-2 pb-8 font-sans">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-50">
           <span className="text-xs font-semibold text-gray-900">Navigation</span>
