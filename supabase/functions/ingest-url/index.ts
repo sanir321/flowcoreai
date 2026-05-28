@@ -51,14 +51,15 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
   try {
-    // Auth: verify JWT or internal secret
+    // Auth: verify JWT, internal secret, or service role key (server action)
     const authHeader = req.headers.get('Authorization') || ''
     const token = authHeader.replace('Bearer ', '')
     const internalSecret = Deno.env.get('INTERNAL_CRON_SECRET')
-    if (!token || (token !== internalSecret)) {
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    if (!token || (token !== internalSecret && token !== serviceRoleKey)) {
       const verifyClient = createClient(
         Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+        serviceRoleKey ?? ''
       )
       const { data: { user }, error: authError } = await verifyClient.auth.getUser(token)
       if (authError || !user) {
