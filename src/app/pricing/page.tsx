@@ -11,10 +11,10 @@ export default function PricingPage() {
   const [mobileOpen, setMobileOpen] = useState(false)
 
   const navItems = [
-    { label: "Industries", href: "/industries" },
-    { label: "Customers", href: "/customers" },
+    { label: "Industries", href: "/" },
+    { label: "Customers", href: "/" },
     { label: "Pricing", href: "/pricing" },
-    { label: "Resources", href: "/resources" },
+    { label: "Resources", href: "/" },
   ]
 
   return (
@@ -41,7 +41,7 @@ export default function PricingPage() {
 
         <div className="flex items-center gap-3">
           <Link href="/login" className="hidden sm:inline text-sm font-normal transition-colors" style={{ color: "#a3a3a3", textDecoration: "none" }} onMouseEnter={(e) => e.currentTarget.style.color = "#fff"} onMouseLeave={(e) => e.currentTarget.style.color = "#a3a3a3"}>Sign In</Link>
-          <Link href="/contact" className="h-8 px-4 rounded-[100px] text-sm font-normal flex items-center gap-1 transition-all duration-300" style={{ background: "#c65f39", color: "#fff", textDecoration: "none" }}
+          <Link href="/login" className="h-8 px-4 rounded-[100px] text-sm font-normal flex items-center gap-1 transition-all duration-300" style={{ background: "#c65f39", color: "#fff", textDecoration: "none" }}
             onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 0 24px rgba(198,95,57,0.35)" }}
             onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "none" }}
           >
@@ -106,13 +106,12 @@ export default function PricingPage() {
                   className="flex-1 bg-transparent border-none px-4 py-2.5 text-sm font-normal outline-none"
                   style={{ color: "#fff" }}
                 />
-                <Link
-                  href="/contact"
-                  className="h-10 px-5 rounded-xl text-sm font-normal flex items-center gap-1.5 whitespace-nowrap no-underline"
+                <button
+                  className="h-10 px-5 rounded-xl text-sm font-normal flex items-center gap-1.5 cursor-pointer border-none whitespace-nowrap"
                   style={{ background: "#c65f39", color: "#fff" }}
                 >
                   See Conduit in action <ArrowUpRight className="h-3.5 w-3.5" />
-                </Link>
+                </button>
               </div>
             </div>
           </div>

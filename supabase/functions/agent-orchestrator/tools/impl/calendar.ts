@@ -232,7 +232,7 @@ async function sendAppointmentEmail(ctx: PipelineContext, appt: any, meetLink: s
     if (!workspaceData) return;
     const email = appt.customer_email || workspaceData.session?.[0]?.contact?.email;
     if (!email) return;
-    const appUrl = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://flowter-bay.vercel.app";
+    const appUrl = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://7flowcore.vercel.app";
     const workspaceName = workspaceData.name || "FlowCore";
     const formattedDate = formatIST(appt.start_at);
     const cronSecret = Deno.env.get("INTERNAL_CRON_SECRET") || "";
