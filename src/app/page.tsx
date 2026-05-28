@@ -81,7 +81,7 @@ export default function LandingPage() {
 
       <main>
         <section className="relative pt-32 pb-48 px-6 overflow-hidden flex flex-col items-center" style={{ background: "#050505" }}>
-          <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[800px] h-[500px] rounded-full pointer-events-none z-0" style={{ background: "radial-gradient(ellipse at center, rgba(198, 95, 57, 0.12) 0%, transparent 70%)" }} />
+          <div className="absolute top-[3%] left-1/2 -translate-x-1/2 w-[1000px] h-[650px] rounded-full pointer-events-none z-0" style={{ background: "radial-gradient(ellipse at center, rgba(198, 95, 57, 0.28) 0%, rgba(198, 95, 57, 0.1) 35%, rgba(198, 95, 57, 0.03) 60%, transparent 80%)" }} />
 
           <div className="max-w-[820px] mx-auto text-center relative z-10 space-y-8">
             <div className="space-y-5">
@@ -118,59 +118,59 @@ export default function LandingPage() {
           </div>
 
           <div className="w-full max-w-[980px] px-6 relative z-30 mt-32">
-            <div className="rounded-2xl overflow-hidden shadow-2xl" style={{ background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.06)" }}>
-              <div className="flex items-center justify-between h-10 px-5" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: "#080808" }}>
+            <div className="rounded-2xl overflow-hidden shadow-xl" style={{ background: "#ffffff", border: "1px solid #e5e5e5" }}>
+              <div className="flex items-center justify-between h-10 px-5" style={{ borderBottom: "1px solid #e5e5e5", background: "#fafafa" }}>
                 <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full" style={{ background: "#2a2a2a" }} />
-                  <div className="h-2 w-2 rounded-full" style={{ background: "#2a2a2a" }} />
-                  <div className="h-2 w-2 rounded-full" style={{ background: "#2a2a2a" }} />
+                  <div className="h-2 w-2 rounded-full" style={{ background: "#d4d4d4" }} />
+                  <div className="h-2 w-2 rounded-full" style={{ background: "#d4d4d4" }} />
+                  <div className="h-2 w-2 rounded-full" style={{ background: "#d4d4d4" }} />
                 </div>
-                <div className="flex items-center gap-2 px-3 py-1 rounded-md" style={{ background: "rgba(255,255,255,0.03)" }}>
+                <div className="flex items-center gap-2 px-3 py-1 rounded-md" style={{ background: "#ffffff", border: "1px solid #e5e5e5" }}>
                   <div className="h-1 w-1 rounded-full" style={{ background: "#c65f39" }} />
-                  <span className="text-[9px] font-normal" style={{ color: "#595859" }}>app.flowcore.ai</span>
+                  <span className="text-[9px] font-normal" style={{ color: "#737373" }}>app.flowcore.ai</span>
                 </div>
-                <div className="h-4 w-4 rounded flex items-center justify-center text-[7px] font-semibold" style={{ background: "rgba(255,255,255,0.04)", color: "#595859" }}>F</div>
+                <div className="h-4 w-4 rounded flex items-center justify-center text-[7px] font-semibold" style={{ background: "#f5f5f5", color: "#a3a3a3", border: "1px solid #e5e5e5" }}>F</div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-4 h-[350px]" style={{ color: "#595859" }}>
-                <div className="p-4 space-y-4 hidden md:block" style={{ borderRight: "1px solid rgba(255,255,255,0.05)", background: "#090909" }}>
-                  <div className="font-normal flex items-center gap-2" style={{ color: "#c0c0c0", fontSize: "13.7086px" }}><Inbox className="h-4 w-4" style={{ color: "#c65f39" }} /> Inbox</div>
+              <div className="grid grid-cols-1 md:grid-cols-4 h-[350px]">
+                <div className="p-4 space-y-4 hidden md:block" style={{ borderRight: "1px solid #e5e5e5", background: "#fcfcfc" }}>
+                  <div className="font-normal flex items-center gap-2" style={{ color: "#171717", fontSize: "13.7086px" }}><Inbox className="h-4 w-4" style={{ color: "#c65f39" }} /> Inbox</div>
                   <div className="space-y-1">
-                    <div className="p-2 rounded-lg" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.05)" }}>
-                      <div className="flex justify-between" style={{ color: "#fff", fontSize: "11px" }}>Will Garman <span style={{ color: "#c65f39", fontSize: "9px" }}>Active</span></div>
-                      <div style={{ fontSize: "10px", color: "#595859" }}>I was wondering if I can extend...</div>
+                    <div className="p-2 rounded-lg" style={{ background: "#ffffff", border: "1px solid #e5e5e5" }}>
+                      <div className="flex justify-between" style={{ color: "#171717", fontSize: "11px" }}>Will Garman <span style={{ color: "#c65f39", fontSize: "9px" }}>Active</span></div>
+                      <div style={{ fontSize: "10px", color: "#737373" }}>I was wondering if I can extend...</div>
                     </div>
                     <div className="p-2 rounded-lg opacity-40">
-                      <div style={{ color: "#fff", fontSize: "11px" }}>Jane Doe</div>
-                      <div style={{ fontSize: "10px", color: "#595859" }}>Book a double room for next Friday</div>
+                      <div style={{ color: "#171717", fontSize: "11px" }}>Jane Doe</div>
+                      <div style={{ fontSize: "10px", color: "#a3a3a3" }}>Book a double room for next Friday</div>
                     </div>
                   </div>
                 </div>
-                <div className="md:col-span-2 p-4 flex flex-col justify-between h-full" style={{ background: "#0a0a0a" }}>
+                <div className="md:col-span-2 p-4 flex flex-col justify-between h-full" style={{ background: "#ffffff" }}>
                   <div className="space-y-4">
                     <div className="flex gap-2">
-                      <div className="h-6 w-6 rounded-full flex items-center justify-center text-[9px] font-bold" style={{ background: "rgba(198, 95, 57, 0.2)", color: "#c65f39" }}>WG</div>
-                      <div className="p-2.5 rounded-2xl max-w-[80%]" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.05)", color: "#c0c0c0", fontSize: "13px" }}>
+                      <div className="h-6 w-6 rounded-full flex items-center justify-center text-[9px] font-bold" style={{ background: "rgba(198, 95, 57, 0.15)", color: "#c65f39" }}>WG</div>
+                      <div className="p-2.5 rounded-2xl max-w-[80%]" style={{ background: "#fafafa", border: "1px solid #e5e5e5", color: "#525252", fontSize: "13px" }}>
                         I was wondering if I can extend my upcoming stay to checkout one day later??
                       </div>
                     </div>
                     <div className="flex gap-2 justify-end">
-                      <div className="p-2.5 rounded-2xl max-w-[80%]" style={{ background: "rgba(198, 95, 57, 0.08)", border: "1px solid rgba(198, 95, 57, 0.15)", color: "#c0c0c0", fontSize: "13px" }}>
+                      <div className="p-2.5 rounded-2xl max-w-[80%]" style={{ background: "rgba(198, 95, 57, 0.06)", border: "1px solid rgba(198, 95, 57, 0.15)", color: "#525252", fontSize: "13px" }}>
                         <span className="block mb-0.5" style={{ color: "#c65f39", fontSize: "9px" }}>Support Agent</span>
                         Let me query availability for property 230CALST. One moment.
                       </div>
                     </div>
                   </div>
-                  <div className="p-1.5 rounded-xl flex gap-2 items-center" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.05)" }}>
-                    <input type="text" placeholder="Type a message..." className="bg-transparent flex-1 border-none focus:outline-none px-2" style={{ color: "#fff", fontSize: "11px" }} disabled />
+                  <div className="p-1.5 rounded-xl flex gap-2 items-center" style={{ background: "#fafafa", border: "1px solid #e5e5e5" }}>
+                    <input type="text" placeholder="Type a message..." className="bg-transparent flex-1 border-none focus:outline-none px-2" style={{ color: "#a3a3a3", fontSize: "11px" }} disabled />
                     <button className="p-1 rounded-lg" style={{ background: "#c65f39", color: "#fff" }}><Send className="h-3 w-3" /></button>
                   </div>
                 </div>
-                <div className="p-4 space-y-4 hidden md:block" style={{ background: "#090909" }}>
-                  <div className="font-normal flex items-center gap-2" style={{ color: "#c0c0c0", fontSize: "13.7086px" }}><BarChart2 className="h-4 w-4" style={{ color: "#c65f39" }} /> Analytics</div>
+                <div className="p-4 space-y-4 hidden md:block" style={{ background: "#fcfcfc" }}>
+                  <div className="font-normal flex items-center gap-2" style={{ color: "#171717", fontSize: "13.7086px" }}><BarChart2 className="h-4 w-4" style={{ color: "#c65f39" }} /> Analytics</div>
                   <div className="space-y-3">
-                    <div className="p-3 rounded-xl" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.05)" }}>
-                      <div style={{ color: "#595859", fontSize: "10px" }}>AI Automation Rate</div>
-                      <div className="mt-0.5" style={{ color: "#fff", fontSize: "24px", fontWeight: 300, letterSpacing: "-0.01em" }}>70.6%</div>
+                    <div className="p-3 rounded-xl" style={{ background: "#ffffff", border: "1px solid #e5e5e5" }}>
+                      <div style={{ color: "#737373", fontSize: "10px" }}>AI Automation Rate</div>
+                      <div className="mt-0.5" style={{ color: "#171717", fontSize: "24px", fontWeight: 300, letterSpacing: "-0.01em" }}>70.6%</div>
                     </div>
                   </div>
                 </div>
