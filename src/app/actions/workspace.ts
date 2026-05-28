@@ -205,7 +205,8 @@ export async function deleteWorkspace(): Promise<ActionResponse<{ success: true 
     const workspaceId = user.app_metadata?.workspace_id
     if (!workspaceId) return { data: null, error: "No workspace found" }
 
-    const { error } = await supabase
+    const admin = createAdminClient()
+    const { error } = await admin
       .from("workspaces")
       .update({ deleted_at: new Date().toISOString() } as any)
       .eq("id", workspaceId)
@@ -213,7 +214,6 @@ export async function deleteWorkspace(): Promise<ActionResponse<{ success: true 
 
     if (error) throw error
 
-    const admin = createAdminClient()
     await admin.auth.admin.updateUserById(user.id, {
       app_metadata: {}
     })
