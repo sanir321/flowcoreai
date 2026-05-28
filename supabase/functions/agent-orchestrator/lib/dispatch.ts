@@ -64,7 +64,7 @@ export async function dispatch(ctx: PipelineContext, response: string | null): P
 
   await ctx.supabase
     .from("conversation_sessions")
-    .update({ last_message_at: new Date().toISOString(), status: "active" })
+    .update({ last_message_at: new Date().toISOString() })
     .eq("id", ctx.session.id);
 }
 

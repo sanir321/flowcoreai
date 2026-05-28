@@ -4,6 +4,15 @@ import { runAllGuards } from "../guards/index.ts";
 export async function runT0(ctx: PipelineContext): Promise<TierResult> {
   const { payload, supabase } = ctx;
 
+  // 0. Skip empty/whitespace-only messages — don't waste credits
+  if (!payload.message || payload.message.trim().length === 0) {
+    return {
+      handled: true,
+      response: "",
+      reason: "empty_message_skipped"
+    };
+  }
+
   // 1. Store inbound message if not already stored by gowa-webhook
   const { data: existing } = await supabase
     .from("messages")
@@ -27,10 +36,26 @@ export async function runT0(ctx: PipelineContext): Promise<TierResult> {
     }
   }
 
+  // 1b. If session was already escalated, tell customer it's still being handled
+  const { data: currentSession } = await supabase
+    .from("conversation_sessions")
+    .select("status")
+    .eq("id", ctx.session.id)
+    .single();
+  if (currentSession?.status === "escalated") {
+    return {
+      handled: true,
+      response: ctx.workspace?.guardrail_config?.handoff_message
+        ?? "Your request has been escalated to our team. They will get back to you shortly.",
+      reason: "already_escalated"
+    };
+  }
+
   // 2. Run all guardrails
   const guardResult = await runAllGuards(ctx, ctx.workspace);
   if (guardResult) {
-    // Escalation: return early so T3 can handle the handoff
+    // Escalation: return early so the handoff message is dispatched to the customer.
+    // Subsequent messages hit the already_escalated check above.
     if (guardResult.reason?.includes("escalation")) {
       return guardResult;
     }

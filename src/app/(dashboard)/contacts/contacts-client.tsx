@@ -84,31 +84,31 @@ export function ContactsClient({ initialContacts, workspaceId }: ContactsClientP
   }
 
   return (
-    <div className="p-10 max-w-full font-sans pb-32">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
-        <div className="flex items-center gap-5">
-            <div className="h-14 w-14 rounded-2xl bg-white border border-gray-100 flex items-center justify-center text-gray-900 shadow-sm">
-                <Users className="h-6 w-6" />
+    <div className="p-4 md:p-6 max-w-full font-sans pb-16">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-gray-900 shadow-sm">
+                <Users className="h-4 w-4" />
             </div>
             <div>
-                <h1 className="text-3xl font-semibold text-gray-900 tracking-tight">Identity Directory</h1>
-                <p className="text-sm text-gray-600 mt-1 font-medium">Manage and monitor customer records across all channels.</p>
+                <h1 className="text-xl font-semibold text-gray-900 tracking-tight">Identity Directory</h1>
+                <p className="text-xs text-gray-600 mt-0.5 font-medium">Manage and monitor customer records across all channels.</p>
             </div>
         </div>
         
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <button 
             onClick={handleExport}
             disabled={isExporting}
-            className="flex items-center gap-2.5 px-6 h-12 text-xs font-semibold border border-gray-100 bg-white rounded-xl text-gray-600 hover:text-black hover:border-gray-200 transition-all shadow-sm active:scale-95 disabled:opacity-50"
+            className="flex items-center gap-2 px-4 h-9 text-[10px] font-semibold border border-gray-100 bg-white rounded-lg text-gray-600 hover:text-black hover:border-gray-200 transition-all active:scale-95 disabled:opacity-50"
           >
-            {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Export
+            {isExporting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />} Export
           </button>
           
           <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
             <DialogTrigger render={
-                <button className="flex items-center gap-2.5 px-8 h-12 text-xs font-semibold bg-black text-white rounded-xl hover:bg-gray-800 transition-all shadow-lg active:scale-95">
-                    <Plus className="h-4 w-4" /> Add Identity
+                <button className="flex items-center gap-2 px-4 h-9 text-[10px] font-semibold bg-black text-white rounded-lg hover:bg-gray-800 transition-all shadow active:scale-95">
+                    <Plus className="h-3 w-3" /> Add
                 </button>
             } />
             <DialogContent className="bg-white rounded-3xl sm:max-w-md p-6 border-gray-100 shadow-2xl overflow-hidden font-sans text-gray-900">

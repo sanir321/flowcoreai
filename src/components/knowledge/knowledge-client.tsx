@@ -185,42 +185,42 @@ export function KnowledgeClient({ initialSources, workspaceId }: { initialSource
   }
 
   return (
-    <div className="p-8 max-w-7xl mx-auto font-sans pb-32 space-y-10">
+    <div className="p-4 md:p-6 max-w-7xl mx-auto font-sans pb-16 space-y-6">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-gray-100 pb-10">
-        <div className="space-y-1">
-           <h1 className="text-3xl font-semibold text-gray-900 tracking-tight">Knowledge</h1>
-           <p className="text-sm text-gray-500 font-medium">Train your automated assistants with business information.</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-6">
+        <div className="space-y-0.5">
+           <h1 className="text-xl font-semibold text-gray-900 tracking-tight">Knowledge</h1>
+           <p className="text-xs text-gray-500 font-medium">Train your automated assistants with business information.</p>
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
             <Button 
                 variant="outline" 
                 size="icon" 
                 onClick={refreshSources} 
                 disabled={isRefreshing}
-                className="h-12 w-12 rounded-xl border-gray-200 text-gray-400 hover:text-black transition-all"
+                className="h-8 w-8 rounded-lg border-gray-200 text-gray-400 hover:text-black transition-all"
             >
-                <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
+                <RefreshCw className={cn("h-3.5 w-3.5", isRefreshing && "animate-spin")} />
             </Button>
             <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger 
                     render={
                         <Button 
-                            className="h-12 px-6 bg-black text-white rounded-xl hover:bg-gray-800 transition-all shadow-sm active:scale-95 text-xs font-semibold gap-2 inline-flex items-center justify-center cursor-pointer"
+                            className="h-8 px-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-all active:scale-95 text-[10px] font-semibold gap-1.5 inline-flex items-center justify-center cursor-pointer"
                         >
-                            <Plus className="h-4 w-4" /> Add Source
+                            <Plus className="h-3 w-3" /> Add Source
                         </Button>
                     }
                 />
-                <DialogContent className="bg-white rounded-3xl sm:max-w-md p-8 border-gray-100 shadow-2xl overflow-hidden font-sans text-gray-900">
-                    <DialogHeader className="space-y-2 pb-6 border-b border-gray-50 text-left">
-                        <DialogTitle className="text-2xl font-bold text-gray-900 tracking-tight">Add Knowledge</DialogTitle>
-                        <DialogDescription className="text-xs text-gray-500 font-medium">Link a website or upload a document.</DialogDescription>
+                <DialogContent className="bg-white rounded-2xl sm:max-w-md p-6 border-gray-100 shadow-xl overflow-hidden font-sans text-gray-900">
+                    <DialogHeader className="space-y-1 pb-4 border-b border-gray-50 text-left">
+                        <DialogTitle className="text-lg font-bold text-gray-900 tracking-tight">Add Knowledge</DialogTitle>
+                        <DialogDescription className="text-[10px] text-gray-500 font-medium">Link a website or upload a document.</DialogDescription>
                     </DialogHeader>
 
                     {/* Tab Switcher */}
-                    <div className="flex p-1.5 bg-white border border-gray-100 rounded-2xl gap-1 mt-6 shadow-sm">
+                    <div className="flex p-1 bg-gray-50 border border-gray-100 rounded-lg gap-1 mt-4 shadow-sm">
                         <button 
                             onClick={() => setActiveTab('url')}
                             className={cn(
@@ -290,53 +290,53 @@ export function KnowledgeClient({ initialSources, workspaceId }: { initialSource
       </div>
 
       {sources.length === 0 ? (
-        <div className="py-32 flex flex-col items-center justify-center text-center space-y-6 bg-gray-50/30 border-2 border-dashed border-gray-100 rounded-[2.5rem]">
-            <div className="h-20 w-20 rounded-3xl bg-white border border-gray-100 flex items-center justify-center text-gray-300 shadow-sm">
-                <Database className="h-8 w-8" />
+        <div className="py-16 flex flex-col items-center justify-center text-center space-y-4 bg-gray-50/30 border-2 border-dashed border-gray-100 rounded-2xl">
+            <div className="h-14 w-14 rounded-2xl bg-white border border-gray-100 flex items-center justify-center text-gray-300">
+                <Database className="h-6 w-6" />
             </div>
-            <div className="space-y-2">
-                <h3 className="text-xl font-semibold text-gray-900 tracking-tight">Knowledge Base is Empty</h3>
-                <p className="text-sm text-gray-400 font-medium max-w-xs mx-auto leading-relaxed">Add information to help your assistants provide accurate answers.</p>
+            <div className="space-y-1">
+                <h3 className="text-base font-semibold text-gray-900 tracking-tight">Knowledge Base is Empty</h3>
+                <p className="text-xs text-gray-400 font-medium max-w-xs mx-auto">Add information to help your assistants provide accurate answers.</p>
             </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {sources.map((source) => (
-                <div key={source.id} className="p-8 rounded-[2rem] bg-white border border-gray-100 hover:border-gray-200 hover:shadow-lg transition-all duration-300 group flex flex-col justify-between h-[280px]">
-                    <div className="space-y-6">
+                <div key={source.id} className="p-5 rounded-2xl bg-white border border-gray-100 hover:border-gray-200 hover:shadow-md transition-all duration-300 group flex flex-col justify-between h-[220px]">
+                    <div className="space-y-4">
                         <div className="flex items-start justify-between">
-                            <div className="h-14 w-14 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400 group-hover:bg-black group-hover:text-white transition-all duration-500">
-                                {source.source_type === 'url' ? <Globe className="h-6 w-6" /> : <FileText className="h-6 w-6" />}
+                            <div className="h-10 w-10 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400 group-hover:bg-black group-hover:text-white transition-all duration-500">
+                                {source.source_type === 'url' ? <Globe className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
                             </div>
                             <button 
                                 onClick={() => handleDelete(source.id)}
-                                className="h-10 w-10 rounded-xl flex items-center justify-center text-gray-300 hover:text-rose-500 hover:bg-rose-50 transition-all"
+                                className="h-8 w-8 rounded-lg flex items-center justify-center text-gray-300 hover:text-rose-500 hover:bg-rose-50 transition-all"
                             >
-                                <Trash2 className="h-4 w-4" />
+                                <Trash2 className="h-3.5 w-3.5" />
                             </button>
                         </div>
                         
-                            <div className="space-y-1">
-                                <h4 className="text-base font-semibold text-gray-900 truncate tracking-tight">{source.label || source.metadata?.url}</h4>
-                                <p className="text-[10px] font-medium text-gray-500 capitalize">{source.source_type}</p>
+                            <div className="space-y-0.5">
+                                <h4 className="text-sm font-semibold text-gray-900 truncate tracking-tight">{source.label || source.metadata?.url}</h4>
+                                <p className="text-[9px] font-medium text-gray-500 capitalize">{source.source_type}</p>
                             </div>
                         </div>
 
-                        <div className="pt-6 border-t border-gray-50 space-y-5">
+                        <div className="pt-4 border-t border-gray-50 space-y-3">
                             <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2.5">
+                                <div className="flex items-center gap-2">
                                     <div className={cn(
-                                        "h-1.5 w-1.5 rounded-full",
+                                        "h-1 w-1 rounded-full",
                                         source.status === 'active' ? "bg-emerald-500" : 
                                         source.status === 'processing' ? "bg-amber-500 animate-pulse" :
                                         source.status === 'failed' ? "bg-rose-500" : "bg-gray-300"
                                     )} />
-                                    <span className="text-[10px] font-semibold text-gray-900 capitalize">{source.status === 'active' ? 'Ready' : source.status}</span>
+                                    <span className="text-[9px] font-semibold text-gray-900 capitalize">{source.status === 'active' ? 'Ready' : source.status}</span>
                                 </div>
                             </div>
                         
-                        <div className="flex items-center gap-4">
-                            <div className="flex-1 h-1.5 bg-gray-50 rounded-full overflow-hidden border border-gray-100">
+                        <div className="flex items-center gap-3">
+                            <div className="flex-1 h-1 bg-gray-50 rounded-full overflow-hidden border border-gray-100">
                                 <div 
                                     className={cn(
                                         "h-full transition-all duration-1000", 

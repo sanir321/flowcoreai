@@ -131,6 +131,23 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
   // Validate plan: inject missing tool calls when response claims actions were taken
   await validatePlanActions(ctx, parsedPlan);
 
+  // Log trace for observability
+  try {
+    await ctx.supabase.from("agent_traces").insert({
+      session_id: ctx.session.id,
+      workspace_id: ctx.payload.workspace_id,
+      trace_id: crypto.randomUUID(),
+      model_used: "llama-3.3-70b-versatile",
+      tokens_used: llmResponse?.usage?.total_tokens || 0,
+      intent_detected: ctx.agentType || agentType,
+      message_length: ctx.payload.message.length,
+      response_length: parsedPlan.response.length,
+      latency_ms: 0
+    });
+  } catch (e: any) {
+    console.error("[T3] Failed to insert agent_trace:", e.message);
+  }
+
   // Execute actions in parallel
   let finalResponse = parsedPlan.response;
   let toolResults: PromiseSettledResult<any>[] = [];

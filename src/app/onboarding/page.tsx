@@ -23,7 +23,8 @@ import {
   ChevronLeft, 
   ChevronRight,
   MessageSquare,
-  CheckCircle2
+  CheckCircle2,
+  AlertTriangle
 } from "lucide-react"
 import { createWorkspace } from "@/app/actions/workspace"
 import { finalizeOnboarding } from "@/app/actions/agents"
@@ -453,7 +454,15 @@ export default function OnboardingPage() {
                  </div>
               </div>
 
-              <div className="w-full max-w-xs space-y-4">
+               <div className="w-full max-w-xs space-y-4">
+                {AGENTS[selectedAgentIndex]?.id !== "customer_support" && (
+                  <div className="flex items-start gap-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                    <AlertTriangle className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+                    <p className="text-xs text-amber-300/80 leading-relaxed">
+                      Without a <span className="font-semibold text-amber-200">Support Hero</span> agent, messages that don't match this specialist will not be handled. You can add more agents later in settings.
+                    </p>
+                  </div>
+                )}
                 <Button 
                   onClick={handleFinalize}
                   className="w-full h-14 rounded-xl bg-[#D95E46] hover:bg-[#E2735D] text-white font-bold text-base transition-all active:scale-95 shadow-xl shadow-[#D95E46]/20"

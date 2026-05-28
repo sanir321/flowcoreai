@@ -38,9 +38,16 @@ const STAGE_TO_FIELD: Record<string, string> = {
   collecting_email: "email"
 };
 
+const DEFAULT_SERVICES = [
+  "Teeth Cleaning", "Root Canal", "Tooth Extraction",
+  "Dental Filling", "Crown & Bridge", "Teeth Whitening"
+];
+
 const FIELD_PROMPTS: Record<string, (ws: any) => string> = {
-  collecting_service: (ws) =>
-    `What service would you like to book? ${ws?.services_offered ? `We offer: ${ws.services_offered}` : ""}`.trim(),
+  collecting_service: (ws) => {
+    const services = ws?.services_offered || DEFAULT_SERVICES.join(", ");
+    return `What service would you like to book? We offer: ${services}`;
+  },
   collecting_date: (_ws) =>
     "What date would you like the appointment?",
   collecting_time: (_ws) =>
@@ -51,25 +58,100 @@ const FIELD_PROMPTS: Record<string, (ws: any) => string> = {
     "What email address should I use for the confirmation?",
 };
 
-const RETRY_PROMPTS: Record<string, (attempt: number) => string> = {
-  collecting_service: (a) =>
-    a === 1 ? "Could you please tell me which service you'd like to book?" : "Please type the name of the service from our list.",
-  collecting_date: (a) =>
-    a === 1 ? "What date would you like?" : "Could you give me a specific date? For example, 'tomorrow' or 'May 25th'.",
-  collecting_time: (a) =>
-    a === 1 ? "What specific time works for you?" : "I just need the time — like '2pm' or '10:30 in the morning'.",
-  collecting_name: (a) =>
-    a === 1 ? "What's your full name?" : "I just need your name. First name is fine.",
-  collecting_email: (a) =>
-    a === 1 ? "What email should I send the confirmation to?" : "Please share your email address so I can send the booking confirmation.",
+const RETRY_PROMPTS: Record<string, (attempt: number, ws: any) => string> = {
+  collecting_service: (a, ws) => {
+    const services = ws?.services_offered || DEFAULT_SERVICES.join(", ");
+    const prompts = [
+      `Which service are you looking for? We currently offer: ${services}`,
+      `I'd love to help! Could you pick one from our available services: ${services}`,
+      `No worries — take a look at what we offer: ${services}. Which one interests you?`
+    ];
+    return prompts[Math.min(a - 1, prompts.length - 1)];
+  },
+  collecting_date: (a) => {
+    const prompts = [
+      "What date would you like?",
+      "Could you give me a specific date? For example, 'tomorrow' or 'May 25th'.",
+      "I understand it can be tricky. Just the date works — like 'next Monday' or 'June 3rd'."
+    ];
+    return prompts[Math.min(a - 1, prompts.length - 1)];
+  },
+  collecting_time: (a) => {
+    const prompts = [
+      "What specific time works for you?",
+      "I just need the time — like '2pm' or '10:30 in the morning'.",
+      "Any time preference? Morning, afternoon, or a specific time like '3pm'?"
+    ];
+    return prompts[Math.min(a - 1, prompts.length - 1)];
+  },
+  collecting_name: (a) => {
+    const prompts = [
+      "What's your full name?",
+      "I just need your name. First name is fine.",
+      "Could you share your name so I can save this booking for you?"
+    ];
+    return prompts[Math.min(a - 1, prompts.length - 1)];
+  },
+  collecting_email: (a) => {
+    const prompts = [
+      "What email should I send the confirmation to?",
+      "Please share your email address so I can send the booking confirmation.",
+      "Just need your email to send the confirmation — any email is fine."
+    ];
+    return prompts[Math.min(a - 1, prompts.length - 1)];
+  },
 };
 
-const CLARIFICATION_PROMPTS: Record<string, string> = {
-  collecting_service: "I'm having trouble understanding which service you'd like. Please pick from our available services or type 'talk to human' for help.",
-  collecting_date: "I'm having trouble figuring out the date. Please give me a specific date like 'May 25th' or 'tomorrow'.",
-  collecting_time: "I need a specific time. Please give me something like '2pm' or '10:30am'.",
-  collecting_name: "I still need your name to complete the booking. Please let me know your name.",
-  collecting_email: "I still need your email for the confirmation. Please share your email address.",
+const CLARIFICATION_PROMPTS: Record<string, (attempt: number) => string> = {
+  collecting_service: (a) => {
+    if (a >= 5) {
+      return "I apologize — I'm having trouble identifying the service you want. Would you like me to connect you with someone who can help directly?";
+    }
+    const prompts = [
+      "I'm sorry, I didn't quite catch that. Which service are you interested in? We have options like Teeth Cleaning, Root Canal, Filling, and more.",
+      "I understand this can be confusing. Could you try telling me what dental work you're looking for? Even a description works.",
+      "I want to make sure I get this right. If it's easier, you can describe what you need and I'll match it to our services."
+    ];
+    return prompts[Math.min(a - 3, prompts.length - 1)];
+  },
+  collecting_date: (a) => {
+    if (a >= 5) {
+      return "I apologize for the trouble. Let me connect you with someone who can help with scheduling. Would that be okay?";
+    }
+    const prompts = [
+      "I'm having trouble figuring out the date. Could you try a simple format like 'tomorrow' or 'May 25th'?",
+      "I appreciate your patience. Any day works — just tell me when you'd like to come in."
+    ];
+    return prompts[Math.min(a - 3, prompts.length - 1)];
+  },
+  collecting_time: (a) => {
+    if (a >= 5) {
+      return "I apologize — I'm struggling with the time. Would you like me to get a human agent to help finalize the booking?";
+    }
+    return a === 3
+      ? "I need a specific time. Please give me something like '2pm' or '10:30am'."
+      : "Just the time is enough — like 'morning', 'afternoon', or a specific time.";
+  },
+  collecting_name: (a) => {
+    if (a >= 5) {
+      return "I'm sorry for the back and forth. Let me hand this over to a team member who can finalize things smoothly.";
+    }
+    const prompts = [
+      "I still need your name to complete the booking. Please let me know your name.",
+      "Just your first name is enough to save this booking for you."
+    ];
+    return prompts[Math.min(a - 3, prompts.length - 1)];
+  },
+  collecting_email: (a) => {
+    if (a >= 5) {
+      return "I apologize for the difficulty. Let me connect you with a team member who can complete the booking.";
+    }
+    const prompts = [
+      "I still need your email for the confirmation. Please share your email address.",
+      "Even a phone number works if email isn't convenient — I just need a way to send the confirmation."
+    ];
+    return prompts[Math.min(a - 3, prompts.length - 1)];
+  },
 };
 
 export async function loadOrCreateBookingSession(ctx: PipelineContext): Promise<BookingSession | null> {
@@ -171,13 +253,27 @@ export async function handleBooking(ctx: PipelineContext): Promise<TierResult | 
   const bs = ctx.bookingSession as BookingSession | undefined;
   if (!bs) return null;
 
-  // 0. Management Intent Check: If user wants to reschedule or cancel, let the full Planner handle it
+  // 0. Intent checks — if message is NOT about booking, pass through to T3
   const msgLower = ctx.payload.message.toLowerCase();
   const managementKeywords = ["reschedule", "move", "cancel", "change", "rebook", "re-schedule", "modify"];
   const hasManagementIntent = managementKeywords.some(kw => msgLower.includes(kw));
   
   if (hasManagementIntent) {
     // If they want to manage, bypass FSM to let Planner use tools (get_contact_history, update_appointment, etc.)
+    return null;
+  }
+
+  // If message seems like general chat, complaint, or rejection — pass to T3
+  const nonBookingSignals = [
+    "no", "stop", "never mind", "nevermind", "forget it", "leave it",
+    "not interested", "don't want", "i don't", "i won't",
+    "useless", "waste", "stupid", "bad", "terrible",
+    "you're not", "you are not", "not helpful", "not what i",
+    "help", "problem", "issue", "complaint", "not working"
+  ];
+  const isNonBooking = nonBookingSignals.some(s => msgLower.includes(s));
+  // Only pass through if we haven't collected much yet (early in flow)
+  if (isNonBooking && Object.keys(bs.collected || {}).length <= 1) {
     return null;
   }
 
@@ -242,12 +338,12 @@ export async function handleBooking(ctx: PipelineContext): Promise<TierResult | 
     await updateBookingSession(ctx, bs.id, { attempts });
 
     if (attempts[bs.state] >= 3) {
-      const clarification = CLARIFICATION_PROMPTS[bs.state]
-        ?? "I'm having trouble. Please contact the business directly.";
+      const clarification = CLARIFICATION_PROMPTS[bs.state]?.(attempts[bs.state])
+        ?? "I apologize for the difficulty. Let me connect you with someone who can help.";
       return { handled: true, response: clarification, reason: "booking_clarification" };
     }
 
-    const retry = RETRY_PROMPTS[bs.state]?.(attempts[bs.state])
+    const retry = RETRY_PROMPTS[bs.state]?.(attempts[bs.state], ctx.workspace)
       ?? "Could you please clarify?";
     return { handled: true, response: retry, reason: "booking_retry" };
   }

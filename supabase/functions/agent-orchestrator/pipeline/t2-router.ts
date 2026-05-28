@@ -15,6 +15,17 @@ const SALES_KEYWORDS = [
 
 export async function runT2(ctx: PipelineContext): Promise<TierResult> {
   const msgLower = ctx.payload.message.toLowerCase();
+
+  // 0. Resolve which agent types are active in this workspace
+  const { data: activeAgentRows } = await ctx.supabase
+    .from("workspace_agents")
+    .select("agent_type")
+    .eq("workspace_id", ctx.session.workspace_id)
+    .eq("status", "active")
+    .is("deleted_at", null);
+  const activeAgents = new Set(activeAgentRows?.map(a => a.agent_type) || []);
+  const firstActiveAgent = activeAgentRows?.[0]?.agent_type;
+
   // 1. Mid-conversation FSM lock
   const { data: bookingState } = await ctx.supabase
     .from("booking_sessions")
@@ -33,19 +44,28 @@ export async function runT2(ctx: PipelineContext): Promise<TierResult> {
     ctx.agentType = "appointment_booking";
     ctx.routingReason = "mid_booking";
   } else {
-    if (BOOKING_KEYWORDS.some(k => msgLower.includes(k))) {
+    // Check each routing target against workspace's active agent configuration
+    if (activeAgents.has("appointment_booking") && BOOKING_KEYWORDS.some(k => msgLower.includes(k))) {
       ctx.agentType = "appointment_booking";
       ctx.routingReason = "keyword_booking";
       if (hasManagementIntent) ctx.routingReason = "management_intent";
-    } else if (SALES_KEYWORDS.some(k => msgLower.includes(k))) {
+    } else if (activeAgents.has("sales") && SALES_KEYWORDS.some(k => msgLower.includes(k))) {
       ctx.agentType = "sales";
       ctx.routingReason = "keyword_sales";
-    } else if (ctx.session.agent_type && ctx.session.message_count >= 1) {
+    } else if (ctx.session.agent_type && activeAgents.has(ctx.session.agent_type) && ctx.session.message_count >= 1) {
       ctx.agentType = ctx.session.agent_type;
       ctx.routingReason = "session_continuity";
-    } else {
+    } else if (activeAgents.has("customer_support")) {
+      // Generalist fallback — only if the workspace explicitly enabled it
       ctx.agentType = "customer_support";
-      ctx.routingReason = "default";
+      ctx.routingReason = "default_fallback";
+    } else {
+      // No specialist matched AND customer_support is not available
+      return {
+        handled: true,
+        response: "I'm sorry, I'm not equipped to handle that type of request. Please contact the business directly for assistance.",
+        reason: "no_matching_agent"
+      };
     }
   }
 

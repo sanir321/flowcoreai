@@ -320,53 +320,53 @@ export function InboxClient({
       <div className="flex-1 flex overflow-hidden min-h-0">
         
         {/* Session List (Left Pane) */}
-        <div className="w-96 border-r border-gray-100 flex flex-col bg-white shrink-0 z-20 min-h-0">
-           <div className="p-8 space-y-6 shrink-0">
-              <div className="flex items-end justify-between">
-                 <div className="space-y-1">
-                    <h2 className="text-2xl font-semibold tracking-tight flex items-center gap-3">
-                        Inbox
-                        <button 
-                            onClick={() => setIsComposeOpen(true)}
-                            className="h-8 w-8 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400 hover:text-black transition-all shadow-sm active:scale-95"
-                        >
-                            <Edit3 className="h-4 w-4" />
-                        </button>
-                        <button 
-                            onClick={() => setIsComposeSettingsOpen(true)}
-                            className="h-8 w-8 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400 hover:text-black transition-all shadow-sm active:scale-95"
-                        >
-                            <Settings className="h-4 w-4" />
-                        </button>
-                    </h2>
-                    <div className="flex items-center gap-2">
-                        <p className="text-[10px] font-semibold text-gray-600">Live Feed</p>
-                        <div className={cn(
-                            "flex items-center gap-1 px-1.5 py-0.5 rounded-full border text-[8px] font-semibold transition-all",
-                            realtimeStatus === 'connected' ? "border-emerald-100 bg-emerald-50 text-emerald-600" :
-                            realtimeStatus === 'error' ? "border-rose-100 bg-rose-50 text-rose-600" :
-                            "border-gray-200 bg-gray-50 text-gray-500"
-                        )}>
-                            {realtimeStatus === 'connected' ? <><Wifi className="h-2 w-2" /> Live</> :
-                             realtimeStatus === 'error' ? <><WifiOff className="h-2 w-2" /> Polling</> :
-                             "Syncing"}
-                        </div>
-                    </div>
+        <div className={cn(
+          "w-full md:w-80 lg:w-72 border-r border-gray-100 flex flex-col bg-white shrink-0 z-20 min-h-0",
+          selectedSessionId ? "hidden md:flex" : "flex"
+        )}>
+           <div className="p-4 md:p-5 space-y-4 shrink-0">
+              <div className="flex items-center justify-between">
+                 <h2 className="text-base font-semibold tracking-tight flex items-center gap-2">
+                     Inbox
+                     <button 
+                         onClick={() => setIsComposeOpen(true)}
+                         className="h-7 w-7 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400 hover:text-black transition-all active:scale-95"
+                     >
+                         <Edit3 className="h-3.5 w-3.5" />
+                     </button>
+                     <button 
+                         onClick={() => setIsComposeSettingsOpen(true)}
+                         className="h-7 w-7 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400 hover:text-black transition-all active:scale-95"
+                     >
+                         <Settings className="h-3.5 w-3.5" />
+                     </button>
+                 </h2>
+                 <div className="flex items-center gap-2">
+                     <div className={cn(
+                         "flex items-center gap-1 px-1.5 py-0.5 rounded-full border text-[8px] font-semibold",
+                         realtimeStatus === 'connected' ? "border-emerald-100 bg-emerald-50 text-emerald-600" :
+                         realtimeStatus === 'error' ? "border-rose-100 bg-rose-50 text-rose-600" :
+                         "border-gray-200 bg-gray-50 text-gray-500"
+                     )}>
+                         {realtimeStatus === 'connected' ? <><Wifi className="h-2 w-2" /> Live</> :
+                          realtimeStatus === 'error' ? <><WifiOff className="h-2 w-2" /> Polling</> :
+                          "Syncing"}
+                     </div>
+                     <Badge className="bg-[#c65f39] text-white border-none text-[9px] px-1.5 h-4 font-semibold">{filteredSessions.length}</Badge>
                  </div>
-                 <Badge className="bg-[#c65f39] text-white border-none text-[10px] px-2 h-5 font-semibold">{filteredSessions.length}</Badge>
               </div>
               <div className="relative group">
-                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-500 group-focus-within:text-black transition-colors" />
+                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3 w-3 text-gray-500 group-focus-within:text-black transition-colors" />
                  <Input 
                    placeholder="Search..." 
                    value={search}
                    onChange={(e) => setSearch(e.target.value)}
-                   className="h-10 pl-9 pr-4 bg-gray-50/50 border-gray-100 rounded-xl text-xs font-medium focus:bg-white transition-all"
+                   className="h-9 pl-8 pr-3 bg-gray-50/50 border-gray-100 rounded-lg text-xs font-medium focus:bg-white transition-all"
                  />
               </div>
            </div>
 
-           <div className="h-14 border-b border-gray-100 flex items-center px-8 gap-8 bg-white shrink-0">
+           <div className="h-10 border-b border-gray-100 flex items-center px-4 md:px-5 gap-4 bg-white shrink-0">
               {([
                 { id: 'todo', label: 'To do' },
                 { id: 'handling', label: 'Active' },
@@ -376,7 +376,7 @@ export function InboxClient({
                   key={t.id}
                   onClick={() => setActiveTab(t.id)}
                   className={cn(
-                    "whitespace-nowrap text-sm font-semibold transition-all relative h-full px-1 flex items-center",
+                    "whitespace-nowrap text-xs font-semibold transition-all relative h-full px-1 flex items-center",
                     activeTab === t.id ? "text-black" : "text-gray-500 hover:text-gray-700"
                   )}
                 >
@@ -395,9 +395,9 @@ export function InboxClient({
            <ScrollArea className="flex-1 min-h-0">
               <div className="divide-y divide-gray-50">
                  {filteredSessions.length === 0 ? (
-                   <div className="py-20 text-center space-y-4">
-                      <div className="h-12 w-12 rounded-2xl bg-gray-50 flex items-center justify-center mx-auto">
-                         <Inbox className="h-5 w-5 text-gray-300" />
+                   <div className="py-12 text-center space-y-3">
+                      <div className="h-10 w-10 rounded-xl bg-gray-50 flex items-center justify-center mx-auto">
+                         <Inbox className="h-4 w-4 text-gray-300" />
                       </div>
                       <p className="text-[10px] font-medium text-gray-500">No conversations found</p>
                    </div>
@@ -407,26 +407,26 @@ export function InboxClient({
                         key={s.id}
                         onClick={() => setSelectedSessionId(s.id)}
                         className={cn(
-                          "w-full h-20 px-8 text-left hover:bg-gray-50 transition-all flex flex-col justify-center gap-1 group relative",
+                          "w-full h-16 px-4 md:px-5 text-left hover:bg-gray-50 transition-all flex flex-col justify-center gap-1 group relative",
                           selectedSessionId === s.id && "bg-gray-50"
                         )}
                      >
                         <div className="flex justify-between items-center w-full text-gray-900">
-                           <div className="flex items-center gap-2">
-                              <span className="text-sm font-semibold truncate max-w-[160px] tracking-tight">{s.contacts?.name || "Unknown Contact"}</span>
+                           <div className="flex items-center gap-1.5">
+                              <span className="text-xs font-semibold truncate max-w-[120px] md:max-w-[160px] tracking-tight">{s.contacts?.name || "Unknown Contact"}</span>
                               {s.status === 'escalated' && <div className="h-1.5 w-1.5 rounded-full bg-[#c65f39]" />}
                            </div>
-                           <span className="text-[10px] font-semibold text-gray-500">
+                           <span className="text-[9px] font-semibold text-gray-500">
                               {s.last_message_at ? new Date(s.last_message_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "--:--"}
                            </span>
                         </div>
-                        <div className="flex items-center gap-1.5">
-                           <Badge variant="outline" className="text-[9px] font-semibold px-1.5 h-4 border-gray-200 text-gray-500 bg-white">{s.channel}</Badge>
-                           <Badge variant="outline" className="text-[9px] font-semibold px-1.5 h-4 border-[#c65f39]/20 text-[#c65f39] bg-[#c65f39]/5 tracking-tight">
+                        <div className="flex items-center gap-1">
+                           <Badge variant="outline" className="text-[8px] font-semibold px-1 h-3.5 border-gray-200 text-gray-500 bg-white">{s.channel}</Badge>
+                           <Badge variant="outline" className="text-[8px] font-semibold px-1 h-3.5 border-[#c65f39]/20 text-[#c65f39] bg-[#c65f39]/5 tracking-tight">
                               {formatAgentType(s.agent_type)}
                            </Badge>
                         </div>
-                        {selectedSessionId === s.id && <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#c65f39]" />}
+                        {selectedSessionId === s.id && <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-[#c65f39]" />}
                      </button>
                    ))
                  )}
@@ -435,74 +435,78 @@ export function InboxClient({
         </div>
 
         {/* Conversation Thread (Right Pane) */}
-        <div className="flex-1 flex flex-col bg-white relative z-10 min-h-0">
+        <div className={cn(
+          "flex-1 flex flex-col bg-white relative z-10 min-h-0",
+          !selectedSessionId ? "hidden md:flex" : "flex"
+        )}>
            {selectedSession ? (
              <>
                {/* Thread Header */}
-               <div className="h-20 px-10 border-b border-gray-50 flex items-center justify-between bg-white shrink-0">
-                  <div className="flex items-center gap-4">
-                     <div className="h-10 w-10 rounded-xl bg-gray-900 flex items-center justify-center text-white font-semibold text-xs shadow-sm">
+               <div className="h-14 px-4 md:px-6 border-b border-gray-50 flex items-center justify-between bg-white shrink-0">
+                  <div className="flex items-center gap-3">
+                     <button onClick={() => setSelectedSessionId(null)} className="md:hidden h-7 w-7 rounded-lg bg-gray-50 flex items-center justify-center text-gray-500 hover:text-black mr-1">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+                     </button>
+                     <div className="h-8 w-8 rounded-lg bg-gray-900 flex items-center justify-center text-white font-semibold text-[10px]">
                         {selectedSession.contacts?.name?.charAt(0) || "U"}
                      </div>
                      <div className="flex flex-col text-gray-900">
-                        <div className="flex items-center gap-3">
-                           <span className="text-base font-semibold tracking-tight">{selectedSession.contacts?.name || "Anonymous contact"}</span>
-                           <Badge className="bg-[#c65f39]/10 text-[#c65f39] border-none text-[9px] font-semibold px-2 h-5">
-                              {formatAgentType(selectedSession.agent_type)} Agent
+                        <div className="flex items-center gap-2">
+                           <span className="text-sm font-semibold tracking-tight">{selectedSession.contacts?.name || "Anonymous contact"}</span>
+                           <Badge className="bg-[#c65f39]/10 text-[#c65f39] border-none text-[8px] font-semibold px-1.5 h-4">
+                              {formatAgentType(selectedSession.agent_type)}
                            </Badge>
                         </div>
-                        <div className="flex items-center gap-2 mt-1">
-                           <ShieldCheck className="h-3 w-3 text-emerald-500" />
-                           <span className="text-[10px] font-medium text-gray-500">{selectedSession.contacts?.phone || "Verified Contact"}</span>
+                        <div className="flex items-center gap-1.5">
+                           <ShieldCheck className="h-2.5 w-2.5 text-emerald-500" />
+                           <span className="text-[9px] font-medium text-gray-500">{selectedSession.contacts?.phone || "Verified Contact"}</span>
                         </div>
                      </div>
                   </div>
-                  <div className="flex items-center gap-4 text-gray-900">
+                  <div className="flex items-center gap-2 text-gray-900">
                      {selectedSession.status === 'active' ? (
                         <Button 
                           onClick={handleTakeOver}
                           disabled={isUpdatingStatus}
-                          className="h-10 px-6 rounded-xl bg-black hover:bg-gray-800 text-white text-[10px] font-semibold shadow-sm transition-all active:scale-95 gap-2"
+                          className="h-8 px-4 rounded-lg bg-black hover:bg-gray-800 text-white text-[9px] font-semibold transition-all active:scale-95 gap-1.5"
                         >
-                           {isUpdatingStatus ? <Loader2 className="h-3 w-3 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5" />}
+                           {isUpdatingStatus ? <Loader2 className="h-3 w-3 animate-spin" /> : <ShieldCheck className="h-3 w-3" />}
                            Take Over
                         </Button>
                      ) : (
                         <Button 
                           onClick={handleResolve}
                           disabled={isUpdatingStatus}
-                          className="h-10 px-6 rounded-xl bg-[#c65f39] hover:bg-[#b05432] text-white text-[10px] font-semibold shadow-sm transition-all active:scale-95 gap-2"
+                          className="h-8 px-4 rounded-lg bg-[#c65f39] hover:bg-[#b05432] text-white text-[9px] font-semibold transition-all active:scale-95 gap-1.5"
                         >
-                           {isUpdatingStatus ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                           {isUpdatingStatus ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
                            Resume AI
                         </Button>
                      )}
-                     <button className="h-10 w-10 flex items-center justify-center rounded-xl bg-gray-50 text-gray-500 hover:text-black transition-colors"><MoreHorizontal className="h-4 w-4" /></button>
+                     <button className="h-8 w-8 flex items-center justify-center rounded-lg bg-gray-50 text-gray-500 hover:text-black transition-colors"><MoreHorizontal className="h-3.5 w-3.5" /></button>
                   </div>
                </div>
 
                {/* Escalation Banner */}
                {selectedSession.status === 'escalated' && (
-                  <div className="bg-amber-50 border-b border-amber-100 px-10 py-3 flex items-center gap-4 shrink-0 text-gray-900">
-                     <AlertTriangle className="h-3.5 w-3.5 text-amber-600" />
-                     <p className="text-[10px] font-semibold text-amber-700 tracking-tight">
-                        Manual response required
-                     </p>
+                  <div className="bg-amber-50 border-b border-amber-100 px-4 md:px-6 py-2 flex items-center gap-2 shrink-0">
+                     <AlertTriangle className="h-3 w-3 text-amber-600" />
+                     <p className="text-[9px] font-semibold text-amber-700 tracking-tight">Manual response required</p>
                   </div>
                )}
 
                <ScrollArea className="flex-1 bg-white min-h-0">
-                  <div className="max-w-3xl mx-auto space-y-10 py-12 px-6">
+                  <div className="max-w-3xl mx-auto space-y-6 py-8 px-4 md:px-6">
                      {messages.map((m) => (
-                       <div key={m.id} className={cn("flex flex-col gap-2", m.role === 'customer' ? "items-start" : "items-end")}>
+                       <div key={m.id} className={cn("flex flex-col gap-1.5", m.role === 'customer' ? "items-start" : "items-end")}>
                            <div className={cn(
-                             "group relative px-5 py-3.5 rounded-2xl text-[14px] font-normal leading-relaxed max-w-[85%] transition-all",
+                             "px-4 py-2.5 rounded-xl text-sm font-normal leading-relaxed max-w-[88%]",
                              m.role === 'customer' 
                                ? "bg-[#F5F5F5] text-gray-900" 
                                : "bg-white border border-gray-100 text-gray-900 shadow-sm"
                            )}>
                               {m.metadata?.media_path ? (
-                                <div className="flex flex-col gap-2">
+                                <div className="flex flex-col gap-1.5">
                                   {(m.metadata.media_mime as string)?.startsWith('image') ? (
                                     <img src={m.metadata.media_path as string} alt="Image" className="max-w-full rounded-lg" />
                                   ) : (m.metadata.media_mime as string)?.startsWith('video') ? (
@@ -519,10 +523,10 @@ export function InboxClient({
                               )}
                            </div>
                           
-                           <div className="flex items-center gap-3 px-1 text-gray-500 font-semibold">
-                              <span className="text-[9px]">{m.role === 'customer' ? 'Customer' : 'Assistant'}</span>
+                           <div className="flex items-center gap-2 px-1 text-gray-500 font-semibold">
+                              <span className="text-[8px]">{m.role === 'customer' ? 'Customer' : 'Assistant'}</span>
                               {m.role !== 'customer' && m.agent_type && m.agent_type !== 'customer_support' && (
-                                <span className="text-[8px] uppercase tracking-wider text-[#c65f39] font-bold">{formatAgentType(m.agent_type)}</span>
+                                <span className="text-[7px] uppercase tracking-wider text-[#c65f39] font-bold">{formatAgentType(m.agent_type)}</span>
                               )}
                            </div>
                        </div>
@@ -535,13 +539,13 @@ export function InboxClient({
                            animate={{ opacity: 1, y: 0 }}
                            className="flex flex-col gap-2 items-end"
                         >
-                           <div className="bg-white border border-gray-100 p-4 rounded-2xl shadow-sm flex items-center gap-3">
+                           <div className="bg-white border border-gray-100 p-3 rounded-xl shadow-sm flex items-center gap-2">
                               <div className="flex gap-1">
-                                 <div className="h-1.5 w-1.5 bg-[#c65f39] rounded-full animate-bounce [animation-delay:-0.3s]" />
-                                 <div className="h-1.5 w-1.5 bg-[#c65f39] rounded-full animate-bounce [animation-delay:-0.15s]" />
-                                 <div className="h-1.5 w-1.5 bg-[#c65f39] rounded-full animate-bounce" />
+                                 <div className="h-1 w-1 bg-[#c65f39] rounded-full animate-bounce [animation-delay:-0.3s]" />
+                                 <div className="h-1 w-1 bg-[#c65f39] rounded-full animate-bounce [animation-delay:-0.15s]" />
+                                 <div className="h-1 w-1 bg-[#c65f39] rounded-full animate-bounce" />
                               </div>
-                              <span className="text-[10px] font-bold text-gray-400 capitalize">
+                              <span className="text-[9px] font-bold text-gray-400 capitalize">
                                  {selectedSession.typing_status.replace(/_/g, ' ')}...
                               </span>
                            </div>
@@ -552,35 +556,35 @@ export function InboxClient({
                </ScrollArea>
 
                {/* Reply Box */}
-               <div className="p-8 bg-white border-t border-gray-50 shrink-0">
-                  <form onSubmit={handleSend} className="max-w-3xl mx-auto flex gap-4">
+               <div className="p-4 md:p-5 bg-white border-t border-gray-50 shrink-0">
+                  <form onSubmit={handleSend} className="max-w-3xl mx-auto flex gap-2">
                      <div className="relative flex-1">
                         <Input 
                           placeholder={selectedSession.status === 'escalated' ? "Type a message..." : "Assistant is active..."} 
                           value={inputText}
                           onChange={(e) => setInputText(e.target.value)}
                           disabled={selectedSession.status !== 'escalated' || isSending}
-                          className="h-12 pl-6 pr-14 bg-gray-50 border-gray-100 rounded-xl focus:bg-white focus:border-gray-200 transition-all text-sm font-normal disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-gray-500 text-gray-900"
+                          className="h-10 pl-4 pr-10 bg-gray-50 border-gray-100 rounded-lg focus:bg-white focus:border-gray-200 transition-all text-xs font-normal disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-gray-500 text-gray-900"
                         />
                      </div>
                      <Button 
                         type="submit" 
                         disabled={selectedSession.status !== 'escalated' || isSending || !inputText.trim()}
-                        className="h-12 px-8 rounded-xl bg-black text-white hover:bg-gray-800 shadow-sm flex items-center justify-center shrink-0 active:scale-95 transition-all gap-2"
+                        className="h-10 px-4 rounded-lg bg-black text-white hover:bg-gray-800 flex items-center justify-center shrink-0 active:scale-95 transition-all gap-1.5"
                      >
-                        {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <><span className="text-[11px] font-semibold">Send</span><Send className="h-3.5 w-3.5" /></>}
+                        {isSending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <><span className="text-[10px] font-semibold hidden sm:inline">Send</span><Send className="h-3.5 w-3.5" /></>}
                      </Button>
                   </form>
                </div>
              </>
            ) : (
-             <div className="flex-1 flex flex-col items-center justify-center p-20 text-center space-y-6 text-gray-900">
-                <div className="h-24 w-24 rounded-3xl bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-300">
-                   <Inbox className="h-8 w-8" />
+             <div className="flex-1 flex flex-col items-center justify-center p-10 text-center space-y-4 text-gray-900">
+                <div className="h-16 w-16 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-300">
+                   <Inbox className="h-6 w-6" />
                 </div>
-                <div className="space-y-2">
-                   <h2 className="text-xl font-semibold tracking-tight">Select a conversation</h2>
-                   <p className="text-sm text-gray-500 font-normal max-w-xs mx-auto leading-relaxed">Choose a message from the list to begin.</p>
+                <div className="space-y-1">
+                   <h2 className="text-base font-semibold tracking-tight">Select a conversation</h2>
+                   <p className="text-xs text-gray-500 font-normal max-w-xs mx-auto">Choose a message from the list to begin.</p>
                 </div>
              </div>
            )}

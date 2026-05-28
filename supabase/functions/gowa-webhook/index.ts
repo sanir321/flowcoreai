@@ -155,8 +155,45 @@ Deno.serve(async (req) => {
 
     // Fire AI processing
     const sessionId = result.session_id
+    const deviceId = rootPayload.device_id || rootPayload.session || rootPayload.deviceId || ''
     EdgeRuntime.waitUntil((async () => {
       try {
+        // If pushname is weak, try to fetch the saved contact name from WhatsApp
+        const isNameWeak = !pushname || pushname === 'Customer' || pushname.length < 3 || pushname.includes('@')
+        const isRealDeviceId = deviceId && !deviceId.includes('@')
+        if (isNameWeak && isRealDeviceId) {
+          try {
+            const phone = normalizedFrom.replace('@s.whatsapp.net', '')
+            const gowaBaseUrl = Deno.env.get('GOWA_BASE_URL')?.replace(/\/$/, '') || ''
+            const gowaKey = Deno.env.get('GOWA_API_KEY') || ''
+            const gowaAuth = btoa(gowaKey)
+            const resp = await fetch(`${gowaBaseUrl}/user/info?phone=${phone}`, {
+              headers: {
+                'Authorization': `Basic ${gowaAuth}`,
+                'X-Device-Id': deviceId,
+              },
+            })
+            if (resp.ok) {
+              const body = await resp.json()
+              const contactName = body?.data?.name || body?.name || ''
+              if (contactName && contactName !== phone) {
+                await supabase.from('contacts')
+                  .update({ name: contactName, updated_at: new Date().toISOString() })
+                  .eq('workspace_id', workspaceId)
+                  .eq('whatsapp_jid', normalizedFrom)
+                await supabase.from('conversation_sessions')
+                  .update({ customer_name: contactName, updated_at: new Date().toISOString() })
+                  .eq('workspace_id', workspaceId)
+                  .eq('customer_jid', normalizedFrom)
+                  .is('deleted_at', null)
+                console.log(`[WEBHOOK] Updated contact name: ${contactName}`)
+              }
+            }
+          } catch (e) {
+            console.error('[WEBHOOK] GoWA contact lookup failed:', e)
+          }
+        }
+
         const aiClient = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '')
         const { error: aiError } = await aiClient.functions.invoke('agent-orchestrator', {
           body: {
