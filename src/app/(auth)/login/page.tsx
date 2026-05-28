@@ -160,8 +160,8 @@ export default function LoginPage() {
       <div className="fixed inset-0 pointer-events-none opacity-[0.02] z-[100] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
       
       {/* Left Side: Authentication Interface */}
-      <div className="w-full lg:w-[45%] flex flex-col p-8 lg:p-24 justify-center relative z-50 bg-[#0A0A0A]">
-        <div className="max-w-md w-full mx-auto space-y-12">
+      <div className="w-full lg:w-[45%] min-h-screen flex flex-col p-8 lg:px-16 lg:py-16 justify-center relative z-50 bg-[#0A0A0A]">
+        <div className="max-w-sm w-full mx-auto space-y-10">
           {/* Brand Identity */}
           <div className="space-y-4">
             <Link href="/" className="h-10 w-10 rounded-xl bg-[#D95E46] flex items-center justify-center shadow-lg hover:scale-105 transition-all duration-500">
@@ -304,11 +304,11 @@ export default function LoginPage() {
       </div>
 
       {/* Right Side: Stable Metallic Orbital Graphic */}
-      <div className="hidden lg:flex flex-1 relative bg-[#0A0A0A] items-center justify-center overflow-hidden border-l border-white/5">
+      <div className="hidden lg:flex flex-1 relative bg-[#0A0A0A] items-center justify-center overflow-hidden border-l border-white/5 min-h-screen">
         {/* Subtle Grid */}
         <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '48px 48px' }} />
         
-        <div className="relative w-full h-full flex items-center justify-center scale-110">
+        <div className="relative w-full h-full flex items-center justify-center">
           {/* Atmospheric Lighting */}
           <div className="absolute w-[1000px] h-[1000px] rounded-full bg-[#D95E46]/5 blur-[160px] animate-pulse" />
           <div className="absolute w-[600px] h-[600px] rounded-full bg-white/5 blur-[100px]" />
@@ -435,13 +435,13 @@ export default function LoginPage() {
         </div>
 
         {/* Professional Copy Overlay */}
-        <div className="absolute bottom-24 left-24 space-y-6 z-50">
+        <div className="absolute bottom-16 left-12 lg:left-16 space-y-6 z-50 max-w-md">
           <div className="space-y-2">
              <div className="flex items-center gap-3">
                 <div className="h-1.5 w-1.5 rounded-full bg-[#D95E46] shadow-[0_0_8px_#D95E46]" />
                 <span className="text-[10px] font-bold text-[#D95E46] uppercase tracking-widest">Platform Core</span>
              </div>
-             <h3 className="text-5xl font-semibold text-white tracking-tight max-w-lg leading-[1.1]">The future of <br/> business operations.</h3>
+              <h3 className="text-4xl lg:text-5xl font-semibold text-white tracking-tight max-w-md leading-[1.1]">The future of <br/> business operations.</h3>
           </div>
           <p className="text-gray-500 font-medium text-lg max-w-md leading-relaxed">Automate your communication and scale with specialized AI assistants.</p>
           
