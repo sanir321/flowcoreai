@@ -1,5 +1,8 @@
 import { PipelineContext } from "../lib/types.ts";
 
+const APP_URL = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://7flowcore.vercel.app";
+const CRON_SECRET = Deno.env.get("INTERNAL_CRON_SECRET") || "";
+
 const DEFAULT_KEYWORDS = [
   "human", "agent", "person", "manager", "staff", "real person",
   "manav", "insaan", "human chahiye", "real agent", "talk to someone",
@@ -40,6 +43,32 @@ export async function checkEscalation(ctx: PipelineContext, workspace: any): Pro
     });
   } catch (e: any) {
     console.error("[ESCALATION] Failed to insert escalation_log:", e.message);
+  }
+
+  // Send immediate email notification to workspace owner
+  try {
+    const ownerEmail = workspace.owner_id
+      ? await ctx.supabase.rpc("get_user_email", { user_id: workspace.owner_id })
+      : null;
+    if (ownerEmail?.data) {
+      await fetch(`${APP_URL}/api/emails/send`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${CRON_SECRET}` },
+        body: JSON.stringify({
+          to: ownerEmail.data,
+          subject: `Escalation Alert — ${workspace.name || "Your Workspace"}`,
+          template: "escalation",
+          data: {
+            workspaceName: workspace.name || "Your Workspace",
+            customerName: ctx.contact?.name || ctx.session?.customer_name || "A Customer",
+            reason: msgLower,
+            inboxUrl: `${APP_URL}/inbox`,
+          },
+        }),
+      });
+    }
+  } catch (e: any) {
+    console.error("[ESCALATION] Email notification error:", e.message);
   }
 
   return workspace.guardrail_config?.handoff_message

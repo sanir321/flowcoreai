@@ -17,3 +17,13 @@ create policy if not exists "pricing_requests_select_service_role"
   on public.pricing_requests for select
   to service_role
   using (true);
+
+-- Helper RPC: get user email from auth.users (used by edge functions)
+create or replace function public.get_user_email(user_id uuid)
+returns text
+language sql
+security definer
+set search_path = auth
+as $$
+  select email from auth.users where id = user_id;
+$$;

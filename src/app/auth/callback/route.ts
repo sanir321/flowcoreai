@@ -31,6 +31,24 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/login?error=Could not authenticate user`)
   }
 
+  const isNewUser = !data.user.last_sign_in_at
+  const username = data.user.user_metadata?.full_name || data.user.email?.split("@")[0] || "User"
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://7flowcore.vercel.app"
+
+  fetch(`${baseUrl}/api/emails/send`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${process.env.INTERNAL_CRON_SECRET}`,
+    },
+    body: JSON.stringify({
+      to: data.user.email,
+      subject: isNewUser ? "Welcome to FlowCore!" : "New Sign-in detected",
+      template: isNewUser ? "welcome" : "signin",
+      data: { username, loginUrl: `${baseUrl}/login` },
+    }),
+  }).catch((e) => console.error("Auth email failed:", e))
+
   const workspaceId = data.user.app_metadata?.workspace_id
   const redirectTo = workspaceId ? "/inbox" : next
   const response = NextResponse.redirect(`${origin}${redirectTo}`)
