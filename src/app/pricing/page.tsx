@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { useState } from "react"
-import { ArrowUpRight } from "lucide-react"
+import { ArrowUpRight, Check } from "lucide-react"
 
 const sf = { fontFamily: "'Söhne', 'Inter', ui-sans-serif, system-ui, sans-serif" }
 
@@ -11,6 +11,35 @@ export default function PricingPage() {
   const [email, setEmail] = useState("")
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
+  const [error, setError] = useState("")
+
+  const handleSubmit = async () => {
+    setError("")
+    if (!firstName.trim() || !lastName.trim() || !email.trim()) {
+      setError("Please fill in all fields")
+      return
+    }
+    setLoading(true)
+    try {
+      const res = await fetch("/api/pricing/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ firstName: firstName.trim(), lastName: lastName.trim(), email: email.trim() }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        setError(data.error || "Something went wrong")
+        return
+      }
+      setSubmitted(true)
+    } catch {
+      setError("Network error. Please try again.")
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="min-h-screen" style={{ background: "#050505", ...sf }}>
@@ -67,6 +96,17 @@ export default function PricingPage() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 1.2, delay: 0.2, ease: [0.16, 1, 0.3, 1] as const }}
             >
+                {submitted ? (
+                  <div className="p-8 rounded-3xl space-y-4 text-center" style={{ background: "rgba(10,10,10,0.6)", backdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                    <div className="h-12 w-12 rounded-full flex items-center justify-center mx-auto" style={{ background: "rgba(198,95,57,0.15)" }}>
+                      <Check className="h-6 w-6" style={{ color: "#c65f39" }} />
+                    </div>
+                    <h2 className="text-lg font-normal tracking-tight" style={{ color: "#e5e5e5" }}>Request received</h2>
+                    <p className="text-sm font-normal" style={{ color: "#595859" }}>
+                      Thanks {firstName}! Our team will reach out within 2-4 hours.
+                    </p>
+                  </div>
+                ) : (
               <div className="p-8 rounded-3xl space-y-6" style={{ background: "rgba(10,10,10,0.6)", backdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.06)" }}>
                 <div className="space-y-1 text-center">
                   <h2 className="text-lg font-normal tracking-tight" style={{ color: "#e5e5e5" }}>Request Pricing</h2>
@@ -110,19 +150,26 @@ export default function PricingPage() {
                   </div>
                 </div>
 
+                {error && (
+                  <p className="text-xs font-normal text-center" style={{ color: "#ef4444" }}>{error}</p>
+                )}
+
                 <button
-                  className="w-full py-3.5 rounded-[100px] text-sm font-normal flex items-center justify-center gap-2 cursor-pointer border-none transition-all duration-300"
+                  onClick={handleSubmit}
+                  disabled={loading}
+                  className="w-full py-3.5 rounded-[100px] text-sm font-normal flex items-center justify-center gap-2 cursor-pointer border-none transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ background: "linear-gradient(135deg, #c65f39 0%, #d9744a 100%)", color: "#fff" }}
-                  onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 0 30px rgba(198,95,57,0.3)" }}
+                  onMouseEnter={(e) => { if (!loading) e.currentTarget.style.boxShadow = "0 0 30px rgba(198,95,57,0.3)" }}
                   onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "none" }}
                 >
-                  Request Pricing <ArrowUpRight className="h-4 w-4" />
+                  {loading ? "Sending..." : "Request Pricing"} {!loading && <ArrowUpRight className="h-4 w-4" />}
                 </button>
 
                 <p className="text-xs font-normal text-center" style={{ color: "#595859" }}>
                   Our team typically responds within 2-4 hours.
                 </p>
               </div>
+                )}
             </motion.div>
           </div>
         </section>

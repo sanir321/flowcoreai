@@ -1,0 +1,125 @@
+Create a modern dark-mode AI SaaS landing page for an enterprise conversational AI platform.
+
+Style:
+
+Premium enterprise AI aesthetic
+Black and deep charcoal background
+Subtle orange/red glowing gradients
+Minimalistic layout
+Cinematic lighting
+Clean typography
+High contrast
+Modern SaaS design similar to Stripe, OpenAI, and ElevenLabs
+
+Layout:
+
+Full-screen hero section
+Left side contains headline and supporting text
+Right side contains a glassmorphism pricing/contact form card
+Large spacing and balanced composition
+Sticky top navigation bar
+
+Top Navbar:
+
+Logo on left
+Navigation links:
+Industries
+Customers
+Pricing
+Resources
+Right side buttons:
+Book Demo
+Sign In
+
+Hero Section:
+Large bold headline:
+“Meet with an AI expert to price your use case”
+
+Highlight “AI expert” in orange gradient text.
+
+Supporting paragraph:
+“Automate high-volume conversations across voice and messaging with AI agents built for your business.”
+
+Typography:
+
+Large modern sans-serif font
+Bold heading
+Soft secondary text opacity
+Enterprise-grade visual hierarchy
+
+Background Effects:
+
+Dark futuristic grid lines
+Soft glowing orange radial gradients
+Very subtle particle/light effects
+Premium AI atmosphere
+Smooth shadows and depth
+
+Right Form Card:
+
+Dark translucent glassmorphism container
+Rounded corners
+Thin subtle borders
+Soft blur effect
+
+Form Fields:
+
+First Name
+Last Name
+Email
+
+Inputs:
+
+Dark inputs
+Thin glowing borders
+Large padding
+Rounded edges
+
+CTA Button:
+Text:
+“Request Pricing”
+
+Style:
+
+Orange gradient button
+Soft hover glow
+Rounded pill shape
+Modern enterprise SaaS style
+
+Additional UI:
+
+Floating customer support chat icon at bottom right
+Smooth hover animations
+Responsive design
+Professional spacing system
+Luxury tech startup aesthetic
+
+Technical Requirements:
+
+React + Tailwind CSS
+Fully responsive
+Smooth animations using Framer Motion
+Mobile optimized
+Production-quality UI
+Accessibility friendly
+Modern component structure
+
+Design References:
+
+OpenAI
+Anthropic
+Stripe
+ElevenLabs
+Vapi AI
+Retell AI
+
+Avoid:
+
+Bright colors
+Cartoonish design
+Excessive text
+Generic templates
+Flat design without depth
+
+Goal:
+The page should feel like a high-ticket AI infrastructure company targeting enterprise clients and optimized for demo bookings and lead generation.
