@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { useState } from "react"
-import { ArrowUpRight, MessageCircle } from "lucide-react"
+import { ArrowUpRight } from "lucide-react"
 
 const sf = { fontFamily: "'Söhne', 'Inter', ui-sans-serif, system-ui, sans-serif" }
 
@@ -152,18 +152,6 @@ export default function PricingPage() {
         </div>
       </main>
 
-      <motion.a
-        href="#"
-        initial={{ opacity: 0, scale: 0 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.6, delay: 1.5, ease: [0.16, 1, 0.3, 1] as const }}
-        className="fixed bottom-6 right-6 h-12 w-12 rounded-full flex items-center justify-center shadow-lg z-50"
-        style={{ background: "#c65f39", color: "#fff" }}
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.95 }}
-      >
-        <MessageCircle className="h-5 w-5" />
-      </motion.a>
     </div>
   )
 }
