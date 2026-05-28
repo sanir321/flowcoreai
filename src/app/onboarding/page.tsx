@@ -306,7 +306,7 @@ export default function OnboardingPage() {
                     <Input 
                       {...form.register("name")}
                       placeholder="Acme"
-                      className="h-14 bg-white/5 border-white/10 rounded-xl focus:border-[#D95E46] text-white placeholder:text-neutral-600 transition-all text-gray-900"
+                      className="h-14 bg-white/5 border-white/10 rounded-xl focus:border-[#D95E46] text-white placeholder:text-neutral-600 transition-all"
                     />
                     {form.formState.errors.name && (
                        <p className="text-red-500 text-[10px] font-bold ml-1 mt-1">{form.formState.errors.name.message as string}</p>
@@ -358,7 +358,7 @@ export default function OnboardingPage() {
                     <Input 
                       {...form.register("website_url")}
                       placeholder="https://acme.com"
-                      className="h-14 bg-white/5 border-white/10 rounded-xl focus:border-[#D95E46] text-white placeholder:text-neutral-600 transition-all text-gray-900"
+                      className="h-14 bg-white/5 border-white/10 rounded-xl focus:border-[#D95E46] text-white placeholder:text-neutral-600 transition-all"
                     />
                   </div>
                 </div>
