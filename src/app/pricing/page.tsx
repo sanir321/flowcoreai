@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { useState } from "react"
-import { ArrowUpRight, Menu, X } from "lucide-react"
+import { ArrowUpRight } from "lucide-react"
 
 const sf = { fontFamily: "'Söhne', 'Inter', ui-sans-serif, system-ui, sans-serif" }
 
@@ -11,14 +11,6 @@ export default function PricingPage() {
   const [email, setEmail] = useState("")
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
-  const [mobileOpen, setMobileOpen] = useState(false)
-
-  const navItems = [
-    { label: "Industries", href: "/" },
-    { label: "Customers", href: "/" },
-    { label: "Pricing", href: "/pricing" },
-    { label: "Resources", href: "/" },
-  ]
 
   return (
     <div className="min-h-screen" style={{ background: "#050505", ...sf }}>
@@ -26,21 +18,6 @@ export default function PricingPage() {
         <Link href="/" className="text-base font-medium tracking-tight" style={{ color: "#fff", letterSpacing: "-0.01em", textDecoration: "none" }}>
           FlowCore
         </Link>
-
-        <nav className="hidden md:flex items-center gap-1">
-          {navItems.map((item) => (
-            <Link
-              key={item.label}
-              href={item.href}
-              className="px-4 py-2 text-sm font-normal transition-all duration-300 rounded-lg"
-              style={{ color: item.label === "Pricing" ? "#fff" : "#a3a3a3", background: item.label === "Pricing" ? "rgba(198,95,57,0.1)" : "transparent" }}
-              onMouseEnter={(e) => { e.currentTarget.style.color = "#fff"; if (item.label !== "Pricing") e.currentTarget.style.background = "rgba(198,95,57,0.08)" }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = item.label === "Pricing" ? "#fff" : "#a3a3a3"; if (item.label !== "Pricing") e.currentTarget.style.background = "transparent" }}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
 
         <div className="flex items-center gap-3">
           <Link href="/login" className="hidden sm:inline text-sm font-normal transition-colors" style={{ color: "#a3a3a3", textDecoration: "none" }} onMouseEnter={(e) => e.currentTarget.style.color = "#fff"} onMouseLeave={(e) => e.currentTarget.style.color = "#a3a3a3"}>Sign In</Link>
@@ -50,36 +27,8 @@ export default function PricingPage() {
           >
             Book Demo <ArrowUpRight className="h-3 w-3" />
           </Link>
-          <button
-            className="md:hidden p-2 cursor-pointer border-none"
-            style={{ color: "#fff", background: "none" }}
-            onClick={() => setMobileOpen(!mobileOpen)}
-            aria-label="Toggle menu"
-          >
-            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
         </div>
       </header>
-
-      {mobileOpen && (
-        <div className="fixed inset-0 z-[99] pt-14 md:hidden" style={{ background: "rgba(5,5,5,0.97)", backdropFilter: "blur(14px)" }} onClick={() => setMobileOpen(false)}>
-          <nav className="flex flex-col items-center gap-2 p-8" onClick={(e) => e.stopPropagation()}>
-            {navItems.map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                className="w-full py-3 text-center text-sm font-normal rounded-lg transition-all"
-                style={{ color: item.label === "Pricing" ? "#fff" : "#a3a3a3", background: item.label === "Pricing" ? "rgba(198,95,57,0.1)" : "transparent" }}
-                onClick={() => setMobileOpen(false)}
-              >
-                {item.label}
-              </Link>
-            ))}
-            <hr className="w-full border-none h-px my-2" style={{ background: "rgba(255,255,255,0.06)" }} />
-            <Link href="/login" className="w-full py-3 text-center text-sm font-normal" style={{ color: "#a3a3a3" }} onClick={() => setMobileOpen(false)}>Sign In</Link>
-          </nav>
-        </div>
-      )}
 
       <main className="relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none z-0" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px)", backgroundSize: "64px 64px" }} />
