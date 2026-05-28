@@ -80,24 +80,23 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen scroll-smooth" style={sf}>
-      <header className="h-14 flex items-center justify-between px-6 lg:px-12 fixed top-0 left-0 right-0 z-[100]" style={{ background: "rgba(5, 5, 5, 0.9)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-        <div className="flex items-center gap-2">
-          <Link href="/" className="h-8 w-8 rounded-lg flex items-center justify-center" style={{ background: "#c65f39" }}>
-            <span className="text-white font-bold text-sm tracking-tighter">F</span>
-          </Link>
+      <header className="h-14 flex items-center justify-between px-6 lg:px-12 fixed top-0 left-0 right-0 z-[100]" style={{ background: "linear-gradient(180deg, rgba(5,5,5,0.95) 0%, rgba(5,5,5,0.7) 100%)", backdropFilter: "blur(12px)" }}>
+        <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg, transparent 0%, rgba(198,95,57,0.4) 20%, rgba(198,95,57,0.6) 50%, rgba(198,95,57,0.4) 80%, transparent 100%)" }} />
+        <div className="absolute inset-0 rounded-b-3xl pointer-events-none" style={{ background: "radial-gradient(ellipse at 50% 100%, rgba(198,95,57,0.08) 0%, transparent 70%)" }} />
+        <div className="flex items-center gap-2 relative z-10">
           <Link href="/" className="text-base font-medium tracking-tight" style={{ color: "#e5e5e5", letterSpacing: "-0.01em" }}>
             FlowCore
           </Link>
         </div>
 
-        <nav className="hidden md:flex items-center gap-1">
-          <Link href="/pricing" className="px-4 py-2 text-sm font-normal transition-colors hover:text-white" style={{ color: "#a3a3a3" }}>Pricing</Link>
-          <Link href="/faq" className="px-4 py-2 text-sm font-normal transition-colors hover:text-white" style={{ color: "#a3a3a3" }}>FAQ</Link>
-          <Link href="/changelog" className="px-4 py-2 text-sm font-normal transition-colors hover:text-white" style={{ color: "#a3a3a3" }}>Changelog</Link>
+        <nav className="hidden md:flex items-center gap-1 relative z-10">
+          <Link href="/pricing" className="px-4 py-2 text-sm font-normal transition-colors" style={{ color: "#a3a3a3" }} onMouseEnter={(e) => e.currentTarget.style.color = "#e5e5e5"} onMouseLeave={(e) => e.currentTarget.style.color = "#a3a3a3"}>Pricing</Link>
+          <Link href="/faq" className="px-4 py-2 text-sm font-normal transition-colors" style={{ color: "#a3a3a3" }} onMouseEnter={(e) => e.currentTarget.style.color = "#e5e5e5"} onMouseLeave={(e) => e.currentTarget.style.color = "#a3a3a3"}>FAQ</Link>
+          <Link href="/changelog" className="px-4 py-2 text-sm font-normal transition-colors" style={{ color: "#a3a3a3" }} onMouseEnter={(e) => e.currentTarget.style.color = "#e5e5e5"} onMouseLeave={(e) => e.currentTarget.style.color = "#a3a3a3"}>Changelog</Link>
         </nav>
 
-        <div className="flex items-center gap-3">
-          <Link href="/login" className="hidden sm:inline text-sm font-normal transition-colors hover:text-white" style={{ color: "#a3a3a3" }}>Sign In</Link>
+        <div className="flex items-center gap-3 relative z-10">
+          <Link href="/login" className="hidden sm:inline text-sm font-normal transition-colors" style={{ color: "#a3a3a3" }} onMouseEnter={(e) => e.currentTarget.style.color = "#e5e5e5"} onMouseLeave={(e) => e.currentTarget.style.color = "#a3a3a3"}>Sign In</Link>
           <Button asChild className="h-8 px-4 rounded-[100px] text-sm font-normal flex items-center gap-1" style={{ background: "#c65f39", color: "#fff" }}>
             <Link href="/login">Book Demo <ArrowUpRight className="h-3 w-3" /></Link>
           </Button>
@@ -105,8 +104,9 @@ export default function LandingPage() {
       </header>
 
       <main ref={heroRef}>
-        <section className="relative min-h-screen pt-32 pb-48 px-6 overflow-hidden flex flex-col items-center" style={{ background: "#050505" }}>
-          <motion.div className="absolute top-[3%] left-1/2 -translate-x-1/2 w-[1000px] h-[650px] rounded-full pointer-events-none z-0" style={{ scale: glowScale, opacity: glowOpacity, background: "radial-gradient(ellipse at center, rgba(198, 95, 57, 0.28) 0%, rgba(198, 95, 57, 0.1) 35%, rgba(198, 95, 57, 0.03) 60%, transparent 80%)" }} />
+        <section className="relative min-h-screen pt-32 pb-48 px-6 overflow-hidden flex flex-col items-center" style={{ background: "linear-gradient(180deg, #0d0705 0%, #080505 30%, #050505 60%)" }}>
+          <motion.div className="absolute top-[2%] left-1/2 -translate-x-1/2 w-[1100px] h-[700px] rounded-full pointer-events-none z-0" style={{ scale: glowScale, opacity: glowOpacity, background: "radial-gradient(ellipse at center, rgba(198, 95, 57, 0.35) 0%, rgba(198, 95, 57, 0.12) 30%, rgba(198, 95, 57, 0.04) 60%, transparent 80%)" }} />
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 2 }} className="absolute top-[15%] left-1/2 -translate-x-1/2 w-[1400px] h-[500px] rounded-full pointer-events-none z-0" style={{ background: "radial-gradient(ellipse at center, rgba(198, 95, 57, 0.06) 0%, transparent 60%)" }} />
 
           <motion.div className="max-w-[820px] mx-auto text-center relative z-10 space-y-8" style={{ opacity: heroOpacity, scale: heroScale }}>
             <motion.div
