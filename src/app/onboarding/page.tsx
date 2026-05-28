@@ -399,12 +399,12 @@ export default function OnboardingPage() {
               initial={{ opacity: 0, x: 100 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -100 }}
-              className="flex flex-col items-center gap-6 lg:gap-8 py-2"
+               className="flex flex-col items-center gap-8 lg:gap-10 py-4"
             >
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center w-full max-w-5xl">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center w-full max-w-5xl">
                  <div className="space-y-4 text-center lg:text-left text-gray-900">
-                     <h2 className="text-3xl lg:text-4xl font-bold tracking-tight text-white leading-tight">Your first agent</h2>
-                     <p className="text-base text-neutral-500 font-medium leading-relaxed max-w-sm mx-auto lg:mx-0">Choose the primary objective for your AI employee.</p>
+                     <h2 className="text-4xl lg:text-5xl font-bold tracking-tight text-white leading-tight">Your first agent</h2>
+                     <p className="text-lg text-neutral-500 font-medium leading-relaxed max-w-sm mx-auto lg:mx-0">Choose the primary objective for your AI employee.</p>
                  </div>
 
                  <div className="relative flex items-center justify-center scale-90 lg:scale-100 origin-center text-gray-900">
@@ -440,11 +440,11 @@ export default function OnboardingPage() {
                                   borderColor: "rgba(217, 94, 70, 0.5)"
                                 }}
                                 transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                                 className="w-[280px] lg:w-[320px] h-[380px] bg-[#2D2A2A] rounded-2xl border border-white/5 shadow-2xl relative overflow-hidden group cursor-pointer flex flex-col items-center p-8 text-center transition-colors duration-500"
+                                 className="w-[300px] lg:w-[340px] h-[440px] bg-[#2D2A2A] rounded-2xl border border-white/5 shadow-2xl relative overflow-hidden group cursor-pointer flex flex-col items-center p-10 text-center transition-colors duration-500"
                               >
                                  <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, #fff 1px, transparent 0)', backgroundSize: '16px 16px' }} />
-                                 <div className="h-12 w-12 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mb-6 shadow-[0_0_30px_-5px_rgba(16,185,129,0.3)]">
-                                     <CheckCircle2 className="h-6 w-6 stroke-[2.5]" />
+                                 <div className="h-16 w-16 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mb-8 shadow-[0_0_30px_-5px_rgba(16,185,129,0.3)]">
+                                     <CheckCircle2 className="h-8 w-8 stroke-[2.5]" />
                                  </div>
                                  <div className="space-y-3">
                                     <h3 className="text-2xl font-bold text-white tracking-tight">{currentAgent.name}</h3>
