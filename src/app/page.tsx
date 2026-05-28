@@ -7,19 +7,10 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { 
   ArrowUpRight,
-  Shield,
-  Lock,
-  Heart,
   Send,
-  MessageSquare,
-  Sparkles,
   Inbox,
   BarChart2,
-  Users,
-  CheckCircle2,
   Globe,
-  FileText,
-  Activity,
   ChevronDown
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
@@ -47,6 +38,8 @@ const GoogleSheetsLogo = ({ className }: { className?: string }) => (
   </svg>
 )
 
+const sf = { fontFamily: "'Söhne', 'Inter', ui-sans-serif, system-ui, sans-serif" }
+
 export default function LandingPage() {
   const [email, setEmail] = useState("")
   const router = useRouter()
@@ -59,175 +52,123 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-[#D95E46] selection:text-white overflow-x-hidden scroll-smooth">
-
-      <header className="h-16 flex items-center justify-between px-6 lg:px-12 sticky top-0 bg-[#050505]/95 backdrop-blur-xl z-[100] border-b border-white/[0.04]">
-        <div className="flex items-center gap-2.5">
-          <Link href="/" className="h-8 w-8 rounded-lg bg-[#D95E46] flex items-center justify-center shadow-sm hover:scale-105 transition-all duration-300">
+    <div className="min-h-screen text-white overflow-x-hidden scroll-smooth" style={{ background: "#050505", ...sf }}>
+      <header className="h-16 flex items-center justify-between px-6 lg:px-12 sticky top-0 z-[100]" style={{ background: "rgba(5, 5, 5, 0.9)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        <div className="flex items-center gap-3">
+          <Link href="/" className="h-8 w-8 rounded-lg flex items-center justify-center" style={{ background: "#c65f39" }}>
             <span className="text-white font-bold text-sm tracking-tighter">F</span>
           </Link>
-          <Link href="/" className="text-xl font-bold tracking-tighter text-white font-outfit">
-            flowcore
+          <Link href="/" className="text-base font-medium tracking-tight" style={{ color: "#c0c0c0", letterSpacing: "-0.01em" }}>
+            FlowCore
           </Link>
         </div>
-        
-        <nav className="hidden md:flex items-center gap-8">
-          <div className="relative group">
-            <button className="text-sm text-neutral-400 hover:text-white transition-colors font-medium flex items-center gap-1 py-2">
-              Industries <ChevronDown className="h-3 w-3 opacity-60" />
-            </button>
-            <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 w-[480px] bg-[#11100f] border border-white/5 rounded-xl shadow-2xl p-6 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 grid grid-cols-2 gap-4">
-              <div>
-                <div className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-2">FlowCore by Industry</div>
-                <div className="space-y-2">
-                  <div className="hover:bg-white/5 p-1.5 rounded-lg transition-colors cursor-pointer">
-                    <div className="font-bold text-xs text-white">Hospitality</div>
-                    <div className="text-[10px] text-neutral-500">Automate guest check-in & STR operations</div>
-                  </div>
-                  <div className="hover:bg-white/5 p-1.5 rounded-lg transition-colors cursor-pointer">
-                    <div className="font-bold text-xs text-white">Property Management</div>
-                    <div className="text-[10px] text-neutral-500">From tour booked to lease signed</div>
-                  </div>
-                  <div className="hover:bg-white/5 p-1.5 rounded-lg transition-colors cursor-pointer">
-                    <div className="font-bold text-xs text-white">Home services</div>
-                    <div className="text-[10px] text-neutral-500">AI that answers calls and books services</div>
-                  </div>
-                </div>
-              </div>
-              <div>
-                <div className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-2">Learn More</div>
-                <div className="space-y-2">
-                  <div className="hover:bg-white/5 p-1.5 rounded-lg transition-colors cursor-pointer">
-                    <div className="font-bold text-xs text-white">Book a Demo</div>
-                    <div className="text-[10px] text-neutral-500">Connect with our team to see in action</div>
-                  </div>
-                  <div className="hover:bg-white/5 p-1.5 rounded-lg transition-colors cursor-pointer">
-                    <div className="font-bold text-xs text-white">ROI Calculator</div>
-                    <div className="text-[10px] text-neutral-500">Calculate FlowCore's Impact</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <Link href="/pricing" className="text-sm text-neutral-400 hover:text-white transition-colors font-medium">Customers</Link>
-          <Link href="/pricing" className="text-sm text-neutral-400 hover:text-white transition-colors font-medium">Pricing</Link>
-          <div className="relative group">
-            <button className="text-sm text-neutral-400 hover:text-white transition-colors font-medium flex items-center gap-1 py-2">
-              Resources <ChevronDown className="h-3 w-3 opacity-60" />
-            </button>
-            <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 w-48 bg-[#11100f] border border-white/5 rounded-xl shadow-2xl p-2 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200">
-              <Link href="/faq" className="block hover:bg-white/5 p-2 rounded-lg text-xs font-semibold text-white">FAQ</Link>
-              <Link href="/changelog" className="block hover:bg-white/5 p-2 rounded-lg text-xs font-semibold text-white">Changelog</Link>
-              <Link href="/legal" className="block hover:bg-white/5 p-2 rounded-lg text-xs font-semibold text-white">Legal</Link>
-            </div>
-          </div>
+
+        <nav className="hidden md:flex items-center gap-1">
+          <Link href="/login" className="px-4 py-2 text-sm font-normal" style={{ color: "#595859" }}>Product</Link>
+          <Link href="/pricing" className="px-4 py-2 text-sm font-normal" style={{ color: "#595859" }}>Pricing</Link>
+          <Link href="/faq" className="px-4 py-2 text-sm font-normal" style={{ color: "#595859" }}>FAQ</Link>
+          <Link href="/changelog" className="px-4 py-2 text-sm font-normal" style={{ color: "#595859" }}>Changelog</Link>
         </nav>
 
-        <div className="flex items-center gap-6">
-          <Link href="/login" className="text-sm font-medium text-neutral-400 hover:text-white transition-colors">Book Demo</Link>
-          <Button asChild className="rounded-lg h-9 px-4 bg-[#222222] border border-neutral-800 text-white hover:bg-neutral-800 transition-all text-xs font-medium">
-             <Link href="/login">Sign In</Link>
+        <div className="flex items-center gap-3">
+          <Button asChild className="h-9 px-4 rounded-[100px] text-sm font-normal" style={{ background: "rgba(255,255,255,0.06)", color: "#c0c0c0", border: "none" }}>
+            <Link href="/login">Sign In</Link>
           </Button>
         </div>
       </header>
 
       <main>
-        {/* HERO SECTION (Dark Theme) */}
-        <section className="relative pt-32 pb-48 px-6 lg:px-12 overflow-hidden flex flex-col items-center bg-[#050505]">
-          {/* Warm orange radial glows in the background */}
-          <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-gradient-radial from-[#D95E46]/18 via-[#D95E46]/6 to-transparent rounded-full blur-[110px] pointer-events-none z-0" />
-          <div className="absolute top-[10%] left-1/2 -translate-x-1/2 w-[700px] h-[450px] bg-[#D95E46]/10 rounded-full blur-[90px] pointer-events-none z-0" />
+        <section className="relative pt-32 pb-48 px-6 overflow-hidden flex flex-col items-center">
+          <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[800px] h-[500px] rounded-full pointer-events-none z-0" style={{ background: "radial-gradient(ellipse at center, rgba(198, 95, 57, 0.12) 0%, transparent 70%)" }} />
 
-          <div className="max-w-4xl mx-auto text-center relative z-10 space-y-10">
-            <div className="space-y-6">
-               <h1 className="text-5xl sm:text-6xl lg:text-[70.5px] font-bold leading-[1.1] tracking-tighter text-white font-outfit">
-                 Automated customer<br/>
-                 service <span className="text-[#D95E46] italic font-outfit">assistants</span>
-               </h1>
-               <p className="text-lg text-neutral-400 font-medium max-w-xl mx-auto leading-relaxed">
-                 Connect specialized AI to manage and resolve your customer conversations with business precision.
-               </p>
+          <div className="max-w-[820px] mx-auto text-center relative z-10 space-y-8">
+            <div className="space-y-5">
+              <h1 className="font-normal leading-[1.1] tracking-tight text-white" style={{ fontSize: "54.8345px", lineHeight: "63.0597px", letterSpacing: "-0.15667px" }}>
+                Automated customer<br/>
+                service <span style={{ color: "#c65f39" }}>assistants</span>
+              </h1>
+              <p className="max-w-xl mx-auto leading-relaxed font-normal" style={{ fontSize: "15.667px", color: "#595859" }}>
+                Connect specialized AI to manage and resolve your customer conversations with business precision.
+              </p>
             </div>
 
-            <div className="max-w-md mx-auto">
+            <div className="max-w-sm mx-auto">
               <form 
                 onSubmit={(e) => {
                   e.preventDefault()
                   router.push(`/login?email=${encodeURIComponent(email)}`)
                 }}
-                className="flex p-1 bg-white/5 border border-white/10 rounded-xl focus-within:border-[#D95E46]/30 transition-all"
+                className="flex p-1 rounded-xl focus-within:border transition-all" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
               >
-                 <Input 
-                   type="email"
-                   placeholder="you@company.com" 
-                   value={email}
-                   onChange={(e) => setEmail(e.target.value)}
-                   required
-                   className="bg-transparent border-none text-white h-11 px-4 focus-visible:ring-0 placeholder:text-neutral-600 text-sm"
-                 />
-                 <Button type="submit" className="h-11 px-6 rounded-lg bg-[#D95E46] hover:bg-[#D95E46]/90 text-white font-semibold text-sm whitespace-nowrap transition-all flex items-center gap-1">
-                   Get Started <ArrowUpRight className="h-4 w-4" />
-                 </Button>
+                <Input 
+                  type="email"
+                  placeholder="you@company.com" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="bg-transparent border-none h-11 px-4 focus-visible:ring-0 text-sm font-normal" style={{ color: "#fff", "--tw-placeholder-color": "#595859" } as any}
+                />
+                <Button type="submit" className="h-11 px-5 rounded-lg text-sm font-normal flex items-center gap-1" style={{ background: "#c65f39", color: "#fff" }}>
+                  Get Started <ArrowUpRight className="h-4 w-4" />
+                </Button>
               </form>
             </div>
           </div>
 
-          {/* Landing Page Dashboard Preview Container */}
-          <div className="w-full max-w-5xl px-6 relative z-30 mt-24">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[350px] bg-[#D95E46]/18 rounded-full blur-[100px] pointer-events-none -z-10 animate-pulse" />
-            <div className="bg-[#11100f] rounded-2xl border border-white/[0.06] overflow-hidden shadow-2xl ring-1 ring-white/[0.02]">
-              <div className="flex items-center justify-between h-10 px-5 border-b border-white/[0.06] bg-[#0c0c0b]">
+          <div className="w-full max-w-[980px] px-6 relative z-30 mt-32">
+            <div className="rounded-2xl overflow-hidden shadow-2xl" style={{ background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.06)" }}>
+              <div className="flex items-center justify-between h-10 px-5" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: "#080808" }}>
                 <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-neutral-800" />
-                  <div className="h-2 w-2 rounded-full bg-neutral-800" />
-                  <div className="h-2 w-2 rounded-full bg-neutral-800" />
+                  <div className="h-2 w-2 rounded-full" style={{ background: "#2a2a2a" }} />
+                  <div className="h-2 w-2 rounded-full" style={{ background: "#2a2a2a" }} />
+                  <div className="h-2 w-2 rounded-full" style={{ background: "#2a2a2a" }} />
                 </div>
-                <div className="flex items-center gap-2 px-3 py-1 bg-white/[0.04] rounded-md">
-                  <div className="h-1 w-1 rounded-full bg-[#D95E46]" />
-                  <span className="text-[9px] font-medium text-neutral-500 font-mono">app.flowcore.ai</span>
+                <div className="flex items-center gap-2 px-3 py-1 rounded-md" style={{ background: "rgba(255,255,255,0.03)" }}>
+                  <div className="h-1 w-1 rounded-full" style={{ background: "#c65f39" }} />
+                  <span className="text-[9px] font-normal" style={{ color: "#595859" }}>app.flowcore.ai</span>
                 </div>
-                <div className="h-4 w-4 rounded bg-white/[0.06] flex items-center justify-center text-[7px] font-semibold text-neutral-500">F</div>
+                <div className="h-4 w-4 rounded flex items-center justify-center text-[7px] font-semibold" style={{ background: "rgba(255,255,255,0.04)", color: "#595859" }}>F</div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-4 h-[350px] text-xs text-neutral-400">
-                <div className="border-r border-white/5 p-4 space-y-4 hidden md:block bg-[#0e0e0d]">
-                  <div className="font-semibold text-neutral-200 flex items-center gap-2"><Inbox className="h-4 w-4 text-[#D95E46]" /> Inbox</div>
+              <div className="grid grid-cols-1 md:grid-cols-4 h-[350px]" style={{ color: "#595859" }}>
+                <div className="p-4 space-y-4 hidden md:block" style={{ borderRight: "1px solid rgba(255,255,255,0.05)", background: "#090909" }}>
+                  <div className="font-normal flex items-center gap-2" style={{ color: "#c0c0c0", fontSize: "13.7086px" }}><Inbox className="h-4 w-4" style={{ color: "#c65f39" }} /> Inbox</div>
                   <div className="space-y-1">
-                    <div className="p-2 rounded-lg bg-white/5 border border-white/5 text-white">
-                      <div className="font-bold text-[11px] flex justify-between">Will Garman <span className="text-[9px] text-[#D95E46]">Active</span></div>
-                      <div className="text-[10px] text-neutral-400 truncate">I was wondering if I can extend...</div>
+                    <div className="p-2 rounded-lg" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                      <div className="flex justify-between" style={{ color: "#fff", fontSize: "11px" }}>Will Garman <span style={{ color: "#c65f39", fontSize: "9px" }}>Active</span></div>
+                      <div style={{ fontSize: "10px", color: "#595859" }}>I was wondering if I can extend...</div>
                     </div>
                     <div className="p-2 rounded-lg opacity-40">
-                      <div className="font-bold text-[11px]">Jane Doe</div>
-                      <div className="text-[10px] text-neutral-400 truncate">Book a double room for next Friday</div>
+                      <div style={{ color: "#fff", fontSize: "11px" }}>Jane Doe</div>
+                      <div style={{ fontSize: "10px", color: "#595859" }}>Book a double room for next Friday</div>
                     </div>
                   </div>
                 </div>
-                <div className="md:col-span-2 p-4 flex flex-col justify-between h-full bg-[#11100f]">
+                <div className="md:col-span-2 p-4 flex flex-col justify-between h-full" style={{ background: "#0a0a0a" }}>
                   <div className="space-y-4">
                     <div className="flex gap-2">
-                      <div className="h-6 w-6 rounded-full bg-[#D95E46]/20 flex items-center justify-center text-[9px] text-[#D95E46] font-bold">WG</div>
-                      <div className="bg-white/5 border border-white/5 p-2.5 rounded-2xl max-w-[80%] text-neutral-300">
+                      <div className="h-6 w-6 rounded-full flex items-center justify-center text-[9px] font-bold" style={{ background: "rgba(198, 95, 57, 0.2)", color: "#c65f39" }}>WG</div>
+                      <div className="p-2.5 rounded-2xl max-w-[80%]" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.05)", color: "#c0c0c0", fontSize: "13px" }}>
                         I was wondering if I can extend my upcoming stay to checkout one day later??
                       </div>
                     </div>
                     <div className="flex gap-2 justify-end">
-                      <div className="bg-[#D95E46]/10 border border-[#D95E46]/20 p-2.5 rounded-2xl max-w-[80%] text-neutral-200">
-                        <span className="block text-[9px] text-[#D95E46] font-bold mb-0.5">Support Agent • Sent by AI</span>
+                      <div className="p-2.5 rounded-2xl max-w-[80%]" style={{ background: "rgba(198, 95, 57, 0.08)", border: "1px solid rgba(198, 95, 57, 0.15)", color: "#c0c0c0", fontSize: "13px" }}>
+                        <span className="block mb-0.5" style={{ color: "#c65f39", fontSize: "9px" }}>Support Agent</span>
                         Let me query availability for property 230CALST. One moment.
                       </div>
                     </div>
                   </div>
-                  <div className="p-1.5 bg-white/5 rounded-xl border border-white/5 flex gap-2 items-center">
-                    <input type="text" placeholder="Type a message..." className="bg-transparent flex-1 border-none focus:outline-none text-[11px] px-2 text-white" disabled />
-                    <button className="bg-[#D95E46] text-white p-1 rounded-lg"><Send className="h-3 w-3" /></button>
+                  <div className="p-1.5 rounded-xl flex gap-2 items-center" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                    <input type="text" placeholder="Type a message..." className="bg-transparent flex-1 border-none focus:outline-none px-2" style={{ color: "#fff", fontSize: "11px" }} disabled />
+                    <button className="p-1 rounded-lg" style={{ background: "#c65f39", color: "#fff" }}><Send className="h-3 w-3" /></button>
                   </div>
                 </div>
-                <div className="p-4 space-y-4 hidden md:block bg-[#0e0e0d]">
-                  <div className="font-semibold text-neutral-200 flex items-center gap-2"><BarChart2 className="h-4 w-4 text-[#D95E46]" /> Analytics</div>
+                <div className="p-4 space-y-4 hidden md:block" style={{ background: "#090909" }}>
+                  <div className="font-normal flex items-center gap-2" style={{ color: "#c0c0c0", fontSize: "13.7086px" }}><BarChart2 className="h-4 w-4" style={{ color: "#c65f39" }} /> Analytics</div>
                   <div className="space-y-3">
-                    <div className="bg-white/5 p-3 rounded-xl border border-white/5">
-                      <div className="text-[10px] text-neutral-500">AI Automation Rate</div>
-                      <div className="text-xl font-bold text-white tracking-tight mt-0.5">70.6%</div>
+                    <div className="p-3 rounded-xl" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                      <div style={{ color: "#595859", fontSize: "10px" }}>AI Automation Rate</div>
+                      <div className="mt-0.5" style={{ color: "#fff", fontSize: "24px", fontWeight: 300, letterSpacing: "-0.01em" }}>70.6%</div>
                     </div>
                   </div>
                 </div>
@@ -236,106 +177,104 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* LOGO CLOUD (Light Theme) */}
-        <section className="py-16 bg-[#ffffff] border-t border-neutral-100 flex flex-col items-center">
-          <div className="text-[11px] font-bold text-neutral-400 uppercase tracking-widest mb-10 text-center font-sans">
-            500+ TEAMS SUPERCHARGE THEIR SERVICE WITH FLOWCORE
+        <section className="py-24 px-6 flex flex-col items-center" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="max-w-[820px] mx-auto text-center space-y-4">
+            <p className="text-sm font-normal" style={{ color: "#595859" }}>
+              500+ teams supercharge their service with FlowCore
+            </p>
           </div>
-          <div className="flex flex-wrap justify-center items-center gap-x-12 gap-y-6 max-w-6xl px-6 opacity-60">
-            {["haus", "Hallson", "CAPITALIA", "HostGenius", "renjoy", "BOCOBAY", "Casioa", "MerchFarm", "Pass the Keys", "alloggio"].map((brand, i) => (
-              <span key={i} className="text-lg font-extrabold text-neutral-900 tracking-tighter hover:opacity-100 transition-opacity select-none cursor-default font-outfit">
+          <div className="flex flex-wrap justify-center items-center gap-x-12 gap-y-6 max-w-4xl px-6 mt-8" style={{ opacity: 0.4 }}>
+            {["Haus", "Hallson", "Capitalia", "HostGenius", "Renjoy", "Bocobay", "Casioa", "MerchFarm"].map((brand, i) => (
+              <span key={i} className="text-base font-normal tracking-tight select-none cursor-default" style={{ color: "#fff" }}>
                 {brand}
               </span>
             ))}
           </div>
         </section>
 
-        {/* HANDLE COMMUNICATION END-TO-END (Light Theme) */}
-        <section className="py-20 bg-[#ffffff] text-center px-6">
-          <div className="max-w-3xl mx-auto space-y-4">
-            <h2 className="text-4xl sm:text-[43px] font-light text-neutral-900 tracking-tight leading-tight font-outfit">
+        <section className="py-24 px-6 lg:px-12" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="max-w-[820px] mx-auto space-y-6">
+            <p className="text-sm font-normal" style={{ color: "#c65f39" }}>Platform</p>
+            <h2 className="font-normal tracking-tight text-white" style={{ fontSize: "35.2508px", lineHeight: "44.0635px", letterSpacing: "-0.15667px" }}>
               Handle communication end-to-end
             </h2>
-            <p className="text-base text-neutral-500 max-w-xl mx-auto leading-relaxed">
+            <p className="max-w-lg leading-relaxed font-normal" style={{ fontSize: "15.667px", color: "#595859" }}>
               FlowCore keeps your team focused by intelligently handling communications and escalating only the critical moments.
             </p>
           </div>
         </section>
 
-        {/* SEE ROI IN 30 DAYS (Light Theme) */}
-        <section className="py-24 bg-[#ffffff] text-neutral-900 border-t border-neutral-100 px-6 lg:px-12">
-          <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+        <section className="py-24 px-6 lg:px-12" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="max-w-[820px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <motion.div {...fadeInUp} className="space-y-6">
-              <span className="text-xs font-bold text-[#D95E46] uppercase tracking-wider">Reporting & Insights</span>
-              <h2 className="text-4xl sm:text-[43px] font-normal tracking-tight leading-tight font-outfit text-neutral-900">
+              <p className="text-sm font-normal" style={{ color: "#c65f39" }}>Reporting</p>
+              <h2 className="font-normal tracking-tight text-white" style={{ fontSize: "35.2508px", lineHeight: "44.0635px", letterSpacing: "-0.15667px" }}>
                 See ROI in 30 days
               </h2>
-              <p className="text-base text-neutral-500 leading-relaxed max-w-md">
+              <p className="leading-relaxed max-w-md font-normal" style={{ fontSize: "15.667px", color: "#595859" }}>
                 AI insights to help monitor, evaluate, and continuously optimize your conversations.
               </p>
-              <Button asChild className="h-11 px-6 rounded-xl bg-[#D95E46] hover:bg-[#D95E46]/90 text-white font-bold text-xs transition-all active:scale-95 shadow-lg flex items-center gap-1.5 w-fit">
+              <Button asChild className="h-11 px-5 rounded-[100px] text-sm font-normal flex items-center gap-1" style={{ background: "#c65f39", color: "#fff" }}>
                 <Link href="/login">Book Demo <ArrowUpRight className="h-4 w-4" /></Link>
               </Button>
             </motion.div>
 
-            <motion.div {...fadeInUp} className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-2xl relative overflow-hidden">
+            <motion.div {...fadeInUp} className="p-6 rounded-2xl overflow-hidden" style={{ background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.06)" }}>
               <div className="space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-neutral-100 pb-4">
-                  <div className="flex items-center gap-2 text-xs font-semibold text-neutral-800">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                  <div className="flex items-center gap-2" style={{ fontSize: "13px", color: "#c0c0c0" }}>
                     <span>Last 7 days</span>
-                    <span className="text-neutral-400">compared to</span>
-                    <span className="text-neutral-600 border border-neutral-200 px-2 py-0.5 rounded bg-neutral-50">Previous period</span>
+                    <span style={{ color: "#595859" }}>compared to</span>
+                    <span className="px-2 py-0.5 rounded" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#595859" }}>Previous period</span>
                   </div>
-                  <div className="text-[10px] text-neutral-400 font-mono">Aug 22, 2025 - Aug 29, 2025</div>
+                  <div style={{ color: "#595859", fontSize: "10px" }}>Aug 22, 2025 - Aug 29, 2025</div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-8">
                   <div>
-                    <div className="text-[10px] text-neutral-400 uppercase font-bold tracking-wider">AI automation rate</div>
+                    <div style={{ color: "#595859", fontSize: "10px", letterSpacing: "0.05em" }}>AI automation rate</div>
                     <div className="flex items-baseline gap-2 mt-1">
-                      <span className="text-3xl font-extrabold text-neutral-900 tracking-tight font-outfit">70.6%</span>
-                      <span className="text-[10px] font-bold bg-neutral-100 text-neutral-500 px-1.5 py-0.5 rounded">-8.1%</span>
+                      <span className="tracking-tight" style={{ color: "#fff", fontSize: "32px", fontWeight: 300 }}>70.6%</span>
+                      <span className="px-1.5 py-0.5 rounded" style={{ background: "rgba(255,255,255,0.04)", color: "#595859", fontSize: "10px" }}>-8.1%</span>
                     </div>
-                    <div className="text-[9px] text-neutral-400 mt-1">78.7% previous period</div>
+                    <div style={{ color: "#595859", fontSize: "9px", marginTop: "4px" }}>78.7% previous period</div>
                   </div>
                   <div>
-                    <div className="text-[10px] text-neutral-400 uppercase font-bold tracking-wider">Open ticket count</div>
+                    <div style={{ color: "#595859", fontSize: "10px", letterSpacing: "0.05em" }}>Open ticket count</div>
                     <div className="flex items-baseline gap-2 mt-1">
-                      <span className="text-3xl font-extrabold text-neutral-900 tracking-tight font-outfit">133</span>
+                      <span className="tracking-tight" style={{ color: "#fff", fontSize: "32px", fontWeight: 300 }}>133</span>
                     </div>
-                    <div className="text-[9px] text-neutral-400 mt-1">90 previous period</div>
+                    <div style={{ color: "#595859", fontSize: "9px", marginTop: "4px" }}>90 previous period</div>
                   </div>
                 </div>
 
-                {/* Line Chart */}
-                <div className="h-32 w-full bg-neutral-50 rounded-xl border border-neutral-200/60 overflow-hidden relative">
+                <div className="h-32 w-full rounded-xl overflow-hidden relative" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
                   <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 100 100">
                     <defs>
-                      <linearGradient id="light-chart-grad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.1" />
-                        <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
+                      <linearGradient id="chart-grad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#c65f39" stopOpacity="0.15" />
+                        <stop offset="100%" stopColor="#c65f39" stopOpacity="0" />
                       </linearGradient>
                     </defs>
-                    <path d="M0,80 C20,70 40,30 60,50 C80,70 90,20 100,10 L100,100 L0,100 Z" fill="url(#light-chart-grad)" />
-                    <path d="M0,80 C20,70 40,30 60,50 C80,70 90,20 100,10" fill="none" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" />
+                    <path d="M0,80 C20,70 40,30 60,50 C80,70 90,20 100,10 L100,100 L0,100 Z" fill="url(#chart-grad)" />
+                    <path d="M0,80 C20,70 40,30 60,50 C80,70 90,20 100,10" fill="none" stroke="#c65f39" strokeWidth="2" strokeLinecap="round" />
                   </svg>
                 </div>
 
-                {/* Escalations Breakdown */}
                 <div className="space-y-3 pt-2">
-                  <div className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">Escalations</div>
-                  <div className="space-y-2 text-xs">
+                  <div style={{ color: "#595859", fontSize: "10px", letterSpacing: "0.05em" }}>Escalations</div>
+                  <div className="space-y-2" style={{ fontSize: "13px" }}>
                     <div className="space-y-1">
-                      <div className="flex justify-between font-medium text-neutral-700"><span>AI missing info</span><span className="font-bold text-neutral-900">19 <span className="text-[10px] text-neutral-400 font-normal">(52.8%)</span></span></div>
-                      <div className="h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden"><div className="h-full w-[52.8%] bg-[#D95E46]" /></div>
+                      <div className="flex justify-between" style={{ color: "#c0c0c0" }}><span>AI missing info</span><span style={{ color: "#fff" }}>19 <span style={{ color: "#595859", fontWeight: 400 }}>(52.8%)</span></span></div>
+                      <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}><div className="h-full w-[52.8%] rounded-full" style={{ background: "#c65f39" }} /></div>
                     </div>
                     <div className="space-y-1">
-                      <div className="flex justify-between font-medium text-neutral-700"><span>AI needs your help</span><span className="font-bold text-neutral-900">10 <span className="text-[10px] text-neutral-400 font-normal">(27.8%)</span></span></div>
-                      <div className="h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden"><div className="h-full w-[27.8%] bg-amber-500" /></div>
+                      <div className="flex justify-between" style={{ color: "#c0c0c0" }}><span>AI needs your help</span><span style={{ color: "#fff" }}>10 <span style={{ color: "#595859", fontWeight: 400 }}>(27.8%)</span></span></div>
+                      <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}><div className="h-full w-[27.8%] rounded-full" style={{ background: "#f59e0b" }} /></div>
                     </div>
                     <div className="space-y-1">
-                      <div className="flex justify-between font-medium text-neutral-700"><span>Urgent tagged</span><span className="font-bold text-neutral-900">7 <span className="text-[10px] text-neutral-400 font-normal">(19.4%)</span></span></div>
-                      <div className="h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden"><div className="h-full w-[19.4%] bg-rose-500" /></div>
+                      <div className="flex justify-between" style={{ color: "#c0c0c0" }}><span>Urgent tagged</span><span style={{ color: "#fff" }}>7 <span style={{ color: "#595859", fontWeight: 400 }}>(19.4%)</span></span></div>
+                      <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}><div className="h-full w-[19.4%] rounded-full" style={{ background: "#e11d48" }} /></div>
                     </div>
                   </div>
                 </div>
@@ -344,106 +283,46 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* EVERYTHING IN ONE PLACE (Light Theme) */}
-        <section className="py-24 bg-[#ffffff] text-neutral-900 border-t border-neutral-100 px-6 lg:px-12">
-          <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            <motion.div {...fadeInUp} className="space-y-6 lg:order-last">
-              <span className="text-xs font-bold text-[#D95E46] uppercase tracking-wider">AI-Native Unified Inbox</span>
-              <h2 className="text-4xl sm:text-[43px] font-normal tracking-tight leading-tight font-outfit text-neutral-900">
-                Everything in one place
-              </h2>
-              <p className="text-base text-neutral-500 leading-relaxed max-w-md">
-                When automation ends, your control begins — streamline every conversation your AI can't handle in one place. Teach AI natively in the inbox and automate the future.
-              </p>
-              <Button asChild className="h-11 px-6 rounded-xl bg-[#D95E46] hover:bg-[#D95E46]/90 text-white font-bold text-xs transition-all active:scale-95 shadow-lg flex items-center gap-1.5 w-fit">
-                <Link href="/login">Book Demo <ArrowUpRight className="h-4 w-4" /></Link>
-              </Button>
-            </motion.div>
-
-            <motion.div {...fadeInUp} className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-2xl relative grid grid-cols-3 gap-4 h-[420px] text-[11px] text-neutral-600">
-              {/* Inbox Details Left */}
-              <div className="col-span-2 space-y-4 border-r border-neutral-100 pr-4 flex flex-col justify-between h-full">
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-neutral-100 flex items-center justify-center text-xs font-bold text-neutral-700">WG</div>
-                    <div>
-                      <div className="font-bold text-neutral-900">Will Garman</div>
-                      <div className="text-[9px] text-neutral-400">LT 2:18 PM • YT 2:18 PM</div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    <div className="bg-neutral-50 border border-neutral-200/60 p-2.5 rounded-xl text-neutral-700 max-w-[90%]">
-                      <span className="block text-[8px] text-neutral-400 uppercase font-bold mb-0.5">Will Garman</span>
-                      I was wondering if I can extend my upcoming stay to checkout one day later??
-                    </div>
-                  </div>
-                  
-                  <div className="flex gap-2 justify-end">
-                    <div className="bg-[#D95E46]/5 border border-[#D95E46]/20 p-2.5 rounded-xl text-neutral-800 max-w-[90%] text-right">
-                      <span className="block text-[8px] text-[#D95E46] font-bold mb-0.5">Support Agent • Sent by AI</span>
-                      Let me query availability for property 230CALST. One moment.
-                    </div>
-                  </div>
-
-                  <div className="bg-emerald-50 border border-emerald-200 p-2 rounded-xl text-emerald-600 text-[10px]">
-                    ✔ Availability lookup successful. Date: 04/10/2025. Status: Available.
-                  </div>
-                </div>
-
-                <div className="p-1.5 bg-neutral-50 border border-neutral-200 rounded-xl flex gap-2 items-center">
-                  <input type="text" placeholder="Type a message..." className="bg-transparent flex-1 border-none focus:outline-none text-[10px] px-2 text-neutral-800" disabled />
-                  <button className="bg-[#D95E46] text-white p-1 rounded-lg"><Send className="h-3 w-3" /></button>
-                </div>
-              </div>
-
-              {/* Sidebar Right */}
-              <div className="space-y-4">
-                <div className="space-y-1">
-                  <div className="text-[9px] text-neutral-400 uppercase font-bold">During Stay</div>
-                  <div className="flex justify-between border-b border-neutral-100 pb-1 text-[10px] font-semibold text-neutral-700">
-                    <span className="text-neutral-400">BEFORE</span>
-                    <span className="text-neutral-900 border-b-2 border-neutral-900">DURING</span>
-                  </div>
-                </div>
-                <div className="bg-neutral-50 p-2 rounded-lg border border-neutral-100 text-[9px] text-neutral-500 leading-normal">
-                  ✨ Will is doing pretty well. The guest is coming for an upcoming stay and wants to extend their stay.
-                </div>
-                <div className="flex flex-wrap gap-1">
-                  <span className="px-2 py-0.5 bg-rose-50 border border-rose-100 text-rose-600 rounded text-[9px]">Access Issue</span>
-                  <span className="px-2 py-0.5 bg-neutral-100 text-neutral-600 rounded text-[9px]">Extend Request</span>
-                </div>
-              </div>
-            </motion.div>
+        <section className="py-24 px-6 lg:px-12" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="max-w-[820px] mx-auto space-y-6">
+            <p className="text-sm font-normal" style={{ color: "#c65f39" }}>Unified Inbox</p>
+            <h2 className="font-normal tracking-tight text-white" style={{ fontSize: "35.2508px", lineHeight: "44.0635px", letterSpacing: "-0.15667px" }}>
+              Everything in one place
+            </h2>
+            <p className="max-w-lg leading-relaxed font-normal" style={{ fontSize: "15.667px", color: "#595859" }}>
+              When automation ends, your control begins — streamline every conversation your AI can't handle in one place.
+            </p>
+            <Button asChild className="h-11 px-5 rounded-[100px] text-sm font-normal flex items-center gap-1" style={{ background: "#c65f39", color: "#fff" }}>
+              <Link href="/login">Book Demo <ArrowUpRight className="h-4 w-4" /></Link>
+            </Button>
           </div>
         </section>
 
-        {/* INTEGRATIONS GRID (Light Theme) */}
-        <section className="py-24 bg-[#ffffff] border-t border-neutral-100 px-6 text-center">
-          <div className="max-w-4xl mx-auto space-y-12">
-            <div className="space-y-4">
-              <h2 className="text-4xl sm:text-[43px] font-normal text-neutral-900 tracking-tight leading-tight font-outfit">
+        <section className="py-24 px-6 lg:px-12" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="max-w-[820px] mx-auto space-y-12">
+            <div className="text-center space-y-6">
+              <p className="text-sm font-normal" style={{ color: "#c65f39" }}>Integrations</p>
+              <h2 className="font-normal tracking-tight text-white" style={{ fontSize: "35.2508px", lineHeight: "44.0635px", letterSpacing: "-0.15667px" }}>
                 Integrate with every aspect of your tech stack
               </h2>
-              <p className="text-base text-neutral-500 max-w-xl mx-auto">
+              <p className="max-w-lg mx-auto leading-relaxed font-normal" style={{ fontSize: "15.667px", color: "#595859" }}>
                 Give agents the tools to succeed, backed by enterprise-grade security and SOC 2 Type II compliance.
               </p>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-3xl mx-auto">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-lg mx-auto">
               {[
-                { logo: WhatsAppLogo, label: "WhatsApp", sub: "Connected" },
-                { logo: GoogleSheetsLogo, label: "Google Sheets", sub: "Synced" },
-                { logo: GoogleCalendarLogo, label: "Google Calendar", sub: "Synced" },
-                { logo: () => <Globe className="h-full w-full text-neutral-600" />, label: "Webchat", sub: "Active" }
+                { logo: WhatsAppLogo, label: "WhatsApp" },
+                { logo: GoogleSheetsLogo, label: "Google Sheets" },
+                { logo: GoogleCalendarLogo, label: "Google Calendar" },
+                { logo: () => <Globe className="h-full w-full" style={{ color: "#595859" }} />, label: "Webchat" }
               ].map((node, i) => (
-                <div key={i} className="p-6 bg-neutral-50 border border-neutral-200/80 rounded-xl flex flex-col items-center gap-4 hover:bg-neutral-100 transition-all duration-300">
-                  <div className="h-12 w-12 bg-white rounded-lg flex items-center justify-center p-2.5 shadow-sm border border-neutral-100">
+                <div key={i} className="p-6 rounded-xl flex flex-col items-center gap-4 transition-all duration-300" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                  <div className="h-12 w-12 rounded-lg flex items-center justify-center p-2.5" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.06)" }}>
                     <node.logo className="h-full w-full" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-neutral-900">{node.label}</h4>
-                    <p className="text-[9px] font-semibold text-neutral-400 mt-0.5">{node.sub}</p>
+                    <h4 className="text-sm font-normal" style={{ color: "#c0c0c0" }}>{node.label}</h4>
                   </div>
                 </div>
               ))}
@@ -451,59 +330,32 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* TRANSFORM THE WAY YOUR TEAM OPERATES (Dark Theme) */}
-        <section className="py-24 bg-[#050505] text-white px-6 lg:px-12 relative overflow-hidden border-t border-white/[0.04]">
-          <div className="absolute top-1/2 right-0 w-[500px] h-[500px] bg-[#D95E46]/5 blur-[100px] rounded-full translate-x-1/2 pointer-events-none" />
-          <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+        <section className="py-24 px-6 lg:px-12 relative overflow-hidden" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="absolute top-1/2 right-0 w-[400px] h-[400px] rounded-full translate-x-1/2 pointer-events-none" style={{ background: "radial-gradient(circle, rgba(198, 95, 57, 0.08) 0%, transparent 60%)" }} />
+          <div className="max-w-[820px] mx-auto space-y-8">
             <div className="space-y-6">
-              <span className="text-xs font-bold text-neutral-500 uppercase tracking-widest">LEARN MORE</span>
-              <h2 className="text-4xl sm:text-[43px] font-normal tracking-tight leading-tight font-outfit text-white">
-                Transform the way your team operates
+              <p className="text-sm font-normal" style={{ color: "#c65f39" }}>Enterprise</p>
+              <h2 className="font-normal tracking-tight text-white" style={{ fontSize: "35.2508px", lineHeight: "44.0635px", letterSpacing: "-0.15667px" }}>
+                Built for Enterprise Security and Privacy
               </h2>
-              <div className="flex flex-wrap gap-4">
-                <Button asChild className="h-11 px-6 rounded-xl bg-[#D95E46] hover:bg-[#D95E46]/90 text-white font-bold text-xs transition-all active:scale-95 shadow-lg flex items-center gap-1">
-                  <Link href="/login">Talk to Sales <ArrowUpRight className="h-4 w-4" /></Link>
-                </Button>
-                <Button asChild className="h-11 px-6 rounded-xl bg-transparent border border-neutral-800 text-white hover:bg-white/5 font-bold text-xs transition-all flex items-center gap-1">
-                  <Link href="/login">Calculate your ROI <ArrowUpRight className="h-4 w-4" /></Link>
-                </Button>
-              </div>
             </div>
 
-            {/* Simulated Metallic Ring Design */}
-            <div className="relative h-64 flex items-center justify-center lg:justify-end">
-              <div className="h-48 w-48 rounded-full border-8 border-neutral-800 border-t-[#D95E46] animate-spin opacity-45" style={{ animationDuration: '8s' }} />
-              <div className="absolute h-32 w-32 rounded-full border-4 border-neutral-900 border-b-[#D95E46] animate-spin opacity-20" style={{ animationDuration: '4s', animationDirection: 'reverse' }} />
-            </div>
-          </div>
-        </section>
-
-        {/* BUILT FOR ENTERPRISE SECURITY (Light Theme) */}
-        <section className="py-24 bg-[#ffffff] text-neutral-900 border-t border-neutral-100 px-6 lg:px-12 text-center">
-          <div className="max-w-7xl mx-auto space-y-16">
-            <h2 className="text-4xl sm:text-[43px] font-normal text-neutral-900 tracking-tight leading-tight font-outfit">
-              Built for Enterprise Security and Privacy
-            </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="p-8 rounded-2xl border border-neutral-200 bg-white space-y-4 text-left shadow-sm">
-                <div className="h-10 w-10 bg-[#D95E46]/10 rounded-xl flex items-center justify-center text-[#D95E46]"><Shield className="h-5 w-5" /></div>
-                <h3 className="text-base font-bold text-neutral-900">SOC Type II</h3>
-                <p className="text-xs text-neutral-500 leading-relaxed font-medium">
-                  FlowCore meets SOC 2 Type II standards, ensuring secure handling of customer data across all AI-powered support and sales operations.
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="p-6 rounded-2xl space-y-4" style={{ background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.06)" }}>
+                <h3 className="text-base font-normal" style={{ color: "#fff" }}>SOC Type II</h3>
+                <p className="text-sm leading-relaxed font-normal" style={{ color: "#595859" }}>
+                  FlowCore meets SOC 2 Type II standards, ensuring secure handling of customer data across all AI-powered operations.
                 </p>
               </div>
-              <div className="p-8 rounded-2xl border border-neutral-200 bg-white space-y-4 text-left shadow-sm">
-                <div className="h-10 w-10 bg-[#D95E46]/10 rounded-xl flex items-center justify-center text-[#D95E46]"><Heart className="h-5 w-5" /></div>
-                <h3 className="text-base font-bold text-neutral-900">HIPAA</h3>
-                <p className="text-xs text-neutral-500 leading-relaxed font-medium">
-                  FlowCore is designed to support HIPAA-regulated workflows and implements administrative and technical safeguards to protect customer data.
+              <div className="p-6 rounded-2xl space-y-4" style={{ background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.06)" }}>
+                <h3 className="text-base font-normal" style={{ color: "#fff" }}>HIPAA</h3>
+                <p className="text-sm leading-relaxed font-normal" style={{ color: "#595859" }}>
+                  FlowCore is designed to support HIPAA-regulated workflows with administrative and technical safeguards.
                 </p>
               </div>
-              <div className="p-8 rounded-2xl border border-neutral-200 bg-white space-y-4 text-left shadow-sm">
-                <div className="h-10 w-10 bg-[#D95E46]/10 rounded-xl flex items-center justify-center text-[#D95E46]"><Lock className="h-5 w-5" /></div>
-                <h3 className="text-base font-bold text-neutral-900">Enterprise Security Controls</h3>
-                <p className="text-xs text-neutral-500 leading-relaxed font-medium">
+              <div className="p-6 rounded-2xl space-y-4" style={{ background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.06)" }}>
+                <h3 className="text-base font-normal" style={{ color: "#fff" }}>Enterprise Security</h3>
+                <p className="text-sm leading-relaxed font-normal" style={{ color: "#595859" }}>
                   End-to-end encryption, role-based access, audit logs, and secure model orchestration across all AI agents.
                 </p>
               </div>
@@ -512,83 +364,54 @@ export default function LandingPage() {
         </section>
       </main>
 
-      <footer className="bg-[#ffffff] text-neutral-900 border-t border-neutral-200/80 pt-16 pb-10 px-4 lg:px-12 relative z-50">
-         <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 mb-16 text-sm text-neutral-600">
-            <div className="col-span-2 md:col-span-3 lg:col-span-2 space-y-6">
-               <div className="flex items-center gap-2.5">
-                  <Link href="/" className="h-8 w-8 rounded-lg bg-[#D95E46] flex items-center justify-center shadow-sm hover:scale-105 transition-all duration-300">
-                     <span className="text-white font-bold text-sm tracking-tighter">F</span>
-                  </Link>
-                  <Link href="/" className="text-xl font-bold tracking-tighter text-neutral-900 font-outfit">
-                     flowcore
-                  </Link>
-               </div>
-               <p className="max-w-xs leading-relaxed text-neutral-500 text-xs font-medium">AI automation that transforms business communication.</p>
-               
-               <div className="space-y-1 text-xs text-neutral-500 font-semibold select-all">
-                 <p>Contact: support@flowcore.ai</p>
-                 <p className="text-[10px] text-neutral-400">@useflowcore</p>
-               </div>
-
-               {/* Newsletter Form */}
-               <div className="space-y-2 max-w-sm">
-                 <div className="text-[10px] text-neutral-400 font-bold uppercase tracking-widest">Join our newsletter</div>
-                 <form onSubmit={(e) => e.preventDefault()} className="flex p-1 bg-neutral-50 border border-neutral-200 rounded-xl max-w-xs">
-                   <Input type="email" placeholder="Email" className="bg-transparent border-none text-neutral-800 h-9 px-3 focus-visible:ring-0 placeholder:text-neutral-400 text-xs" />
-                   <Button type="submit" className="h-9 px-4 rounded-lg bg-[#D95E46] hover:bg-[#D95E46]/90 text-white font-semibold text-xs transition-all">Submit</Button>
-                 </form>
-               </div>
+      <footer className="pt-16 pb-10 px-4 lg:px-12" style={{ background: "#050505", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+        <div className="max-w-[820px] mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-16">
+            <div className="col-span-2 md:col-span-1 space-y-4">
+              <Link href="/" className="text-base font-medium tracking-tight" style={{ color: "#c0c0c0", letterSpacing: "-0.01em" }}>
+                FlowCore
+              </Link>
+              <p className="text-sm leading-relaxed font-normal" style={{ color: "#595859" }}>
+                AI automation that transforms business communication.
+              </p>
+              <p className="text-sm font-normal" style={{ color: "#595859" }}>
+                support@flowcore.ai
+              </p>
             </div>
-            
-             <div className="space-y-4 text-neutral-500">
-                 <h4 className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Technology</h4>
-                 <nav className="flex flex-col gap-3 font-semibold">
-                    <Link href="/agent-hub" className="hover:text-neutral-900 transition-colors text-neutral-500 text-xs">FlowCore for Consumer</Link>
-                    <Link href="/knowledge" className="hover:text-neutral-900 transition-colors text-neutral-500 text-xs">FlowCore for Marketplaces</Link>
-                    <Link href="/pricing" className="hover:text-neutral-900 transition-colors text-neutral-500 text-xs">FlowCore for E-Commerce</Link>
-                    <Link href="/changelog" className="hover:text-neutral-900 transition-colors text-neutral-500 text-xs">FlowCore for Banking</Link>
-                 </nav>
-             </div>
 
-             <div className="space-y-4 text-neutral-500">
-                 <h4 className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Real Estate</h4>
-                 <nav className="flex flex-col gap-3 font-semibold">
-                    <Link href="/login" className="hover:text-neutral-900 transition-colors text-neutral-500 text-xs">FlowCore for Housing</Link>
-                    <Link href="/faq" className="hover:text-neutral-900 transition-colors text-neutral-500 text-xs">FlowCore for Hotels</Link>
-                    <Link href="/settings/integrations" className="hover:text-neutral-900 transition-colors text-neutral-500 text-xs">FlowCore for STR</Link>
-                 </nav>
-             </div>
+            <div className="space-y-3">
+              <h4 className="text-sm font-normal" style={{ color: "#595859" }}>Product</h4>
+              <nav className="flex flex-col gap-2">
+                <Link href="/login" className="text-sm font-normal" style={{ color: "#c0c0c0" }}>Features</Link>
+                <Link href="/pricing" className="text-sm font-normal" style={{ color: "#c0c0c0" }}>Pricing</Link>
+                <Link href="/changelog" className="text-sm font-normal" style={{ color: "#c0c0c0" }}>Changelog</Link>
+                <Link href="/faq" className="text-sm font-normal" style={{ color: "#c0c0c0" }}>FAQ</Link>
+              </nav>
+            </div>
 
-             <div className="space-y-4 text-neutral-500">
-                 <h4 className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Company</h4>
-                 <nav className="flex flex-col gap-3 font-semibold">
-                    <Link href="/login" className="hover:text-neutral-900 transition-colors text-neutral-500 text-xs">About</Link>
-                    <Link href="/pricing" className="hover:text-neutral-900 transition-colors text-neutral-500 text-xs">Customers</Link>
-                    <Link href="/faq" className="hover:text-neutral-900 transition-colors text-neutral-500 text-xs">Product Tour</Link>
-                    <Link href="/changelog" className="hover:text-neutral-900 transition-colors text-neutral-500 text-xs">Careers</Link>
-                 </nav>
-             </div>
-         </div>
+            <div className="space-y-3">
+              <h4 className="text-sm font-normal" style={{ color: "#595859" }}>Company</h4>
+              <nav className="flex flex-col gap-2">
+                <Link href="/legal/privacy-policy" className="text-sm font-normal" style={{ color: "#c0c0c0" }}>Privacy Policy</Link>
+                <Link href="/legal/terms" className="text-sm font-normal" style={{ color: "#c0c0c0" }}>Terms</Link>
+                <Link href="/legal/cookie-policy" className="text-sm font-normal" style={{ color: "#c0c0c0" }}>Cookies</Link>
+                <Link href="/legal" className="text-sm font-normal" style={{ color: "#c0c0c0" }}>Legal</Link>
+              </nav>
+            </div>
 
-         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center border-t border-neutral-200/80 pt-6 gap-6 text-[10px] font-bold text-neutral-500">
-             <nav className="flex gap-6">
-                <Link href="/legal/privacy-policy" className="hover:text-neutral-900 transition-colors">Privacy</Link>
-                <Link href="/legal/terms" className="hover:text-neutral-900 transition-colors">Terms & Conditions</Link>
-                <Link href="/legal/cookie-policy" className="hover:text-neutral-900 transition-colors">Consent Preferences</Link>
-             </nav>
-             
-             <div className="flex items-center gap-6">
-                <div className="flex items-center gap-3">
-                  <div className="px-2 py-1 rounded bg-neutral-100 border border-neutral-200 text-[8px] font-bold text-neutral-500 tracking-wider">SOC 2 TYPE II</div>
-                  <div className="px-2 py-1 rounded bg-neutral-100 border border-neutral-200 text-[8px] font-bold text-neutral-500 tracking-wider">HIPAA COMPLIANT</div>
-                </div>
-                <div className="flex items-center gap-2 text-emerald-600 font-semibold tracking-tight">
-                   <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                   Verified Connection
-                </div>
-                <span className="tracking-tight text-neutral-400 font-medium">© 2026 FlowCore Systems</span>
-             </div>
-         </div>
+            <div className="space-y-3">
+              <h4 className="text-sm font-normal" style={{ color: "#595859" }}>Compliance</h4>
+              <nav className="flex flex-col gap-2">
+                <span className="text-sm font-normal" style={{ color: "#c0c0c0" }}>SOC 2 Type II</span>
+                <span className="text-sm font-normal" style={{ color: "#c0c0c0" }}>HIPAA Compliant</span>
+              </nav>
+            </div>
+          </div>
+
+          <div className="flex flex-col md:flex-row justify-between items-center pt-6 gap-6" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+            <span className="text-sm font-normal" style={{ color: "#595859" }}>&copy; 2026 FlowCore Systems. All rights reserved.</span>
+          </div>
+        </div>
       </footer>
     </div>
   )
