@@ -10,8 +10,10 @@ import {
   Send,
   Inbox,
   BarChart2,
-  Globe,
-  ChevronDown
+  Shield,
+  Heart,
+  Lock,
+  Globe
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 
@@ -52,7 +54,7 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="min-h-screen text-white overflow-x-hidden scroll-smooth" style={{ background: "#050505", ...sf }}>
+    <div className="min-h-screen overflow-x-hidden scroll-smooth" style={sf}>
       <header className="h-16 flex items-center justify-between px-6 lg:px-12 sticky top-0 z-[100]" style={{ background: "rgba(5, 5, 5, 0.9)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
         <div className="flex items-center gap-3">
           <Link href="/" className="h-8 w-8 rounded-lg flex items-center justify-center" style={{ background: "#c65f39" }}>
@@ -78,7 +80,7 @@ export default function LandingPage() {
       </header>
 
       <main>
-        <section className="relative pt-32 pb-48 px-6 overflow-hidden flex flex-col items-center">
+        <section className="relative pt-32 pb-48 px-6 overflow-hidden flex flex-col items-center" style={{ background: "#050505" }}>
           <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[800px] h-[500px] rounded-full pointer-events-none z-0" style={{ background: "radial-gradient(ellipse at center, rgba(198, 95, 57, 0.12) 0%, transparent 70%)" }} />
 
           <div className="max-w-[820px] mx-auto text-center relative z-10 space-y-8">
@@ -93,20 +95,20 @@ export default function LandingPage() {
             </div>
 
             <div className="max-w-sm mx-auto">
-              <form 
+              <form
                 onSubmit={(e) => {
                   e.preventDefault()
                   router.push(`/login?email=${encodeURIComponent(email)}`)
                 }}
-                className="flex p-1 rounded-xl focus-within:border transition-all" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                className="flex p-1 rounded-xl" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
               >
-                <Input 
+                <Input
                   type="email"
-                  placeholder="you@company.com" 
+                  placeholder="you@company.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="bg-transparent border-none h-11 px-4 focus-visible:ring-0 text-sm font-normal" style={{ color: "#fff", "--tw-placeholder-color": "#595859" } as any}
+                  className="bg-transparent border-none h-11 px-4 focus-visible:ring-0 text-sm font-normal" style={{ color: "#fff" }}
                 />
                 <Button type="submit" className="h-11 px-5 rounded-lg text-sm font-normal flex items-center gap-1" style={{ background: "#c65f39", color: "#fff" }}>
                   Get Started <ArrowUpRight className="h-4 w-4" />
@@ -177,41 +179,39 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="py-24 px-6 flex flex-col items-center" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-          <div className="max-w-[820px] mx-auto text-center space-y-4">
-            <p className="text-sm font-normal" style={{ color: "#595859" }}>
-              500+ teams supercharge their service with FlowCore
-            </p>
+        <section className="py-16 px-6 flex flex-col items-center" style={{ background: "#ffffff", borderTop: "1px solid #e5e5e5" }}>
+          <div className="text-sm font-normal" style={{ color: "#a3a3a3", letterSpacing: "0.05em" }}>
+            500+ teams supercharge their service with FlowCore
           </div>
-          <div className="flex flex-wrap justify-center items-center gap-x-12 gap-y-6 max-w-4xl px-6 mt-8" style={{ opacity: 0.4 }}>
+          <div className="flex flex-wrap justify-center items-center gap-x-12 gap-y-6 max-w-4xl px-6 mt-8" style={{ opacity: 0.5 }}>
             {["Haus", "Hallson", "Capitalia", "HostGenius", "Renjoy", "Bocobay", "Casioa", "MerchFarm"].map((brand, i) => (
-              <span key={i} className="text-base font-normal tracking-tight select-none cursor-default" style={{ color: "#fff" }}>
+              <span key={i} className="text-base tracking-tight select-none cursor-default" style={{ color: "#171717", fontWeight: 400 }}>
                 {brand}
               </span>
             ))}
           </div>
         </section>
 
-        <section className="py-24 px-6 lg:px-12" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-          <div className="max-w-[820px] mx-auto space-y-6">
-            <p className="text-sm font-normal" style={{ color: "#c65f39" }}>Platform</p>
-            <h2 className="font-normal tracking-tight text-white" style={{ fontSize: "35.2508px", lineHeight: "44.0635px", letterSpacing: "-0.15667px" }}>
+        <section className="py-24 px-6 lg:px-12" style={{ background: "#ffffff", borderTop: "1px solid #e5e5e5" }}>
+          <div className="max-w-[820px] mx-auto">
+            <p className="text-sm font-normal mb-4" style={{ color: "#c65f39" }}>Platform</p>
+            <h2 className="font-normal tracking-tight" style={{ fontSize: "35.2508px", lineHeight: "44.0635px", letterSpacing: "-0.15667px", color: "#171717" }}>
               Handle communication end-to-end
             </h2>
-            <p className="max-w-lg leading-relaxed font-normal" style={{ fontSize: "15.667px", color: "#595859" }}>
+            <p className="max-w-lg mt-4 leading-relaxed font-normal" style={{ fontSize: "15.667px", color: "#737373" }}>
               FlowCore keeps your team focused by intelligently handling communications and escalating only the critical moments.
             </p>
           </div>
         </section>
 
-        <section className="py-24 px-6 lg:px-12" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+        <section className="py-24 px-6 lg:px-12" style={{ background: "#ffffff", borderTop: "1px solid #e5e5e5" }}>
           <div className="max-w-[820px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <motion.div {...fadeInUp} className="space-y-6">
               <p className="text-sm font-normal" style={{ color: "#c65f39" }}>Reporting</p>
-              <h2 className="font-normal tracking-tight text-white" style={{ fontSize: "35.2508px", lineHeight: "44.0635px", letterSpacing: "-0.15667px" }}>
+              <h2 className="font-normal tracking-tight" style={{ fontSize: "35.2508px", lineHeight: "44.0635px", letterSpacing: "-0.15667px", color: "#171717" }}>
                 See ROI in 30 days
               </h2>
-              <p className="leading-relaxed max-w-md font-normal" style={{ fontSize: "15.667px", color: "#595859" }}>
+              <p className="leading-relaxed max-w-md font-normal" style={{ fontSize: "15.667px", color: "#737373" }}>
                 AI insights to help monitor, evaluate, and continuously optimize your conversations.
               </p>
               <Button asChild className="h-11 px-5 rounded-[100px] text-sm font-normal flex items-center gap-1" style={{ background: "#c65f39", color: "#fff" }}>
@@ -219,62 +219,62 @@ export default function LandingPage() {
               </Button>
             </motion.div>
 
-            <motion.div {...fadeInUp} className="p-6 rounded-2xl overflow-hidden" style={{ background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.06)" }}>
+            <motion.div {...fadeInUp} className="p-6 rounded-2xl overflow-hidden" style={{ background: "#fafafa", border: "1px solid #e5e5e5" }}>
               <div className="space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                  <div className="flex items-center gap-2" style={{ fontSize: "13px", color: "#c0c0c0" }}>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4" style={{ borderBottom: "1px solid #e5e5e5" }}>
+                  <div className="flex items-center gap-2" style={{ fontSize: "13px", color: "#525252" }}>
                     <span>Last 7 days</span>
-                    <span style={{ color: "#595859" }}>compared to</span>
-                    <span className="px-2 py-0.5 rounded" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#595859" }}>Previous period</span>
+                    <span style={{ color: "#a3a3a3" }}>compared to</span>
+                    <span className="px-2 py-0.5 rounded" style={{ background: "#f5f5f5", border: "1px solid #e5e5e5", color: "#a3a3a3" }}>Previous period</span>
                   </div>
-                  <div style={{ color: "#595859", fontSize: "10px" }}>Aug 22, 2025 - Aug 29, 2025</div>
+                  <div style={{ color: "#a3a3a3", fontSize: "10px" }}>Aug 22, 2025 - Aug 29, 2025</div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-8">
                   <div>
-                    <div style={{ color: "#595859", fontSize: "10px", letterSpacing: "0.05em" }}>AI automation rate</div>
+                    <div style={{ color: "#a3a3a3", fontSize: "10px", letterSpacing: "0.05em" }}>AI automation rate</div>
                     <div className="flex items-baseline gap-2 mt-1">
-                      <span className="tracking-tight" style={{ color: "#fff", fontSize: "32px", fontWeight: 300 }}>70.6%</span>
-                      <span className="px-1.5 py-0.5 rounded" style={{ background: "rgba(255,255,255,0.04)", color: "#595859", fontSize: "10px" }}>-8.1%</span>
+                      <span className="tracking-tight" style={{ color: "#171717", fontSize: "32px", fontWeight: 300 }}>70.6%</span>
+                      <span className="px-1.5 py-0.5 rounded" style={{ background: "#f5f5f5", color: "#a3a3a3", fontSize: "10px" }}>-8.1%</span>
                     </div>
-                    <div style={{ color: "#595859", fontSize: "9px", marginTop: "4px" }}>78.7% previous period</div>
+                    <div style={{ color: "#a3a3a3", fontSize: "9px", marginTop: "4px" }}>78.7% previous period</div>
                   </div>
                   <div>
-                    <div style={{ color: "#595859", fontSize: "10px", letterSpacing: "0.05em" }}>Open ticket count</div>
+                    <div style={{ color: "#a3a3a3", fontSize: "10px", letterSpacing: "0.05em" }}>Open ticket count</div>
                     <div className="flex items-baseline gap-2 mt-1">
-                      <span className="tracking-tight" style={{ color: "#fff", fontSize: "32px", fontWeight: 300 }}>133</span>
+                      <span className="tracking-tight" style={{ color: "#171717", fontSize: "32px", fontWeight: 300 }}>133</span>
                     </div>
-                    <div style={{ color: "#595859", fontSize: "9px", marginTop: "4px" }}>90 previous period</div>
+                    <div style={{ color: "#a3a3a3", fontSize: "9px", marginTop: "4px" }}>90 previous period</div>
                   </div>
                 </div>
 
-                <div className="h-32 w-full rounded-xl overflow-hidden relative" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                <div className="h-32 w-full rounded-xl overflow-hidden relative" style={{ background: "#f5f5f5", border: "1px solid #e5e5e5" }}>
                   <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 100 100">
                     <defs>
-                      <linearGradient id="chart-grad" x1="0" y1="0" x2="0" y2="1">
+                      <linearGradient id="chart-grad-light" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor="#c65f39" stopOpacity="0.15" />
                         <stop offset="100%" stopColor="#c65f39" stopOpacity="0" />
                       </linearGradient>
                     </defs>
-                    <path d="M0,80 C20,70 40,30 60,50 C80,70 90,20 100,10 L100,100 L0,100 Z" fill="url(#chart-grad)" />
+                    <path d="M0,80 C20,70 40,30 60,50 C80,70 90,20 100,10 L100,100 L0,100 Z" fill="url(#chart-grad-light)" />
                     <path d="M0,80 C20,70 40,30 60,50 C80,70 90,20 100,10" fill="none" stroke="#c65f39" strokeWidth="2" strokeLinecap="round" />
                   </svg>
                 </div>
 
                 <div className="space-y-3 pt-2">
-                  <div style={{ color: "#595859", fontSize: "10px", letterSpacing: "0.05em" }}>Escalations</div>
+                  <div style={{ color: "#a3a3a3", fontSize: "10px", letterSpacing: "0.05em" }}>Escalations</div>
                   <div className="space-y-2" style={{ fontSize: "13px" }}>
                     <div className="space-y-1">
-                      <div className="flex justify-between" style={{ color: "#c0c0c0" }}><span>AI missing info</span><span style={{ color: "#fff" }}>19 <span style={{ color: "#595859", fontWeight: 400 }}>(52.8%)</span></span></div>
-                      <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}><div className="h-full w-[52.8%] rounded-full" style={{ background: "#c65f39" }} /></div>
+                      <div className="flex justify-between" style={{ color: "#525252" }}><span>AI missing info</span><span style={{ color: "#171717" }}>19 <span style={{ color: "#a3a3a3", fontWeight: 400 }}>(52.8%)</span></span></div>
+                      <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ background: "#e5e5e5" }}><div className="h-full w-[52.8%] rounded-full" style={{ background: "#c65f39" }} /></div>
                     </div>
                     <div className="space-y-1">
-                      <div className="flex justify-between" style={{ color: "#c0c0c0" }}><span>AI needs your help</span><span style={{ color: "#fff" }}>10 <span style={{ color: "#595859", fontWeight: 400 }}>(27.8%)</span></span></div>
-                      <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}><div className="h-full w-[27.8%] rounded-full" style={{ background: "#f59e0b" }} /></div>
+                      <div className="flex justify-between" style={{ color: "#525252" }}><span>AI needs your help</span><span style={{ color: "#171717" }}>10 <span style={{ color: "#a3a3a3", fontWeight: 400 }}>(27.8%)</span></span></div>
+                      <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ background: "#e5e5e5" }}><div className="h-full w-[27.8%] rounded-full" style={{ background: "#f59e0b" }} /></div>
                     </div>
                     <div className="space-y-1">
-                      <div className="flex justify-between" style={{ color: "#c0c0c0" }}><span>Urgent tagged</span><span style={{ color: "#fff" }}>7 <span style={{ color: "#595859", fontWeight: 400 }}>(19.4%)</span></span></div>
-                      <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}><div className="h-full w-[19.4%] rounded-full" style={{ background: "#e11d48" }} /></div>
+                      <div className="flex justify-between" style={{ color: "#525252" }}><span>Urgent tagged</span><span style={{ color: "#171717" }}>7 <span style={{ color: "#a3a3a3", fontWeight: 400 }}>(19.4%)</span></span></div>
+                      <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ background: "#e5e5e5" }}><div className="h-full w-[19.4%] rounded-full" style={{ background: "#e11d48" }} /></div>
                     </div>
                   </div>
                 </div>
@@ -283,29 +283,29 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="py-24 px-6 lg:px-12" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-          <div className="max-w-[820px] mx-auto space-y-6">
-            <p className="text-sm font-normal" style={{ color: "#c65f39" }}>Unified Inbox</p>
-            <h2 className="font-normal tracking-tight text-white" style={{ fontSize: "35.2508px", lineHeight: "44.0635px", letterSpacing: "-0.15667px" }}>
+        <section className="py-24 px-6 lg:px-12" style={{ background: "#ffffff", borderTop: "1px solid #e5e5e5" }}>
+          <div className="max-w-[820px] mx-auto">
+            <p className="text-sm font-normal mb-4" style={{ color: "#c65f39" }}>Unified Inbox</p>
+            <h2 className="font-normal tracking-tight" style={{ fontSize: "35.2508px", lineHeight: "44.0635px", letterSpacing: "-0.15667px", color: "#171717" }}>
               Everything in one place
             </h2>
-            <p className="max-w-lg leading-relaxed font-normal" style={{ fontSize: "15.667px", color: "#595859" }}>
+            <p className="max-w-lg mt-4 leading-relaxed font-normal" style={{ fontSize: "15.667px", color: "#737373" }}>
               When automation ends, your control begins — streamline every conversation your AI can't handle in one place.
             </p>
-            <Button asChild className="h-11 px-5 rounded-[100px] text-sm font-normal flex items-center gap-1" style={{ background: "#c65f39", color: "#fff" }}>
+            <Button asChild className="h-11 px-5 rounded-[100px] text-sm font-normal flex items-center gap-1 mt-6" style={{ background: "#c65f39", color: "#fff" }}>
               <Link href="/login">Book Demo <ArrowUpRight className="h-4 w-4" /></Link>
             </Button>
           </div>
         </section>
 
-        <section className="py-24 px-6 lg:px-12" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+        <section className="py-24 px-6 lg:px-12 text-center" style={{ background: "#ffffff", borderTop: "1px solid #e5e5e5" }}>
           <div className="max-w-[820px] mx-auto space-y-12">
-            <div className="text-center space-y-6">
+            <div className="space-y-6">
               <p className="text-sm font-normal" style={{ color: "#c65f39" }}>Integrations</p>
-              <h2 className="font-normal tracking-tight text-white" style={{ fontSize: "35.2508px", lineHeight: "44.0635px", letterSpacing: "-0.15667px" }}>
+              <h2 className="font-normal tracking-tight" style={{ fontSize: "35.2508px", lineHeight: "44.0635px", letterSpacing: "-0.15667px", color: "#171717" }}>
                 Integrate with every aspect of your tech stack
               </h2>
-              <p className="max-w-lg mx-auto leading-relaxed font-normal" style={{ fontSize: "15.667px", color: "#595859" }}>
+              <p className="max-w-lg mx-auto leading-relaxed font-normal" style={{ fontSize: "15.667px", color: "#737373" }}>
                 Give agents the tools to succeed, backed by enterprise-grade security and SOC 2 Type II compliance.
               </p>
             </div>
@@ -315,14 +315,14 @@ export default function LandingPage() {
                 { logo: WhatsAppLogo, label: "WhatsApp" },
                 { logo: GoogleSheetsLogo, label: "Google Sheets" },
                 { logo: GoogleCalendarLogo, label: "Google Calendar" },
-                { logo: () => <Globe className="h-full w-full" style={{ color: "#595859" }} />, label: "Webchat" }
+                { logo: () => <Globe className="h-full w-full" style={{ color: "#a3a3a3" }} />, label: "Webchat" }
               ].map((node, i) => (
-                <div key={i} className="p-6 rounded-xl flex flex-col items-center gap-4 transition-all duration-300" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                  <div className="h-12 w-12 rounded-lg flex items-center justify-center p-2.5" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                <div key={i} className="p-6 rounded-xl flex flex-col items-center gap-4 transition-all duration-300" style={{ background: "#fafafa", border: "1px solid #e5e5e5" }}>
+                  <div className="h-12 w-12 rounded-lg flex items-center justify-center p-2.5" style={{ background: "#ffffff", border: "1px solid #e5e5e5" }}>
                     <node.logo className="h-full w-full" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-normal" style={{ color: "#c0c0c0" }}>{node.label}</h4>
+                    <h4 className="text-sm font-normal" style={{ color: "#525252" }}>{node.label}</h4>
                   </div>
                 </div>
               ))}
@@ -330,31 +330,30 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="py-24 px-6 lg:px-12 relative overflow-hidden" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+        <section className="py-24 px-6 lg:px-12 relative overflow-hidden" style={{ background: "#050505", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
           <div className="absolute top-1/2 right-0 w-[400px] h-[400px] rounded-full translate-x-1/2 pointer-events-none" style={{ background: "radial-gradient(circle, rgba(198, 95, 57, 0.08) 0%, transparent 60%)" }} />
-          <div className="max-w-[820px] mx-auto space-y-8">
+          <div className="max-w-[820px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div className="space-y-6">
               <p className="text-sm font-normal" style={{ color: "#c65f39" }}>Enterprise</p>
               <h2 className="font-normal tracking-tight text-white" style={{ fontSize: "35.2508px", lineHeight: "44.0635px", letterSpacing: "-0.15667px" }}>
                 Built for Enterprise Security and Privacy
               </h2>
+              <div className="flex flex-wrap gap-4">
+                <Button asChild className="h-11 px-5 rounded-[100px] text-sm font-normal flex items-center gap-1" style={{ background: "#c65f39", color: "#fff" }}>
+                  <Link href="/login">Talk to Sales <ArrowUpRight className="h-4 w-4" /></Link>
+                </Button>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="p-6 rounded-2xl space-y-4" style={{ background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.06)" }}>
+            <div className="grid grid-cols-1 gap-4">
+              <div className="p-5 rounded-2xl space-y-3" style={{ background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.06)" }}>
                 <h3 className="text-base font-normal" style={{ color: "#fff" }}>SOC Type II</h3>
                 <p className="text-sm leading-relaxed font-normal" style={{ color: "#595859" }}>
-                  FlowCore meets SOC 2 Type II standards, ensuring secure handling of customer data across all AI-powered operations.
+                  FlowCore meets SOC 2 Type II standards for secure handling of customer data across all AI-powered operations.
                 </p>
               </div>
-              <div className="p-6 rounded-2xl space-y-4" style={{ background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.06)" }}>
-                <h3 className="text-base font-normal" style={{ color: "#fff" }}>HIPAA</h3>
-                <p className="text-sm leading-relaxed font-normal" style={{ color: "#595859" }}>
-                  FlowCore is designed to support HIPAA-regulated workflows with administrative and technical safeguards.
-                </p>
-              </div>
-              <div className="p-6 rounded-2xl space-y-4" style={{ background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.06)" }}>
-                <h3 className="text-base font-normal" style={{ color: "#fff" }}>Enterprise Security</h3>
+              <div className="p-5 rounded-2xl space-y-3" style={{ background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.06)" }}>
+                <h3 className="text-base font-normal" style={{ color: "#fff" }}>HIPAA & Enterprise Security</h3>
                 <p className="text-sm leading-relaxed font-normal" style={{ color: "#595859" }}>
                   End-to-end encryption, role-based access, audit logs, and secure model orchestration across all AI agents.
                 </p>
@@ -364,52 +363,52 @@ export default function LandingPage() {
         </section>
       </main>
 
-      <footer className="pt-16 pb-10 px-4 lg:px-12" style={{ background: "#050505", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+      <footer className="pt-16 pb-10 px-4 lg:px-12" style={{ background: "#ffffff", borderTop: "1px solid #e5e5e5" }}>
         <div className="max-w-[820px] mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-16">
             <div className="col-span-2 md:col-span-1 space-y-4">
-              <Link href="/" className="text-base font-medium tracking-tight" style={{ color: "#c0c0c0", letterSpacing: "-0.01em" }}>
+              <Link href="/" className="text-base font-medium tracking-tight" style={{ color: "#171717", letterSpacing: "-0.01em" }}>
                 FlowCore
               </Link>
-              <p className="text-sm leading-relaxed font-normal" style={{ color: "#595859" }}>
+              <p className="text-sm leading-relaxed font-normal" style={{ color: "#737373" }}>
                 AI automation that transforms business communication.
               </p>
-              <p className="text-sm font-normal" style={{ color: "#595859" }}>
+              <p className="text-sm font-normal" style={{ color: "#737373" }}>
                 support@flowcore.ai
               </p>
             </div>
 
             <div className="space-y-3">
-              <h4 className="text-sm font-normal" style={{ color: "#595859" }}>Product</h4>
+              <h4 className="text-sm font-normal" style={{ color: "#a3a3a3" }}>Product</h4>
               <nav className="flex flex-col gap-2">
-                <Link href="/login" className="text-sm font-normal" style={{ color: "#c0c0c0" }}>Features</Link>
-                <Link href="/pricing" className="text-sm font-normal" style={{ color: "#c0c0c0" }}>Pricing</Link>
-                <Link href="/changelog" className="text-sm font-normal" style={{ color: "#c0c0c0" }}>Changelog</Link>
-                <Link href="/faq" className="text-sm font-normal" style={{ color: "#c0c0c0" }}>FAQ</Link>
+                <Link href="/login" className="text-sm font-normal" style={{ color: "#525252" }}>Features</Link>
+                <Link href="/pricing" className="text-sm font-normal" style={{ color: "#525252" }}>Pricing</Link>
+                <Link href="/changelog" className="text-sm font-normal" style={{ color: "#525252" }}>Changelog</Link>
+                <Link href="/faq" className="text-sm font-normal" style={{ color: "#525252" }}>FAQ</Link>
               </nav>
             </div>
 
             <div className="space-y-3">
-              <h4 className="text-sm font-normal" style={{ color: "#595859" }}>Company</h4>
+              <h4 className="text-sm font-normal" style={{ color: "#a3a3a3" }}>Company</h4>
               <nav className="flex flex-col gap-2">
-                <Link href="/legal/privacy-policy" className="text-sm font-normal" style={{ color: "#c0c0c0" }}>Privacy Policy</Link>
-                <Link href="/legal/terms" className="text-sm font-normal" style={{ color: "#c0c0c0" }}>Terms</Link>
-                <Link href="/legal/cookie-policy" className="text-sm font-normal" style={{ color: "#c0c0c0" }}>Cookies</Link>
-                <Link href="/legal" className="text-sm font-normal" style={{ color: "#c0c0c0" }}>Legal</Link>
+                <Link href="/legal/privacy-policy" className="text-sm font-normal" style={{ color: "#525252" }}>Privacy Policy</Link>
+                <Link href="/legal/terms" className="text-sm font-normal" style={{ color: "#525252" }}>Terms</Link>
+                <Link href="/legal/cookie-policy" className="text-sm font-normal" style={{ color: "#525252" }}>Cookies</Link>
+                <Link href="/legal" className="text-sm font-normal" style={{ color: "#525252" }}>Legal</Link>
               </nav>
             </div>
 
             <div className="space-y-3">
-              <h4 className="text-sm font-normal" style={{ color: "#595859" }}>Compliance</h4>
+              <h4 className="text-sm font-normal" style={{ color: "#a3a3a3" }}>Compliance</h4>
               <nav className="flex flex-col gap-2">
-                <span className="text-sm font-normal" style={{ color: "#c0c0c0" }}>SOC 2 Type II</span>
-                <span className="text-sm font-normal" style={{ color: "#c0c0c0" }}>HIPAA Compliant</span>
+                <span className="text-sm font-normal" style={{ color: "#525252" }}>SOC 2 Type II</span>
+                <span className="text-sm font-normal" style={{ color: "#525252" }}>HIPAA Compliant</span>
               </nav>
             </div>
           </div>
 
-          <div className="flex flex-col md:flex-row justify-between items-center pt-6 gap-6" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-            <span className="text-sm font-normal" style={{ color: "#595859" }}>&copy; 2026 FlowCore Systems. All rights reserved.</span>
+          <div className="flex flex-col md:flex-row justify-between items-center pt-6 gap-6" style={{ borderTop: "1px solid #e5e5e5" }}>
+            <span className="text-sm font-normal" style={{ color: "#a3a3a3" }}>&copy; 2026 FlowCore Systems. All rights reserved.</span>
           </div>
         </div>
       </footer>
