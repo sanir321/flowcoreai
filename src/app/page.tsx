@@ -80,26 +80,26 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen scroll-smooth" style={sf}>
-      <header className="h-16 flex items-center justify-between px-6 lg:px-12 fixed top-0 left-0 right-0 z-[100]" style={{ background: "rgba(5, 5, 5, 0.9)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-        <div className="flex items-center gap-3">
+      <header className="h-14 flex items-center justify-between px-6 lg:px-12 fixed top-0 left-0 right-0 z-[100]" style={{ background: "rgba(5, 5, 5, 0.9)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        <div className="flex items-center gap-2">
           <Link href="/" className="h-8 w-8 rounded-lg flex items-center justify-center" style={{ background: "#c65f39" }}>
             <span className="text-white font-bold text-sm tracking-tighter">F</span>
           </Link>
-          <Link href="/" className="text-base font-medium tracking-tight" style={{ color: "#c0c0c0", letterSpacing: "-0.01em" }}>
+          <Link href="/" className="text-base font-medium tracking-tight" style={{ color: "#e5e5e5", letterSpacing: "-0.01em" }}>
             FlowCore
           </Link>
         </div>
 
         <nav className="hidden md:flex items-center gap-1">
-          <Link href="/login" className="px-4 py-2 text-sm font-normal" style={{ color: "#595859" }}>Product</Link>
-          <Link href="/pricing" className="px-4 py-2 text-sm font-normal" style={{ color: "#595859" }}>Pricing</Link>
-          <Link href="/faq" className="px-4 py-2 text-sm font-normal" style={{ color: "#595859" }}>FAQ</Link>
-          <Link href="/changelog" className="px-4 py-2 text-sm font-normal" style={{ color: "#595859" }}>Changelog</Link>
+          <Link href="/pricing" className="px-4 py-2 text-sm font-normal transition-colors hover:text-white" style={{ color: "#a3a3a3" }}>Pricing</Link>
+          <Link href="/faq" className="px-4 py-2 text-sm font-normal transition-colors hover:text-white" style={{ color: "#a3a3a3" }}>FAQ</Link>
+          <Link href="/changelog" className="px-4 py-2 text-sm font-normal transition-colors hover:text-white" style={{ color: "#a3a3a3" }}>Changelog</Link>
         </nav>
 
         <div className="flex items-center gap-3">
-          <Button asChild className="h-9 px-4 rounded-[100px] text-sm font-normal" style={{ background: "rgba(255,255,255,0.06)", color: "#c0c0c0", border: "none" }}>
-            <Link href="/login">Sign In</Link>
+          <Link href="/login" className="hidden sm:inline text-sm font-normal transition-colors hover:text-white" style={{ color: "#a3a3a3" }}>Sign In</Link>
+          <Button asChild className="h-8 px-4 rounded-[100px] text-sm font-normal flex items-center gap-1" style={{ background: "#c65f39", color: "#fff" }}>
+            <Link href="/login">Book Demo <ArrowUpRight className="h-3 w-3" /></Link>
           </Button>
         </div>
       </header>
