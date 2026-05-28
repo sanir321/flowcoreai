@@ -12,7 +12,7 @@ export async function GET() {
 
     const { data: googleTokens, error } = await (supabase
         .from("google_oauth_tokens") as any)
-        .select("google_email, token_expiry, scopes, calendar_id, sheet_id, sheet_range, sync_status, created_at, updated_at")
+        .select("google_email, token_expiry, scopes, calendar_id, sheet_id, sheet_range, created_at, updated_at")
         .eq("workspace_id", workspaceId)
         .is("deleted_at", null)
         .maybeSingle()
