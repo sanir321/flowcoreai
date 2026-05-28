@@ -269,10 +269,15 @@ export async function handleBooking(ctx: PipelineContext): Promise<TierResult | 
     "not interested", "don't want", "i don't", "i won't",
     "useless", "waste", "stupid", "bad", "terrible",
     "you're not", "you are not", "not helpful", "not what i",
-    "help", "problem", "issue", "complaint", "not working"
+    "help", "problem", "issue", "complaint", "not working",
+    "talk to human", "talk to person", "talk to someone",
+    "speak to", "speak with", "contact", "samir", "call owner",
+    "human", "real person", "real agent", "owner",
+    "what", "who", "why", "where", "tell me about",
+    "are you real", "are you a bot", "confused", "don't understand",
+    "i want to talk", "i want to speak", "listen to me"
   ];
   const isNonBooking = nonBookingSignals.some(s => msgLower.includes(s));
-  // Only pass through if we haven't collected much yet (early in flow)
   if (isNonBooking && Object.keys(bs.collected || {}).length <= 1) {
     return null;
   }
@@ -337,10 +342,9 @@ export async function handleBooking(ctx: PipelineContext): Promise<TierResult | 
     const attempts = { ...(bs.attempts || {}), [bs.state]: ((bs.attempts || {})[bs.state] || 0) + 1 };
     await updateBookingSession(ctx, bs.id, { attempts });
 
+    // After 3 failed attempts, pass to the LLM — they're clearly not booking
     if (attempts[bs.state] >= 3) {
-      const clarification = CLARIFICATION_PROMPTS[bs.state]?.(attempts[bs.state])
-        ?? "I apologize for the difficulty. Let me connect you with someone who can help.";
-      return { handled: true, response: clarification, reason: "booking_clarification" };
+      return null;
     }
 
     const retry = RETRY_PROMPTS[bs.state]?.(attempts[bs.state], ctx.workspace)

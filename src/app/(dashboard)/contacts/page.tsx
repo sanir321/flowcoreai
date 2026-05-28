@@ -13,6 +13,14 @@ export default async function ContactsPage() {
   const workspaceId = user.app_metadata?.workspace_id
   if (!workspaceId) redirect("/onboarding")
 
+  const { data: ws } = await supabase
+    .from("workspaces")
+    .select("id")
+    .eq("id", workspaceId)
+    .is("deleted_at", null)
+    .single()
+  if (!ws) redirect("/onboarding")
+
   const { data: contacts } = await supabase
     .from("contacts")
     .select("*, appointments(count)")

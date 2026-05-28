@@ -147,7 +147,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex bg-[#0A0A0A] text-white font-sans selection:bg-[#c65f39]/30 selection:text-white overflow-hidden">
+    <div className="min-h-screen flex bg-[#0A0A0A] text-white font-sans selection:bg-[#D95E46]/30 selection:text-white overflow-hidden">
       {/* Subtle Background Elements */}
       <div className="fixed inset-0 pointer-events-none opacity-[0.02] z-[100] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
       
@@ -156,7 +156,7 @@ export default function LoginPage() {
         <div className="max-w-md w-full mx-auto space-y-12">
           {/* Brand Identity */}
           <div className="space-y-4">
-            <Link href="/" className="h-10 w-10 rounded-xl bg-[#c65f39] flex items-center justify-center shadow-lg hover:scale-105 transition-all duration-500">
+            <Link href="/" className="h-10 w-10 rounded-xl bg-[#D95E46] flex items-center justify-center shadow-lg hover:scale-105 transition-all duration-500">
               <span className="text-white font-bold text-base tracking-tighter">F</span>
             </Link>
             <div className="space-y-1">
@@ -216,7 +216,7 @@ export default function LoginPage() {
                         value={email}
                         onChange={(e) => { setEmail(e.target.value); setTermsError("") }}
                         required
-                        className="h-12 bg-[#141414] border-white/5 focus:border-[#c65f39]/50 text-white rounded-xl placeholder:text-gray-700 transition-all font-medium"
+                        className="h-12 bg-[#141414] border-white/5 focus:border-[#D95E46]/50 text-white rounded-xl placeholder:text-gray-700 transition-all font-medium"
                       />
                     </div>
 
@@ -224,13 +224,13 @@ export default function LoginPage() {
                       <Checkbox
                         checked={acceptedTerms}
                         onCheckedChange={(checked) => { setAcceptedTerms(checked === true); setTermsError("") }}
-                        className="mt-0.5 border-neutral-600 data-[state=checked]:bg-[#c65f39] data-[state=checked]:border-[#c65f39]"
+                        className="mt-0.5 border-neutral-600 data-[state=checked]:bg-[#D95E46] data-[state=checked]:border-[#D95E46]"
                       />
                       <span className="text-xs text-neutral-500 leading-relaxed">
                         I accept the{" "}
-                        <Link href="/legal/privacy-policy" target="_blank" className="text-[#c65f39] hover:underline font-medium">Privacy Policy</Link>
+                        <Link href="/legal/privacy-policy" target="_blank" className="text-[#D95E46] hover:underline font-medium">Privacy Policy</Link>
                         {" "}and{" "}
-                        <Link href="/legal/terms" target="_blank" className="text-[#c65f39] hover:underline font-medium">Terms & Conditions</Link>
+                        <Link href="/legal/terms" target="_blank" className="text-[#D95E46] hover:underline font-medium">Terms & Conditions</Link>
                       </span>
                     </label>
                     {termsError && (
@@ -239,7 +239,7 @@ export default function LoginPage() {
 
                     <Button 
                       type="submit"
-                      className="w-full h-12 rounded-xl bg-[#c65f39] hover:bg-[#b04d2e] text-white font-semibold text-sm transition-all active:scale-95 shadow-md"
+                      className="w-full h-12 rounded-xl bg-[#D95E46] hover:bg-[#c54f37] text-white font-semibold text-sm transition-all active:scale-95 shadow-md"
                       disabled={isLoading}
                     >
                       {isLoading ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : "Continue with Email"}
@@ -264,13 +264,13 @@ export default function LoginPage() {
                         onChange={(e) => setOtp(e.target.value)}
                         required
                         maxLength={6}
-                        className="h-14 bg-[#141414] border-white/5 focus:border-[#c65f39]/50 text-white rounded-xl text-center tracking-[0.4em] text-xl font-bold transition-all"
+                        className="h-14 bg-[#141414] border-white/5 focus:border-[#D95E46]/50 text-white rounded-xl text-center tracking-[0.4em] text-xl font-bold transition-all"
                       />
                     </div>
 
                     <Button 
                       type="submit"
-                      className="w-full h-12 rounded-xl bg-[#c65f39] hover:bg-[#b04d2e] text-white font-semibold text-sm transition-all active:scale-95 shadow-md"
+                      className="w-full h-12 rounded-xl bg-[#D95E46] hover:bg-[#c54f37] text-white font-semibold text-sm transition-all active:scale-95 shadow-md"
                       disabled={isLoading || otp.length !== 6}
                     >
                       {isLoading ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : "Verify and Continue"}
@@ -302,7 +302,7 @@ export default function LoginPage() {
         
         <div className="relative w-full h-full flex items-center justify-center scale-110">
           {/* Atmospheric Lighting */}
-          <div className="absolute w-[1000px] h-[1000px] rounded-full bg-[#c65f39]/5 blur-[160px] animate-pulse" />
+          <div className="absolute w-[1000px] h-[1000px] rounded-full bg-[#D95E46]/5 blur-[160px] animate-pulse" />
           <div className="absolute w-[600px] h-[600px] rounded-full bg-white/5 blur-[100px]" />
           
           <div className="relative z-10">
@@ -314,9 +314,9 @@ export default function LoginPage() {
                   <stop offset="100%" stopColor="rgba(255,255,255,0.01)" />
                 </linearGradient>
                 <linearGradient id="glow-sweep" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#c65f39" stopOpacity="0" />
-                  <stop offset="50%" stopColor="#c65f39" stopOpacity="1" />
-                  <stop offset="100%" stopColor="#c65f39" stopOpacity="0" />
+                  <stop offset="0%" stopColor="#D95E46" stopOpacity="0" />
+                  <stop offset="50%" stopColor="#D95E46" stopOpacity="1" />
+                  <stop offset="100%" stopColor="#D95E46" stopOpacity="0" />
                 </linearGradient>
                 <filter id="neon-glow">
                   <feGaussianBlur stdDeviation="2" result="blur" />
@@ -363,15 +363,15 @@ export default function LoginPage() {
                   >
                     <motion.circle
                       cx={300 + ring.r} cy="300" r="5"
-                      fill={i === 0 ? "#c65f39" : "white"}
-                      style={{ filter: `blur(${i === 0 ? '1.5px' : '0px'})`, boxShadow: `0 0 15px ${i === 0 ? '#c65f39' : '#fff'}` }}
+                      fill={i === 0 ? "#D95E46" : "white"}
+                      style={{ filter: `blur(${i === 0 ? '1.5px' : '0px'})`, boxShadow: `0 0 15px ${i === 0 ? '#D95E46' : '#fff'}` }}
                       animate={{ scale: [1, 1.3, 1], opacity: [0.5, 1, 0.5] }}
                       transition={{ duration: 4 + i, repeat: Infinity }}
                     />
                     {/* Trailing Arc */}
                     <path 
                       d={`M ${300 + ring.r} 300 A ${ring.r} ${ring.r} 0 0 1 ${300 + ring.r - 30} ${300 - 30}`}
-                      stroke={i === 0 ? "#c65f39" : "white"}
+                      stroke={i === 0 ? "#D95E46" : "white"}
                       strokeWidth="1.5"
                       opacity="0.15"
                       fill="none"
@@ -382,10 +382,10 @@ export default function LoginPage() {
 
               {/* Reactor Core Housing */}
               <g filter="url(#neon-glow)">
-                <circle cx="300" cy="300" r={65} stroke="#c65f39" strokeOpacity="0.1" strokeWidth="0.5" />
+                <circle cx="300" cy="300" r={65} stroke="#D95E46" strokeOpacity="0.1" strokeWidth="0.5" />
                 <motion.circle 
                    cx="300" cy="300" r={45} 
-                   stroke="#c65f39" 
+                   stroke="#D95E46" 
                    strokeWidth="1.5" 
                    strokeDasharray="5 5"
                    animate={{ rotate: 360, scale: [0.98, 1.02, 0.98] }}
@@ -399,7 +399,7 @@ export default function LoginPage() {
                 <motion.path
                   key={`burst-${idx}`}
                   d="M300 100 A 200 200 0 0 1 450 250"
-                  stroke="#c65f39"
+                  stroke="#D95E46"
                   strokeWidth="1"
                   strokeDasharray="2 10"
                   opacity="0"
@@ -413,14 +413,14 @@ export default function LoginPage() {
             {/* Core Neural Node */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
                <motion.div 
-                 animate={{ scale: [1, 1.2, 1], boxShadow: ["0 0 20px rgba(255,255,255,0.2)", "0 0 40px rgba(198,95,57,0.4)", "0 0 20px rgba(255,255,255,0.2)"] }}
+                 animate={{ scale: [1, 1.2, 1], boxShadow: ["0 0 20px rgba(255,255,255,0.2)", "0 0 40px rgba(217,94,70,0.4)", "0 0 20px rgba(255,255,255,0.2)"] }}
                  transition={{ duration: 4, repeat: Infinity }}
                  className="h-2 w-2 rounded-full bg-white relative z-20" 
                />
                <motion.div 
                  animate={{ scale: [1, 3, 1], opacity: [0.3, 0, 0.3] }}
                  transition={{ duration: 3, repeat: Infinity }}
-                 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-8 rounded-full border border-[#c65f39]/30" 
+                 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-8 rounded-full border border-[#D95E46]/30" 
                />
             </div>
           </div>
@@ -430,8 +430,8 @@ export default function LoginPage() {
         <div className="absolute bottom-24 left-24 space-y-6 z-50">
           <div className="space-y-2">
              <div className="flex items-center gap-3">
-                <div className="h-1.5 w-1.5 rounded-full bg-[#c65f39] shadow-[0_0_8px_#c65f39]" />
-                <span className="text-[10px] font-bold text-[#c65f39] uppercase tracking-widest">Platform Core</span>
+                <div className="h-1.5 w-1.5 rounded-full bg-[#D95E46] shadow-[0_0_8px_#D95E46]" />
+                <span className="text-[10px] font-bold text-[#D95E46] uppercase tracking-widest">Platform Core</span>
              </div>
              <h3 className="text-5xl font-semibold text-white tracking-tight max-w-lg leading-[1.1]">The future of <br/> business operations.</h3>
           </div>

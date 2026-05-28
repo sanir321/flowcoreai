@@ -18,6 +18,14 @@ export default async function AgentHubPage() {
     redirect("/onboarding")
   }
 
+  const { data: ws } = await supabase
+    .from("workspaces")
+    .select("id")
+    .eq("id", workspaceId)
+    .is("deleted_at", null)
+    .single()
+  if (!ws) redirect("/onboarding")
+
   const { data: agents } = await supabase
     .from("workspace_agents")
     .select("*")

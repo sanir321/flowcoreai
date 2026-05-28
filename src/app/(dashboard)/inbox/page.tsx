@@ -13,6 +13,15 @@ export default async function InboxPage() {
   const workspaceId = user.app_metadata?.workspace_id
   if (!workspaceId) redirect("/onboarding")
 
+  const { data: workspace } = await supabase
+    .from("workspaces")
+    .select("id, welcome_template")
+    .eq("id", workspaceId)
+    .is("deleted_at", null)
+    .single()
+
+  if (!workspace) redirect("/onboarding")
+
   // Fetch initial sessions
   const { data: sessions } = await supabase
     .from("conversation_sessions")
@@ -28,13 +37,6 @@ export default async function InboxPage() {
     .eq("workspace_id", workspaceId)
     .is("deleted_at", null)
     .limit(50)
-
-  // Fetch workspace template
-  const { data: workspace } = await supabase
-    .from("workspaces")
-    .select("welcome_template")
-    .eq("id", workspaceId)
-    .single()
 
   return (
     <InboxClient 

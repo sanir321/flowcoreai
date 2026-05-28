@@ -2,43 +2,26 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { motion, useScroll, useTransform, useSpring, useMotionValue } from "framer-motion"
-import { useRef, useState, useEffect } from "react"
+import { motion } from "framer-motion"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { 
-  ArrowRight, 
-  Globe, 
-  ShieldCheck, 
-  CheckCircle2, 
-  Lock,
   ArrowUpRight,
-  Sparkles,
+  Shield,
+  Lock,
+  Heart,
+  Send,
   MessageSquare,
+  Sparkles,
+  Inbox,
   BarChart2,
   Users,
-  Inbox,
-  Command,
-  Plus,
-  Search,
-  Cpu,
-  Book,
+  CheckCircle2,
+  Globe,
   FileText,
-  Bot,
-  Mic,
-  Workflow,
-  Settings,
-  Calendar,
-  Table,
-  Hash,
-  Database,
-  User,
-  Zap,
-  Clock,
-  Send,
   Activity,
-  LayoutGrid
+  ChevronDown
 } from "lucide-react"
-import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 
 const WhatsAppLogo = ({ className }: { className?: string }) => (
@@ -67,43 +50,6 @@ const GoogleSheetsLogo = ({ className }: { className?: string }) => (
 export default function LandingPage() {
   const [email, setEmail] = useState("")
   const router = useRouter()
-  const containerRef = useRef<HTMLDivElement>(null)
-  const heroRef = useRef<HTMLDivElement>(null)
-
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start start", "end end"]
-  })
-
-  const smoothProgress = useSpring(scrollYProgress, {
-    stiffness: 100,
-    damping: 30,
-    restDelta: 0.001
-  })
-
-  // Parallax Transforms
-  const heroY = useTransform(smoothProgress, [0, 0.2], [0, -100])
-  const dashboardY = useTransform(smoothProgress, [0, 0.3], [0, -150])
-  const mockupContentY = useTransform(smoothProgress, [0.05, 0.4], [40, -100])
-  const dashboardScale = useTransform(smoothProgress, [0, 0.2], [1, 1.05])
-  const featuresY = useTransform(smoothProgress, [0.15, 0.5], [0, -60])
-  const integrationsY = useTransform(smoothProgress, [0.35, 0.7], [0, -40])
-  const footerY = useTransform(smoothProgress, [0.7, 1], [0, -20])
-
-  // Interactive mouse glow
-  const mouseX = useMotionValue(0)
-  const mouseY = useMotionValue(0)
-  useEffect(() => {
-    const handleMouse = (e: MouseEvent) => {
-      mouseX.set(e.clientX)
-      mouseY.set(e.clientY)
-    }
-    window.addEventListener('mousemove', handleMouse)
-    return () => window.removeEventListener('mousemove', handleMouse)
-  }, [mouseX, mouseY])
-
-  const glowX = useTransform(mouseX, (x) => x - 500)
-  const glowY = useTransform(mouseY, (y) => y - 500)
 
   const fadeInUp = {
     initial: { opacity: 0, y: 30 },
@@ -112,78 +58,98 @@ export default function LandingPage() {
     transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] as any }
   }
 
-  const stagger = {
-    initial: { opacity: 0, y: 20 },
-    whileInView: { opacity: 1, y: 0 },
-    viewport: { once: true, margin: "-60px" },
-    transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] as any }
-  }
-
-  const scaleOnHover = { whileHover: { scale: 1.02 }, transition: { type: "spring", stiffness: 300, damping: 15 } }
-
   return (
-    <div ref={containerRef} className="min-h-screen bg-[#0A0A0A] text-white font-sans selection:bg-[#D95E46] selection:text-white overflow-x-hidden scroll-smooth text-gray-300">
+    <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-[#D95E46] selection:text-white overflow-x-hidden scroll-smooth">
 
-      {/* Navigation */}
-      <header className="h-16 flex items-center justify-between px-6 lg:px-12 sticky top-0 bg-[#0A0A0A]/90 backdrop-blur-xl z-[100]">
-         <div className="flex items-center">
-           <Link href="/" className="text-xl font-bold tracking-tighter text-white">flowcore</Link>
-         </div>
-         
-         <nav className="hidden md:flex items-center gap-8">
-           <Link href="/pricing" className="text-sm text-neutral-500 hover:text-white transition-colors font-medium">Pricing</Link>
-           <Link href="/faq" className="text-sm text-neutral-500 hover:text-white transition-colors font-medium">FAQ</Link>
-           <Link href="/changelog" className="text-sm text-neutral-500 hover:text-white transition-colors font-medium">Changelog</Link>
-           <Link href="/legal" className="text-sm text-neutral-500 hover:text-white transition-colors font-medium">Legal</Link>
-         </nav>
+      <header className="h-16 flex items-center justify-between px-6 lg:px-12 sticky top-0 bg-[#050505]/95 backdrop-blur-xl z-[100] border-b border-white/[0.04]">
+        <div className="flex items-center gap-2.5">
+          <Link href="/" className="h-8 w-8 rounded-lg bg-[#D95E46] flex items-center justify-center shadow-sm hover:scale-105 transition-all duration-300">
+            <span className="text-white font-bold text-sm tracking-tighter">F</span>
+          </Link>
+          <Link href="/" className="text-xl font-bold tracking-tighter text-white font-outfit">
+            flowcore
+          </Link>
+        </div>
+        
+        <nav className="hidden md:flex items-center gap-8">
+          <div className="relative group">
+            <button className="text-sm text-neutral-400 hover:text-white transition-colors font-medium flex items-center gap-1 py-2">
+              Industries <ChevronDown className="h-3 w-3 opacity-60" />
+            </button>
+            <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 w-[480px] bg-[#11100f] border border-white/5 rounded-xl shadow-2xl p-6 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 grid grid-cols-2 gap-4">
+              <div>
+                <div className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-2">FlowCore by Industry</div>
+                <div className="space-y-2">
+                  <div className="hover:bg-white/5 p-1.5 rounded-lg transition-colors cursor-pointer">
+                    <div className="font-bold text-xs text-white">Hospitality</div>
+                    <div className="text-[10px] text-neutral-500">Automate guest check-in & STR operations</div>
+                  </div>
+                  <div className="hover:bg-white/5 p-1.5 rounded-lg transition-colors cursor-pointer">
+                    <div className="font-bold text-xs text-white">Property Management</div>
+                    <div className="text-[10px] text-neutral-500">From tour booked to lease signed</div>
+                  </div>
+                  <div className="hover:bg-white/5 p-1.5 rounded-lg transition-colors cursor-pointer">
+                    <div className="font-bold text-xs text-white">Home services</div>
+                    <div className="text-[10px] text-neutral-500">AI that answers calls and books services</div>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-2">Learn More</div>
+                <div className="space-y-2">
+                  <div className="hover:bg-white/5 p-1.5 rounded-lg transition-colors cursor-pointer">
+                    <div className="font-bold text-xs text-white">Book a Demo</div>
+                    <div className="text-[10px] text-neutral-500">Connect with our team to see in action</div>
+                  </div>
+                  <div className="hover:bg-white/5 p-1.5 rounded-lg transition-colors cursor-pointer">
+                    <div className="font-bold text-xs text-white">ROI Calculator</div>
+                    <div className="text-[10px] text-neutral-500">Calculate FlowCore's Impact</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <Link href="/pricing" className="text-sm text-neutral-400 hover:text-white transition-colors font-medium">Customers</Link>
+          <Link href="/pricing" className="text-sm text-neutral-400 hover:text-white transition-colors font-medium">Pricing</Link>
+          <div className="relative group">
+            <button className="text-sm text-neutral-400 hover:text-white transition-colors font-medium flex items-center gap-1 py-2">
+              Resources <ChevronDown className="h-3 w-3 opacity-60" />
+            </button>
+            <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 w-48 bg-[#11100f] border border-white/5 rounded-xl shadow-2xl p-2 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200">
+              <Link href="/faq" className="block hover:bg-white/5 p-2 rounded-lg text-xs font-semibold text-white">FAQ</Link>
+              <Link href="/changelog" className="block hover:bg-white/5 p-2 rounded-lg text-xs font-semibold text-white">Changelog</Link>
+              <Link href="/legal" className="block hover:bg-white/5 p-2 rounded-lg text-xs font-semibold text-white">Legal</Link>
+            </div>
+          </div>
+        </nav>
 
-         <div className="flex items-center gap-4">
-           <Link href="/login" className="text-sm font-medium text-neutral-500 hover:text-white transition-colors">Sign In</Link>
-           <Button asChild className="rounded-lg h-9 px-5 bg-white text-black hover:bg-neutral-100 transition-all text-xs font-semibold">
-              <Link href="/login">Get Started</Link>
-           </Button>
-         </div>
-       </header>
+        <div className="flex items-center gap-6">
+          <Link href="/login" className="text-sm font-medium text-neutral-400 hover:text-white transition-colors">Book Demo</Link>
+          <Button asChild className="rounded-lg h-9 px-4 bg-[#222222] border border-neutral-800 text-white hover:bg-neutral-800 transition-all text-xs font-medium">
+             <Link href="/login">Sign In</Link>
+          </Button>
+        </div>
+      </header>
 
       <main>
-        {/* Primary Hero Section */}
-        <section className="relative pt-32 pb-48 px-6 lg:px-12 overflow-hidden flex flex-col items-center">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-radial from-[#D95E46]/8 to-transparent rounded-full pointer-events-none" />
+        {/* HERO SECTION (Dark Theme) */}
+        <section className="relative pt-32 pb-48 px-6 lg:px-12 overflow-hidden flex flex-col items-center bg-[#050505]">
+          {/* Warm orange radial glows in the background */}
+          <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-gradient-radial from-[#D95E46]/18 via-[#D95E46]/6 to-transparent rounded-full blur-[110px] pointer-events-none z-0" />
+          <div className="absolute top-[10%] left-1/2 -translate-x-1/2 w-[700px] h-[450px] bg-[#D95E46]/10 rounded-full blur-[90px] pointer-events-none z-0" />
 
-          <motion.div style={{ y: heroY }} className="max-w-4xl mx-auto text-center relative z-10 space-y-10">
-            <div className="space-y-5">
-               <motion.div 
-                 initial={{ opacity: 0, y: 20 }}
-                 animate={{ opacity: 1, y: 0 }}
-                 className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10"
-               >
-                  <div className="h-1.5 w-1.5 rounded-full bg-[#D95E46]" />
-                  <span className="text-xs font-medium text-neutral-400">AI-powered customer service platform</span>
-               </motion.div>
-               <motion.h1 
-                 initial={{ opacity: 0, y: 20 }}
-                 animate={{ opacity: 1, y: 0 }}
-                 transition={{ delay: 0.1 }}
-                 className="text-5xl sm:text-6xl lg:text-8xl font-bold leading-[1.0] tracking-tighter text-white"
-               >
-                 Automated customer<br/>service <span className="text-[#D95E46]">assistants</span>
-               </motion.h1>
-               <motion.p 
-                 initial={{ opacity: 0, y: 20 }}
-                 animate={{ opacity: 1, y: 0 }}
-                 transition={{ delay: 0.2 }}
-                 className="text-lg text-neutral-500 font-medium max-w-xl mx-auto leading-relaxed"
-               >
+          <div className="max-w-4xl mx-auto text-center relative z-10 space-y-10">
+            <div className="space-y-6">
+               <h1 className="text-5xl sm:text-6xl lg:text-[70.5px] font-bold leading-[1.1] tracking-tighter text-white font-outfit">
+                 Automated customer<br/>
+                 service <span className="text-[#D95E46] italic font-outfit">assistants</span>
+               </h1>
+               <p className="text-lg text-neutral-400 font-medium max-w-xl mx-auto leading-relaxed">
                  Connect specialized AI to manage and resolve your customer conversations with business precision.
-               </motion.p>
+               </p>
             </div>
 
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="max-w-md mx-auto"
-            >
+            <div className="max-w-md mx-auto">
               <form 
                 onSubmit={(e) => {
                   e.preventDefault()
@@ -199,245 +165,429 @@ export default function LandingPage() {
                    required
                    className="bg-transparent border-none text-white h-11 px-4 focus-visible:ring-0 placeholder:text-neutral-600 text-sm"
                  />
-                 <Button type="submit" className="h-11 px-6 rounded-lg bg-[#D95E46] hover:bg-[#E2735D] text-white font-semibold text-sm whitespace-nowrap transition-all">
-                   Get Started
+                 <Button type="submit" className="h-11 px-6 rounded-lg bg-[#D95E46] hover:bg-[#D95E46]/90 text-white font-semibold text-sm whitespace-nowrap transition-all flex items-center gap-1">
+                   Get Started <ArrowUpRight className="h-4 w-4" />
                  </Button>
               </form>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
 
-          <motion.div 
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            style={{ y: dashboardY, scale: dashboardScale }} 
-            className="w-full max-w-6xl px-6 relative z-30 mt-24"
-          >
-            <div className="bg-[#111] rounded-2xl border border-white/[0.06] overflow-hidden shadow-2xl ring-1 ring-white/[0.02]">
-              <div className="flex items-center justify-between h-10 px-5 border-b border-white/[0.06]">
+          {/* Landing Page Dashboard Preview Container */}
+          <div className="w-full max-w-5xl px-6 relative z-30 mt-24">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[350px] bg-[#D95E46]/18 rounded-full blur-[100px] pointer-events-none -z-10 animate-pulse" />
+            <div className="bg-[#11100f] rounded-2xl border border-white/[0.06] overflow-hidden shadow-2xl ring-1 ring-white/[0.02]">
+              <div className="flex items-center justify-between h-10 px-5 border-b border-white/[0.06] bg-[#0c0c0b]">
                 <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-[#FF5F57]" />
-                  <div className="h-2 w-2 rounded-full bg-[#FEBC2E]" />
-                  <div className="h-2 w-2 rounded-full bg-[#28C840]" />
+                  <div className="h-2 w-2 rounded-full bg-neutral-800" />
+                  <div className="h-2 w-2 rounded-full bg-neutral-800" />
+                  <div className="h-2 w-2 rounded-full bg-neutral-800" />
                 </div>
                 <div className="flex items-center gap-2 px-3 py-1 bg-white/[0.04] rounded-md">
-                  <div className="h-1 w-1 rounded-full bg-emerald-500" />
-                  <span className="text-[9px] font-medium text-neutral-500">app.flowcore.ai</span>
+                  <div className="h-1 w-1 rounded-full bg-[#D95E46]" />
+                  <span className="text-[9px] font-medium text-neutral-500 font-mono">app.flowcore.ai</span>
                 </div>
-                <div className="h-6 w-6 rounded-md bg-white/[0.06] flex items-center justify-center text-[8px] font-semibold text-neutral-500">F</div>
+                <div className="h-4 w-4 rounded bg-white/[0.06] flex items-center justify-center text-[7px] font-semibold text-neutral-500">F</div>
               </div>
-              <div className="flex items-center justify-center h-64 lg:h-80">
-                <div className="flex items-center gap-8 text-neutral-600">
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="h-12 w-12 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center">
-                      <MessageSquare className="h-5 w-5 text-[#D95E46]" />
+              <div className="grid grid-cols-1 md:grid-cols-4 h-[350px] text-xs text-neutral-400">
+                <div className="border-r border-white/5 p-4 space-y-4 hidden md:block bg-[#0e0e0d]">
+                  <div className="font-semibold text-neutral-200 flex items-center gap-2"><Inbox className="h-4 w-4 text-[#D95E46]" /> Inbox</div>
+                  <div className="space-y-1">
+                    <div className="p-2 rounded-lg bg-white/5 border border-white/5 text-white">
+                      <div className="font-bold text-[11px] flex justify-between">Will Garman <span className="text-[9px] text-[#D95E46]">Active</span></div>
+                      <div className="text-[10px] text-neutral-400 truncate">I was wondering if I can extend...</div>
                     </div>
-                    <span className="text-[10px] font-medium">Inbox</span>
+                    <div className="p-2 rounded-lg opacity-40">
+                      <div className="font-bold text-[11px]">Jane Doe</div>
+                      <div className="text-[10px] text-neutral-400 truncate">Book a double room for next Friday</div>
+                    </div>
                   </div>
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="h-12 w-12 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center">
-                      <Bot className="h-5 w-5 text-neutral-500" />
+                </div>
+                <div className="md:col-span-2 p-4 flex flex-col justify-between h-full bg-[#11100f]">
+                  <div className="space-y-4">
+                    <div className="flex gap-2">
+                      <div className="h-6 w-6 rounded-full bg-[#D95E46]/20 flex items-center justify-center text-[9px] text-[#D95E46] font-bold">WG</div>
+                      <div className="bg-white/5 border border-white/5 p-2.5 rounded-2xl max-w-[80%] text-neutral-300">
+                        I was wondering if I can extend my upcoming stay to checkout one day later??
+                      </div>
                     </div>
-                    <span className="text-[10px] font-medium">Agents</span>
+                    <div className="flex gap-2 justify-end">
+                      <div className="bg-[#D95E46]/10 border border-[#D95E46]/20 p-2.5 rounded-2xl max-w-[80%] text-neutral-200">
+                        <span className="block text-[9px] text-[#D95E46] font-bold mb-0.5">Support Agent • Sent by AI</span>
+                        Let me query availability for property 230CALST. One moment.
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="h-12 w-12 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center">
-                      <BarChart2 className="h-5 w-5 text-neutral-500" />
-                    </div>
-                    <span className="text-[10px] font-medium">Insights</span>
+                  <div className="p-1.5 bg-white/5 rounded-xl border border-white/5 flex gap-2 items-center">
+                    <input type="text" placeholder="Type a message..." className="bg-transparent flex-1 border-none focus:outline-none text-[11px] px-2 text-white" disabled />
+                    <button className="bg-[#D95E46] text-white p-1 rounded-lg"><Send className="h-3 w-3" /></button>
                   </div>
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="h-12 w-12 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center">
-                      <Users className="h-5 w-5 text-neutral-500" />
+                </div>
+                <div className="p-4 space-y-4 hidden md:block bg-[#0e0e0d]">
+                  <div className="font-semibold text-neutral-200 flex items-center gap-2"><BarChart2 className="h-4 w-4 text-[#D95E46]" /> Analytics</div>
+                  <div className="space-y-3">
+                    <div className="bg-white/5 p-3 rounded-xl border border-white/5">
+                      <div className="text-[10px] text-neutral-500">AI Automation Rate</div>
+                      <div className="text-xl font-bold text-white tracking-tight mt-0.5">70.6%</div>
                     </div>
-                    <span className="text-[10px] font-medium">Contacts</span>
                   </div>
                 </div>
               </div>
             </div>
-          </motion.div>
+          </div>
         </section>
 
-         {/* Core Functions - Refined Contrast */}
-         <motion.section style={{ y: featuresY }} className="py-20 lg:py-32 px-4 lg:px-12 bg-[#0A0A0A] relative z-40 -mt-20">
-           <div className="max-w-7xl mx-auto space-y-24 lg:space-y-32">
-              {/* Function 1 & 2: Agents & Knowledge */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-                  <motion.div {...fadeInUp} className="space-y-6">
-                     <div className="h-10 w-10 rounded-xl bg-[#D95E46]/10 border border-[#D95E46]/20 flex items-center justify-center text-[#D95E46]"><Bot className="h-5 w-5" /></div>
-                     <h2 className="text-3xl lg:text-4xl font-bold tracking-tight text-white leading-[1.1]">Deploy Automated Service Assistants</h2>
-                     <p className="text-base text-neutral-500 leading-relaxed max-w-md font-medium">Manage messages and resolve customer queries with assistants trained on your specific business logic.</p>
-                     <div className="flex gap-8 border-t border-white/5 pt-6 text-gray-300">
-                        <div><p className="text-2xl font-bold text-white tracking-tighter">24/7</p><p className="text-[10px] font-semibold text-neutral-500 mt-1">Availability</p></div>
-                        <div><p className="text-2xl font-bold text-white tracking-tighter">98%</p><p className="text-[10px] font-semibold text-neutral-500 mt-1">Resolution</p></div>
-                    </div>
-                 </motion.div>
-                 
-                  <motion.div {...fadeInUp} className="bg-[#141414] p-6 rounded-2xl border border-white/5 shadow-lg relative group overflow-hidden">
-                     <div className="absolute inset-0 bg-gradient-to-br from-[#D95E46]/5 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-700" />
-                     <div className="space-y-5 relative z-10">
-                        <div className="flex items-center justify-between">
-                           <h3 className="text-[11px] font-semibold text-neutral-500">Data Upload</h3>
-                           <Sparkles className="h-3 w-3 text-[#D95E46] animate-pulse" />
-                        </div>
-                        <div className="space-y-2">
-                           <div className="h-12 w-full bg-[#0A0A0A] rounded-xl border border-white/5 flex items-center px-4 gap-3 hover:border-white/10 transition-all"><FileText className="h-4 w-4 text-[#D95E46]" /><span className="text-xs font-semibold text-white tracking-tight">Business_Playbook_2026.pdf</span><div className="ml-auto h-1.5 w-20 bg-emerald-950 rounded-full overflow-hidden"><div className="h-full w-[85%] bg-emerald-500" /></div></div>
-                           <div className="h-12 w-full bg-[#0A0A0A] rounded-xl border border-white/5 flex items-center px-4 gap-3 hover:border-white/10 transition-all"><Globe className="h-4 w-4 text-neutral-600" /><span className="text-xs font-semibold text-white tracking-tight">https://docs.business.com</span><CheckCircle2 className="ml-auto h-4 w-4 text-emerald-500" /></div>
-                        </div>
-                     </div>
-                  </motion.div>
-               </div>
+        {/* LOGO CLOUD (Light Theme) */}
+        <section className="py-16 bg-[#ffffff] border-t border-neutral-100 flex flex-col items-center">
+          <div className="text-[11px] font-bold text-neutral-400 uppercase tracking-widest mb-10 text-center font-sans">
+            500+ TEAMS SUPERCHARGE THEIR SERVICE WITH FLOWCORE
+          </div>
+          <div className="flex flex-wrap justify-center items-center gap-x-12 gap-y-6 max-w-6xl px-6 opacity-60">
+            {["haus", "Hallson", "CAPITALIA", "HostGenius", "renjoy", "BOCOBAY", "Casioa", "MerchFarm", "Pass the Keys", "alloggio"].map((brand, i) => (
+              <span key={i} className="text-lg font-extrabold text-neutral-900 tracking-tighter hover:opacity-100 transition-opacity select-none cursor-default font-outfit">
+                {brand}
+              </span>
+            ))}
+          </div>
+        </section>
 
-               {/* Function 3: Integrations - Refined Design */}
-               <div className="py-16 lg:py-24 border-t border-white/5 flex flex-col items-center text-center space-y-12">
-                  <motion.div {...fadeInUp} className="max-w-2xl space-y-4">
-                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10">
-                        <div className="h-1.5 w-1.5 rounded-full bg-[#D95E46]" />
-                        <span className="text-[9px] font-semibold text-[#D95E46]">Business Interconnect</span>
-                     </div>
-                     <h2 className="text-3xl lg:text-4xl font-bold tracking-tight text-white leading-[1.1]">Active Connections</h2>
-                     <p className="text-base text-neutral-500 font-medium max-w-xl mx-auto">Synchronize your existing communication channels with our automated business data layer.</p>
-                  </motion.div>
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-4xl">
-                     {[
-                       { logo: WhatsAppLogo, label: "WhatsApp", sub: "Business Bridge" },
-                       { logo: GoogleSheetsLogo, label: "Google Sheets", sub: "Data Storage" },
-                       { logo: GoogleCalendarLogo, label: "Google Calendar", sub: "Schedule Sync" }
-                     ].map((node, i) => (
-                       <motion.div key={i} {...fadeInUp} transition={{ delay: i * 0.1 }} className="group p-6 bg-[#141414] border border-white/5 rounded-2xl flex flex-col items-center gap-4 hover:border-[#D95E46]/30 hover:bg-[#1A1A1A] transition-all duration-500 hover:-translate-y-1 shadow-sm">
-                          <div className="h-14 w-14 bg-white/5 rounded-xl flex items-center justify-center group-hover:scale-110 transition-all duration-500 p-3">
-                             <node.logo className="h-full w-full" />
-                          </div>
-                          <div className="text-center space-y-1">
-                             <h4 className="text-sm font-bold text-white tracking-tight">{node.label}</h4>
-                             <p className="text-[10px] font-bold text-neutral-600">{node.sub}</p>
-                          </div>
-                       </motion.div>
-                     ))}
+        {/* HANDLE COMMUNICATION END-TO-END (Light Theme) */}
+        <section className="py-20 bg-[#ffffff] text-center px-6">
+          <div className="max-w-3xl mx-auto space-y-4">
+            <h2 className="text-4xl sm:text-[43px] font-light text-neutral-900 tracking-tight leading-tight font-outfit">
+              Handle communication end-to-end
+            </h2>
+            <p className="text-base text-neutral-500 max-w-xl mx-auto leading-relaxed">
+              FlowCore keeps your team focused by intelligently handling communications and escalating only the critical moments.
+            </p>
+          </div>
+        </section>
+
+        {/* SEE ROI IN 30 DAYS (Light Theme) */}
+        <section className="py-24 bg-[#ffffff] text-neutral-900 border-t border-neutral-100 px-6 lg:px-12">
+          <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <motion.div {...fadeInUp} className="space-y-6">
+              <span className="text-xs font-bold text-[#D95E46] uppercase tracking-wider">Reporting & Insights</span>
+              <h2 className="text-4xl sm:text-[43px] font-normal tracking-tight leading-tight font-outfit text-neutral-900">
+                See ROI in 30 days
+              </h2>
+              <p className="text-base text-neutral-500 leading-relaxed max-w-md">
+                AI insights to help monitor, evaluate, and continuously optimize your conversations.
+              </p>
+              <Button asChild className="h-11 px-6 rounded-xl bg-[#D95E46] hover:bg-[#D95E46]/90 text-white font-bold text-xs transition-all active:scale-95 shadow-lg flex items-center gap-1.5 w-fit">
+                <Link href="/login">Book Demo <ArrowUpRight className="h-4 w-4" /></Link>
+              </Button>
+            </motion.div>
+
+            <motion.div {...fadeInUp} className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-2xl relative overflow-hidden">
+              <div className="space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-neutral-100 pb-4">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-neutral-800">
+                    <span>Last 7 days</span>
+                    <span className="text-neutral-400">compared to</span>
+                    <span className="text-neutral-600 border border-neutral-200 px-2 py-0.5 rounded bg-neutral-50">Previous period</span>
                   </div>
-               </div>
-
-              {/* Function 4 & 5: Inbox & Insights - Refined Layout */}
-               <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24 items-center border-t border-white/5 pt-20 pb-8">
-                  <motion.div {...fadeInUp} className="bg-[#141414] rounded-3xl border border-white/5 shadow-lg p-6 space-y-6 relative overflow-hidden group">
-                     <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity"><BarChart2 size={80} className="text-[#D95E46]" /></div>
-                     <div className="flex items-center justify-between relative z-10">
-                        <div className="space-y-1"><h4 className="text-[10px] font-semibold text-neutral-500">Real-time Volume</h4><p className="text-3xl font-bold text-white tracking-tighter">85.4%</p></div>
-                        <div className="h-10 w-10 rounded-xl bg-[#D95E46]/10 flex items-center justify-center text-[#D95E46]"><Activity size={18} /></div>
-                     </div>
-                     <div className="h-32 w-full bg-[#0A0A0A] rounded-2xl overflow-hidden relative z-10 border border-white/5">
-                        <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 100 100">
-                           <defs>
-                              <linearGradient id="chart-grad" x1="0" y1="0" x2="0" y2="1">
-                                 <stop offset="0%" stopColor="#D95E46" stopOpacity="0.2" />
-                                 <stop offset="100%" stopColor="#D95E46" stopOpacity="0" />
-                              </linearGradient>
-                           </defs>
-                           <path d="M0,80 Q25,20 50,60 T100,10 L100,100 L0,100 Z" fill="url(#chart-grad)" />
-                           <path d="M0,80 Q25,20 50,60 T100,10" fill="none" stroke="#D95E46" strokeWidth="3" strokeLinecap="round" />
-                        </svg>
-                     </div>
-                  </motion.div>
-                  <motion.div {...fadeInUp} className="space-y-6">
-                     <div className="h-10 w-10 rounded-xl bg-[#D95E46]/10 border border-[#D95E46]/20 flex items-center justify-center text-[#D95E46]"><Activity size={20} /></div>
-                     <h2 className="text-3xl lg:text-4xl font-bold tracking-tight text-white leading-[1.1]">Full Visibility & Strategy Control</h2>
-                     <p className="text-base text-neutral-500 leading-relaxed font-medium max-w-md">Monitor assistant performance, track lead conversion, and step in manually when precision requires a human touch.</p>
-                     <div>
-                        <Button asChild className="h-10 px-6 rounded-xl bg-white text-black hover:bg-gray-100 font-bold text-xs transition-all active:scale-95 shadow-lg">
-                           <Link href="/login">Explore Insights</Link>
-                        </Button>
-                     </div>
-                  </motion.div>
+                  <div className="text-[10px] text-neutral-400 font-mono">Aug 22, 2025 - Aug 29, 2025</div>
                 </div>
-            </div>
-         </motion.section>
 
-         {/* FAQ Section */}
-         <motion.section style={{ y: integrationsY }} className="py-20 lg:py-32 px-4 lg:px-12 bg-[#0A0A0A] border-t border-white/5 relative overflow-hidden">
-             <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-[#D95E46]/5 blur-[120px] rounded-full translate-x-1/2 translate-y-1/2 pointer-events-none" />
-            <div className="max-w-3xl mx-auto space-y-12 relative z-10">
-               <div className="space-y-3 text-center">
-                  <h2 className="text-3xl lg:text-4xl font-bold text-white tracking-tight">Intelligence Briefing</h2>
-                  <p className="text-base text-neutral-600 font-medium">Everything you need to know about the FlowCore platform.</p>
-               </div>
-               <div className="grid gap-4">
-                  {[
-                     { q: "What is FlowCore?", a: "FlowCore is a next-generation automated orchestration platform that enables businesses to deploy specialized, high-precision assistants for customer communication and operational management." },
-                     { q: "How secure is the WhatsApp Bridge?", a: "We use official WhatsApp Cloud API protocols combined with our secure automated bridge layer, ensuring all conversations are encrypted end-to-end and data isolated." },
-                     { q: "Can I customize the AI's personality?", a: "Yes. Every assistant in the hub features a 'Persona' configuration where you can define their tone, instructions, and specific guardrails to match your brand voice." },
-                     { q: "What integrations are supported?", a: "Currently, we feature native synchronization nodes for WhatsApp, Google Sheets, and Google Calendar, with Salesforce and custom API webhooks coming in the next release cycle." }
-                  ].map((faq, i) => (
-                     <motion.div key={i} {...fadeInUp} className="p-6 bg-[#141414] border border-white/5 rounded-2xl space-y-3 hover:border-white/10 transition-all cursor-default shadow-sm">
-                        <h4 className="text-sm font-bold text-white tracking-tight flex items-center gap-3">
-                           <div className="h-1.5 w-1.5 rounded-full bg-[#D95E46]" />
-                           {faq.q}
-                        </h4>
-                        <p className="text-neutral-500 leading-relaxed font-medium text-sm border-l-2 border-[#D95E46]/20 pl-4 ml-0.5">{faq.a}</p>
-                     </motion.div>
-                  ))}
-               </div>
+                <div className="grid grid-cols-2 gap-8">
+                  <div>
+                    <div className="text-[10px] text-neutral-400 uppercase font-bold tracking-wider">AI automation rate</div>
+                    <div className="flex items-baseline gap-2 mt-1">
+                      <span className="text-3xl font-extrabold text-neutral-900 tracking-tight font-outfit">70.6%</span>
+                      <span className="text-[10px] font-bold bg-neutral-100 text-neutral-500 px-1.5 py-0.5 rounded">-8.1%</span>
+                    </div>
+                    <div className="text-[9px] text-neutral-400 mt-1">78.7% previous period</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-neutral-400 uppercase font-bold tracking-wider">Open ticket count</div>
+                    <div className="flex items-baseline gap-2 mt-1">
+                      <span className="text-3xl font-extrabold text-neutral-900 tracking-tight font-outfit">133</span>
+                    </div>
+                    <div className="text-[9px] text-neutral-400 mt-1">90 previous period</div>
+                  </div>
+                </div>
+
+                {/* Line Chart */}
+                <div className="h-32 w-full bg-neutral-50 rounded-xl border border-neutral-200/60 overflow-hidden relative">
+                  <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 100 100">
+                    <defs>
+                      <linearGradient id="light-chart-grad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.1" />
+                        <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
+                      </linearGradient>
+                    </defs>
+                    <path d="M0,80 C20,70 40,30 60,50 C80,70 90,20 100,10 L100,100 L0,100 Z" fill="url(#light-chart-grad)" />
+                    <path d="M0,80 C20,70 40,30 60,50 C80,70 90,20 100,10" fill="none" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" />
+                  </svg>
+                </div>
+
+                {/* Escalations Breakdown */}
+                <div className="space-y-3 pt-2">
+                  <div className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">Escalations</div>
+                  <div className="space-y-2 text-xs">
+                    <div className="space-y-1">
+                      <div className="flex justify-between font-medium text-neutral-700"><span>AI missing info</span><span className="font-bold text-neutral-900">19 <span className="text-[10px] text-neutral-400 font-normal">(52.8%)</span></span></div>
+                      <div className="h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden"><div className="h-full w-[52.8%] bg-[#D95E46]" /></div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex justify-between font-medium text-neutral-700"><span>AI needs your help</span><span className="font-bold text-neutral-900">10 <span className="text-[10px] text-neutral-400 font-normal">(27.8%)</span></span></div>
+                      <div className="h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden"><div className="h-full w-[27.8%] bg-amber-500" /></div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex justify-between font-medium text-neutral-700"><span>Urgent tagged</span><span className="font-bold text-neutral-900">7 <span className="text-[10px] text-neutral-400 font-normal">(19.4%)</span></span></div>
+                      <div className="h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden"><div className="h-full w-[19.4%] bg-rose-500" /></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* EVERYTHING IN ONE PLACE (Light Theme) */}
+        <section className="py-24 bg-[#ffffff] text-neutral-900 border-t border-neutral-100 px-6 lg:px-12">
+          <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <motion.div {...fadeInUp} className="space-y-6 lg:order-last">
+              <span className="text-xs font-bold text-[#D95E46] uppercase tracking-wider">AI-Native Unified Inbox</span>
+              <h2 className="text-4xl sm:text-[43px] font-normal tracking-tight leading-tight font-outfit text-neutral-900">
+                Everything in one place
+              </h2>
+              <p className="text-base text-neutral-500 leading-relaxed max-w-md">
+                When automation ends, your control begins — streamline every conversation your AI can't handle in one place. Teach AI natively in the inbox and automate the future.
+              </p>
+              <Button asChild className="h-11 px-6 rounded-xl bg-[#D95E46] hover:bg-[#D95E46]/90 text-white font-bold text-xs transition-all active:scale-95 shadow-lg flex items-center gap-1.5 w-fit">
+                <Link href="/login">Book Demo <ArrowUpRight className="h-4 w-4" /></Link>
+              </Button>
+            </motion.div>
+
+            <motion.div {...fadeInUp} className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-2xl relative grid grid-cols-3 gap-4 h-[420px] text-[11px] text-neutral-600">
+              {/* Inbox Details Left */}
+              <div className="col-span-2 space-y-4 border-r border-neutral-100 pr-4 flex flex-col justify-between h-full">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-full bg-neutral-100 flex items-center justify-center text-xs font-bold text-neutral-700">WG</div>
+                    <div>
+                      <div className="font-bold text-neutral-900">Will Garman</div>
+                      <div className="text-[9px] text-neutral-400">LT 2:18 PM • YT 2:18 PM</div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <div className="bg-neutral-50 border border-neutral-200/60 p-2.5 rounded-xl text-neutral-700 max-w-[90%]">
+                      <span className="block text-[8px] text-neutral-400 uppercase font-bold mb-0.5">Will Garman</span>
+                      I was wondering if I can extend my upcoming stay to checkout one day later??
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-2 justify-end">
+                    <div className="bg-[#D95E46]/5 border border-[#D95E46]/20 p-2.5 rounded-xl text-neutral-800 max-w-[90%] text-right">
+                      <span className="block text-[8px] text-[#D95E46] font-bold mb-0.5">Support Agent • Sent by AI</span>
+                      Let me query availability for property 230CALST. One moment.
+                    </div>
+                  </div>
+
+                  <div className="bg-emerald-50 border border-emerald-200 p-2 rounded-xl text-emerald-600 text-[10px]">
+                    ✔ Availability lookup successful. Date: 04/10/2025. Status: Available.
+                  </div>
+                </div>
+
+                <div className="p-1.5 bg-neutral-50 border border-neutral-200 rounded-xl flex gap-2 items-center">
+                  <input type="text" placeholder="Type a message..." className="bg-transparent flex-1 border-none focus:outline-none text-[10px] px-2 text-neutral-800" disabled />
+                  <button className="bg-[#D95E46] text-white p-1 rounded-lg"><Send className="h-3 w-3" /></button>
+                </div>
+              </div>
+
+              {/* Sidebar Right */}
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <div className="text-[9px] text-neutral-400 uppercase font-bold">During Stay</div>
+                  <div className="flex justify-between border-b border-neutral-100 pb-1 text-[10px] font-semibold text-neutral-700">
+                    <span className="text-neutral-400">BEFORE</span>
+                    <span className="text-neutral-900 border-b-2 border-neutral-900">DURING</span>
+                  </div>
+                </div>
+                <div className="bg-neutral-50 p-2 rounded-lg border border-neutral-100 text-[9px] text-neutral-500 leading-normal">
+                  ✨ Will is doing pretty well. The guest is coming for an upcoming stay and wants to extend their stay.
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  <span className="px-2 py-0.5 bg-rose-50 border border-rose-100 text-rose-600 rounded text-[9px]">Access Issue</span>
+                  <span className="px-2 py-0.5 bg-neutral-100 text-neutral-600 rounded text-[9px]">Extend Request</span>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* INTEGRATIONS GRID (Light Theme) */}
+        <section className="py-24 bg-[#ffffff] border-t border-neutral-100 px-6 text-center">
+          <div className="max-w-4xl mx-auto space-y-12">
+            <div className="space-y-4">
+              <h2 className="text-4xl sm:text-[43px] font-normal text-neutral-900 tracking-tight leading-tight font-outfit">
+                Integrate with every aspect of your tech stack
+              </h2>
+              <p className="text-base text-neutral-500 max-w-xl mx-auto">
+                Give agents the tools to succeed, backed by enterprise-grade security and SOC 2 Type II compliance.
+              </p>
             </div>
-         </motion.section>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-3xl mx-auto">
+              {[
+                { logo: WhatsAppLogo, label: "WhatsApp", sub: "Connected" },
+                { logo: GoogleSheetsLogo, label: "Google Sheets", sub: "Synced" },
+                { logo: GoogleCalendarLogo, label: "Google Calendar", sub: "Synced" },
+                { logo: () => <Globe className="h-full w-full text-neutral-600" />, label: "Webchat", sub: "Active" }
+              ].map((node, i) => (
+                <div key={i} className="p-6 bg-neutral-50 border border-neutral-200/80 rounded-xl flex flex-col items-center gap-4 hover:bg-neutral-100 transition-all duration-300">
+                  <div className="h-12 w-12 bg-white rounded-lg flex items-center justify-center p-2.5 shadow-sm border border-neutral-100">
+                    <node.logo className="h-full w-full" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-neutral-900">{node.label}</h4>
+                    <p className="text-[9px] font-semibold text-neutral-400 mt-0.5">{node.sub}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* TRANSFORM THE WAY YOUR TEAM OPERATES (Dark Theme) */}
+        <section className="py-24 bg-[#050505] text-white px-6 lg:px-12 relative overflow-hidden border-t border-white/[0.04]">
+          <div className="absolute top-1/2 right-0 w-[500px] h-[500px] bg-[#D95E46]/5 blur-[100px] rounded-full translate-x-1/2 pointer-events-none" />
+          <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <div className="space-y-6">
+              <span className="text-xs font-bold text-neutral-500 uppercase tracking-widest">LEARN MORE</span>
+              <h2 className="text-4xl sm:text-[43px] font-normal tracking-tight leading-tight font-outfit text-white">
+                Transform the way your team operates
+              </h2>
+              <div className="flex flex-wrap gap-4">
+                <Button asChild className="h-11 px-6 rounded-xl bg-[#D95E46] hover:bg-[#D95E46]/90 text-white font-bold text-xs transition-all active:scale-95 shadow-lg flex items-center gap-1">
+                  <Link href="/login">Talk to Sales <ArrowUpRight className="h-4 w-4" /></Link>
+                </Button>
+                <Button asChild className="h-11 px-6 rounded-xl bg-transparent border border-neutral-800 text-white hover:bg-white/5 font-bold text-xs transition-all flex items-center gap-1">
+                  <Link href="/login">Calculate your ROI <ArrowUpRight className="h-4 w-4" /></Link>
+                </Button>
+              </div>
+            </div>
+
+            {/* Simulated Metallic Ring Design */}
+            <div className="relative h-64 flex items-center justify-center lg:justify-end">
+              <div className="h-48 w-48 rounded-full border-8 border-neutral-800 border-t-[#D95E46] animate-spin opacity-45" style={{ animationDuration: '8s' }} />
+              <div className="absolute h-32 w-32 rounded-full border-4 border-neutral-900 border-b-[#D95E46] animate-spin opacity-20" style={{ animationDuration: '4s', animationDirection: 'reverse' }} />
+            </div>
+          </div>
+        </section>
+
+        {/* BUILT FOR ENTERPRISE SECURITY (Light Theme) */}
+        <section className="py-24 bg-[#ffffff] text-neutral-900 border-t border-neutral-100 px-6 lg:px-12 text-center">
+          <div className="max-w-7xl mx-auto space-y-16">
+            <h2 className="text-4xl sm:text-[43px] font-normal text-neutral-900 tracking-tight leading-tight font-outfit">
+              Built for Enterprise Security and Privacy
+            </h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="p-8 rounded-2xl border border-neutral-200 bg-white space-y-4 text-left shadow-sm">
+                <div className="h-10 w-10 bg-[#D95E46]/10 rounded-xl flex items-center justify-center text-[#D95E46]"><Shield className="h-5 w-5" /></div>
+                <h3 className="text-base font-bold text-neutral-900">SOC Type II</h3>
+                <p className="text-xs text-neutral-500 leading-relaxed font-medium">
+                  FlowCore meets SOC 2 Type II standards, ensuring secure handling of customer data across all AI-powered support and sales operations.
+                </p>
+              </div>
+              <div className="p-8 rounded-2xl border border-neutral-200 bg-white space-y-4 text-left shadow-sm">
+                <div className="h-10 w-10 bg-[#D95E46]/10 rounded-xl flex items-center justify-center text-[#D95E46]"><Heart className="h-5 w-5" /></div>
+                <h3 className="text-base font-bold text-neutral-900">HIPAA</h3>
+                <p className="text-xs text-neutral-500 leading-relaxed font-medium">
+                  FlowCore is designed to support HIPAA-regulated workflows and implements administrative and technical safeguards to protect customer data.
+                </p>
+              </div>
+              <div className="p-8 rounded-2xl border border-neutral-200 bg-white space-y-4 text-left shadow-sm">
+                <div className="h-10 w-10 bg-[#D95E46]/10 rounded-xl flex items-center justify-center text-[#D95E46]"><Lock className="h-5 w-5" /></div>
+                <h3 className="text-base font-bold text-neutral-900">Enterprise Security Controls</h3>
+                <p className="text-xs text-neutral-500 leading-relaxed font-medium">
+                  End-to-end encryption, role-based access, audit logs, and secure model orchestration across all AI agents.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
 
-      {/* NEW PROFESSIONAL FOOTER */}
-      <footer className="bg-[#0A0A0A] border-t border-white/5 pt-16 pb-10 px-4 lg:px-12 text-gray-500">
-         <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 mb-16 text-sm">
-            <div className="col-span-2 md:col-span-3 lg:col-span-2 space-y-4">
-               <Link href="/" className="text-xl font-bold tracking-tighter text-white">flowcore</Link>
-               <p className="max-w-xs leading-relaxed font-medium text-neutral-600 text-sm">The automated orchestration layer for automated business communication.</p>
-               <div className="flex gap-3">
-                  <div className="h-8 w-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center hover:border-white/20 transition-all cursor-pointer"><Hash className="h-4 w-4 text-neutral-400" /></div>
-                  <div className="h-8 w-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center hover:border-white/20 transition-all cursor-pointer"><Globe className="h-4 w-4 text-neutral-400" /></div>
+      <footer className="bg-[#ffffff] text-neutral-900 border-t border-neutral-200/80 pt-16 pb-10 px-4 lg:px-12 relative z-50">
+         <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 mb-16 text-sm text-neutral-600">
+            <div className="col-span-2 md:col-span-3 lg:col-span-2 space-y-6">
+               <div className="flex items-center gap-2.5">
+                  <Link href="/" className="h-8 w-8 rounded-lg bg-[#D95E46] flex items-center justify-center shadow-sm hover:scale-105 transition-all duration-300">
+                     <span className="text-white font-bold text-sm tracking-tighter">F</span>
+                  </Link>
+                  <Link href="/" className="text-xl font-bold tracking-tighter text-neutral-900 font-outfit">
+                     flowcore
+                  </Link>
                </div>
-               <p className="text-[10px] text-neutral-700 font-semibold">Authorized System • Est. 2026</p>
+               <p className="max-w-xs leading-relaxed text-neutral-500 text-xs font-medium">AI automation that transforms business communication.</p>
+               
+               <div className="space-y-1 text-xs text-neutral-500 font-semibold select-all">
+                 <p>Contact: support@flowcore.ai</p>
+                 <p className="text-[10px] text-neutral-400">@useflowcore</p>
+               </div>
+
+               {/* Newsletter Form */}
+               <div className="space-y-2 max-w-sm">
+                 <div className="text-[10px] text-neutral-400 font-bold uppercase tracking-widest">Join our newsletter</div>
+                 <form onSubmit={(e) => e.preventDefault()} className="flex p-1 bg-neutral-50 border border-neutral-200 rounded-xl max-w-xs">
+                   <Input type="email" placeholder="Email" className="bg-transparent border-none text-neutral-800 h-9 px-3 focus-visible:ring-0 placeholder:text-neutral-400 text-xs" />
+                   <Button type="submit" className="h-9 px-4 rounded-lg bg-[#D95E46] hover:bg-[#D95E46]/90 text-white font-semibold text-xs transition-all">Submit</Button>
+                 </form>
+               </div>
             </div>
             
-             <div className="space-y-4 text-gray-400">
-                 <h4 className="text-[10px] font-semibold text-white uppercase tracking-wider">Platform</h4>
+             <div className="space-y-4 text-neutral-500">
+                 <h4 className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Technology</h4>
                  <nav className="flex flex-col gap-3 font-semibold">
-                    <Link href="/agent-hub" className="hover:text-white transition-colors text-neutral-500 text-xs">Agent Hub</Link>
-                    <Link href="/knowledge" className="hover:text-white transition-colors text-neutral-500 text-xs">Knowledge Base</Link>
-                    <Link href="/pricing" className="hover:text-white transition-colors text-neutral-500 text-xs">Pricing</Link>
-                    <Link href="/changelog" className="hover:text-white transition-colors text-neutral-500 text-xs">Changelog</Link>
+                    <Link href="/agent-hub" className="hover:text-neutral-900 transition-colors text-neutral-500 text-xs">FlowCore for Consumer</Link>
+                    <Link href="/knowledge" className="hover:text-neutral-900 transition-colors text-neutral-500 text-xs">FlowCore for Marketplaces</Link>
+                    <Link href="/pricing" className="hover:text-neutral-900 transition-colors text-neutral-500 text-xs">FlowCore for E-Commerce</Link>
+                    <Link href="/changelog" className="hover:text-neutral-900 transition-colors text-neutral-500 text-xs">FlowCore for Banking</Link>
                  </nav>
              </div>
 
-             <div className="space-y-4 text-gray-400">
-                 <h4 className="text-[10px] font-semibold text-white uppercase tracking-wider">Connect</h4>
+             <div className="space-y-4 text-neutral-500">
+                 <h4 className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Real Estate</h4>
                  <nav className="flex flex-col gap-3 font-semibold">
-                    <Link href="/login" className="hover:text-white transition-colors text-neutral-500 text-xs">Sign In</Link>
-                    <Link href="/faq" className="hover:text-white transition-colors text-neutral-500 text-xs">FAQ</Link>
-                    <Link href="/settings/integrations" className="hover:text-white transition-colors text-neutral-500 text-xs">Integrations</Link>
-                    <Link href="/legal" className="hover:text-white transition-colors text-neutral-500 text-xs">Legal</Link>
+                    <Link href="/login" className="hover:text-neutral-900 transition-colors text-neutral-500 text-xs">FlowCore for Housing</Link>
+                    <Link href="/faq" className="hover:text-neutral-900 transition-colors text-neutral-500 text-xs">FlowCore for Hotels</Link>
+                    <Link href="/settings/integrations" className="hover:text-neutral-900 transition-colors text-neutral-500 text-xs">FlowCore for STR</Link>
                  </nav>
              </div>
 
-             <div className="space-y-4 text-gray-400">
-                 <h4 className="text-[10px] font-semibold text-white uppercase tracking-wider">Company</h4>
+             <div className="space-y-4 text-neutral-500">
+                 <h4 className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Company</h4>
                  <nav className="flex flex-col gap-3 font-semibold">
-                    <Link href="/login" className="hover:text-white transition-colors text-neutral-500 text-xs">Get Started</Link>
-                    <Link href="/pricing" className="hover:text-white transition-colors text-neutral-500 text-xs">Subscription Plans</Link>
-                    <Link href="/faq" className="hover:text-white transition-colors text-neutral-500 text-xs">Case Studies</Link>
-                    <Link href="/changelog" className="hover:text-white transition-colors text-neutral-500 text-xs">Network Status</Link>
+                    <Link href="/login" className="hover:text-neutral-900 transition-colors text-neutral-500 text-xs">About</Link>
+                    <Link href="/pricing" className="hover:text-neutral-900 transition-colors text-neutral-500 text-xs">Customers</Link>
+                    <Link href="/faq" className="hover:text-neutral-900 transition-colors text-neutral-500 text-xs">Product Tour</Link>
+                    <Link href="/changelog" className="hover:text-neutral-900 transition-colors text-neutral-500 text-xs">Careers</Link>
                  </nav>
              </div>
          </div>
 
-         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center border-t border-white/5 pt-6 gap-4 text-[10px] font-semibold text-neutral-600">
+         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center border-t border-neutral-200/80 pt-6 gap-6 text-[10px] font-bold text-neutral-500">
              <nav className="flex gap-6">
-                <Link href="/legal/privacy-policy" className="hover:text-white transition-colors">Privacy</Link>
-                <Link href="/legal/terms" className="hover:text-white transition-colors">Terms</Link>
-                <Link href="/legal/cookie-policy" className="hover:text-white transition-colors">Cookies</Link>
+                <Link href="/legal/privacy-policy" className="hover:text-neutral-900 transition-colors">Privacy</Link>
+                <Link href="/legal/terms" className="hover:text-neutral-900 transition-colors">Terms & Conditions</Link>
+                <Link href="/legal/cookie-policy" className="hover:text-neutral-900 transition-colors">Consent Preferences</Link>
              </nav>
-            <div className="flex items-center gap-4">
-               <div className="flex items-center gap-2 text-emerald-500/60 font-semibold tracking-tight">
-                  <div className="h-1 w-1 rounded-full bg-emerald-500" />
-                  Verified Connection
-               </div>
-               <span className="tracking-tight text-neutral-700 font-medium">© 2026 FlowCore Systems</span>
-            </div>
+             
+             <div className="flex items-center gap-6">
+                <div className="flex items-center gap-3">
+                  <div className="px-2 py-1 rounded bg-neutral-100 border border-neutral-200 text-[8px] font-bold text-neutral-500 tracking-wider">SOC 2 TYPE II</div>
+                  <div className="px-2 py-1 rounded bg-neutral-100 border border-neutral-200 text-[8px] font-bold text-neutral-500 tracking-wider">HIPAA COMPLIANT</div>
+                </div>
+                <div className="flex items-center gap-2 text-emerald-600 font-semibold tracking-tight">
+                   <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                   Verified Connection
+                </div>
+                <span className="tracking-tight text-neutral-400 font-medium">© 2026 FlowCore Systems</span>
+             </div>
          </div>
       </footer>
     </div>
