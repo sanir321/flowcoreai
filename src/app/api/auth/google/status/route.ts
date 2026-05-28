@@ -4,11 +4,11 @@ import { NextResponse } from "next/server"
 export async function GET() {
   try {
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return new NextResponse("Unauthorized", { status: 401 })
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
     const workspaceId = user.app_metadata.workspace_id
-    if (!workspaceId) return new NextResponse("No workspace", { status: 400 })
+    if (!workspaceId) return NextResponse.json({ error: "No workspace" }, { status: 400 })
 
     const { data: googleTokens, error } = await (supabase
         .from("google_oauth_tokens") as any)
@@ -17,12 +17,11 @@ export async function GET() {
         .is("deleted_at", null)
         .maybeSingle()
     
-    if (error) throw error
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-    // Only expose safe fields — never return access_token, refresh_token to the client
     return NextResponse.json(googleTokens)
   } catch (error: any) {
     console.error("[GOOGLE_STATUS_ERROR]", error)
-    return new NextResponse("Internal Error", { status: 500 })
+    return NextResponse.json({ error: error?.message || "Internal Error" }, { status: 500 })
   }
 }

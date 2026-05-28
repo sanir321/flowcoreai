@@ -100,22 +100,21 @@ export default function IntegrationsPage() {
       // Fetch connection status
       try {
         const res = await fetch("/api/auth/google/status")
-        const googleTokens = await res.json()
+        const json = await res.json()
         
-        if (googleTokens && !googleTokens.error) {
-          const d = googleTokens as any
+        if (json && !json.error) {
           setConnectedIds(['google'])
           setConfig({
-            calendar_id: d.calendar_id || 'primary',
-            sheet_id: d.sheet_id || '',
-            sheet_range: d.sheet_range || 'Sheet1!A:E'
+            calendar_id: json.calendar_id || 'primary',
+            sheet_id: json.sheet_id || '',
+            sheet_range: json.sheet_range || 'Sheet1!A:E'
           })
         } else {
           setConnectedIds([])
+          if (json?.error) console.warn("Google status error:", json.error)
         }
       } catch (e) {
-        console.error("Failed to load Google status:", e)
-        setErrorIds(prev => ({ ...prev, google: "Failed to load connection status" }))
+        console.warn("Google status fetch failed (likely not connected):", e)
         setConnectedIds([])
       }
     }
