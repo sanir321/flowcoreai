@@ -2,14 +2,12 @@
 
 import { usePathname } from "next/navigation"
 import Link from "next/link"
-import { Sidebar } from "@/components/nav/sidebar"
 import { NavigationRail } from "@/components/nav/navigation-rail"
 import { CommandPalette } from "@/components/nav/command-palette"
 import { PageTransition } from "@/components/ui/page-transition"
 import { useMemo, useState } from "react"
 import { cn } from "@/lib/utils"
 import { Inbox, Bot, Calendar, TrendingUp, BookOpen, Users, Menu, Zap, Settings, Bell, ShoppingCart, ChevronRight, X } from "lucide-react"
-import { motion, AnimatePresence } from "framer-motion"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
 const MOBILE_NAV = [
