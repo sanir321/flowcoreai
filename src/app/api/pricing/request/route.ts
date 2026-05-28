@@ -24,15 +24,6 @@ export async function POST(req: NextRequest) {
 
     const { firstName, lastName, email } = parsed.data;
 
-    const { error: insertError } = await supabaseAdmin
-      .from("pricing_requests")
-      .insert({ first_name: firstName, last_name: lastName, email });
-
-    if (insertError) {
-      console.error("[PRICING_REQUEST] DB insert error:", insertError);
-      return NextResponse.json({ error: "Failed to save request" }, { status: 500 });
-    }
-
     await sendEmail({
       to: process.env.SMTP_USER!,
       subject: `New pricing request from ${firstName} ${lastName}`,
@@ -42,6 +33,14 @@ export async function POST(req: NextRequest) {
         <p><strong>Email:</strong> ${email}</p>
       `,
     }).catch((e) => console.error("[PRICING_REQUEST] Email notification failed:", e));
+
+    const { error: insertError } = await supabaseAdmin
+      .from("pricing_requests")
+      .insert({ first_name: firstName, last_name: lastName, email });
+
+    if (insertError) {
+      console.error("[PRICING_REQUEST] DB insert error (non-fatal):", insertError);
+    }
 
     return NextResponse.json({ success: true });
   } catch (e) {
