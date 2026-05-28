@@ -6,9 +6,11 @@ import { Sidebar } from "@/components/nav/sidebar"
 import { NavigationRail } from "@/components/nav/navigation-rail"
 import { CommandPalette } from "@/components/nav/command-palette"
 import { PageTransition } from "@/components/ui/page-transition"
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import { cn } from "@/lib/utils"
-import { Inbox, Bot, Calendar, TrendingUp, BookOpen, Users } from "lucide-react"
+import { Inbox, Bot, Calendar, TrendingUp, BookOpen, Users, Menu, Zap, Settings, Bell, ShoppingCart, ChevronRight, X } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
 const MOBILE_NAV = [
   { icon: Inbox, href: "/inbox", label: "Inbox" },
@@ -17,6 +19,74 @@ const MOBILE_NAV = [
   { icon: TrendingUp, href: "/insights", label: "Insights" },
   { icon: Users, href: "/contacts", label: "Contacts" },
 ]
+
+const MORE_SECTIONS = [
+  {
+    label: "Features",
+    items: [
+      { icon: BookOpen, href: "/knowledge", label: "Knowledge Base" },
+      { icon: Zap, href: "/ceo", label: "CEO Analyst" },
+      { icon: ShoppingCart, href: "/orders", label: "Orders" },
+    ],
+  },
+  {
+    label: "Settings",
+    items: [
+      { icon: Settings, href: "/settings", label: "Workspace" },
+      { icon: Bell, href: "/settings/notifications", label: "Notifications" },
+    ],
+  },
+]
+
+function MobileMoreMenu({ pathname }: { pathname: string }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
+        <button className={cn(
+          "flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg transition-all min-w-0",
+          "text-gray-400 hover:text-gray-900"
+        )}>
+          <Menu className="h-4 w-4" />
+          <span className="text-[8px] font-bold">More</span>
+        </button>
+      </SheetTrigger>
+      <SheetContent side="bottom" className="bg-white border-t border-gray-100 rounded-t-2xl p-0 pt-2 pb-8 font-sans">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-50">
+          <span className="text-xs font-semibold text-gray-900">Navigation</span>
+          <button onClick={() => setOpen(false)} className="h-8 w-8 rounded-lg bg-gray-50 flex items-center justify-center text-gray-400">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        {MORE_SECTIONS.map((section) => (
+          <div key={section.label} className="px-4 py-3">
+            <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest px-2">{section.label}</span>
+            <div className="mt-2 space-y-0.5">
+              {section.items.map((item) => {
+                const isActive = pathname.startsWith(item.href)
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setOpen(false)}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all",
+                      isActive ? "bg-[#c65f39]/5 text-[#c65f39]" : "text-gray-600 hover:bg-gray-50"
+                    )}
+                  >
+                    <item.icon className={cn("h-4 w-4 shrink-0", isActive && "stroke-[2.5]")} />
+                    <span className="text-xs font-semibold">{item.label}</span>
+                    <ChevronRight className="h-3 w-3 ml-auto text-gray-300" />
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+        ))}
+      </SheetContent>
+    </Sheet>
+  )
+}
 
 export function DashboardClientWrapper({
   children,
@@ -72,6 +142,7 @@ export function DashboardClientWrapper({
               </Link>
             )
           })}
+          <MobileMoreMenu pathname={pathname} />
         </nav>
       )}
     </div>
