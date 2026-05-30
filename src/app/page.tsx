@@ -108,18 +108,18 @@ export default function LandingPage() {
           <motion.div className="absolute top-[2%] left-1/2 -translate-x-1/2 w-[1100px] h-[700px] rounded-full pointer-events-none z-0" style={{ scale: glowScale, opacity: glowOpacity, background: "radial-gradient(ellipse at center, rgba(198, 95, 57, 0.35) 0%, rgba(198, 95, 57, 0.12) 30%, rgba(198, 95, 57, 0.04) 60%, transparent 80%)" }} />
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 2 }} className="absolute top-[15%] left-1/2 -translate-x-1/2 w-[1400px] h-[500px] rounded-full pointer-events-none z-0" style={{ background: "radial-gradient(ellipse at center, rgba(198, 95, 57, 0.06) 0%, transparent 60%)" }} />
 
-          <motion.div className="max-w-[820px] mx-auto text-center relative z-10 space-y-8" style={{ opacity: heroOpacity, scale: heroScale }}>
+          <motion.div className="max-w-[1040px] mx-auto text-center relative z-10 space-y-12" style={{ opacity: heroOpacity, scale: heroScale }}>
             <motion.div
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] as const }}
               className="space-y-5"
             >
-              <h1 className="font-normal leading-[1.1] tracking-tight text-white" style={{ fontSize: "54.8345px", lineHeight: "63.0597px", letterSpacing: "-0.15667px" }}>
+              <h1 className="font-normal leading-[1.05] tracking-tighter text-white" style={{ fontSize: "84px", lineHeight: "88px", letterSpacing: "-0.03em" }}>
                 Automated customer<br/>
                 service <span style={{ color: "#c65f39" }}>assistants</span>
               </h1>
-              <p className="max-w-xl mx-auto leading-relaxed font-normal" style={{ fontSize: "15.667px", color: "#595859" }}>
+              <p className="max-w-2xl mx-auto leading-relaxed font-normal" style={{ fontSize: "18px", color: "#888" }}>
                 Connect specialized AI to manage and resolve your customer conversations with business precision.
               </p>
             </motion.div>
