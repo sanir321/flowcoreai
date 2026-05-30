@@ -354,13 +354,39 @@ export default function AgentConfigurePage() {
                             className="h-11 rounded-xl bg-gray-50/30 border-gray-200 focus:bg-white focus:border-[#c65f39] focus:ring-1 focus:ring-[#c65f39]/10 transition-all text-sm font-medium"
                           />
                         </div>
-                        <div className="space-y-1.5">
-                          <Label className="text-[10px] font-bold text-gray-900 ml-0.5">System Instructions</Label>
-                          <Textarea 
-                            {...form.register("config.persona")}
-                            placeholder="Enter system instructions here..."
-                            className="min-h-[220px] rounded-xl bg-gray-50/30 border-gray-200 focus:bg-white focus:border-[#c65f39] focus:ring-1 focus:ring-[#c65f39]/10 transition-all text-sm p-5 resize-none font-medium leading-relaxed"
-                          />
+                        
+                        <div className="space-y-6">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {(Object.entries(TRAIT_OPTIONS) as [keyof typeof TRAIT_OPTIONS, string[]][]).map(([key, options]) => (
+                              <div key={key} className="space-y-1.5">
+                                <Label className="text-[10px] font-bold text-gray-900 ml-0.5 capitalize">{key}</Label>
+                                <Select 
+                                  value={form.watch(`config.traits.${key}` as any)} 
+                                  onValueChange={(val) => form.setValue(`config.traits.${key}` as any, val)}
+                                >
+                                  <SelectTrigger className="h-11 rounded-xl bg-gray-50/30 border-gray-200 focus:bg-white focus:border-[#c65f39] focus:ring-1 focus:ring-[#c65f39]/10 transition-all text-sm font-medium capitalize text-left">
+                                    <SelectValue placeholder={`Select ${key}`} />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {options.map((option) => (
+                                      <SelectItem key={option} value={option} className="capitalize">
+                                        {option}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            ))}
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <Label className="text-[10px] font-bold text-gray-900 ml-0.5">Custom Directives</Label>
+                            <Textarea 
+                              {...form.register("config.traits.custom_directives")}
+                              placeholder="Special instructions for the agent's behavior..."
+                              className="min-h-[120px] rounded-xl bg-gray-50/30 border-gray-200 focus:bg-white focus:border-[#c65f39] focus:ring-1 focus:ring-[#c65f39]/10 transition-all text-sm p-5 resize-none font-medium leading-relaxed"
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>
