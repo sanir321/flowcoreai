@@ -14,7 +14,7 @@ export default async function BusinessProfilePage() {
   const workspaceId = user.app_metadata?.workspace_id
   if (!workspaceId) redirect("/onboarding")
 
-  const { data: workspace } = await supabase
+  const { data: workspace } = await (supabase as any)
     .from("workspaces")
     .select("business_profile, business_type, name")
     .eq("id", workspaceId)

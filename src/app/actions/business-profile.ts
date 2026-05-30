@@ -42,7 +42,7 @@ export async function getBusinessProfile(workspaceId: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { data: null, error: "Unauthorized" }
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("workspaces")
     .select("business_profile")
     .eq("id", workspaceId)
@@ -74,7 +74,7 @@ export async function updateBusinessProfile(input: unknown) {
 
     const workspaceId = result.data.workspace_id
 
-    const { data: existing } = await supabase
+    const { data: existing } = await (supabase as any)
       .from("workspaces")
       .select("business_profile")
       .eq("id", workspaceId)
@@ -96,7 +96,7 @@ export async function updateBusinessProfile(input: unknown) {
       }
     }
 
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from("workspaces")
       .update({
         business_profile: merged as any,
@@ -143,7 +143,7 @@ export async function getRequiredInfo(workspaceId: string): Promise<{ data: Requ
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
 
-    const wsResult = await supabase
+    const wsResult = await (supabase as any)
       .from("workspaces")
       .select("name, business_profile")
       .eq("id", workspaceId)
@@ -153,14 +153,14 @@ export async function getRequiredInfo(workspaceId: string): Promise<{ data: Requ
 
     const businessProfile = (wsResult.data.business_profile || {}) as Record<string, unknown>
 
-    const { data: templates, error } = await supabase
+    const { data: templates, error } = await (supabase as any)
       .from("required_info_templates")
       .select("*")
       .order("priority", { ascending: true })
 
     if (error) return { data: null, error: error.message }
 
-    const { data: tags } = await supabase.rpc("match_kb_chunks", { 
+    const { data: tags } = await (supabase as any).rpc("match_kb_chunks", { 
       query_text: "", 
       match_threshold: 0, 
       match_count: 1, 
