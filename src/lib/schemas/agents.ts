@@ -12,7 +12,16 @@ export const AddAgentSchema = z.object({
 
 export const UpdateAgentConfigSchema = z.object({
   agent_id: z.string().uuid(),
-  config: z.record(z.string(), z.unknown()),
+  config: z.object({
+    name: z.string().optional(),
+    traits: z.object({
+      tone: z.enum(['professional', 'friendly', 'enthusiastic']),
+      formality: z.enum(['formal', 'casual']),
+      brevity: z.enum(['concise', 'standard', 'detailed']),
+      proactivity: z.enum(['passive', 'standard', 'assertive']),
+      custom_directives: z.string().optional()
+    }).optional()
+  })
 })
 
 export const SetAgentStatusSchema = z.object({

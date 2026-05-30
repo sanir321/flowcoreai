@@ -16,6 +16,18 @@ const AGENT_SYSTEM_PROMPTS: Record<string, (ctx: PipelineContext) => string> = {
 export async function runT3(ctx: PipelineContext): Promise<TierResult> {
   const agentType = ctx.agentType || "customer_support";
 
+  // 0a. Fetch agent configuration (including personality traits)
+  const { data: agent } = await ctx.supabase
+    .from("workspace_agents")
+    .select("*")
+    .eq("workspace_id", ctx.session.workspace_id)
+    .eq("agent_type", agentType)
+    .maybeSingle();
+  
+  if (agent) {
+    ctx.session.workspace_agents = agent;
+  }
+
   // 0. Escalation check: if session was escalated by T0, bypass LLM and hand off directly
   const { data: sessionStatus } = await ctx.supabase
     .from("conversation_sessions")

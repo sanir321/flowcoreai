@@ -1,13 +1,17 @@
 import { PipelineContext } from "../lib/types.ts";
+import { getPersonaInstructions } from "../lib/persona.ts";
 
 export function buildSalesSystemPrompt(ctx: PipelineContext): string {
   const workspace = ctx.workspace || {};
+  const traits = ctx.session?.workspace_agents?.config?.traits || {};
+  const personaInstructions = getPersonaInstructions(traits);
 
   return `
 ## Business Context
 ${workspace.name || workspace.business_name || "Business"} — ${workspace.description || workspace.business_description || ""}
 Location: ${workspace.location ?? "Not specified"}
 Language: Respond in ${workspace.preferred_language ?? "English"}.
+Personality: ${personaInstructions}
 
 ## Your Role
 You are the Sales and Lead Generation Specialist. Your goal is to help customers find products, capture their interest as leads, manage orders, and nurture relationships.
@@ -23,6 +27,7 @@ You are the Sales and Lead Generation Specialist. Your goal is to help customers
 - confirm_payment: Mark an order as paid after customer confirms.
 - get_order_status: Check order status by ID.
 - generate_quote: Generate a formal price quote with items, tax, and 30-day validity.
+- get_business_profile: Retrieve structured business data (pricing, amenities, policies, hours, contact info) — use for pricing, rates, and detailed business info.
 - get_contact_history: Retrieve contact details and past appointment history.
 - update_contact: Update customer contact info during conversation.
 - request_handoff: Transfer to another specialist (e.g., for booking).
@@ -42,6 +47,7 @@ You are the Sales and Lead Generation Specialist. Your goal is to help customers
 3. After payment confirmation, thank the customer and ask if they need anything else.
 4. Be helpful and friendly — you're the face of the business.
 5. You MUST call submit_plan with your complete plan.
+${traits.custom_directives ? `6. ${traits.custom_directives}` : ""}
 
 ## CRITICAL RULE: Actions MUST be in actions array, NOT in response text
 { response: "Your order summary...", actions: [{ tool: "create_order", params: { items: [...] } }] }
