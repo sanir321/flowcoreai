@@ -2,6 +2,9 @@
 
 // /lib/gowa.ts
 import { SendTextPayload, SendImagePayload, SendLinkPayload } from "@/types/gowa";
+import { createAdminClient } from "@/lib/supabase/admin";
+
+const deviceIdCache = new Map<string, { id: string, expires: number }>();
 
 const GOWA_BASE_URL = process.env.GOWA_BASE_URL?.replace(/\/$/, "") || "";
 const GOWA_API_KEY = process.env.GOWA_API_KEY || "";
@@ -58,16 +61,29 @@ export async function formatPhoneForGoWA(phone: string): Promise<string> {
  * Send Text Message (High-level wrapper that fetches deviceId internally)
  */
 export async function sendWhatsAppText(workspaceId: string, phone: string, message: string): Promise<void> {
-  // We need to fetch the deviceId from the database for this workspace
-  const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/gowa_sessions?workspace_id=eq.${workspaceId}&select=gowa_session_id`, {
-    headers: {
-      'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`
-    }
-  });
+  let deviceId = "";
+  const cached = deviceIdCache.get(workspaceId);
   
-  const data = await response.json();
-  const deviceId = data[0]?.gowa_session_id;
+  if (cached && cached.expires > Date.now()) {
+    deviceId = cached.id;
+  } else {
+    const supabaseAdmin = createAdminClient();
+    
+    const { data, error } = await supabaseAdmin
+      .from("gowa_sessions")
+      .select("gowa_session_id")
+      .eq("workspace_id", workspaceId)
+      .maybeSingle();
+      
+    if (error) {
+      console.error("Error fetching gowa session:", error);
+    }
+
+    deviceId = data?.gowa_session_id || "";
+    if (deviceId) {
+      deviceIdCache.set(workspaceId, { id: deviceId, expires: Date.now() + 5 * 60 * 1000 });
+    }
+  }
 
   if (!deviceId) {
     throw new Error(`No WhatsApp session found for workspace ${workspaceId}`);
