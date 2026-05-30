@@ -14,6 +14,7 @@ export const UpdateAgentConfigSchema = z.object({
   agent_id: z.string().uuid(),
   config: z.object({
     name: z.string().optional(),
+    guardrails_text: z.string().optional(),
     traits: z.object({
       tone: z.enum(['professional', 'friendly', 'enthusiastic']),
       formality: z.enum(['formal', 'casual']),
