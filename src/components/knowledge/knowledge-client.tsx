@@ -59,6 +59,9 @@ export function KnowledgeClient({
   const [open, setOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState<string | null>(null)
   const [isSavingBP, setIsSavingBP] = useState(false)
+  const [policyNewKey, setPolicyNewKey] = useState("")
+  const [policyNewVal, setPolicyNewVal] = useState("")
+  const [amenityInput, setAmenityInput] = useState("")
   const router = useRouter()
 
   // --- Helpers ---
@@ -237,8 +240,6 @@ export function KnowledgeClient({
 
     if (fieldType === "policies") {
       const p = currentVal || {}
-      const [newKey, setNewKey] = useState("")
-      const [newVal, setNewVal] = useState("")
       return (
         <div className="space-y-2">
           {Object.entries(p).map(([k, v]) => (
@@ -255,9 +256,9 @@ export function KnowledgeClient({
             </div>
           ))}
           <div className="flex gap-2 pt-2 border-t border-gray-50">
-            <Input size={1} placeholder="New policy" value={newKey} onChange={e => setNewKey(e.target.value)} className="h-8 text-xs flex-1" />
-            <Input size={1} placeholder="Value" value={newVal} onChange={e => setNewVal(e.target.value)} className="h-8 text-xs flex-1" />
-            <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => { if (newKey.trim()) { setField({ ...p, [newKey.trim()]: newVal }); setNewKey(""); setNewVal("") } }}>Add</Button>
+            <Input size={1} placeholder="New policy" value={policyNewKey} onChange={e => setPolicyNewKey(e.target.value)} className="h-8 text-xs flex-1" />
+            <Input size={1} placeholder="Value" value={policyNewVal} onChange={e => setPolicyNewVal(e.target.value)} className="h-8 text-xs flex-1" />
+            <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => { if (policyNewKey.trim()) { setField({ ...p, [policyNewKey.trim()]: policyNewVal }); setPolicyNewKey(""); setPolicyNewVal("") } }}>Add</Button>
           </div>
         </div>
       )
@@ -265,7 +266,6 @@ export function KnowledgeClient({
 
     if (fieldType === "amenities" || fieldType === "tags") {
       const arr: string[] = currentVal || []
-      const [tagInput, setTagInput] = useState("")
       return (
         <div className="space-y-2">
           <div className="flex flex-wrap gap-1.5">
@@ -277,10 +277,10 @@ export function KnowledgeClient({
             ))}
           </div>
           <div className="flex gap-2">
-            <Input size={1} placeholder="Add item..." value={tagInput} onChange={e => setTagInput(e.target.value)} onKeyDown={e => {
-              if (e.key === 'Enter' && tagInput.trim()) { e.preventDefault(); setField([...arr, tagInput.trim().toLowerCase().replace(/\s+/g, '_')]); setTagInput("") }
+            <Input size={1} placeholder="Add item..." value={amenityInput} onChange={e => setAmenityInput(e.target.value)} onKeyDown={e => {
+              if (e.key === 'Enter' && amenityInput.trim()) { e.preventDefault(); setField([...arr, amenityInput.trim().toLowerCase().replace(/\s+/g, '_')]); setAmenityInput("") }
             }} className="h-8 text-xs flex-1" />
-            <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => { if (tagInput.trim()) { setField([...arr, tagInput.trim().toLowerCase().replace(/\s+/g, '_')]); setTagInput("") } }}>Add</Button>
+            <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => { if (amenityInput.trim()) { setField([...arr, amenityInput.trim().toLowerCase().replace(/\s+/g, '_')]); setAmenityInput("") } }}>Add</Button>
           </div>
         </div>
       )
@@ -509,21 +509,33 @@ export function KnowledgeClient({
               </h3>
               <div className="space-y-0.5">
                 {kbItems.map(item => (
-                  <div key={item.id} className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-500">
-                    <div className={cn("h-4 w-4 rounded-full border-2 flex items-center justify-center shrink-0",
-                      item.status === 'complete' ? "border-emerald-500 bg-emerald-500" : "border-gray-300")}>
-                      {item.status === 'complete' && <CheckCircle2 className="h-3 w-3 text-white" />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs font-medium truncate">{item.label}</div>
-                    </div>
+                  <div key={item.id}>
+                    <button onClick={() => setSelectedItem(selectedItem === item.id ? null : item.id)}
+                      className={cn("w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-all",
+                        selectedItem === item.id ? "bg-blue-50 text-blue-700" : "hover:bg-gray-50 text-gray-600")}>
+                      <div className={cn("h-4 w-4 rounded-full border-2 flex items-center justify-center shrink-0",
+                        item.status === 'complete' ? "border-emerald-500 bg-emerald-500" : "border-gray-300")}>
+                        {item.status === 'complete' && <CheckCircle2 className="h-3 w-3 text-white" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-medium truncate">{item.label}</div>
+                      </div>
+                      <ChevronRight className={cn("h-3 w-3 shrink-0 transition-transform", selectedItem === item.id && "rotate-90")} />
+                    </button>
+                    {selectedItem === item.id && (
+                      <div className="mx-3 mb-2 p-4 rounded-xl bg-gray-50 border border-gray-100">
+                        <p className="text-xs text-gray-500 mb-2">Paste content about "{item.label}" to create tagged knowledge base entries.</p>
+                        <Textarea placeholder={`Paste ${item.label.toLowerCase()} content here...`} value={pasteContent} onChange={e => setPasteContent(e.target.value)} rows={4} className="rounded-xl bg-gray-50 border-gray-100 focus:bg-white text-sm resize-none mb-2" />
+                        <Button size="sm" className="h-8 text-xs bg-black hover:bg-gray-800 text-white rounded-xl" disabled={!pasteContent.trim()} onClick={async () => {
+                          if (!pasteContent.trim()) return
+                          const r = await pasteKbText({ workspace_id: workspaceId, content: pasteContent, tag: item.field_key })
+                          if (r.error) toast.error(r.error)
+                          else { toast.success("Saved to knowledge base"); setPasteContent(""); router.refresh() }
+                        }}>Save</Button>
+                      </div>
+                    )}
                   </div>
                 ))}
-                {kbItems.length > 0 && (
-                  <div className="px-3 pt-2">
-                    <p className="text-[10px] text-gray-400">Add content via URL, document, or paste above</p>
-                  </div>
-                )}
               </div>
             </div>
 
