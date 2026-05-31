@@ -53,10 +53,7 @@ export const WelcomeEmail = ({
               Hi {username},
             </Text>
             <Text className="text-black text-[14px] leading-[24px]">
-              We're excited to have you on board! FlowCore is designed to help you automate your WhatsApp customer interactions seamlessly with AI.
-            </Text>
-            <Text className="text-black text-[14px] leading-[24px]">
-              To get started, log in to your dashboard and connect your first WhatsApp device.
+              Your FlowCore workspace is ready. Log in to connect your WhatsApp device and configure your AI agents.
             </Text>
             <Section className="text-center mt-[32px] mb-[32px]">
               <Button
@@ -67,7 +64,7 @@ export const WelcomeEmail = ({
               </Button>
             </Section>
             <Text className="text-black text-[14px] leading-[24px]">
-              If you have any questions, just reply to this email. We're here to help!
+              Reply to this email if you have questions.
             </Text>
             <Hr className="border border-solid border-[#eaeaea] my-[26px] mx-0 w-full" />
             <Text className="text-[#666666] text-[12px] leading-[24px]">

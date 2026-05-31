@@ -87,7 +87,7 @@ export default function PricingPage() {
                     <div key={i} className="h-8 w-8 rounded-full border-2 border-[#050505] flex items-center justify-center text-[10px] font-bold" style={{ background: `${color}20`, color }}>AI</div>
                   ))}
                 </div>
-                <span className="text-sm font-normal" style={{ color: "#595859" }}>Trusted by 50+ hospitality teams</span>
+                <span className="text-sm font-normal" style={{ color: "#595859" }}>Trusted by growing businesses</span>
               </div>
             </motion.div>
 

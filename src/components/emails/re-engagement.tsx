@@ -22,7 +22,7 @@ export const ReEngagementEmail = ({
   username = "there",
   loginUrl = "https://flowcore.ai/login",
 }: ReEngagementEmailProps) => {
-  const previewText = `We miss you, ${username}!`;
+  const previewText = `Haven't seen you lately, ${username}`;
 
   return (
     <Html>
@@ -47,16 +47,13 @@ export const ReEngagementEmail = ({
               </div>
             </Section>
             <Heading className="text-black text-[24px] font-bold p-0 my-[30px] mx-0">
-              We miss you!
+              Still there?
             </Heading>
             <Text className="text-black text-[14px] leading-[24px]">
               Hi {username},
             </Text>
             <Text className="text-black text-[14px] leading-[24px]">
-              It's been a while since we saw you on FlowCore. We've made several improvements to our AI orchestration that we think you'll love!
-            </Text>
-            <Text className="text-black text-[14px] leading-[24px]">
-              Why not jump back in and see how your WhatsApp automation is doing?
+              It's been a while since you last logged in. Your AI agents keep running, but we wanted to check in.
             </Text>
             <Section className="text-center mt-[32px] mb-[32px]">
               <Button

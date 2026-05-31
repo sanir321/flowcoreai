@@ -35,7 +35,7 @@ interface Template {
 
 interface RequiredItem {
   id: string; label: string; description: string | null; section: string
-  field_key: string; priority: number; is_required: boolean; status: "complete" | "empty"
+  field_key: string; field_type: string; priority: number; is_required: boolean; status: "complete" | "empty"
 }
 
 export function KnowledgeClient({
@@ -81,7 +81,7 @@ export function KnowledgeClient({
       }
       return {
         id: t.id, label: t.label, description: t.description, section: t.section,
-        field_key: t.field_key, priority: t.priority, is_required: t.is_required, status,
+        field_key: t.field_key, field_type: t.field_type, priority: t.priority, is_required: t.is_required, status,
       }
     })
     const completed = items.filter(i => i.status === "complete").length
@@ -346,7 +346,7 @@ export function KnowledgeClient({
             <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
           </Button>
           <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
+            <DialogTrigger>
               <Button className="h-9 px-4 bg-black text-white rounded-xl hover:bg-gray-800 transition-all text-xs font-semibold gap-2">
                 <Plus className="h-4 w-4" /> Add
               </Button>

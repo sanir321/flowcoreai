@@ -102,7 +102,7 @@ export default function FaqPage() {
             Frequently Asked Questions
           </h1>
           <p style={{ fontSize: "15.667px", color: "#595859", marginTop: "12px" }}>
-            Everything you need to know about FlowCore.
+            Common questions about the platform.
           </p>
         </header>
 

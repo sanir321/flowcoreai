@@ -54,7 +54,7 @@ export const SignInNotificationEmail = ({
               Hi {username},
             </Text>
             <Text className="text-black text-[14px] leading-[24px]">
-              This is a quick notification to let you know that your account was just accessed.
+              Your account was just accessed.
             </Text>
             <Section className="bg-[#f9f9f9] rounded-lg p-4 my-6 border border-solid border-[#eeeeee]">
               <Text className="text-[14px] leading-[24px] m-0">

@@ -88,11 +88,9 @@ export async function deleteSource(id: string): Promise<ActionResponse<{ success
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
 
-    // Fetch workspace_id for logging and verification
-    const { data: source } = await supabase.from("kb_sources").select("workspace_id").eq("id", res.data).maybeSingle()
+    const { data: source } = await (supabase.from("kb_sources") as any).select("workspace_id, bp_extracted_fields").eq("id", res.data).maybeSingle()
     if (!source) return { data: null, error: "Source not found" }
 
-    // Delete chunks first, then soft-delete the source
     const { error: chunkError } = await supabase
       .from("kb_chunks")
       .delete()
@@ -107,6 +105,43 @@ export async function deleteSource(id: string): Promise<ActionResponse<{ success
 
     if (error) throw error
 
+    const extractedFields = (source.bp_extracted_fields as string[]) || []
+    if (extractedFields.length > 0) {
+      const { data: otherSources } = await supabaseAdmin
+        .from("kb_sources")
+        .select("bp_extracted_fields")
+        .eq("workspace_id", source.workspace_id)
+        .is("deleted_at", null)
+        .neq("id", res.data)
+
+      const fieldsStillProvided = new Set<string>()
+      for (const s of otherSources || []) {
+        const fields = (s.bp_extracted_fields as string[]) || []
+        for (const f of fields) fieldsStillProvided.add(f)
+      }
+
+      const fieldsToClear = extractedFields.filter(f => !fieldsStillProvided.has(f))
+
+      if (fieldsToClear.length > 0) {
+        const { data: workspace } = await supabaseAdmin
+          .from("workspaces")
+          .select("business_profile")
+          .eq("id", source.workspace_id)
+          .single()
+
+        if (workspace?.business_profile) {
+          const bp = { ...(workspace.business_profile as Record<string, unknown>) }
+          for (const field of fieldsToClear) {
+            delete bp[field]
+          }
+          await supabaseAdmin
+            .from("workspaces")
+            .update({ business_profile: bp, updated_at: new Date().toISOString() })
+            .eq("id", source.workspace_id)
+        }
+      }
+    }
+
     await logAudit({
       workspace_id: source.workspace_id,
       action: 'delete_kb_source',
@@ -115,6 +150,7 @@ export async function deleteSource(id: string): Promise<ActionResponse<{ success
     })
 
     revalidatePath("/knowledge")
+
     return { data: { success: true }, error: null }
   } catch (err: any) {
     console.error(err)

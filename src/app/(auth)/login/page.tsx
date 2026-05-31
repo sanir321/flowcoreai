@@ -169,7 +169,7 @@ export default function LoginPage() {
             </Link>
             <div className="space-y-1">
                <h2 className="text-lg font-semibold tracking-tight text-white">FlowCore</h2>
-               <p className="text-xs text-gray-500 font-medium">AI assistants for business scale</p>
+               <p className="text-xs text-gray-500 font-medium">AI agent platform</p>
             </div>
           </div>
 
@@ -179,7 +179,7 @@ export default function LoginPage() {
                 {isOtpSent ? "Verification" : "Sign in"}
               </h1>
               <p className="text-gray-500 text-sm font-medium leading-relaxed">
-                {isOtpSent ? `We sent a code to ${email}` : "Manage your AI workforce and conversations."}
+                {isOtpSent ? `We sent a code to ${email}` : "Sign in to manage your agents and conversations."}
               </p>
             </div>
 
@@ -441,9 +441,9 @@ export default function LoginPage() {
                 <div className="h-1.5 w-1.5 rounded-full bg-[#D95E46] shadow-[0_0_8px_#D95E46]" />
                 <span className="text-[10px] font-bold text-[#D95E46] uppercase tracking-widest">Platform Core</span>
              </div>
-              <h3 className="text-4xl lg:text-5xl font-semibold text-white tracking-tight max-w-md leading-[1.1]">The future of <br/> business operations.</h3>
+              <h3 className="text-4xl lg:text-5xl font-semibold text-white tracking-tight max-w-md leading-[1.1]">AI agents for <br/> your business.</h3>
           </div>
-          <p className="text-gray-500 font-medium text-lg max-w-md leading-relaxed">Automate your communication and scale with specialized AI assistants.</p>
+          <p className="text-gray-500 font-medium text-lg max-w-md leading-relaxed">Connect WhatsApp, email, and web chat — one inbox for all customer conversations.</p>
           
           <div className="flex gap-2 pt-8">
             <div className="h-0.5 w-8 bg-white opacity-40" />

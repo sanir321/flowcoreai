@@ -220,7 +220,7 @@ export default function LandingPage() {
 
         <motion.section {...sectionAnim} className="py-16 px-6 flex flex-col items-center" style={{ background: "#ffffff", borderTop: "1px solid #e5e5e5" }}>
           <div className="text-sm font-normal" style={{ color: "#a3a3a3", letterSpacing: "0.05em" }}>
-            500+ teams supercharge their service with FlowCore
+            Used by teams worldwide
           </div>
           <div className="flex flex-wrap justify-center items-center gap-x-12 gap-y-6 max-w-4xl px-6 mt-8" style={{ opacity: 0.5 }}>
             {["Haus", "Hallson", "Capitalia", "HostGenius", "Renjoy", "Bocobay", "Casioa", "MerchFarm"].map((brand, i) => (
@@ -431,7 +431,7 @@ export default function LandingPage() {
                 FlowCore
               </Link>
               <p className="text-sm leading-relaxed font-normal max-w-[200px]" style={{ color: "#737373" }}>
-                AI automation that transforms business communication.
+                AI agents for customer communication.
               </p>
               <p className="text-sm font-normal" style={{ color: "#737373" }}>
                 support@flowcore.ai

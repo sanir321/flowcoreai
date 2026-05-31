@@ -47,7 +47,7 @@ export default async function KnowledgePage() {
   const { data: templates } = await (supabase as any)
     .from("required_info_templates")
     .select("*")
-    .eq("business_type", businessType)
+    .eq("business_type", "*")
     .order("priority", { ascending: true })
 
   return (
