@@ -27,12 +27,36 @@ export default async function KnowledgePage() {
     }
   }
 
-  const { data: sources } = await supabase
-    .from("kb_sources")
-    .select("*")
-    .eq("workspace_id", workspaceId)
-    .is("deleted_at", null)
-    .order("created_at", { ascending: false })
+  const [{ data: sources }, { data: ws }] = await Promise.all([
+    supabase
+      .from("kb_sources")
+      .select("*")
+      .eq("workspace_id", workspaceId)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false }),
+    (supabase as any)
+      .from("workspaces")
+      .select("business_type, business_profile")
+      .eq("id", workspaceId)
+      .single(),
+  ])
 
-  return <KnowledgeClient initialSources={(sources || []) as any} workspaceId={workspaceId} />
+  const businessType = ws?.business_type || "hotel"
+  const businessProfile = ws?.business_profile || {}
+
+  const { data: templates } = await (supabase as any)
+    .from("required_info_templates")
+    .select("*")
+    .eq("business_type", businessType)
+    .order("priority", { ascending: true })
+
+  return (
+    <KnowledgeClient
+      initialSources={(sources || []) as any}
+      workspaceId={workspaceId}
+      businessType={businessType}
+      initialBusinessProfile={businessProfile}
+      initialTemplates={templates || []}
+    />
+  )
 }

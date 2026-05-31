@@ -178,6 +178,92 @@ export async function createDocumentSource(input: unknown): Promise<ActionRespon
   }
 }
 
+export async function pasteKbText(input: { workspace_id: string; content: string; tag?: string }): Promise<ActionResponse<{ id: string }>> {
+  try {
+    const { workspace_id, content, tag } = input
+    if (!content.trim()) return { data: null, error: "Content is required" }
+
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { data: null, error: "Unauthorized" }
+
+    const { data: source, error: sourceError } = await (supabase
+      .from("kb_sources") as any)
+      .insert({
+        workspace_id,
+        label: tag || "Pasted text",
+        source_type: "txt",
+        status: "active",
+        chunk_count: 0,
+      })
+      .select()
+      .single()
+
+    if (sourceError) throw sourceError
+
+    const chunks = splitIntoChunks(content, 1000)
+    const zeroedEmbedding = new Array(384).fill(0)
+
+    const chunkRows = chunks.map((c, i) => ({
+      workspace_id,
+      source_id: source.id,
+      content: c,
+      embedding: zeroedEmbedding,
+      chunk_index: i,
+      token_count: Math.ceil(c.length / 4),
+    }))
+
+    const { error: insertError } = await supabase
+      .from("kb_chunks")
+      .insert(chunkRows as any)
+
+    if (insertError) throw insertError
+
+    await (supabase
+      .from("kb_sources") as any)
+      .update({ chunk_count: chunks.length })
+      .eq("id", source.id)
+
+    await logAudit({
+      workspace_id,
+      action: 'add_kb_source',
+      entity_type: 'kb_source',
+      entity_id: source.id,
+      payload: { method: 'paste', label: tag, chars: content.length }
+    })
+
+    revalidatePath("/knowledge")
+
+    // Fire-and-forget: extract business profile
+    try {
+      supabaseAdmin.functions.invoke("extract-business-profile", {
+        body: { workspace_id, source_id: source.id }
+      }).catch(() => {})
+    } catch {}
+
+    return { data: { id: source.id }, error: null }
+  } catch (err: any) {
+    console.error(err)
+    return { data: null, error: err.message || "Failed to save pasted text" }
+  }
+}
+
+function splitIntoChunks(text: string, maxSize: number): string[] {
+  const sentences = text.match(/[^.!?]+[.!?]+/g) || [text]
+  const chunks: string[] = []
+  let current = ""
+  for (const sentence of sentences) {
+    if ((current + sentence).length > maxSize && current.length > 0) {
+      chunks.push(current.trim())
+      current = sentence
+    } else {
+      current += sentence
+    }
+  }
+  if (current.trim()) chunks.push(current.trim())
+  return chunks.length > 0 ? chunks : [text.slice(0, maxSize)]
+}
+
 export async function uploadDocumentSource(input: unknown): Promise<ActionResponse<{ id: string }>> {
   try {
     const res = z.object({
