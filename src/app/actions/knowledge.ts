@@ -247,6 +247,7 @@ export async function pasteKbText(input: { workspace_id: string; content: string
       embedding: zeroedEmbedding,
       chunk_index: i,
       token_count: Math.ceil(c.length / 4),
+      metadata: tag ? { tag } : null,
     }))
 
     const { error: insertError } = await supabase

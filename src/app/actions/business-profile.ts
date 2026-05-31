@@ -160,14 +160,11 @@ export async function getRequiredInfo(workspaceId: string): Promise<{ data: Requ
 
     if (error) return { data: null, error: error.message }
 
-    const { data: tags } = await (supabase as any).rpc("match_kb_chunks", { 
-      query_text: "", 
-      match_threshold: 0, 
-      match_count: 1, 
-      p_workspace_id: workspaceId 
+    const { data: tags } = await (supabase as any).rpc("get_distinct_kb_tags", {
+      p_workspace_id: workspaceId
     })
 
-    const usedTags = new Set<string>() // Fallback as get_distinct_kb_tags might be missing
+    const usedTags = new Set<string>(tags || [])
 
     const items: RequiredInfoItem[] = (templates || []).map((t: any) => {
       let status: "complete" | "empty" = "empty"
