@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
 
   const isNewUser = !data.user.last_sign_in_at
   const username = data.user.user_metadata?.full_name || data.user.email?.split("@")[0] || "User"
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://7flowcore.vercel.app"
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL || "http://localhost:3000"
 
   fetch(`${baseUrl}/api/emails/send`, {
     method: "POST",

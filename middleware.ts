@@ -2,14 +2,15 @@ import { type NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 
 export async function middleware(request: NextRequest) {
-  // EMERGENCY 431 GUARD: Clear bloated headers/cookies
+  // EMERGENCY 431 GUARD: Clear bloated cookies by setting Max-Age=0
   const requestHeaders = new Headers(request.headers)
   const headerSize = JSON.stringify([...requestHeaders.entries()]).length
 
   if (headerSize > 12000) {
     const response = NextResponse.redirect(new URL('/login', request.url))
-    request.cookies.getAll().forEach(cookie => {
-      response.cookies.delete(cookie.name)
+    const allCookies = request.cookies.getAll()
+    allCookies.forEach(cookie => {
+      response.cookies.set(cookie.name, '', { maxAge: 0, path: '/' })
     })
     return response
   }
