@@ -338,12 +338,12 @@ export default function CEOAnalystPage() {
   ]
 
   return (
-    <div className="flex h-full bg-white font-sans overflow-hidden">
+    <div className="flex min-h-0 flex-1 bg-white font-sans">
       <AssistantsSidebar />
 
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
+      <div className="flex min-w-0 flex-1 flex-col">
         {/* Header */}
-        <div className="h-13 px-6 border-b border-gray-100 flex items-center justify-between shrink-0 bg-white/80 backdrop-blur-sm">
+        <div className="px-6 border-b border-gray-100 flex items-center justify-between shrink-0 bg-white/80 backdrop-blur-sm" style={{ height: 52 }}>
           <div className="flex items-center gap-3">
             <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center text-white shadow-sm">
               <TrendingUp size={15} />
@@ -362,8 +362,8 @@ export default function CEOAnalystPage() {
         </div>
 
         {/* Chat */}
-        <ScrollArea className="flex-1">
-          <div className="max-w-2xl mx-auto py-8 px-5">
+        <ScrollArea className="flex min-h-0 flex-1">
+          <div className="max-w-2xl mx-auto py-6 px-5">
             <AnimatePresence initial={false}>
               {messages.length === 0 ? (
                 <motion.div
@@ -398,7 +398,7 @@ export default function CEOAnalystPage() {
                   </div>
                 </motion.div>
               ) : (
-                <div className="space-y-6 pb-28">
+                <div className="space-y-6 pb-16">
                   {messages.map((m) => (
                     <motion.div
                       key={m.id}

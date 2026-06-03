@@ -186,9 +186,9 @@ export default function CeoAgentPage() {
   }
 
   return (
-    <div className="h-[calc(100vh-120px)] flex flex-col font-sans">
+    <div className="flex min-h-0 flex-1 flex-col font-sans">
       {/* Header */}
-      <header className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+      <header className="flex items-center justify-between px-6 border-b border-gray-100 shrink-0" style={{ height: 52 }}>
         <div className="flex items-center gap-3">
           <button 
             onClick={() => router.back()} 
@@ -211,9 +211,9 @@ export default function CeoAgentPage() {
       </header>
 
       {/* Chat */}
-      <div className="flex-1 flex flex-col bg-white overflow-hidden">
-        <ScrollArea className="flex-1">
-          <div className="max-w-2xl mx-auto py-8 px-5">
+      <div className="flex min-h-0 flex-1 flex-col bg-white">
+        <ScrollArea className="flex min-h-0 flex-1">
+          <div className="max-w-2xl mx-auto py-6 px-5">
             <AnimatePresence initial={false}>
               {messages.length === 0 ? (
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="py-16 space-y-10">
@@ -243,7 +243,7 @@ export default function CeoAgentPage() {
                   </div>
                 </motion.div>
               ) : (
-                <div className="space-y-6 pb-24">
+                <div className="space-y-6 pb-16">
                   {messages.map((m) => (
                     <motion.div
                       key={m.id}
