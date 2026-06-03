@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useEffect, useCallback } from "react"
 import { 
   Search, 
   MoreHorizontal, 
@@ -50,7 +50,7 @@ import {
 } from "@/components/ui/sheet"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { updateContact, sendManualMessage } from "@/app/actions/contacts"
+import { updateContact, sendManualMessage, getContactsPaginated } from "@/app/actions/contacts"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { motion, AnimatePresence } from "framer-motion"
@@ -67,6 +67,34 @@ export function ContactsTable({ initialContacts = [], workspaceId }: ContactsTab
   const [isSaving, setIsSaving] = useState(false)
   const [manualMessage, setManualMessage] = useState("")
   const [isSending, setIsSending] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
+  const sentinelRef = useRef<HTMLDivElement>(null)
+
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !hasMore) return
+    setLoadingMore(true)
+    const result = await getContactsPaginated(workspaceId, contacts.length, 10)
+    if (result.data?.contacts) {
+      const newContacts = result.data.contacts
+      if (newContacts.length < 10) setHasMore(false)
+      setContacts(prev => [...prev, ...newContacts])
+    }
+    setLoadingMore(false)
+  }, [workspaceId, contacts.length, loadingMore, hasMore])
+
+  useEffect(() => {
+    if (!sentinelRef.current) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0]
+        if (entry?.isIntersecting) loadMore()
+      },
+      { rootMargin: "200px" }
+    )
+    observer.observe(sentinelRef.current)
+    return () => observer.disconnect()
+  }, [loadMore])
 
   const filteredContacts = (contacts || []).filter(c => {
     const matchesSearch = (c.name || '').toLowerCase().includes(search.toLowerCase()) || 
@@ -220,6 +248,12 @@ export function ContactsTable({ initialContacts = [], workspaceId }: ContactsTab
             )}
           </TableBody>
         </Table>
+        {loadingMore && (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+          </div>
+        )}
+        <div ref={sentinelRef} className="h-4" />
       </div>
 
       {/* Edit Contact Sheet - Minimalist Profile */}

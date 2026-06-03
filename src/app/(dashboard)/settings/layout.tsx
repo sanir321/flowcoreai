@@ -1,7 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
+import { useRef, useCallback } from "react"
 import {
   Settings as SettingsIcon,
   Bell,
@@ -35,6 +36,19 @@ export default function SettingsLayout({
   children: React.ReactNode
 }) {
   const pathname = usePathname()
+  const router = useRouter()
+  const prefetchTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
+
+  const handlePrefetch = useCallback((href: string) => {
+    if (prefetchTimer.current) clearTimeout(prefetchTimer.current)
+    prefetchTimer.current = setTimeout(() => {
+      router.prefetch(href)
+    }, 100)
+  }, [router])
+
+  const cancelPrefetch = useCallback(() => {
+    if (prefetchTimer.current) clearTimeout(prefetchTimer.current)
+  }, [])
 
   return (
     <div className="h-full flex bg-white font-sans overflow-hidden">
@@ -51,6 +65,9 @@ export default function SettingsLayout({
               <Link
                 key={item.href}
                 href={item.href}
+                onMouseEnter={() => handlePrefetch(item.href)}
+                onMouseLeave={cancelPrefetch}
+                prefetch={false}
                 className={cn(
                   "flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all duration-200 group",
                   isActive

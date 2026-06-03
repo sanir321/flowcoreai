@@ -167,6 +167,37 @@ export async function updateContact(input: unknown): Promise<ActionResponse<{ su
   }
 }
 
+export async function getContactsPaginated(
+  workspace_id: string,
+  offset: number = 0,
+  limit: number = 10
+): Promise<ActionResponse<{ contacts: any[], total: number | null }>> {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { data: null, error: "Unauthorized" }
+
+    if (user.app_metadata.workspace_id !== workspace_id) {
+      return { data: null, error: "Forbidden: Workspace mismatch" }
+    }
+
+    const { data: contacts, error } = await supabase
+      .from("contacts")
+      .select("*, appointments(count)", { count: "exact" })
+      .eq("workspace_id", workspace_id)
+      .is("deleted_at", null)
+      .order("last_active", { ascending: false })
+      .range(offset, offset + limit - 1)
+
+    if (error) throw error
+
+    return { data: { contacts: contacts || [], total: null }, error: null }
+  } catch (err) {
+    console.error("[GET_CONTACTS_ERROR]", err)
+    return { data: null, error: err instanceof Error ? err.message : "Failed to load contacts" }
+  }
+}
+
 export async function exportContacts(workspace_id: string): Promise<ActionResponse<{ csv: string }>> {
   try {
     const res = z.string().uuid().safeParse(workspace_id)

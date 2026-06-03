@@ -1,0 +1,2 @@
+-- Add offset-based pagination support for contacts list
+-- The server action getContacts uses LIMIT/OFFSET for incremental loading

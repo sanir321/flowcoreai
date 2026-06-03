@@ -27,6 +27,7 @@ export default async function ContactsPage() {
     .eq("workspace_id", workspaceId)
     .is("deleted_at", null)
     .order("last_active", { ascending: false })
+    .limit(10)
 
   return (
     <ContactsClient 

@@ -21,7 +21,7 @@ import {
   Calendar as CalendarIcon
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { motion } from "framer-motion"
 import { useRouter } from "next/navigation"
@@ -61,6 +61,19 @@ export function NavigationRail() {
     getUser()
   }, [])
 
+  const prefetchTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+
+  const handlePrefetch = useCallback((href: string) => {
+    if (prefetchTimer.current) clearTimeout(prefetchTimer.current)
+    prefetchTimer.current = setTimeout(() => {
+      router.prefetch(href)
+    }, 100)
+  }, [router])
+
+  const cancelPrefetch = useCallback(() => {
+    if (prefetchTimer.current) clearTimeout(prefetchTimer.current)
+  }, [])
+
   const handleSignOut = async () => {
     await supabase.auth.signOut()
     router.push("/login")
@@ -81,6 +94,9 @@ export function NavigationRail() {
             <Link 
               key={idx} 
               href={item.href}
+              onMouseEnter={() => handlePrefetch(item.href)}
+              onMouseLeave={cancelPrefetch}
+              prefetch={false}
               className={cn(
                 "group relative h-9 w-9 flex items-center justify-center rounded-lg transition-all duration-300",
                 isActive 
@@ -111,14 +127,17 @@ export function NavigationRail() {
 
       <div className="mt-auto flex flex-col items-center gap-3 w-full">
          <Link 
-           href="/settings" 
-           className={cn(
-             "h-9 w-9 flex items-center justify-center rounded-lg transition-all duration-300",
-             pathname.startsWith('/settings') ? "bg-[#c65f39]/10 text-[#c65f39]" : "text-gray-500 hover:text-gray-900 hover:bg-gray-100/50"
-           )}
-         >
-            <Settings className="h-4 w-4" />
-         </Link>
+            href="/settings"
+            onMouseEnter={() => handlePrefetch("/settings")}
+            onMouseLeave={cancelPrefetch}
+            prefetch={false}
+            className={cn(
+              "h-9 w-9 flex items-center justify-center rounded-lg transition-all duration-300",
+              pathname.startsWith('/settings') ? "bg-[#c65f39]/10 text-[#c65f39]" : "text-gray-500 hover:text-gray-900 hover:bg-gray-100/50"
+            )}
+          >
+             <Settings className="h-4 w-4" />
+          </Link>
          
          <DropdownMenu>
             <DropdownMenuTrigger asChild>

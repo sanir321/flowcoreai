@@ -1,9 +1,11 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { motion } from "framer-motion"
+import { useRef, useCallback } from "react"
 
 interface NavItemProps {
   icon: LucideIcon
@@ -14,9 +16,27 @@ interface NavItemProps {
 }
 
 export function NavItem({ icon: Icon, label, href, isCollapsed, active }: NavItemProps) {
+  const router = useRouter()
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+
+  const handleMouseEnter = useCallback(() => {
+    timerRef.current = setTimeout(() => {
+      router.prefetch(href)
+    }, 100)
+  }, [router, href])
+
+  const handleMouseLeave = useCallback(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current)
+    }
+  }, [])
+
   return (
     <Link 
       href={href}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      prefetch={false}
       className={cn(
         "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-300 group relative",
         active 
