@@ -1,13 +1,12 @@
-import { createClient } from "@supabase/supabase-js";
+import { createAdminClient } from "@/lib/supabase/admin";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/types/supabase";
 
-let _supabaseAdmin: ReturnType<typeof createClient> | null = null;
+let _supabaseAdmin: SupabaseClient<Database> | null = null;
 
 function getAdmin() {
   if (!_supabaseAdmin) {
-    _supabaseAdmin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    _supabaseAdmin = createAdminClient();
   }
   return _supabaseAdmin;
 }

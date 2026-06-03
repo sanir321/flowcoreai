@@ -54,3 +54,11 @@ DROP POLICY IF EXISTS "workspace_owner_access" ON public.workspaces;
 CREATE POLICY "workspace_owner_access" ON public.workspaces
   FOR ALL
   USING ((owner_id = (SELECT auth.uid())) AND (deleted_at IS NULL));
+
+-- Fix 7: Add RLS policy for support_tickets (was missing entirely)
+CREATE POLICY IF NOT EXISTS "support_tickets_rls" ON public.support_tickets
+  FOR ALL
+  USING (workspace_id IN (SELECT id FROM public.workspaces WHERE owner_id = (SELECT auth.uid()) AND deleted_at IS NULL))
+  WITH CHECK (workspace_id IN (SELECT id FROM public.workspaces WHERE owner_id = (SELECT auth.uid()) AND deleted_at IS NULL));
+
+
