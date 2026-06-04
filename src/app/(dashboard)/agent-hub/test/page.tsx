@@ -11,7 +11,8 @@ import {
   ChevronDown,
   MessageSquare,
   Target,
-  Zap
+  Zap,
+  Bot
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -20,6 +21,7 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { motion, AnimatePresence } from "framer-motion"
+import { AssistantsSidebar } from "@/components/nav/assistants-sidebar"
 
 interface Message {
   id: string
@@ -127,77 +129,77 @@ export default function TestChatPage() {
   const selectedAgentData = AGENT_TYPES.find(a => a.id === selectedAgent)
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-100 shrink-0">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => router.back()}
-            className="h-8 w-8 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 transition-all flex items-center justify-center"
-          >
-            <ArrowLeft className="h-3.5 w-3.5 text-gray-600" />
-          </button>
-          <div>
-            <h1 className="text-sm font-semibold text-gray-900 tracking-tight">Test Chat</h1>
+    <div className="flex min-h-0 flex-1 bg-white font-sans">
+      <AssistantsSidebar />
+      <div className="flex min-w-0 flex-1 flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 border-b border-gray-100 shrink-0" style={{ height: 52 }}>
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center text-white shadow-sm">
+              <Bot size={15} />
+            </div>
+            <div>
+              <h1 className="text-sm font-semibold text-gray-900 tracking-tight">Test Chat</h1>
+              <p className="text-[9px] font-medium text-gray-400 uppercase tracking-widest">Agent Playground</p>
+            </div>
           </div>
-        </div>
 
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <button
-              onClick={() => setShowAgentMenu(!showAgentMenu)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 hover:border-gray-300 transition-all text-xs font-medium text-gray-700"
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <button
+                onClick={() => setShowAgentMenu(!showAgentMenu)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all text-xs font-medium text-gray-700"
+              >
+                {selectedAgentData && <selectedAgentData.icon className="h-3 w-3 text-gray-400" />}
+                <span>{selectedAgentData?.name}</span>
+                <ChevronDown className={cn("h-2.5 w-2.5 text-gray-400 transition-transform", showAgentMenu && "rotate-180")} />
+              </button>
+
+              <AnimatePresence>
+                {showAgentMenu && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 6 }}
+                    className="absolute right-0 top-full mt-1.5 w-52 bg-white border border-gray-100 rounded-xl shadow-lg shadow-black/5 z-50 overflow-hidden"
+                  >
+                    <div className="p-1.5 space-y-0.5">
+                      {AGENT_TYPES.map(agent => (
+                        <button
+                          key={agent.id}
+                          onClick={() => { setSelectedAgent(agent.id); setShowAgentMenu(false) }}
+                          className={cn(
+                            "w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left transition-all text-xs",
+                            selectedAgent === agent.id ? "bg-gray-100 text-gray-900" : "text-gray-600 hover:bg-gray-50"
+                          )}
+                        >
+                          <agent.icon className="h-3 w-3 text-gray-400" />
+                          <span className="font-medium">{agent.name}</span>
+                          {selectedAgent === agent.id && <Check className="h-3 w-3 text-[#c65f39] ml-auto" />}
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => { setMessages([]); toast.info("Chat cleared") }}
+              className="h-8 px-3 rounded-xl text-xs font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+              disabled={messages.length === 0}
             >
-              {selectedAgentData && <selectedAgentData.icon className="h-3 w-3 text-gray-400" />}
-              <span>{selectedAgentData?.name}</span>
-              <ChevronDown className={cn("h-2.5 w-2.5 text-gray-400 transition-transform", showAgentMenu && "rotate-180")} />
-            </button>
-
-            <AnimatePresence>
-              {showAgentMenu && (
-                <motion.div
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 6 }}
-                  className="absolute right-0 top-full mt-1.5 w-52 bg-white border border-gray-100 rounded-xl shadow-lg shadow-black/5 z-50 overflow-hidden"
-                >
-                  <div className="p-1.5 space-y-0.5">
-                    {AGENT_TYPES.map(agent => (
-                      <button
-                        key={agent.id}
-                        onClick={() => { setSelectedAgent(agent.id); setShowAgentMenu(false) }}
-                        className={cn(
-                          "w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left transition-all text-xs",
-                          selectedAgent === agent.id ? "bg-gray-100 text-gray-900" : "text-gray-600 hover:bg-gray-50"
-                        )}
-                      >
-                        <agent.icon className="h-3 w-3 text-gray-400" />
-                        <span className="font-medium">{agent.name}</span>
-                        {selectedAgent === agent.id && <Check className="h-3 w-3 text-[#c65f39] ml-auto" />}
-                      </button>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+              Clear
+            </Button>
           </div>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => { setMessages([]); toast.info("Chat cleared") }}
-            className="h-8 px-2 rounded-lg text-xs font-medium text-gray-500 hover:text-gray-900"
-            disabled={messages.length === 0}
-          >
-            Clear
-          </Button>
         </div>
-      </div>
 
-      {/* Main */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-3 min-h-0 p-3">
+        {/* Main */}
+        <div className="flex min-h-0 flex-1 p-3 gap-3">
         {/* Chat */}
-        <div className="lg:col-span-2 flex flex-col border border-gray-200 rounded-xl overflow-hidden bg-white">
+        <div className="flex flex-1 flex-col border border-gray-200 rounded-xl overflow-hidden bg-white min-w-0">
           {/* Messages */}
           <ScrollArea className="flex-1">
             <div className="px-5 py-4 space-y-3">
@@ -317,7 +319,7 @@ export default function TestChatPage() {
         </div>
 
         {/* Debug */}
-        <div className="lg:col-span-1 flex flex-col border border-gray-200 rounded-xl overflow-hidden bg-white min-h-0">
+        <div className="hidden lg:flex w-72 flex-col border border-gray-200 rounded-xl overflow-hidden bg-white min-h-0">
           <div className="h-9 px-3 flex items-center gap-2 border-b border-gray-100 shrink-0">
             <Terminal className="h-3 w-3 text-gray-400" />
             <span className="text-xs font-semibold text-gray-900">Debug</span>
@@ -345,6 +347,7 @@ export default function TestChatPage() {
           </ScrollArea>
         </div>
       </div>
+    </div>
     </div>
   )
 }

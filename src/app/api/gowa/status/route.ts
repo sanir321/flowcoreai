@@ -61,9 +61,10 @@ export async function GET(req: NextRequest) {
         )
 
         const candidate = named || byId || byJid || byDisplay
-        if (candidate?.state === "logged_in" && candidate?.jid) {
+        const connectedStates = ["connected", "logged_in", "logged-in"]
+        if (candidate && connectedStates.includes(candidate.state)) {
           gowaConnected = true
-          gowaJid = candidate.jid
+          gowaJid = candidate.jid || ""
           gowaDisplay = candidate.display_name || ""
           gowaDeviceId = candidate.id || ""
         }

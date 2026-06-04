@@ -7,10 +7,10 @@
 - [ ] **npm audit** — 2 moderate vulns remain (PostCSS via Next.js). Requires Next.js upgrade.
 
 ## Deferred
-- [ ] Billing — Stripe/Razorpay integration *(manual billing for now)*
-- [ ] Subscription plans (Starter/Growth/Scale) with recurring billing
-- [ ] Drafting mode — AI suggestion/draft for human approval before sending
-- [ ] Google Calendar sync_status — DB-first ordering done, column already exists
+- [ ] Google Calendar sync_status — moved to FUTURE.md
+- [ ] Billing / Subscriptions — moved to FUTURE.md
+- [ ] Draft / Co-Pilot mode — moved to FUTURE.md
+- [ ] Google OAuth re-auth — moved to FUTURE.md
 
 ## Done
 - [x] Terms checkbox on signup/sign-in (new users only)

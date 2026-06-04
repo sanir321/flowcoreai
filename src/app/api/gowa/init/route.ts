@@ -21,7 +21,14 @@ export async function GET(req: NextRequest) {
       return new NextResponse("No active workspace found for user.", { status: 404 })
     }
 
-    const qrData = await initiateQRLogin(workspaceId)
+    // Get stored device ID if any
+    const { data: existingSession } = await supabase
+      .from("gowa_sessions")
+      .select("gowa_session_id")
+      .eq("workspace_id", workspaceId)
+      .maybeSingle()
+
+    const qrData = await initiateQRLogin(workspaceId, existingSession?.gowa_session_id)
 
     if (!qrData.qr_code) {
       throw new Error("QR code not returned by the initialization function.");
