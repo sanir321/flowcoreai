@@ -55,18 +55,7 @@ export async function addUrlSource(input: unknown): Promise<ActionResponse<{ id:
     if (source_type === 'url' && url) {
         supabaseAdmin.functions.invoke("ingest-url", {
             body: { workspace_id, source_id: data.id, url }
-        }).catch(async (e) => {
-          console.error("[KB_ACTION] URL Ingestion trigger failed, trying TinyFish fallback:", e)
-          try {
-            await fetch(`${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/ingest-url-tinyfish`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ workspace_id, source_id: data.id, url }),
-            })
-          } catch (tfErr) {
-            console.error("[KB_ACTION] TinyFish fallback also failed:", tfErr)
-          }
-        })
+        }).catch(e => console.error("[KB_ACTION] URL Ingestion trigger failed:", e))
     } else if (storage_path) {
         supabaseAdmin.functions.invoke("ingest-document", {
             body: { workspace_id, source_id: data.id, storage_path }
