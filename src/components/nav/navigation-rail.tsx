@@ -156,9 +156,9 @@ export function NavigationRail() {
                   </div>
                </DropdownMenuLabel>
                <DropdownMenuSeparator className="bg-gray-50 mx-1" />
-               <DropdownMenuItem className="rounded-lg px-3 py-2 text-[10px] font-bold text-gray-700 focus:bg-gray-50 focus:text-black cursor-pointer group transition-all">
+               <DropdownMenuItem onClick={() => router.push("/settings/business-profile")} className="rounded-lg px-3 py-2 text-[10px] font-bold text-gray-700 focus:bg-gray-50 focus:text-black cursor-pointer group transition-all">
                   <UserIcon className="mr-2 h-3.5 w-3.5 text-gray-400" />
-                  <span>Profile</span>
+                  <span>Business Profile</span>
                </DropdownMenuItem>
                <DropdownMenuItem 
                  onClick={handleSignOut}

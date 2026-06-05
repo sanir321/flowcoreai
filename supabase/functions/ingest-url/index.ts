@@ -6,23 +6,20 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// SSRF blocklist: internal/private IP ranges
 const PRIVATE_CIDRS = [
-  { prefix: [10], mask: 8 },           // 10.0.0.0/8
-  { prefix: [172, 16], mask: 12 },      // 172.16.0.0/12
-  { prefix: [192, 168], mask: 16 },     // 192.168.0.0/16
-  { prefix: [127], mask: 8 },           // 127.0.0.0/8
-  { prefix: [169, 254], mask: 16 },     // 169.254.0.0/16
-  { prefix: [0], mask: 8 },             // 0.0.0.0/8
-  { prefix: [100, 64], mask: 10 },      // 100.64.0.0/10 (CGNAT)
+  { prefix: [10], mask: 8 },
+  { prefix: [172, 16], mask: 12 },
+  { prefix: [192, 168], mask: 16 },
+  { prefix: [127], mask: 8 },
+  { prefix: [169, 254], mask: 16 },
+  { prefix: [0], mask: 8 },
+  { prefix: [100, 64], mask: 10 },
 ]
 
 function isPrivateIP(hostname: string): boolean {
   try {
-    // Resolve hostname to IP addresses via DNS
-    // Since Deno doesn't have dns.lookup, parse IP directly
     const isIPv4 = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname)
-    if (!isIPv4) return false // hostnames pass, IPs are checked
+    if (!isIPv4) return false
     const parts = hostname.split('.').map(Number)
     if (parts.some(p => p < 0 || p > 255)) return true
     for (const cidr of PRIVATE_CIDRS) {
@@ -33,7 +30,7 @@ function isPrivateIP(hostname: string): boolean {
       if (match) return true
     }
     return false
-  } catch { return true } // deny on resolve failure
+  } catch { return true }
 }
 
 function validateUrl(raw: string): URL {
@@ -44,236 +41,170 @@ function validateUrl(raw: string): URL {
   return url
 }
 
-// Initialize the local embedding model — loaded once, reused across invocations
 const model = new Supabase.ai.Session('gte-small')
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
   try {
-    // Auth: verify JWT, internal secret, or service role key (server action)
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    const internalSecret = Deno.env.get('INTERNAL_CRON_SECRET')
+    const publishableKeys = Deno.env.get('SUPABASE_PUBLISHABLE_KEYS') || ''
     const authHeader = req.headers.get('Authorization') || ''
     const token = authHeader.replace('Bearer ', '')
-    const internalSecret = Deno.env.get('INTERNAL_CRON_SECRET')
-    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-    if (!token || (token !== internalSecret && token !== serviceRoleKey)) {
-      const verifyClient = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        serviceRoleKey ?? ''
-      )
+    if (!token || !(token === serviceRoleKey || token === internalSecret || publishableKeys.includes(token))) {
+      const verifyClient = createClient(Deno.env.get('SUPABASE_URL') ?? '', serviceRoleKey ?? '')
       const { data: { user }, error: authError } = await verifyClient.auth.getUser(token)
       if (authError || !user) {
         return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
       }
     }
 
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+    const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', serviceRoleKey ?? '')
+    const groqKey = Deno.env.get('GROQ_API_KEY')
 
     const { workspace_id, source_id, url: rawUrl } = await req.json()
-
-    // SSRF GUARD: validate URL before any network operation
     const url = validateUrl(rawUrl)
 
-    // 0. Update status to processing
-    await supabase.from('kb_sources').update({ 
-      status: 'processing',
-      error_message: 'Fetching website content...' 
-    }).eq('id', source_id)
+    await supabase.from('kb_sources').update({ status: 'processing', error_message: 'Fetching website content...' }).eq('id', source_id)
 
-    // 1. Fetch and process URL (with timeout)
     const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 15000) // 15s timeout
+    const timeout = setTimeout(() => controller.abort(), 15000)
     const response = await fetch(url, { signal: controller.signal })
     clearTimeout(timeout)
     if (!response.ok) throw new Error(`Failed to fetch URL: ${response.statusText}`)
-    
-    const html = await response.text()
-    const text = convertHtmlToText(html)
+
+    const raw = await response.text()
+    if (raw.length > 1000000) throw new Error("Page too large (>1MB). Use document upload instead.")
+    const html = raw.slice(0, 100000)
+
+    await supabase.from('kb_sources').update({ error_message: 'Extracting content with AI...' }).eq('id', source_id)
+
+    let text = ""
+    if (groqKey) {
+      text = await extractContentWithGroq(html, groqKey)
+    }
+
+    if (!text || text.length < 10) {
+      text = convertHtmlToText(html)
+    }
+
     if (text.length < 10) throw new Error("No meaningful content found on the page.")
 
-    // 2. Chunking
     await supabase.from('kb_sources').update({ error_message: 'Chunking content...' }).eq('id', source_id)
+
     const chunks = splitIntoChunks(text, 5000)
 
-    // 3. Generate Embeddings via Local Model
     const chunksToInsert = []
     for (let i = 0; i < chunks.length; i++) {
-      const content = chunks[i];
-      
-      await supabase.from('kb_sources').update({ 
-        error_message: `Embedding chunk ${i + 1}/${chunks.length}...` 
-      }).eq('id', source_id)
-      
-      const embedding = await model.run(content, {
-        mean_pool: true,
-        normalize: true,
-      })
-      
+      await supabase.from('kb_sources').update({ error_message: `Embedding chunk ${i + 1}/${chunks.length}...` }).eq('id', source_id)
+
+      const embedding = await model.run(chunks[i], { mean_pool: true, normalize: true })
       chunksToInsert.push({
-        workspace_id,
-        source_id,
-        content,
+        workspace_id, source_id,
+        content: chunks[i],
         embedding: Array.from(embedding),
         chunk_index: i,
-        token_count: Math.ceil(content.length / 4)
+        token_count: Math.ceil(chunks[i].length / 4)
       })
     }
 
-    // 4. Update source and jobs
-    await supabase.from('kb_sources').update({ error_message: 'Finalizing knowledge base...' }).eq('id', source_id)
-    
+    const { error: deleteError } = await supabase.from('kb_chunks').delete().eq('source_id', source_id)
+    if (deleteError) throw new Error(`Failed to clear old chunks: ${deleteError.message}`)
+
     if (chunksToInsert.length > 0) {
       const { error: insertError } = await supabase.from('kb_chunks').insert(chunksToInsert)
       if (insertError) throw new Error(`Failed to save chunks: ${insertError.message}`)
     }
 
-    // FINAL GATE: Only set to active if we actually have chunks or the process definitely finished
-    const { error: finalError } = await supabase.from('kb_sources').update({ 
-      status: 'active', 
-      chunk_count: chunks.length,
-      error_message: null,
-      updated_at: new Date().toISOString()
+    await supabase.from('kb_sources').update({
+      status: 'active', chunk_count: chunks.length, error_message: null, updated_at: new Date().toISOString()
     }).eq('id', source_id)
 
-    if (finalError) throw new Error(`Failed to activate source: ${finalError.message}`)
-    
     await supabase.from('ingestion_jobs').update({ status: 'completed' }).eq('source_id', source_id)
 
-    return new Response(JSON.stringify({ success: true, chunks: chunks.length }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    if (groqKey && chunks.length > 0) {
+      fireAndForget(supabase, "extract-business-profile", { workspace_id, source_id })
+    }
+
+    return new Response(JSON.stringify({ success: true, chunks: chunks.length }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
 
   } catch (error: any) {
     console.error(error)
-    
-    // Attempt to mark as failed in DB
     try {
-      const supabase = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-      )
+      const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '')
       const { source_id } = await req.clone().json().catch(() => ({}))
       if (source_id) {
-        await supabase.from('kb_sources').update({ 
-          status: 'failed', 
-          error_message: error.message 
-        }).eq('id', source_id)
+        await supabase.from('kb_sources').update({ status: 'failed', error_message: error.message }).eq('id', source_id)
       }
-    } catch (e) {
-      console.error("Failed to update error status:", e)
-    }
-
+    } catch {}
     return new Response(JSON.stringify({ error: "URL ingestion failed" }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
   }
 })
 
+async function extractContentWithGroq(html: string, apiKey: string): Promise<string> {
+  const stripped = convertHtmlToText(html)
+
+  if (stripped.length < 50) return stripped
+
+  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "llama-3.3-70b-versatile",
+      messages: [
+        {
+          role: "system",
+          content: "You are a web content extractor. Given raw website text, extract the main body content: remove navigation menus, sidebars, footers, header banners, cookie notices, ads, and boilerplate. Preserve the core article or page content — headings, paragraphs, lists, tables — in clean readable text. Return ONLY the extracted content, no commentary."
+        },
+        {
+          role: "user",
+          content: `Extract the main content from this website text. Return only the cleaned text:\n\n${stripped.slice(0, 25000)}`
+        }
+      ],
+      temperature: 0.1,
+      max_tokens: 16000,
+    }),
+  })
+
+  if (!response.ok) {
+    console.error("[GroqURL] API error:", response.status)
+    return stripped
+  }
+
+  const result = await response.json()
+  const content = result.choices?.[0]?.message?.content
+  return (content && content.length > 10) ? content : stripped
+}
+
 function convertHtmlToText(html: string): string {
-  let text = html
-
-  // Remove script and style blocks
-  text = text.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-  text = text.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
-  text = text.replace(/<svg\b[^<]*(?:(?!<\/svg>)<[^<]*)*<\/svg>/gi, '')
-  text = text.replace(/<noscript\b[^<]*(?:(?!<\/noscript>)<[^<]*)*<\/noscript>/gi, '')
-
-  // Remove common noise elements (nav, footer, header, sidebar, etc.)
-  text = text.replace(/<nav\b[^<]*(?:(?!<\/nav>)<[^<]*)*<\/nav>/gi, '')
-  text = text.replace(/<footer\b[^<]*(?:(?!<\/footer>)<[^<]*)*<\/footer>/gi, '')
-  text = text.replace(/<header\b[^<]*(?:(?!<\/header>)<[^<]*)*<\/header>/gi, '')
-  text = text.replace(/<aside\b[^<]*(?:(?!<\/aside>)<[^<]*)*<\/aside>/gi, '')
-  text = text.replace(/<form\b[^<]*(?:(?!<\/form>)<[^<]*)*<\/form>/gi, '')
-
-  // Convert structural elements to markdown-like markers
-  // Headings: add # prefix and newlines
-  text = text.replace(/<h1[^>]*>/gi, '# ')
-  text = text.replace(/<\/h1>/gi, '\n\n')
-  text = text.replace(/<h2[^>]*>/gi, '## ')
-  text = text.replace(/<\/h2>/gi, '\n\n')
-  text = text.replace(/<h3[^>]*>/gi, '### ')
-  text = text.replace(/<\/h3>/gi, '\n\n')
-  text = text.replace(/<h4[^>]*>/gi, '#### ')
-  text = text.replace(/<\/h4>/gi, '\n\n')
-  text = text.replace(/<h5[^>]*>/gi, '##### ')
-  text = text.replace(/<\/h5>/gi, '\n\n')
-  text = text.replace(/<h6[^>]*>/gi, '###### ')
-  text = text.replace(/<\/h6>/gi, '\n\n')
-
-  // List items: bullet points
-  text = text.replace(/<li[^>]*>/gi, '\n- ')
-  text = text.replace(/<\/li>/gi, '')
-
-  // Ordered list items
-  text = text.replace(/<ol[^>]*>/gi, '\n')
-  text = text.replace(/<\/ol>/gi, '\n')
-
-  // Unordered list
-  text = text.replace(/<ul[^>]*>/gi, '\n')
-  text = text.replace(/<\/ul>/gi, '\n')
-
-  // Links: [text](url)
-  text = text.replace(/<a\s+(?:[^>]*?\s+)?href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi, '[$2]($1)')
-  text = text.replace(/<a\s+(?:[^>]*?\s+)?href='([^']*)'[^>]*>([\s\S]*?)<\/a>/gi, '[$2]($1)')
-
-  // Bold/strong
-  text = text.replace(/<(?:strong|b)\b[^>]*>/gi, '**')
-  text = text.replace(/<\/(?:strong|b)>/gi, '**')
-
-  // Italic/emphasis
-  text = text.replace(/<(?:em|i)\b[^>]*>/gi, '*')
-  text = text.replace(/<\/(?:em|i)>/gi, '*')
-
-  // Inline code
-  text = text.replace(/<code[^>]*>/gi, '`')
-  text = text.replace(/<\/code>/gi, '`')
-
-  // Block code
-  text = text.replace(/<pre[^>]*>/gi, '\n```\n')
-  text = text.replace(/<\/pre>/gi, '\n```\n')
-
-  // Tables: extract cells with pipe separators
-  text = text.replace(/<table[^>]*>/gi, '\n')
-  text = text.replace(/<\/table>/gi, '\n')
-  text = text.replace(/<tr[^>]*>/gi, '\n')
-  text = text.replace(/<\/tr>/gi, '')
-  text = text.replace(/<th[^>]*>/gi, '| ')
-  text = text.replace(/<\/th>/gi, ' ')
-  text = text.replace(/<td[^>]*>/gi, '| ')
-  text = text.replace(/<\/td>/gi, ' ')
-
-  // Line breaks
-  text = text.replace(/<br\s*\/?>/gi, '\n')
-  text = text.replace(/<\/p>/gi, '\n\n')
-  text = text.replace(/<\/div>/gi, '\n')
-  text = text.replace(/<\/li>/gi, '')
-  text = text.replace(/<\/dd>/gi, '\n')
-  text = text.replace(/<\/dt>/gi, '\n')
-  text = text.replace(/<\/hgroup>/gi, '\n')
-
-  // Horizontal rules
-  text = text.replace(/<hr\s*\/?>/gi, '\n---\n')
-
-  // Strip any remaining HTML tags
-  text = text.replace(/<[^>]*>?/g, '')
-
-  // Decode common HTML entities
-  text = text.replace(/&amp;/g, '&')
-  text = text.replace(/&lt;/g, '<')
-  text = text.replace(/&gt;/g, '>')
-  text = text.replace(/&quot;/g, '"')
-  text = text.replace(/&#39;/g, "'")
-  text = text.replace(/&nbsp;/g, ' ')
-  text = text.replace(/&#x27;/g, "'")
-  text = text.replace(/&#x60;/g, '`')
-  text = text.replace(/&#x2F;/g, '/')
-
-  // Clean up excessive whitespace
-  text = text.replace(/\n{3,}/g, '\n\n')
-  text = text.replace(/[ \t]+/g, ' ')
-  text = text.replace(/^\s+|\s+$/gm, '')
-  text = text.replace(/^[ \t]+\n/gm, '')
-
-  return text.trim()
+  html = html.replace(/<(script|style|svg|noscript|nav|footer|header|aside|form)[^>]*>[\s\S]*?<\/\1>/gi, '')
+  html = html.replace(/<br\s*\/?>/gi, '\n')
+  html = html.replace(/<\/p>/gi, '\n\n')
+  html = html.replace(/<\/h([1-6])>/gi, '\n\n')
+  html = html.replace(/<h([1-6])[^>]*>/gi, (_, n) => '#'.repeat(Number(n)) + ' ')
+  html = html.replace(/<li[^>]*>/gi, '\n- ')
+  html = html.replace(/<\/(?:li|ol|ul|table|tr|div|dd|dt|hgroup)>/gi, '\n')
+  html = html.replace(/<th[^>]*>/gi, '| ')
+  html = html.replace(/<td[^>]*>/gi, '| ')
+  html = html.replace(/<hr\s*\/?>/gi, '\n---\n')
+  html = html.replace(/<(?:strong|b)\b[^>]*>/gi, '**')
+  html = html.replace(/<\/(?:strong|b)>/gi, '**')
+  html = html.replace(/<(?:em|i)\b[^>]*>/gi, '*')
+  html = html.replace(/<\/(?:em|i)>/gi, '*')
+  html = html.replace(/<code[^>]*>/gi, '`')
+  html = html.replace(/<\/code>/gi, '`')
+  html = html.replace(/<pre[^>]*>/gi, '\n```\n')
+  html = html.replace(/<\/pre>/gi, '\n```\n')
+  html = html.replace(/<a\s+(?:[^>]*?\s+)?href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi, '[$2]($1)')
+  html = html.replace(/<a\s+(?:[^>]*?\s+)?href='([^']*)'[^>]*>([\s\S]*?)<\/a>/gi, '[$2]($1)')
+  html = html.replace(/<[^>]*>/g, '')
+  html = html.replace(/&(?:amp|lt|gt|quot|#39|nbsp|#x27|#x60|#x2F);/g, (m: string) => ({ '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'", '&nbsp;': ' ', '&#x27;': "'", '&#x60;': '`', '&#x2F;': '/' })[m] || m)
+  html = html.replace(/\n{3,}/g, '\n\n')
+  html = html.replace(/[ \t]+/g, ' ')
+  return html.trim()
 }
 
 function splitIntoChunks(text: string, maxSize: number): string[] {
@@ -290,4 +221,9 @@ function splitIntoChunks(text: string, maxSize: number): string[] {
   }
   if (current.trim()) chunks.push(current.trim())
   return chunks.length > 0 ? chunks : [text.slice(0, maxSize)]
+}
+
+function fireAndForget(supabase: any, functionName: string, body: object) {
+  const secret = Deno.env.get('INTERNAL_CRON_SECRET')
+  supabase.functions.invoke(functionName, { body, headers: { Authorization: `Bearer ${secret}` } }).catch(() => {})
 }

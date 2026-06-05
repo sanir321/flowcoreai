@@ -21,7 +21,6 @@ Deno.serve(async (req) => {
       throw new Error("workspace_id and source_id are required")
     }
 
-    // Get all chunks for this source
     const { data: chunks, error: chunkError } = await supabase
       .from("kb_chunks")
       .select("content")
@@ -37,7 +36,6 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Get workspace business_type and existing profile
     const { data: workspace, error: wsError } = await supabase
       .from("workspaces")
       .select("business_type, business_profile")
@@ -49,7 +47,6 @@ Deno.serve(async (req) => {
     const businessType = workspace?.business_type || "hotel"
     const existingProfile = (workspace?.business_profile || {}) as Record<string, unknown>
 
-    // Join all chunks into full text (first 15000 chars to fit context window)
     const fullText = chunks.map(c => c.content).join("\n\n").slice(0, 15000)
 
     const groqKey = Deno.env.get("GROQ_API_KEY")
@@ -59,7 +56,6 @@ Deno.serve(async (req) => {
         { headers: { ...corsHeaders, "Content-Type": "application/json" } })
     }
 
-    // Extract structured data via Groq
     const extracted = await extractBusinessProfile(fullText, businessType, groqKey)
 
     if (!extracted || Object.keys(extracted).length === 0) {
@@ -68,15 +64,16 @@ Deno.serve(async (req) => {
         { headers: { ...corsHeaders, "Content-Type": "application/json" } })
     }
 
-    // Merge extracted data with existing profile
     const merged = mergeProfiles(existingProfile, extracted)
 
-    await supabase
+    const { error: updateError } = await supabase
       .from("workspaces")
       .update({ business_profile: merged, updated_at: new Date().toISOString() })
       .eq("id", workspace_id)
 
-    console.log(`[ExtractBP] Updated business profile for workspace ${workspace_id}`)
+    if (updateError) throw new Error(`Failed to update workspace: ${updateError.message}`)
+
+    console.log(`[ExtractBP] Updated business profile for workspace ${workspace_id} from source ${source_id}`)
 
     return new Response(JSON.stringify({ success: true, extracted: Object.keys(extracted) }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" }
@@ -90,43 +87,47 @@ Deno.serve(async (req) => {
 })
 
 async function extractBusinessProfile(text: string, businessType: string, apiKey: string): Promise<Record<string, unknown>> {
-  const prompt = `Extract structured business information from the website text below. Return ONLY valid JSON matching this schema (all fields optional — omit if not found):
+  const prompt = `Extract structured business information from the website text below. Return ONLY valid JSON.
+
+Business type: "${businessType}"
+
+For a ${businessType}, extract ALL available information into this shape:
 
 {
-  "contact": { "phone": "...", "email": "...", "address": "...", "google_maps_link": "..." },
+  "contact": { "phone": "...", "email": "...", "address": "..." },
   "social": { "instagram": "...", "facebook": "...", "twitter": "..." },
-  "hours": { "daily": { "monday": { "open": "09:00", "close": "18:00", "closed": false }, ...all days } },
+  "hours": { "daily": { "monday": { "open": "09:00", "close": "18:00", "closed": false }, "tuesday": {...}, ...all 7 days } },
   "policies": { "cancellation": "...", "pets": "...", "smoking": "...", "children": "...", "payment": "..." },
   "amenities": ["wifi", "parking", "pool", ...],
   "pricing": { "description": "e.g. Rooms from ₹8,000/night", "currency": "INR" },
   "extras": {
     "check_in": "14:00",
     "check_out": "11:00",
-    "rooms": [{ "name": "Deluxe Room", "base_rate": 8000, "currency": "INR", "description": "..." }],
-    "cuisine": "...",
-    "specialties": ["...", "..."],
-    "services": ["...", "..."],
-    "class_types": ["...", "..."],
-    "product_categories": ["...", "..."],
-    "property_types": ["...", "..."],
-    "store_type": "...",
+    "rooms": [{ "name": "Deluxe Room", "description": "...", "base_rate": 8000, "currency": "INR" }],
+    "cuisine": "e.g. Goan, Indian, Chinese",
+    "specialties": ["general_dentistry", "orthodontic_treatment", ...],
+    "services": ["spa", "dining", "banqueting", ...],
+    "class_types": ["yoga", "pilates", ...],
+    "product_categories": ["skincare", "haircare", ...],
+    "property_types": ["apartment", "villa", ...],
+    "store_type": "boutique",
     "seating_capacity": 80,
     "booking_notice": 24,
     "appointment_duration": 30
   }
 }
 
-Business type: "${businessType}"
-
 Rules:
-1. Only include fields that you found on the website
-2. Use empty string or empty array for missing fields — don't make up data
-3. Hours should use 24h format (HH:MM)
-4. Convert all amenity names to lowercase with underscores (e.g. "Free WiFi" → "wifi")
-5. For room rates, include name, base_rate (number), currency, description
-6. For extract fields, only include ones relevant to this business type
-7. phone numbers should be stripped of non-digit characters except leading +
-8. email addresses should be lowercase
+1. Extract ONLY information that is explicitly present in the text. Do NOT invent or assume.
+2. For fields not found, OMIT them from the JSON entirely (don't include empty strings or arrays).
+3. Hours: use 24h format (HH:MM). If a day's hours aren't listed, omit that day. If no hours at all, omit "hours" entirely.
+4. Amenities: use lowercase with underscores (e.g. "Free WiFi" → "wifi", "Swimming Pool" → "pool")
+5. Phone numbers: strip all non-digit characters except leading +
+6. Email addresses: lowercase
+7. Room rates: include name, description, base_rate as a number, and currency
+8. For restaurants: include cuisine, seating_capacity
+9. For hotels: include check_in, check_out, rooms, amenities
+10. For dental clinics: include specialties, services, appointment_duration
 
 Website text:
 ${text.slice(0, 14000)}`
@@ -140,7 +141,7 @@ ${text.slice(0, 14000)}`
     body: JSON.stringify({
       model: "llama-3.3-70b-versatile",
       messages: [
-        { role: "system", content: "You extract structured business data from website content. Return only valid JSON." },
+        { role: "system", content: "You extract structured business data from website content. Return only valid JSON. Omit fields that are not found — do not include empty strings or arrays." },
         { role: "user", content: prompt }
       ],
       temperature: 0.1,
@@ -173,31 +174,8 @@ function mergeProfiles(existing: Record<string, unknown>, extracted: Record<stri
   const merged = { ...existing }
 
   for (const [key, val] of Object.entries(extracted)) {
-    if (!val) continue
-
-    const existingVal = merged[key]
-
-    if (!existingVal || isEmpty(existingVal as any)) {
-      merged[key] = val
-      continue
-    }
-
-    // For objects, merge individual fields (don't overwrite non-empty existing fields)
-    if (typeof val === "object" && !Array.isArray(val) && val !== null) {
-      if (typeof existingVal === "object" && !Array.isArray(existingVal) && existingVal !== null) {
-        const mergedObj = { ...(existingVal as Record<string, unknown>) }
-        for (const [subKey, subVal] of Object.entries(val as Record<string, unknown>)) {
-          if (isEmpty(subVal as any)) continue
-          const existingSubVal = (existingVal as Record<string, unknown>)[subKey]
-          if (!existingSubVal || isEmpty(existingSubVal as any)) {
-            mergedObj[subKey] = subVal
-          }
-        }
-        merged[key] = mergedObj
-      } else {
-        merged[key] = { ...(existingVal as Record<string, unknown> || {}), ...(val as Record<string, unknown>) }
-      }
-    }
+    if (val == null || isEmpty(val)) continue
+    merged[key] = val
   }
 
   return merged
@@ -206,7 +184,9 @@ function mergeProfiles(existing: Record<string, unknown>, extracted: Record<stri
 function isEmpty(val: unknown): boolean {
   if (val === null || val === undefined) return true
   if (typeof val === "string") return val.trim() === ""
+  if (typeof val === "boolean") return val === false
+  if (typeof val === "number") return val === 0
   if (Array.isArray(val)) return val.length === 0
-  if (typeof val === "object" && !Array.isArray(val)) return Object.values(val as Record<string, unknown>).every(v => v === "" || v === null || v === undefined || v === 0)
+  if (typeof val === "object") return Object.values(val as Record<string, unknown>).every(v => isEmpty(v))
   return false
 }

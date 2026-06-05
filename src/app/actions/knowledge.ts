@@ -55,7 +55,18 @@ export async function addUrlSource(input: unknown): Promise<ActionResponse<{ id:
     if (source_type === 'url' && url) {
         supabaseAdmin.functions.invoke("ingest-url", {
             body: { workspace_id, source_id: data.id, url }
-        }).catch(e => console.error("[KB_ACTION] URL Ingestion trigger failed:", e))
+        }).catch(async (e) => {
+          console.error("[KB_ACTION] URL Ingestion trigger failed, trying TinyFish fallback:", e)
+          try {
+            await fetch(`${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/ingest-url-tinyfish`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ workspace_id, source_id: data.id, url }),
+            })
+          } catch (tfErr) {
+            console.error("[KB_ACTION] TinyFish fallback also failed:", tfErr)
+          }
+        })
     } else if (storage_path) {
         supabaseAdmin.functions.invoke("ingest-document", {
             body: { workspace_id, source_id: data.id, storage_path }
@@ -229,37 +240,13 @@ export async function pasteKbText(input: { workspace_id: string; content: string
         workspace_id,
         label: tag || "Pasted text",
         source_type: "txt",
-        status: "active",
+        status: "pending",
         chunk_count: 0,
       })
       .select()
       .single()
 
     if (sourceError) throw sourceError
-
-    const chunks = splitIntoChunks(content, 1000)
-    const zeroedEmbedding = new Array(384).fill(0)
-
-    const chunkRows = chunks.map((c, i) => ({
-      workspace_id,
-      source_id: source.id,
-      content: c,
-      embedding: zeroedEmbedding,
-      chunk_index: i,
-      token_count: Math.ceil(c.length / 4),
-      metadata: tag ? { tag } : null,
-    }))
-
-    const { error: insertError } = await supabase
-      .from("kb_chunks")
-      .insert(chunkRows as any)
-
-    if (insertError) throw insertError
-
-    await (supabase
-      .from("kb_sources") as any)
-      .update({ chunk_count: chunks.length })
-      .eq("id", source.id)
 
     await logAudit({
       workspace_id,
@@ -271,7 +258,13 @@ export async function pasteKbText(input: { workspace_id: string; content: string
 
     revalidatePath("/knowledge")
 
-    // Fire-and-forget: extract business profile
+    // Fire-and-forget: generate real embeddings + extract business profile
+    try {
+      supabaseAdmin.functions.invoke("embed-text", {
+        body: { workspace_id, source_id: source.id, content }
+      }).catch(e => console.error("[KB_ACTION] Embed text failed:", e))
+    } catch {}
+
     try {
       supabaseAdmin.functions.invoke("extract-business-profile", {
         body: { workspace_id, source_id: source.id }

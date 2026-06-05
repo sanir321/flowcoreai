@@ -18,6 +18,9 @@ const businessProfileSchema = z.object({
     instagram: z.string().optional().default(""),
     facebook: z.string().optional().default(""),
     twitter: z.string().optional().default(""),
+    linkedin: z.string().optional().default(""),
+    youtube: z.string().optional().default(""),
+    whatsapp: z.string().optional().default(""),
   }).optional(),
   hours: z.object({
     daily: z.record(z.string(), z.object({

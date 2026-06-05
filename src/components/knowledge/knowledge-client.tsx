@@ -213,22 +213,24 @@ export function KnowledgeClient({
     }
 
     if (fieldType === "hours") {
-      const d = currentVal?.daily || {}
+      const hours = currentVal || {}
+      const d = hours.daily || hours
       return (
         <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
           {DAYS.map(day => {
-            const dd = d[day] || { open: "09:00", close: "18:00", closed: false }
+            const dd = d[day] || { open: "09:00", close: "17:00", closed: false }
+            const setDay = (updates: any) => setField({ daily: { ...d, [day]: { ...dd, ...updates } } })
             return (
               <div key={day} className="flex items-center gap-2 py-1.5 border-b border-gray-50 last:border-0">
                 <span className="w-20 text-xs font-medium capitalize text-gray-600">{day.slice(0, 3)}</span>
-                <button onClick={() => setField({ daily: { ...d, [day]: { ...dd, closed: !dd.closed } } })} className={cn("h-5 w-5 rounded flex items-center justify-center transition-all", dd.closed ? "bg-red-50 text-red-400" : "bg-emerald-50 text-emerald-400")}>
+                <button onClick={() => setDay({ closed: !dd.closed })} className={cn("h-5 w-5 rounded flex items-center justify-center transition-all", dd.closed ? "bg-red-50 text-red-400" : "bg-emerald-50 text-emerald-400")}>
                   {dd.closed ? <X className="h-3 w-3" /> : <CheckCircle2 className="h-3 w-3" />}
                 </button>
                 {!dd.closed && (
                   <>
-                    <Input size={1} type="time" value={dd.open || "09:00"} onChange={e => setField({ daily: { ...d, [day]: { ...dd, open: e.target.value } } })} className="h-8 w-24 text-xs" />
+                    <Input size={1} type="time" value={dd.open || "09:00"} onChange={e => setDay({ open: e.target.value })} className="h-8 w-24 text-xs" />
                     <span className="text-xs text-gray-300">—</span>
-                    <Input size={1} type="time" value={dd.close || "18:00"} onChange={e => setField({ daily: { ...d, [day]: { ...dd, close: e.target.value } } })} className="h-8 w-24 text-xs" />
+                    <Input size={1} type="time" value={dd.close || "17:00"} onChange={e => setDay({ close: e.target.value })} className="h-8 w-24 text-xs" />
                   </>
                 )}
               </div>
@@ -278,9 +280,9 @@ export function KnowledgeClient({
           </div>
           <div className="flex gap-2">
             <Input size={1} placeholder="Add item..." value={amenityInput} onChange={e => setAmenityInput(e.target.value)} onKeyDown={e => {
-              if (e.key === 'Enter' && amenityInput.trim()) { e.preventDefault(); setField([...arr, amenityInput.trim().toLowerCase().replace(/\s+/g, '_')]); setAmenityInput("") }
+              if (e.key === 'Enter' && amenityInput.trim()) { e.preventDefault(); setField([...arr, amenityInput.trim()]); setAmenityInput("") }
             }} className="h-8 text-xs flex-1" />
-            <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => { if (amenityInput.trim()) { setField([...arr, amenityInput.trim().toLowerCase().replace(/\s+/g, '_')]); setAmenityInput("") } }}>Add</Button>
+            <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => { if (amenityInput.trim()) { setField([...arr, amenityInput.trim()]); setAmenityInput("") } }}>Add</Button>
           </div>
         </div>
       )

@@ -13,13 +13,15 @@ import {
   ChevronRight,
   ShieldCheck,
   ShoppingBag,
-  ClipboardList
+  ClipboardList,
+  Building2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { motion } from "framer-motion"
 
 const SETTINGS_NAV = [
   { name: "Workspace", href: "/settings", icon: SettingsIcon },
+  { name: "Business Profile", href: "/settings/business-profile", icon: Building2 },
   { name: "Notifications", href: "/settings/notifications", icon: Bell },
   { name: "Integrations", href: "/settings/integrations", icon: Puzzle },
   { name: "WhatsApp Bridge", href: "/settings/whatsapp", icon: MessageSquare },

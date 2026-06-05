@@ -44,11 +44,11 @@ export default async function KnowledgePage() {
   const businessType = ws?.business_type || "hotel"
   const businessProfile = ws?.business_profile || {}
 
-  const { data: templates } = await (supabase as any)
-    .from("required_info_templates")
-    .select("*")
-    .eq("business_type", "*")
-    .order("priority", { ascending: true })
+  const [{ data: wildcardTemplates }, { data: typeTemplates }] = await Promise.all([
+    (supabase as any).from("required_info_templates").select("*").eq("business_type", "*").order("priority", { ascending: true }),
+    (supabase as any).from("required_info_templates").select("*").eq("business_type", businessType).order("priority", { ascending: true }),
+  ])
+  const templates = [...(wildcardTemplates || []), ...(typeTemplates || [])]
 
   return (
     <KnowledgeClient

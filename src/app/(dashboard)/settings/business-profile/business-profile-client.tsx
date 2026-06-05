@@ -24,35 +24,41 @@ const DAY_LABELS: Record<string, string> = {
 }
 
 const AMENITIES_LIST = [
+  { key: "general_construction", label: "General Construction" },
+  { key: "architectural_design", label: "Architectural Design" },
+  { key: "interior_design", label: "Interior Design" },
+  { key: "lighting_design", label: "Lighting Design" },
+  { key: "cctv_installation", label: "CCTV Installation" },
+  { key: "electrical_plumbing", label: "Electrical & Plumbing" },
+  { key: "planning_estimation", label: "Planning & Estimation" },
+  { key: "budgeting", label: "Budgeting" },
+  { key: "property_management", label: "Property Management" },
+  { key: "residential_construction", label: "Residential Construction" },
+  { key: "commercial_construction", label: "Commercial Construction" },
+  { key: "home_automation", label: "Home Automation" },
+  { key: "solar_integration", label: "Solar Integration" },
   { key: "wifi", label: "WiFi" },
   { key: "parking", label: "Parking" },
   { key: "restaurant", label: "Restaurant" },
-  { key: "bar", label: "Bar" },
   { key: "pet_friendly", label: "Pet Friendly" },
-  { key: "wheelchair_access", label: "Wheelchair Access" },
-  { key: "air_conditioning", label: "Air Conditioning" },
   { key: "outdoor_seating", label: "Outdoor Seating" },
-  { key: "pool", label: "Pool" },
-  { key: "gym", label: "Gym" },
-  { key: "spa", label: "Spa" },
-  { key: "delivery", label: "Delivery" },
-  { key: "takeaway", label: "Takeaway" },
   { key: "online_booking", label: "Online Booking" },
   { key: "telehealth", label: "Telehealth" },
-  { key: "gift_cards", label: "Gift Cards" },
+  { key: "delivery", label: "Delivery" },
+  { key: "takeaway", label: "Takeaway" },
 ]
 
 const POLICY_PRESETS = [
+  { key: "privacy", label: "Privacy Policy" },
+  { key: "payment", label: "Payment Policy" },
   { key: "cancellation", label: "Cancellation Policy" },
+  { key: "return", label: "Return / Refund Policy" },
+  { key: "warranty", label: "Warranty Policy" },
+  { key: "appointment", label: "Appointment / Booking Policy" },
+  { key: "hygiene", label: "Hygiene & Safety Policy" },
   { key: "pets", label: "Pet Policy" },
   { key: "smoking", label: "Smoking Policy" },
-  { key: "children", label: "Children Policy" },
-  { key: "payment", label: "Payment Policy" },
-  { key: "dress_code", label: "Dress Code" },
   { key: "membership", label: "Membership Terms" },
-  { key: "return", label: "Return Policy" },
-  { key: "privacy", label: "Privacy Policy" },
-  { key: "hygiene", label: "Hygiene Policy" },
 ]
 
 interface Props {
@@ -67,7 +73,7 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
   const [profile, setProfile] = useState<BusinessProfile>({
     workspace_id: workspaceId,
     contact: initialProfile.contact || { phone: "", email: "", address: "", google_maps_link: "" },
-    social: initialProfile.social || { instagram: "", facebook: "", twitter: "" },
+    social: initialProfile.social || { instagram: "", facebook: "", twitter: "", linkedin: "", youtube: "", whatsapp: "" },
     hours: initialProfile.hours || { daily: {} },
     amenities: initialProfile.amenities || [],
     policies: initialProfile.policies || {},
@@ -200,8 +206,9 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
 
             <div className="space-y-4">
               {DAYS.map(day => {
-                const daily = (profile.hours?.daily || {}) as Record<string, any>
-                const dayData = daily[day] || { open: "09:00", close: "18:00", closed: false }
+                const hours = profile.hours || { daily: {} }
+                const daily = hours.daily as Record<string, any>
+                const dayData = daily[day] || { open: "09:00", close: "17:00", closed: false }
                 
                 return (
                   <div key={day} className="flex items-center justify-between p-4 rounded-2xl bg-gray-50/50 border border-gray-100/50 transition-all hover:bg-white hover:shadow-sm">
@@ -313,6 +320,40 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
                   ))}
                 </div>
              </div>
+          </Card>
+
+          {/* Social Media */}
+          <Card className="p-8 border-gray-100 rounded-[2rem] shadow-sm space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-sky-50 flex items-center justify-center text-sky-500">
+                <Globe className="h-5 w-5" />
+              </div>
+              <h2 className="text-lg font-semibold text-gray-900 tracking-tight">Social Media</h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {[
+                { key: "facebook", label: "Facebook", icon: "facebook" },
+                { key: "instagram", label: "Instagram", icon: "instagram" },
+                { key: "linkedin", label: "LinkedIn", icon: "linkedin" },
+                { key: "youtube", label: "YouTube", icon: "youtube" },
+                { key: "twitter", label: "Twitter / X", icon: "twitter" },
+                { key: "whatsapp", label: "WhatsApp", icon: "whatsapp" },
+              ].map(sm => (
+                <div key={sm.key} className="space-y-1.5">
+                  <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">{sm.label}</Label>
+                  <div className="relative">
+                    <AtSign className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+                    <Input 
+                      value={(profile.social as any)?.[sm.key] || ""}
+                      onChange={e => setNestedField("social", sm.key, e.target.value)}
+                      placeholder={`${sm.label} URL...`}
+                      className="h-11 pl-10 rounded-xl bg-gray-50/50 border-gray-100 focus:bg-white focus:border-[#c65f39] focus:ring-1 focus:ring-[#c65f39]/10 transition-all"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
           </Card>
 
           {/* Pricing & Extras */}

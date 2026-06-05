@@ -104,23 +104,34 @@ export function SettingsClient({ initialWorkspace }: SettingsClientProps) {
                  <p className="text-[10px] text-gray-500 ml-1 font-medium">This name will be used by your automated agents during conversation.</p>
               </div>
 
-              <div className="space-y-2.5">
-                 <Label className="text-xs font-bold text-gray-700 ml-1">Industry Sector</Label>
-                 <Select 
-                    value={workspace.business_type || "tech"}
-                    onValueChange={(val) => setWorkspace(prev => ({ ...prev, business_type: val }))}
-                 >
-                   <SelectTrigger className="h-12 border-gray-200 focus:ring-0 bg-gray-50/30 text-gray-900">
-                     <SelectValue />
-                   </SelectTrigger>
-                   <SelectContent className="bg-white border-gray-100 text-gray-900">
-                     <SelectItem value="tech">Technology & Software</SelectItem>
-                     <SelectItem value="finance">Banking & Finance</SelectItem>
-                     <SelectItem value="retail">E-commerce & Retail</SelectItem>
-                     <SelectItem value="healthcare">Healthcare & Medical</SelectItem>
-                   </SelectContent>
-                 </Select>
-              </div>
+               <div className="space-y-2.5">
+                  <Label className="text-xs font-bold text-gray-700 ml-1">Industry Sector</Label>
+                  <Select 
+                     value={workspace.business_type || "construction"}
+                     onValueChange={(val) => setWorkspace(prev => ({ ...prev, business_type: val }))}
+                  >
+                    <SelectTrigger className="h-12 border-gray-200 focus:ring-0 bg-gray-50/30 text-gray-900">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white border-gray-100 text-gray-900">
+                      <SelectItem value="construction">Construction & Engineering</SelectItem>
+                      <SelectItem value="hotel">Hotel & Hospitality</SelectItem>
+                      <SelectItem value="dental">Dental Clinic</SelectItem>
+                      <SelectItem value="restaurant">Restaurant & Food Service</SelectItem>
+                      <SelectItem value="retail">E-commerce & Retail</SelectItem>
+                      <SelectItem value="healthcare">Healthcare & Medical</SelectItem>
+                      <SelectItem value="tech">Technology & Software</SelectItem>
+                      <SelectItem value="finance">Banking & Finance</SelectItem>
+                      <SelectItem value="realestate">Real Estate</SelectItem>
+                      <SelectItem value="education">Education & Training</SelectItem>
+                      <SelectItem value="legal">Legal Services</SelectItem>
+                      <SelectItem value="beauty">Salon & Beauty</SelectItem>
+                      <SelectItem value="fitness">Fitness & Wellness</SelectItem>
+                      <SelectItem value="automotive">Automotive</SelectItem>
+                      <SelectItem value="logistics">Logistics & Transport</SelectItem>
+                    </SelectContent>
+                  </Select>
+               </div>
 
               <div className="space-y-2.5 pt-4 border-t border-gray-50">
                  <div className="flex items-center gap-2 mb-2">
