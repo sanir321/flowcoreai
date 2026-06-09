@@ -5,7 +5,8 @@ import { getHistory, update } from "./impl/contact.ts";
 import { captureLead, updateLeadStage, getPipeline, scheduleFollowUp, generateQuote } from "./impl/crm.ts";
 import { searchMenu, sendMenuMedia, createOrder, confirmPayment, getOrderStatus } from "./impl/order.ts";
 import { requestHandoff } from "./impl/handoff.ts";
-import { createTicket } from "./impl/support-ticket.ts";
+import { createTicket, getTicketStatus } from "./impl/support-ticket.ts";
+import { getBusinessProfile } from "./impl/business-profile.ts";
 
 const TOOL_RATE_LIMITS: Record<string, number> = {
   check_availability: 5,
@@ -17,6 +18,8 @@ const TOOL_RATE_LIMITS: Record<string, number> = {
   capture_lead: 2,
   request_handoff: 1,
   create_ticket: 3,
+  get_business_profile: 10,
+  get_ticket_status: 5,
 };
 
 const countCache = new WeakMap<PipelineContext, Record<string, number>>();
@@ -91,6 +94,8 @@ async function routeToImpl(toolName: string, params: any, ctx: PipelineContext):
     case "schedule_follow_up": return scheduleFollowUp(params, ctx);
     case "generate_quote": return generateQuote(params, ctx);
     case "create_ticket": return createTicket(params, ctx);
+    case "get_ticket_status": return getTicketStatus(params, ctx);
+    case "get_business_profile": return getBusinessProfile(ctx);
     default: return { success: false, error: `Unknown tool: ${toolName}` };
   }
 }
