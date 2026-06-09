@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ArrowRight, CheckCircle2, Loader2, Sparkles } from "lucide-react"
@@ -67,7 +67,7 @@ export default function WaitlistPage() {
               Join the <span style={{ color: "#c65f39" }}>Waitlist</span>
             </h1>
             <p className="text-[#a3a3a3] text-lg">
-              Get early access to FlowCore's automated customer service agents before we open to the public.
+              Get early access to FlowCore&apos;s automated customer service agents before we open to the public.
             </p>
           </div>
 
@@ -86,9 +86,9 @@ export default function WaitlistPage() {
                   <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center mb-2">
                     <CheckCircle2 className="w-8 h-8 text-green-500" />
                   </div>
-                  <h3 className="text-xl font-medium text-white">You're on the list!</h3>
+                  <h3 className="text-xl font-medium text-white">You&apos;re on the list!</h3>
                   <p className="text-[#a3a3a3] text-sm">
-                    We'll email you as soon as a spot opens up. Keep an eye on your inbox.
+                    We&apos;ll email you as soon as a spot opens up. Keep an eye on your inbox.
                   </p>
                   <Button asChild variant="ghost" className="mt-4 text-white/70 hover:text-white hover:bg-white/10">
                     <Link href="/">Return Home</Link>
