@@ -95,7 +95,7 @@ async function routeToImpl(toolName: string, params: any, ctx: PipelineContext):
     case "generate_quote": return generateQuote(params, ctx);
     case "create_ticket": return createTicket(params, ctx);
     case "get_ticket_status": return getTicketStatus(params, ctx);
-    case "get_business_profile": return getBusinessProfile(ctx);
+    case "get_business_profile": return getBusinessProfile(params, ctx);
     default: return { success: false, error: `Unknown tool: ${toolName}` };
   }
 }

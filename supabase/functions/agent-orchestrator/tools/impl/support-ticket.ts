@@ -42,3 +42,31 @@ export async function createTicket(
     priority: params.priority || "normal"
   };
 }
+
+export async function getTicketStatus(
+  params: { ticket_number?: string; ticket_id?: string },
+  ctx: PipelineContext
+) {
+  if (!params.ticket_number && !params.ticket_id) {
+    return { error: "ticket_number or ticket_id is required" };
+  }
+
+  let query = ctx.supabase
+    .from("support_tickets")
+    .select("ticket_number, subject, status, priority, resolution_notes, created_at, updated_at")
+    .eq("workspace_id", ctx.payload.workspace_id);
+
+  if (params.ticket_number) {
+    query = query.eq("ticket_number", params.ticket_number);
+  } else if (params.ticket_id) {
+    query = query.eq("id", params.ticket_id);
+  }
+
+  const { data: ticket, error } = await query.single();
+
+  if (error || !ticket) {
+    return { error: "Ticket not found or access denied." };
+  }
+
+  return ticket;
+}
