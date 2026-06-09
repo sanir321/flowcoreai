@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7"
 import mammoth from "npm:mammoth@1.8.0"
+import { Buffer } from "node:buffer"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -44,8 +45,9 @@ Deno.serve(async (req) => {
     if (ext === 'txt') {
       text = await fileData.text()
     } else if (ext === 'docx') {
-      const buffer = await fileData.arrayBuffer()
-      const result = await mammoth.extractRawText({ arrayBuffer: buffer })
+        const arrayBuf = await fileData.arrayBuffer()
+        const nodeBuf = Buffer.from(arrayBuf)
+        const result = await mammoth.extractRawText({ buffer: nodeBuf })
       text = result.value
     } else if (ext === 'pdf') {
       text = extractPdfText(await fileData.arrayBuffer())

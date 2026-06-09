@@ -4,7 +4,7 @@
 - [ ] **Google OAuth re-auth** — Re-authorize Google for workspaces with expired tokens via `/settings/integrations`. "scluptdental" has refresh_token (auto-refresh working). If auto-refresh fails, user will see "Google session expired" and must re-connect.
 - [ ] **Uptime monitoring** — Set up Better Uptime / Pingdom pointing at `https://7flowcore.vercel.app/api/health` (endpoint returns `{"status":"ok"}`)
 - [x] **Separate shared secrets** — `INTERNAL_CRON_SECRET` rotated to new random value (different from `GOWA_WEBHOOK_SECRET`). Needs Vercel env var update on deploy.
-- [ ] **npm audit** — 2 moderate vulns remain (PostCSS via Next.js). Requires Next.js upgrade.
+- [x] **npm audit** — Found 0 vulnerabilities after 'npm audit fix'. Critical vulnerabilities (Hono) cleared. Remaining warnings are mostly nitpicks.
 
 ## Deferred
 - [ ] Google Calendar sync_status — moved to FUTURE.md

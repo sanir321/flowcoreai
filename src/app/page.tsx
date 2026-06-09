@@ -434,20 +434,26 @@ export default function LandingPage() {
             <h2 className="font-normal tracking-tight mb-8" style={{ fontSize: "35.2508px", lineHeight: "44.0635px", letterSpacing: "-0.15667px", color: "#171717" }}>
               Support our launch on Product Hunt
             </h2>
-            <div 
-              dangerouslySetInnerHTML={{ __html: `
-                <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; border: 1px solid rgb(224, 224, 224); border-radius: 12px; padding: 20px; max-width: 500px; background: rgb(255, 255, 255); box-shadow: rgba(0, 0, 0, 0.05) 0px 2px 8px;">
-                  <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
-                    <img alt=" FlowCore" src="https://ph-files.imgix.net/e8f6dc47-6f1d-46cb-bb41-2def66ff4cdc.svg?auto=compress,format&codec=mozjpeg&cs=strip&fit=crop&h=80&w=80" style="width: 64px; height: 64px; border-radius: 8px; object-fit: cover; flex-shrink: 0;">
-                    <div style="flex: 1 1 0%; min-width: 0px;">
-                      <h3 style="margin: 0px; font-size: 18px; font-weight: 600; color: rgb(26, 26, 26); line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"> FlowCore</h3>
-                      <p style="margin: 4px 0px 0px; font-size: 14px; color: rgb(102, 102, 102); line-height: 1.4; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">AI customer service agents for clinics and restaurants</p>
-                    </div>
-                  </div>
-                  <a href="https://www.producthunt.com/products/flowcore?embed=true&utm_source=embed&utm_medium=post_embed" target="_blank" rel="noopener" style="display: inline-flex; align-items: center; gap: 4px; margin-top: 12px; padding: 8px 16px; background: rgb(255, 97, 84); color: rgb(255, 255, 255); text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 600;">Check it out on Product Hunt →</a>
-                </div>
-              `}} 
-            />
+            <a 
+              href="https://www.producthunt.com/products/flowcore"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group relative flex flex-col sm:flex-row items-center gap-6 p-6 rounded-2xl transition-all duration-300 hover:shadow-xl hover:-translate-y-1 w-full max-w-[500px] text-left"
+              style={{ background: "#fafafa", border: "1px solid #e5e5e5" }}
+            >
+              <img 
+                alt="FlowCore logo" 
+                src="https://ph-files.imgix.net/e8f6dc47-6f1d-46cb-bb41-2def66ff4cdc.svg?auto=compress,format&codec=mozjpeg&cs=strip&fit=crop&h=80&w=80" 
+                className="w-16 h-16 rounded-xl object-cover shrink-0 shadow-sm border border-gray-200"
+              />
+              <div className="flex-1 min-w-0 text-center sm:text-left">
+                <h3 className="text-lg font-semibold tracking-tight text-gray-900 mb-1">FlowCore</h3>
+                <p className="text-sm text-gray-500 line-clamp-2 leading-relaxed">AI customer service agents for clinics and restaurants</p>
+              </div>
+              <div className="shrink-0 flex items-center justify-center p-3 rounded-full transition-colors bg-white border border-gray-200 group-hover:border-[#ff6154] group-hover:bg-[#ff6154]/5">
+                <svg viewBox="0 0 24 24" fill="#ff6154" className="w-5 h-5"><path d="M12 0C5.372 0 0 5.372 0 12s5.372 12 12 12 12-5.372 12-12S18.628 0 12 0zm1.758 15.656h-2.5v4.542H8.718V4.316h5.811c3.159 0 5.438 2.054 5.438 5.67 0 3.615-2.279 5.67-5.451 5.67zm-2.5-2.203h2.463c1.678 0 2.92-1.047 2.92-3.467 0-2.42-1.242-3.468-2.92-3.468H11.258v6.935z"/></svg>
+              </div>
+            </a>
           </div>
         </motion.section>
 

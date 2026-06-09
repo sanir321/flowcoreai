@@ -23,7 +23,7 @@ export default function WidgetPreview({ workspaceId, accentColor, greeting }: Pr
   const [input, setInput] = useState("")
   const [sending, setSending] = useState(false)
   const [config, setConfig] = useState<WidgetConfig | null>(null)
-  const sessionRef = useRef(
+  const [sessionToken] = useState(() =>
     typeof crypto !== "undefined" && crypto.randomUUID
       ? crypto.randomUUID()
       : Math.random().toString(36).slice(2) + Date.now().toString(36)
@@ -61,7 +61,7 @@ export default function WidgetPreview({ workspaceId, accentColor, greeting }: Pr
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           workspace_id: workspaceId,
-          session_token: sessionRef.current,
+          session_token: sessionToken,
           message: text,
         }),
       })
