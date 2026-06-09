@@ -8,14 +8,17 @@ const supabaseAdmin = createClient(
 
 export async function POST(req: NextRequest) {
   try {
-    const { email } = await req.json();
+    const { email, business_type } = await req.json();
     if (!email || typeof email !== "string" || !email.includes("@")) {
       return NextResponse.json({ error: "Valid email required" }, { status: 400 });
     }
 
     const { error } = await supabaseAdmin
       .from("waitlist")
-      .insert({ email: email.toLowerCase().trim() });
+      .insert({ 
+        email: email.toLowerCase().trim(),
+        business_type: business_type || null 
+      });
 
     if (error) {
       if (error.code === "23505") {

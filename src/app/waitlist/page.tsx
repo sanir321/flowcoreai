@@ -9,19 +9,25 @@ import Link from "next/link"
 
 export default function WaitlistPage() {
   const [email, setEmail] = useState("")
+  const [businessType, setBusinessType] = useState("")
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
   const [errorMessage, setErrorMessage] = useState("")
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!email || !email.includes("@")) return
+    if (!businessType) {
+      setStatus("error")
+      setErrorMessage("Please select a business type.")
+      return
+    }
 
     setStatus("loading")
     try {
       const res = await fetch("/api/waitlist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, business_type: businessType }),
       })
 
       const data = await res.json()
@@ -32,6 +38,7 @@ export default function WaitlistPage() {
 
       setStatus("success")
       setEmail("")
+      setBusinessType("")
     } catch (err: any) {
       setStatus("error")
       setErrorMessage(err.message)
@@ -119,6 +126,34 @@ export default function WaitlistPage() {
                       }}
                       className="h-12 bg-black/50 border-white/10 text-white placeholder:text-white/30 focus-visible:ring-[#c65f39] focus-visible:border-[#c65f39]"
                     />
+                  </div>
+
+                  <div className="space-y-2 pb-2">
+                    <label htmlFor="businessType" className="text-sm font-medium text-white/80">
+                      Business Type
+                    </label>
+                    <div className="relative">
+                      <select
+                        id="businessType"
+                        required
+                        value={businessType}
+                        onChange={(e) => {
+                          setBusinessType(e.target.value)
+                          if (status === "error") setStatus("idle")
+                        }}
+                        className="w-full h-12 px-3 py-2 bg-black/50 border border-white/10 rounded-md text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#c65f39] focus:border-transparent appearance-none"
+                      >
+                        <option value="" disabled hidden className="text-gray-500">Select your industry...</option>
+                        <option value="clinic" className="bg-[#121212] text-white">Clinic / Healthcare</option>
+                        <option value="restaurant" className="bg-[#121212] text-white">Restaurant / F&B</option>
+                        <option value="agency" className="bg-[#121212] text-white">Agency / Professional Services</option>
+                        <option value="ecommerce" className="bg-[#121212] text-white">E-commerce / Retail</option>
+                        <option value="other" className="bg-[#121212] text-white">Other</option>
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-white/50">
+                        <svg className="h-4 w-4 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                      </div>
+                    </div>
                   </div>
 
                   {status === "error" && (
