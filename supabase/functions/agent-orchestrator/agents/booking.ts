@@ -39,13 +39,12 @@ const STAGE_TO_FIELD: Record<string, string> = {
 };
 
 const DEFAULT_SERVICES = [
-  "Teeth Cleaning", "Root Canal", "Tooth Extraction",
-  "Dental Filling", "Crown & Bridge", "Teeth Whitening"
+  "our available services", "a consultation", "an appointment"
 ];
 
 const FIELD_PROMPTS: Record<string, (ws: any) => string> = {
   collecting_service: (ws) => {
-    const services = ws?.services_offered || DEFAULT_SERVICES.join(", ");
+    const services = ws?.services_offered || "our available services";
     return `What service would you like to book? We offer: ${services}`;
   },
   collecting_date: (_ws) =>
@@ -60,10 +59,10 @@ const FIELD_PROMPTS: Record<string, (ws: any) => string> = {
 
 const RETRY_PROMPTS: Record<string, (attempt: number, ws: any) => string> = {
   collecting_service: (a, ws) => {
-    const services = ws?.services_offered || DEFAULT_SERVICES.join(", ");
+    const services = ws?.services_offered || "our available services";
     const prompts = [
       `Which service are you looking for? We currently offer: ${services}`,
-      `I'd love to help! Could you pick one from our available services: ${services}`,
+      `I'd love to help! Could you let me know what type of appointment you need?`,
       `No worries — take a look at what we offer: ${services}. Which one interests you?`
     ];
     return prompts[Math.min(a - 1, prompts.length - 1)];
@@ -108,8 +107,8 @@ const CLARIFICATION_PROMPTS: Record<string, (attempt: number) => string> = {
       return "I apologize — I'm having trouble identifying the service you want. Would you like me to connect you with someone who can help directly?";
     }
     const prompts = [
-      "I'm sorry, I didn't quite catch that. Which service are you interested in? We have options like Teeth Cleaning, Root Canal, Filling, and more.",
-      "I understand this can be confusing. Could you try telling me what dental work you're looking for? Even a description works.",
+      "I'm sorry, I didn't quite catch that. What type of appointment or service are you interested in?",
+      "I understand this can be confusing. Could you try telling me what you're looking to book?",
       "I want to make sure I get this right. If it's easier, you can describe what you need and I'll match it to our services."
     ];
     return prompts[Math.min(a - 3, prompts.length - 1)];
