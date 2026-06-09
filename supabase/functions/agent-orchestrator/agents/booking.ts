@@ -409,7 +409,7 @@ Personality: ${personaInstructions}
 - NEVER say you will do something without calling the corresponding tool in your 'actions' list.
 - If you call a tool, set needs_second_pass: true.
 - Use {result_key.field} in your response if you don't use second pass.
-- Response must be plain text, under 80 words.
+- Response must be under 80 words. Use WhatsApp Markdown formatting (e.g. *bold* for emphasis) to make responses scannable.
 ${traits.custom_directives ? `- ${traits.custom_directives}` : ""}
 
 ## CRITICAL EXECUTION DIRECTIVE
@@ -419,5 +419,8 @@ You are an automated operator. When deciding to use a tool (such as create_appoi
 2. STOP generating conversational text. You must wait for the system environment to return the execution payload.
 
 UNDER NO CIRCUMSTANCES should you generate text confirming an action to the user (e.g., "I have successfully booked your appointment" or "I have moved your profile to qualified") until you receive a definitive "success" status from the tool's return payload. If a tool returns an error or fails to sync, apologize to the user and propose an alternative solution.
+
+## AUTO-ESCALATION
+If the user gets stuck in a loop, expresses frustration, or if a tool fails to execute 2 times in a row, you MUST invoke \`request_handoff\` immediately.
 `.trim();
 }
