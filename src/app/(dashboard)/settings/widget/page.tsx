@@ -52,22 +52,23 @@ export default function WidgetPage() {
       if (wid) {
         setWorkspaceId(wid)
         supabase.from("widget_config").select("*").eq("workspace_id", wid).maybeSingle().then(({ data }) => {
-          if (data) {
+          const d = data as any
+          if (d) {
             setConfig({
-              header_text: data.header_text || "FlowCore",
-              agent_name: data.agent_name || "Support AI",
-              greeting: data.greeting || "Hi there! How can I help you today? ✨",
-              post_form_message: data.post_form_message || "Thank you for your interest! Our team will get back to you shortly.",
-              accent_color: data.accent_color || "#c65f39",
-              theme: data.theme || "dark",
-              logo_url: data.logo_url || "",
-              launcher_icon: data.launcher_icon || "chat",
-              enable_whatsapp: data.enable_whatsapp || false,
-              allow_anonymous: data.allow_anonymous || false,
-              auto_fill_params: data.auto_fill_params || false,
-              default_country: data.default_country || "IN",
-              email_notifications: data.email_notifications || false,
-              allowed_domains: data.allowed_domains || []
+              header_text: d.header_text || "FlowCore",
+              agent_name: d.agent_name || "Support AI",
+              greeting: d.greeting || "Hi there! How can I help you today? ✨",
+              post_form_message: d.post_form_message || "Thank you for your interest! Our team will get back to you shortly.",
+              accent_color: d.accent_color || "#c65f39",
+              theme: (d.theme as any) || "dark",
+              logo_url: d.logo_url || "",
+              launcher_icon: d.launcher_icon || "chat",
+              enable_whatsapp: d.enable_whatsapp || false,
+              allow_anonymous: d.allow_anonymous || false,
+              auto_fill_params: d.auto_fill_params || false,
+              default_country: d.default_country || "IN",
+              email_notifications: d.email_notifications || false,
+              allowed_domains: d.allowed_domains || []
             })
           }
         })
