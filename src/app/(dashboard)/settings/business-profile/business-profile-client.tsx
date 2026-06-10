@@ -1,6 +1,4 @@
-"use client"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -71,18 +69,29 @@ interface Props {
 
 export function BusinessProfileClient({ workspaceId, initialProfile, businessType, initialServicesOffered = "" }: Props) {
   const router = useRouter()
+  const [mounted, setMounted] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [servicesOffered, setServicesOffered] = useState(initialServicesOffered)
-  const [profile, setProfile] = useState<BusinessProfile>({
+  const [profile, setProfile] = useState<BusinessProfile>(() => ({
     workspace_id: workspaceId,
-    contact: initialProfile.contact || { phone: "", email: "", address: "", google_maps_link: "" },
-    social: initialProfile.social || { instagram: "", facebook: "", twitter: "", linkedin: "", youtube: "", whatsapp: "" },
-    hours: initialProfile.hours || { daily: {} },
-    amenities: initialProfile.amenities || [],
-    policies: initialProfile.policies || {},
-    pricing: initialProfile.pricing || { description: "", currency: "INR" },
-    extras: initialProfile.extras || {},
-  })
+    contact: initialProfile?.contact || { phone: "", email: "", address: "", google_maps_link: "" },
+    social: initialProfile?.social || { instagram: "", facebook: "", twitter: "", linkedin: "", youtube: "", whatsapp: "" },
+    hours: initialProfile?.hours || { daily: {} },
+    amenities: initialProfile?.amenities || [],
+    policies: initialProfile?.policies || {},
+    pricing: initialProfile?.pricing || { description: "", currency: "INR" },
+    extras: initialProfile?.extras || {},
+  }))
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (initialServicesOffered) {
+       setServicesOffered(initialServicesOffered)
+    }
+  }, [initialServicesOffered])
 
   const setField = <K extends keyof BusinessProfile>(key: K, value: BusinessProfile[K]) => {
     setProfile(prev => ({ ...prev, [key]: value }))
@@ -104,27 +113,46 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
 
   const handleSave = async () => {
     setIsSaving(true)
-    
-    // Save the services_offered directly to the workspaces table
-    const supabase = createClient()
-    await supabase.from("workspaces")
-      .update({ services_offered: servicesOffered } as any)
-      .eq("id", workspaceId)
+    try {
+      // Save the services_offered directly to the workspaces table
+      const supabase = createClient()
+      await supabase.from("workspaces")
+        .update({ services_offered: servicesOffered } as any)
+        .eq("id", workspaceId)
 
-    // Save the JSONB profile
-    const result = await updateBusinessProfile({
-      workspace_id: workspaceId,
-      profile,
-    })
-    
-    if (result.error) {
-      toast.error(result.error)
-    } else {
-      toast.success("Profile updated successfully")
-      router.refresh()
+      // Save the JSONB profile
+      const result = await updateBusinessProfile({
+        workspace_id: workspaceId,
+        profile,
+      })
+      
+      if (result.error) {
+        toast.error(result.error)
+      } else {
+        toast.success("Profile updated successfully")
+        router.refresh()
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save profile")
+    } finally {
+      setIsSaving(false)
     }
-    setIsSaving(false)
   }
+
+  if (!mounted) return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <Loader2 className="h-8 w-8 animate-spin text-[#c65f39]" />
+    </div>
+  )
+
+  const safeAmenities = (Array.isArray(profile.amenities) ? profile.amenities : []) as any[]
+  const safePolicies = ((profile.policies && typeof profile.policies === 'object') ? profile.policies : {}) as any
+  const safeSocial = ((profile.social && typeof profile.social === 'object') ? profile.social : {}) as any
+  const safeHours = ((profile.hours && typeof profile.hours === 'object') ? profile.hours : { daily: {} }) as any
+  const safeDaily = ((safeHours.daily && typeof safeHours.daily === 'object') ? safeHours.daily : {}) as any
+  const safeContact = ((profile.contact && typeof profile.contact === 'object') ? profile.contact : {}) as any
+  const safePricing = ((profile.pricing && typeof profile.pricing === 'object') ? profile.pricing : { description: "", currency: "INR" }) as any
+
 
   return (
     <div className="space-y-8 p-1">
@@ -159,7 +187,7 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
                 <div className="relative">
                   <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
                   <Input 
-                    value={profile.contact?.phone} 
+                    value={safeContact.phone || ""} 
                     onChange={e => setNestedField("contact", "phone", e.target.value)}
                     placeholder="+91 98765 43210"
                     className="h-11 pl-10 rounded-xl bg-gray-50/50 border-gray-100 focus:bg-white focus:border-[#c65f39] focus:ring-1 focus:ring-[#c65f39]/10 transition-all"
@@ -171,7 +199,7 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
                 <div className="relative">
                   <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
                   <Input 
-                    value={profile.contact?.email} 
+                    value={safeContact.email || ""} 
                     onChange={e => setNestedField("contact", "email", e.target.value)}
                     placeholder="hello@business.com"
                     className="h-11 pl-10 rounded-xl bg-gray-50/50 border-gray-100 focus:bg-white focus:border-[#c65f39] focus:ring-1 focus:ring-[#c65f39]/10 transition-all"
@@ -185,7 +213,7 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
               <div className="relative">
                 <MapPin className="absolute left-3.5 top-3.5 h-3.5 w-3.5 text-gray-400" />
                 <Textarea 
-                  value={profile.contact?.address} 
+                  value={safeContact.address || ""} 
                   onChange={e => setNestedField("contact", "address", e.target.value)}
                   placeholder="Street, City, State, ZIP"
                   className="min-h-[80px] pl-10 pt-3 rounded-xl bg-gray-50/50 border-gray-100 focus:bg-white focus:border-[#c65f39] focus:ring-1 focus:ring-[#c65f39]/10 transition-all resize-none"
@@ -198,7 +226,7 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
               <div className="relative">
                 <Link2 className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
                 <Input 
-                  value={profile.contact?.google_maps_link} 
+                  value={safeContact.google_maps_link || ""} 
                   onChange={e => setNestedField("contact", "google_maps_link", e.target.value)}
                   placeholder="https://maps.google.com/..."
                   className="h-11 pl-10 rounded-xl bg-gray-50/50 border-gray-100 focus:bg-white focus:border-[#c65f39] focus:ring-1 focus:ring-[#c65f39]/10 transition-all"
@@ -218,9 +246,7 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
 
             <div className="space-y-4">
               {DAYS.map(day => {
-                const hours = profile.hours || { daily: {} }
-                const daily = hours.daily as Record<string, any>
-                const dayData = daily[day] || { open: "09:00", close: "17:00", closed: false }
+                const dayData = safeDaily[day] || { open: "09:00", close: "17:00", closed: false }
                 
                 return (
                   <div key={day} className="flex items-center justify-between p-4 rounded-2xl bg-gray-50/50 border border-gray-100/50 transition-all hover:bg-white hover:shadow-sm">
@@ -230,7 +256,7 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
                         type="checkbox" 
                         checked={!dayData.closed} 
                         onChange={e => {
-                          const newDaily = { ...daily }
+                          const newDaily = { ...safeDaily }
                           newDaily[day] = { ...dayData, closed: !e.target.checked }
                           setNestedField("hours", "daily", newDaily)
                         }}
@@ -244,7 +270,7 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
                         <Input 
                           value={dayData.open || ""} 
                           onChange={e => {
-                            const newDaily = { ...daily }
+                            const newDaily = { ...safeDaily }
                             newDaily[day] = { ...dayData, open: e.target.value }
                             setNestedField("hours", "daily", newDaily)
                           }}
@@ -254,7 +280,7 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
                         <Input 
                           value={dayData.close || ""} 
                           onChange={e => {
-                            const newDaily = { ...daily }
+                            const newDaily = { ...safeDaily }
                             newDaily[day] = { ...dayData, close: e.target.value }
                             setNestedField("hours", "daily", newDaily)
                           }}
@@ -295,14 +321,14 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
                   <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">Additional Amenities</Label>
                   <div className="flex flex-wrap gap-2">
                     {AMENITIES_LIST.map(item => {
-                      const isActive = profile.amenities?.includes(item.label)
+                      const isActive = safeAmenities.includes(item.label)
                       return (
                         <button
                           key={item.key}
                           onClick={() => {
                             const newAmenities = isActive
-                              ? profile.amenities?.filter(a => a !== item.label)
-                              : [...(profile.amenities || []), item.label]
+                              ? safeAmenities.filter(a => a !== item.label)
+                              : [...safeAmenities, item.label]
                             setField("amenities", newAmenities)
                           }}
                           className={cn(
@@ -333,9 +359,9 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
                     <div key={item.key} className="space-y-1.5">
                       <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">{item.label}</Label>
                       <Textarea 
-                        value={(profile.policies || {})[item.key] || ""}
+                        value={safePolicies[item.key] || ""}
                         onChange={e => {
-                          const newPolicies = { ...(profile.policies || {}) }
+                          const newPolicies = { ...safePolicies }
                           newPolicies[item.key] = e.target.value
                           setField("policies", newPolicies)
                         }}
@@ -371,7 +397,7 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
                   <div className="relative">
                     <AtSign className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
                     <Input 
-                      value={(profile.social as any)?.[sm.key] || ""}
+                      value={(safeSocial as any)?.[sm.key] || ""}
                       onChange={e => setNestedField("social", sm.key, e.target.value)}
                       placeholder={`${sm.label} URL...`}
                       className="h-11 pl-10 rounded-xl bg-gray-50/50 border-gray-100 focus:bg-white focus:border-[#c65f39] focus:ring-1 focus:ring-[#c65f39]/10 transition-all"
@@ -395,7 +421,7 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
                <div className="space-y-1.5">
                   <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">Currency</Label>
                   <Input 
-                    value={profile.pricing?.currency}
+                    value={safePricing.currency || ""}
                     onChange={e => setNestedField("pricing", "currency", e.target.value)}
                     className="h-11 rounded-xl bg-gray-50/50 border-gray-100 text-sm font-bold" 
                   />
@@ -403,7 +429,7 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
                <div className="md:col-span-2 space-y-1.5">
                   <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">General Pricing Note</Label>
                   <Input 
-                    value={profile.pricing?.description}
+                    value={safePricing.description || ""}
                     onChange={e => setNestedField("pricing", "description", e.target.value)}
                     placeholder="e.g. Prices exclude 18% GST"
                     className="h-11 rounded-xl bg-gray-50/50 border-gray-100 text-sm" 
