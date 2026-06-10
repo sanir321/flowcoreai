@@ -102,14 +102,20 @@
     .fc-messages { 
       flex: 1; overflow-y: auto; padding: 20px; display: flex; 
       flex-direction: column; gap: 12px; background: #fff;
-      scrollbar-width: thin;
+      scrollbar-width: thin; scroll-behavior: smooth;
     }
     .fc-bubble { 
       max-width: 82%; padding: 12px 16px; border-radius: 18px; font-size: 13px; 
-      line-height: 1.5; animation: fc-fade-in 0.4s ease-out both;
+      line-height: 1.5; animation: fc-fade-in 0.3s ease-out both;
     }
     .fc-bubble.ai { align-self: flex-start; background: ${SOFT_GRAY}; color: ${TRUE_BLACK}; border-bottom-left-radius: 4px; }
     .fc-bubble.user { align-self: flex-end; background: ${TRUE_BLACK}; color: #fff; border-bottom-right-radius: 4px; }
+
+    .fc-typing { align-self: flex-start; background: ${SOFT_GRAY}; border-radius: 18px; border-bottom-left-radius: 4px; padding: 14px 20px; display: none; gap: 5px; align-items: center; }
+    .fc-typing.active { display: flex; }
+    .fc-typing-dot { width: 7px; height: 7px; border-radius: 50%; background: #999; animation: fc-dot-pulse 1.2s ease-in-out infinite; }
+    .fc-typing-dot:nth-child(2) { animation-delay: 0.15s; }
+    .fc-typing-dot:nth-child(3) { animation-delay: 0.3s; }
 
     .fc-input-area { padding: 16px; border-top: 1px solid ${SOFT_GRAY}; display: flex; gap: 10px; }
     .fc-input { flex: 1; border: none; outline: none; font-size: 13px; font-family: inherit; }
@@ -165,7 +171,13 @@
 
       <!-- CHAT VIEW -->
       <div id="fc-view-chat" class="fc-view">
-        <div class="fc-messages" id="fc-messages"></div>
+        <div class="fc-messages" id="fc-messages">
+          <div class="fc-typing" id="fc-typing">
+            <div class="fc-typing-dot"></div>
+            <div class="fc-typing-dot"></div>
+            <div class="fc-typing-dot"></div>
+          </div>
+        </div>
         <div class="fc-input-area">
           <input type="text" class="fc-input" id="fc-input" placeholder="Type a message...">
           <button class="fc-send" id="fc-send-msg">${Icons.send}</button>
@@ -187,11 +199,24 @@
   const whatsappLink = document.getElementById('fc-whatsapp-link');
 
   let config = {};
+  const typingEl = document.getElementById('fc-typing');
 
   fab.onclick = () => {
     const isOpen = panel.classList.toggle('open');
     fab.innerHTML = isOpen ? Icons.close : Icons.chat;
   };
+
+  function isNearBottom() {
+    return messages.scrollHeight - messages.scrollTop - messages.clientHeight < 80;
+  }
+
+  function scrollToBottom(smooth) {
+    if (smooth) {
+      messages.scrollTo({ top: messages.scrollHeight, behavior: 'smooth' });
+    } else {
+      messages.scrollTop = messages.scrollHeight;
+    }
+  }
 
   let customerName = '';
   let customerEmail = '';
@@ -215,8 +240,18 @@
     const bubble = document.createElement('div');
     bubble.className = `fc-bubble ${role}`;
     bubble.innerText = text;
-    messages.appendChild(bubble);
-    messages.scrollTop = messages.scrollHeight;
+    messages.insertBefore(bubble, typingEl);
+    const wasAtBottom = isNearBottom();
+    if (wasAtBottom) scrollToBottom(false);
+  }
+
+  function showTyping() {
+    typingEl.classList.add('active');
+    if (isNearBottom()) scrollToBottom(false);
+  }
+
+  function hideTyping() {
+    typingEl.classList.remove('active');
   }
 
   async function sendMessage() {
@@ -224,6 +259,7 @@
     if (!text) return;
     input.value = '';
     addMessage(text, 'user');
+    showTyping();
 
     try {
       const res = await fetch(`${baseUrl}/api/widget/message`, {
@@ -232,8 +268,10 @@
         body: JSON.stringify({ workspace_id: workspaceId, session_token: sessionToken, message: text, customer_name: customerName, customer_email: customerEmail })
       });
       const data = await res.json();
+      hideTyping();
       addMessage(data.reply, 'ai');
     } catch (e) {
+      hideTyping();
       addMessage("Technical hiccup. Please try again.", 'ai');
     }
   }
@@ -264,9 +302,15 @@
         // Reload previous messages
         fetch(`${baseUrl}/api/widget/message?workspace_id=${workspaceId}&session_token=${sessionToken}`)
           .then(r => r.json())
-          .then(({ messages }) => {
-            if (messages?.length) {
-              messages.forEach(m => addMessage(m.content, m.role === 'customer' ? 'user' : 'ai'));
+          .then(({ messages: hist }) => {
+            if (hist?.length) {
+              hist.forEach(m => {
+                const bubble = document.createElement('div');
+                bubble.className = `fc-bubble ${m.role === 'customer' ? 'user' : 'ai'}`;
+                bubble.innerText = m.content;
+                messages.insertBefore(bubble, typingEl);
+              });
+              scrollToBottom(false);
             }
           })
           .catch(() => {});
