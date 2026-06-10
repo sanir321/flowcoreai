@@ -7,10 +7,21 @@
 
   // Persistence
   const storageKey = `fc_${workspaceId}`;
+  const profileKey = `fc_profile_${workspaceId}`;
   let sessionToken = localStorage.getItem(storageKey);
   if (!sessionToken) {
     sessionToken = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15);
     localStorage.setItem(storageKey, sessionToken);
+  }
+
+  // Load saved profile
+  let customerName = '';
+  let customerEmail = '';
+  let savedProfile = null;
+  try { savedProfile = JSON.parse(localStorage.getItem(profileKey)); } catch {}
+  if (savedProfile?.name && savedProfile?.email) {
+    customerName = savedProfile.name;
+    customerEmail = savedProfile.email;
   }
 
   // Inject Google Fonts
@@ -192,6 +203,7 @@
 
     customerName = name;
     customerEmail = email;
+    localStorage.setItem(profileKey, JSON.stringify({ name, email }));
 
     document.getElementById('fc-view-form').classList.remove('active');
     document.getElementById('fc-view-chat').classList.add('active');
@@ -239,12 +251,25 @@
       }
       if (d.enable_whatsapp) {
         whatsappLink.classList.add('active');
-        whatsappLink.href = `https://wa.me/919999999999`; // Placeholder, should ideally come from workspace
+        whatsappLink.href = d.whatsapp_number ? `https://wa.me/${d.whatsapp_number.replace(/[^0-9]/g, '')}` : '#';
       }
-      if (d.allow_anonymous) {
+      // Skip form if profile already saved or anonymous allowed
+      if (d.allow_anonymous || savedProfile) {
         document.getElementById('fc-view-form').classList.remove('active');
         document.getElementById('fc-view-chat').classList.add('active');
-        addMessage(d.greeting || "Hi! How can I help?", 'ai');
+        const greeting = d.greeting || "Hi! How can I help you today?";
+        const userName = savedProfile?.name?.split(' ')[0];
+        addMessage(userName ? `Hi ${userName}! ${greeting}` : greeting, 'ai');
+
+        // Reload previous messages
+        fetch(`${baseUrl}/api/widget/message?workspace_id=${workspaceId}&session_token=${sessionToken}`)
+          .then(r => r.json())
+          .then(({ messages }) => {
+            if (messages?.length) {
+              messages.forEach(m => addMessage(m.content, m.role === 'customer' ? 'user' : 'ai'));
+            }
+          })
+          .catch(() => {});
       }
     });
 })();
