@@ -218,9 +218,6 @@
     }
   }
 
-  let customerName = '';
-  let customerEmail = '';
-
   startBtn.onclick = () => {
     const name = document.getElementById('fc-name').value;
     const email = document.getElementById('fc-email').value;
