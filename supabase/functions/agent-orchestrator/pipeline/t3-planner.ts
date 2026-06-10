@@ -176,7 +176,7 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
 
     if (requiredFailed) {
       finalResponse = (parsedPlan.fallback || "").replace(/\{[^}]+\}/g, "");
-      await postProcess(ctx, llmResponse, parsedPlan, finalResponse, agentType);
+      await postProcess(ctx, llmResponse, parsedPlan, finalResponse, agentType, true);
       return { handled: true, response: finalResponse, reason: "t3_fallback_required_failed" };
     }
   }
@@ -401,7 +401,8 @@ function fillTemplate(
   actions: { tool: string; result_key?: string }[],
   results: PromiseSettledResult<any>[]
 ): string {
-  let filled = template;
+  // Strip correction text before filling template
+  let filled = template.replace(/\s*\[Correction:[^\]]*\]/g, "");
   actions.forEach((action, i) => {
     if (results[i].status === "fulfilled") {
       const resultKey = action.result_key || action.tool;
@@ -443,7 +444,16 @@ async function handleHandoff(ctx: PipelineContext, targetAgent: string, context:
   const depth = (ctx.handoffDepth ?? 0) + 1;
   if (depth > 2) {
     console.log(`[T3] Handoff depth limit reached (${depth}). Returning fallback.`);
-    return { handled: true, response: "I've reached the limit for transferring between specialists. A human agent will follow up with you shortly.", reason: "handoff_depth_limit" };
+    const fallbackResponse = "I've reached the limit for transferring between specialists. A human agent will follow up with you shortly.";
+    // Update session metadata even on depth limit
+    await ctx.supabase.from("conversation_sessions")
+      .update({
+        last_message_at: new Date().toISOString(),
+        last_message_preview: fallbackResponse.substring(0, 100),
+        message_count: (ctx.session.message_count || 0) + 1,
+      })
+      .eq("id", ctx.session.id);
+    return { handled: true, response: fallbackResponse, reason: "handoff_depth_limit" };
   }
 
   console.log(`[T3] Executing handoff to: ${targetAgent}. Depth: ${depth}. Context: ${context.substring(0, 50)}...`);
@@ -470,10 +480,11 @@ async function postProcess(
   llmResponse: any,
   plan: any,
   finalResponse: string,
-  agentType: string
+  agentType: string,
+  skipCredits = false
 ) {
-  // Deduct credits
-  if (!ctx.payload.is_test) {
+  // Deduct credits (skip if tools failed)
+  if (!ctx.payload.is_test && !skipCredits) {
     try {
       await ctx.supabase.rpc("decrement_credits", {
         p_workspace_id: ctx.payload.workspace_id,

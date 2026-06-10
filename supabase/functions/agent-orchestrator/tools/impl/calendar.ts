@@ -143,6 +143,7 @@ export async function createAppointment(
 
   let googleEventId: string | null = null;
   let meetLink: string | null = null;
+  let calendarSyncFailed = false;
   try {
     const gConfig = await getGoogleConfig(ctx.supabase, ctx.payload.workspace_id);
     const gRes = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${gConfig.calendar_id || "primary"}/events?conferenceDataVersion=1`, {
@@ -163,8 +164,43 @@ export async function createAppointment(
       await ctx.supabase.from("appointments")
         .update({ google_event_id: googleEventId, meeting_link: meetLink })
         .eq("id", appt.id);
+    } else {
+      calendarSyncFailed = true;
+      console.error("[CALENDAR] Google Calendar API error:", gRes.status, await gRes.text());
     }
-  } catch (_) {}
+  } catch (e: any) {
+    calendarSyncFailed = true;
+    console.error("[CALENDAR] Google Calendar sync failed:", e.message);
+    
+    // Alert workspace owner about broken OAuth
+    if (e.message?.includes("token") || e.message?.includes("invalid_grant")) {
+      try {
+        const APP_URL = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://7flowcore.vercel.app";
+        const CRON_SECRET = Deno.env.get("INTERNAL_CRON_SECRET") || "";
+        const { data: workspace } = await ctx.supabase
+          .from("workspaces").select("owner_id, name").eq("id", ctx.payload.workspace_id).maybeSingle();
+        if (workspace?.owner_id) {
+          const { data: ownerEmail } = await ctx.supabase.rpc("get_user_email", { user_id: workspace.owner_id });
+          if (ownerEmail) {
+            await fetch(`${APP_URL}/api/emails/send`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Authorization: `Bearer ${CRON_SECRET}` },
+              body: JSON.stringify({
+                to: ownerEmail,
+                subject: `Google Calendar Disconnected — ${workspace.name || "Your Workspace"}`,
+                template: "welcome",
+                data: {
+                  workspaceName: workspace.name || "Your Workspace",
+                  customerName: "System Alert",
+                  customerEmail: "Your Google Calendar integration has expired. Please re-authorize in Settings > Integrations."
+                }
+              }),
+            });
+          }
+        }
+      } catch (_) {}
+    }
+  }
 
   if (params.email && curSession?.contact_id) {
     await ctx.supabase.from("contacts").update({ email: params.email, updated_at: new Date().toISOString() }).eq("id", curSession.contact_id);
@@ -178,7 +214,10 @@ export async function createAppointment(
 
   EdgeRuntime.waitUntil(sendAppointmentNotifications(ctx, appt, meetLink));
 
-  return appt;
+  return {
+    ...appt,
+    ...(calendarSyncFailed ? { warning: "Appointment saved but Google Calendar sync failed. A Meet link was not generated." } : {})
+  };
 }
 
 async function sendAppointmentNotifications(ctx: PipelineContext, appt: any, meetLink: string | null) {

@@ -165,6 +165,19 @@ export async function loadOrCreateBookingSession(ctx: PipelineContext): Promise<
     .maybeSingle();
 
   if (existing) {
+    // Timeout: if booking session is older than 30 minutes and not in idle/booked/cancelled, reset it
+    const lastUpdate = new Date(existing.updated_at).getTime();
+    const thirtyMinAgo = Date.now() - 30 * 60 * 1000;
+    const activeStates = ["idle", "booked", "cancelled"];
+    if (!activeStates.includes(existing.state) && lastUpdate < thirtyMinAgo) {
+      await updateBookingSession(ctx, existing.id, {
+        state: "idle",
+        collected: {},
+        attempts: {}
+      });
+      ctx.bookingSession = { ...existing, state: "idle", collected: {}, attempts: {} };
+      return ctx.bookingSession;
+    }
     ctx.bookingSession = existing;
     return existing;
   }
@@ -278,7 +291,17 @@ export async function handleBooking(ctx: PipelineContext): Promise<TierResult | 
     "i want to talk", "i want to speak", "listen to me"
   ];
   const isNonBooking = nonBookingSignals.some(s => msgLower.includes(s));
-  if (isNonBooking && Object.keys(bs.collected || {}).length <= 1) {
+  if (isNonBooking) {
+    // Allow escape even if fields were collected — user explicitly wants out
+    if (Object.keys(bs.collected || {}).length <= 1) {
+      return null;
+    }
+    // With 2+ fields collected, reset booking and let T3 handle the new intent
+    await updateBookingSession(ctx, bs.id, {
+      state: "idle",
+      collected: {},
+      attempts: {}
+    });
     return null;
   }
 

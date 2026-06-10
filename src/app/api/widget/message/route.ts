@@ -101,33 +101,48 @@ export async function POST(req: NextRequest) {
       .maybeSingle();
 
     if (!session) {
-      // Create contact for widget user
+      // Upsert contact for widget user
       const { data: contact } = await supabaseAdmin
         .from("contacts")
-        .insert({
+        .upsert({
           workspace_id,
           session_token,
           channel: "widget",
           name: "Widget User",
-        })
+        }, { onConflict: "workspace_id,session_token,channel" })
         .select()
         .single();
 
-      const { data: newSession } = await supabaseAdmin
-        .from("conversation_sessions")
-        .insert({
-          workspace_id,
-          contact_id: contact?.id,
-          customer_jid: session_token,
-          customer_name: "Widget User",
-          channel: "widget",
-          agent_type: "customer_support",
-          status: "active",
-        })
-        .select()
-        .single();
-      
-      session = newSession;
+      // Try to create session — race condition safe
+      try {
+        const { data: newSession } = await supabaseAdmin
+          .from("conversation_sessions")
+          .insert({
+            workspace_id,
+            contact_id: contact?.id,
+            customer_jid: session_token,
+            customer_name: "Widget User",
+            channel: "widget",
+            agent_type: "customer_support",
+            status: "active",
+          })
+          .select()
+          .single();
+        
+        session = newSession;
+      } catch {
+        // Unique constraint violation — another request created the session
+        const { data: existingSession } = await supabaseAdmin
+          .from("conversation_sessions")
+          .select("*")
+          .eq("workspace_id", workspace_id)
+          .eq("customer_jid", session_token)
+          .eq("channel", "widget")
+          .eq("status", "active")
+          .is("deleted_at", null)
+          .maybeSingle();
+        session = existingSession;
+      }
     }
 
     if (!session) throw new Error("Could not initialize session");
@@ -161,9 +176,8 @@ export async function POST(req: NextRequest) {
     // 4. Extract AI response
     const reply = aiResponse.response || "I apologize, but I am unable to respond at the moment.";
 
-    // Update session metadata
+    // Update session metadata (message_count is managed by orchestrator)
     await supabaseAdmin.from("conversation_sessions").update({
-      message_count: (session.message_count || 0) + 2,
       last_message_at: new Date().toISOString(),
       last_message_preview: reply.substring(0, 100),
     }).eq("id", session.id);
