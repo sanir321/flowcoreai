@@ -150,7 +150,7 @@ async function parseWebhook(req: Request): Promise<WebhookPayload | null> {
     customer_phone: body.customer_jid?.split("@")[0] || "",
     message: body.message,
     message_type: body.message_type || "text",
-    gowa_message_id: body.gowa_message_id || crypto.randomUUID(),
+    gowa_message_id: body.gowa_message_id || null,
     timestamp: body.timestamp || Date.now(),
     source: body.channel || body.source || "whatsapp",
     is_test: body.is_test || false
