@@ -62,7 +62,7 @@ export async function updateWidgetConfig(input: unknown): Promise<ActionResponse
 
     const { error } = await supabase
       .from("widget_config")
-      .upsert({ workspace_id, ...config, updated_at: new Date().toISOString() } as any, { onConflict: "workspace_id" })
+      .upsert({ workspace_id, ...config, updated_at: new Date().toISOString() }, { onConflict: "workspace_id" })
 
     if (error) throw error
 

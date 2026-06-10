@@ -58,19 +58,11 @@ export async function GET(req: NextRequest) {
       .single();
 
     const responseData = {
-      header_text: config?.header_text || "FlowCore",
-      agent_name: config?.agent_name || (agent?.config as any)?.name || "Support AI",
+      agent_name: (agent?.config as any)?.name || "Support AI",
+      accent_color: config?.accent_color || "#f9510b",
       greeting: config?.greeting || "Hi! How can I help you today?",
-      post_form_message: config?.post_form_message || "Thank you for your interest! Our team will get back to you shortly.",
-      accent_color: config?.accent_color || "#c65f39",
       theme: config?.theme || "dark",
-      logo_url: config?.logo_url || null,
-      launcher_icon: config?.launcher_icon || "chat",
-      enable_whatsapp: config?.enable_whatsapp || false,
-      allow_anonymous: config?.allow_anonymous || false,
-      auto_fill_params: config?.auto_fill_params || false,
-      default_country: config?.default_country || "IN",
-      email_notifications: config?.email_notifications || false,
+      avatar_url: config?.avatar_url || null,
     };
 
     return NextResponse.json(responseData, {
