@@ -2,64 +2,61 @@ import { PipelineContext } from "./types.ts";
 
 export async function dispatch(ctx: PipelineContext, response: string | null): Promise<void> {
   if (!response) return;
-  console.log(`[DISPATCH] Sending response: ${response.substring(0, 50)}...`)
-
-  // Always store the outbound message for audit trail
-  await storeOutboundMessage(ctx, response);
-  console.log(`[DISPATCH] Outbound message stored.`)
+  console.log(`[DISPATCH] Preparing response: ${response.substring(0, 50)}...`)
 
   const phone = ctx.payload.customer_phone;
-  if (!phone || ctx.payload.source !== "whatsapp") {
-    console.log(`[DISPATCH] Skipping WhatsApp send (Phone: ${phone}, Source: ${ctx.payload.source})`)
-    return;
-  }
+  const source = ctx.payload.source || "whatsapp";
 
   const gowaBase = Deno.env.get("GOWA_BASE_URL")?.replace(/\/$/, "");
   const gowaKey = Deno.env.get("GOWA_API_KEY");
-  if (!gowaBase || !gowaKey) {
-    console.error(`[DISPATCH] Missing Gowa config (Base: ${!!gowaBase}, Key: ${!!gowaKey})`)
-    return;
-  }
-
-  const { data: gowaSession } = await ctx.supabase
-    .from("gowa_sessions")
-    .select("gowa_session_id")
-    .eq("workspace_id", ctx.payload.workspace_id)
-    .maybeSingle();
-  const deviceId = gowaSession?.gowa_session_id;
   
-  if (!deviceId) {
-    console.error(`[DISPATCH] No Gowa session found for workspace: ${ctx.payload.workspace_id}`)
-    return;
+  // 1. Get Device/Session info if needed for WhatsApp
+  let deviceId = "";
+  if (source === "whatsapp" && gowaBase && gowaKey) {
+    const { data: gowaSession } = await ctx.supabase
+      .from("gowa_sessions")
+      .select("gowa_session_id")
+      .eq("workspace_id", ctx.payload.workspace_id)
+      .maybeSingle();
+    deviceId = gowaSession?.gowa_session_id || "";
   }
 
-  console.log(`[DISPATCH] Using device: ${deviceId}`)
-  const auth = btoa(gowaKey);
+  const auth = gowaKey ? btoa(gowaKey) : "";
 
-  try {
-    await fetch(`${gowaBase}/send/presence`, {
-      method: "POST",
-      headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json", "X-Device-Id": deviceId },
-      body: JSON.stringify({ phone, type: "available" })
-    });
-  } catch (_) {}
+  // 2. Presence/Typing Simulation
+  if (source === "whatsapp" && deviceId && phone) {
+    try {
+      await fetch(`${gowaBase}/send/presence`, {
+        method: "POST",
+        headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json", "X-Device-Id": deviceId },
+        body: JSON.stringify({ phone, type: "available" })
+      });
+    } catch (_) {}
+    
+    const delayMs = Math.min(response.length * 12, 1500);
+    await new Promise(resolve => setTimeout(resolve, delayMs));
 
-  const delayMs = Math.min(response.length * 12, 1500);
-  await new Promise(resolve => setTimeout(resolve, delayMs));
+    try {
+      await fetch(`${gowaBase}/send/presence`, {
+        method: "POST",
+        headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json", "X-Device-Id": deviceId },
+        body: JSON.stringify({ phone, type: "unavailable" })
+      });
+    } catch (_) {}
+  }
 
-  try {
-    await fetch(`${gowaBase}/send/presence`, {
-      method: "POST",
-      headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json", "X-Device-Id": deviceId },
-      body: JSON.stringify({ phone, type: "unavailable" })
-    });
-  } catch (_) {}
-
+  // 3. Split and Deliver
   const parts = response.length > 1000 ? splitAtSentence(response, 1000) : [response];
 
   for (const part of parts) {
-    await sendWithRetry(ctx, gowaBase, phone, part, auth, deviceId);
-    if (parts.length > 1) await new Promise(res => setTimeout(res, 500));
+    // PERSIST TO DB FIRST
+    await storeOutboundMessage(ctx, part);
+    
+    // DELIVER TO WHATSAPP
+    if (source === "whatsapp" && deviceId && phone) {
+      await sendWithRetry(ctx, gowaBase!, phone, part, auth, deviceId);
+      if (parts.length > 1) await new Promise(res => setTimeout(res, 500));
+    }
   }
 
   await ctx.supabase
