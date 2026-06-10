@@ -1,8 +1,8 @@
 "use client"
 
 import {
-  BarChart,
-  Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -21,7 +21,17 @@ export default function InsightsChart({ data }: { data: any[] }) {
 
   return (
     <ResponsiveContainer width="100%" height={240}>
-      <BarChart data={data} barGap={4}>
+      <LineChart data={data}>
+        <defs>
+          <linearGradient id="gradientInbound" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#2563eb" stopOpacity={0.15} />
+            <stop offset="100%" stopColor="#2563eb" stopOpacity={0} />
+          </linearGradient>
+          <linearGradient id="gradientOutbound" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#60a5fa" stopOpacity={0.1} />
+            <stop offset="100%" stopColor="#60a5fa" stopOpacity={0} />
+          </linearGradient>
+        </defs>
         <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
         <XAxis
           dataKey="date"
@@ -47,21 +57,26 @@ export default function InsightsChart({ data }: { data: any[] }) {
             fontSize: '12px',
             padding: '8px 12px'
           }}
-          cursor={{ fill: '#f9fafb' }}
+          cursor={{ stroke: '#2563eb', strokeWidth: 1, strokeDasharray: '4 4' }}
         />
-        <Bar
+        <Line
+          type="monotone"
           dataKey="inbound"
-          fill="#111827"
-          radius={[4, 4, 0, 0]}
-          maxBarSize={28}
+          stroke="#2563eb"
+          strokeWidth={2.5}
+          dot={false}
+          activeDot={{ r: 5, fill: '#2563eb', stroke: '#fff', strokeWidth: 2 }}
         />
-        <Bar
+        <Line
+          type="monotone"
           dataKey="outbound"
-          fill="#c65f39"
-          radius={[4, 4, 0, 0]}
-          maxBarSize={28}
+          stroke="#60a5fa"
+          strokeWidth={2}
+          dot={false}
+          strokeDasharray="6 3"
+          activeDot={{ r: 4, fill: '#60a5fa', stroke: '#fff', strokeWidth: 2 }}
         />
-      </BarChart>
+      </LineChart>
     </ResponsiveContainer>
   )
 }

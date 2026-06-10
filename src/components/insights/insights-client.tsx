@@ -185,13 +185,13 @@ export function InsightsClient({ metrics, chartData }: { metrics: Metrics, chart
                 <h3 className="text-sm font-semibold text-gray-900">Message Volume</h3>
                 <p className="text-[11px] text-gray-500 font-medium">Daily inbound vs outbound</p>
               </div>
-              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4">
                 <div className="flex items-center gap-1.5">
-                  <div className="h-2 w-2 rounded-full bg-gray-900" />
+                  <div className="h-2 w-2 rounded-full bg-[#2563eb]" />
                   <span className="text-[10px] font-medium text-gray-500">Inbound</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className="h-2 w-2 rounded-full bg-[#c65f39]" />
+                  <div className="h-2 w-2 rounded-full bg-[#60a5fa]" />
                   <span className="text-[10px] font-medium text-gray-500">Outbound</span>
                 </div>
               </div>
