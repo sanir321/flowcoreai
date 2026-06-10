@@ -275,19 +275,20 @@ export const SUBMIT_PLAN_TOOL = {
             properties: {
               tool: { type: "string", description: "Name of the tool to call." },
               params: { type: "object", description: "Arguments for the tool." },
-              required: { type: "boolean", description: "If true, failure halts the response." },
+              required: { type: "boolean", description: "If true, failure halts the response.", default: false },
               result_key: { type: "string", description: "Key to store the result for templating." }
             },
-            required: ["tool", "params", "required"]
+            required: ["tool", "params"]
           }
         },
         fallback: { type: "string", description: "Fallback message if tools fail." },
         needs_second_pass: {
           type: "boolean",
-          description: "True if tool results are needed to write the natural response."
+          description: "True if tool results are needed to write the natural response.",
+          default: false
         }
       },
-      required: ["response", "actions", "fallback", "needs_second_pass"]
+      required: ["response", "actions"]
     }
   }
 };

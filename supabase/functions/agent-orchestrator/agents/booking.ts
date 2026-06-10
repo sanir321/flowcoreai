@@ -1,5 +1,6 @@
 import { PipelineContext, TierResult } from "../lib/types.ts";
 import { callLLM } from "../lib/llm.ts";
+import { getPersonaInstructions } from "../lib/persona.ts";
 
 type BookingFlowStage =
   | "idle"

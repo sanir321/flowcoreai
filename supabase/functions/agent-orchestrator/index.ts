@@ -15,18 +15,19 @@ const responseHeaders = {
   "X-Content-Type-Options": "nosniff",
 }
 
+const STATIC_FALLBACK_MESSAGE = "I'm having a small technical hiccup right now! Our team has been notified and will get back to you very shortly. Sorry for the inconvenience!";
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { status: 204 })
 
   try {
-    // AUTH: Verify Bearer token is the service role key (what all internal callers send)
-    // This prevents unauthorized external invocation while maintaining backward compat.
     const authHeader = req.headers.get("Authorization") || ""
     const token = authHeader.replace("Bearer ", "")
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
     const internalSecret = Deno.env.get("INTERNAL_CRON_SECRET") || ""
+    
     if (!token || (token !== serviceRoleKey && token !== internalSecret)) {
-      console.error("[ORCHESTRATOR] Unauthorized invocation attempt")
+      console.error(`[ORCHESTRATOR] Auth Mismatch. Recv: ${token.substring(0, 4)}... Expected: ${serviceRoleKey.substring(0, 4)}... or ${internalSecret.substring(0, 4)}...`)
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401, headers: responseHeaders
       })
@@ -35,23 +36,29 @@ Deno.serve(async (req) => {
     const payload = await parseWebhook(req)
     if (!payload) return new Response("ok", { status: 200 })
 
-    await processMessage(payload)
+    const aiResult = await processMessage(payload)
+    
+    if (payload.is_test) {
+      return new Response(JSON.stringify(aiResult), { status: 200, headers: responseHeaders })
+    }
+    
     return new Response("ok", { status: 200 })
   } catch (e: any) {
-    console.error("[ORCHESTRATOR] Parse error:", e.message)
+    console.error("[ORCHESTRATOR] Request error:", e.message)
     return new Response(JSON.stringify({ error: e.message }), {
       status: 200, headers: responseHeaders
     })
   }
 })
 
-async function processMessage(payload: WebhookPayload) {
+async function processMessage(payload: WebhookPayload): Promise<TierResult> {
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
   )
 
   try {
+    console.log(`[ORCHESTRATOR] Starting pipeline for session: ${payload.session_id || 'new'}`)
     const session = await getOrCreateSession(supabase, {
       workspace_id: payload.workspace_id,
       customer_jid: payload.customer_jid,
@@ -60,39 +67,61 @@ async function processMessage(payload: WebhookPayload) {
     })
 
     const ctx: PipelineContext = { supabase, session, payload }
-
-    const guardrailConfig = session.workspaces?.guardrail_config || {}
     ctx.workspace = session.workspaces
-    console.log(`[ORCHESTRATOR] Processing message for workspace: ${ctx.workspace?.name}`)
+    console.log(`[ORCHESTRATOR] Context ready. Workspace: ${ctx.workspace?.name}`)
 
     const t0 = await runT0(ctx)
     if (t0.handled) {
-      console.log(`[ORCHESTRATOR] T0 handled: ${t0.reason}`)
+      console.log(`[ORCHESTRATOR] T0 handled. Reason: ${t0.reason}`)
       await touchSession(ctx, "customer_support", t0.response || "")
-      return dispatch(ctx, t0.response)
+      await dispatch(ctx, t0.response)
+      return t0
     }
 
     const t1 = await runT1(ctx)
     if (t1.handled) {
-      console.log(`[ORCHESTRATOR] T1 handled: ${t1.reason}`)
+      console.log(`[ORCHESTRATOR] T1 handled. Reason: ${t1.reason}`)
       await touchSession(ctx, "customer_support", t1.response || "")
-      return dispatch(ctx, t1.response)
+      await dispatch(ctx, t1.response)
+      return t1
     }
 
     const t2 = await runT2(ctx)
     if (t2.handled) {
-      console.log(`[ORCHESTRATOR] T2 handled: ${t2.reason}`)
+      console.log(`[ORCHESTRATOR] T2 handled. Reason: ${t2.reason}`)
       await touchSession(ctx, ctx.agentType || "customer_support", t2.response || "")
-      return dispatch(ctx, t2.response)
+      await dispatch(ctx, t2.response)
+      return t2
     }
 
-    console.log(`[ORCHESTRATOR] Entering T3 Planner for agent: ${ctx.agentType}`)
+    console.log(`[ORCHESTRATOR] Entering T3 for agent: ${ctx.agentType}`)
     const t3 = await runT3(ctx)
-    console.log(`[ORCHESTRATOR] T3 completed: ${t3.reason}`)
+    console.log(`[ORCHESTRATOR] T3 finished. Response length: ${t3.response?.length || 0}`)
     await dispatch(ctx, t3.response)
+    return { ...t3, agent_type: ctx.agentType }
   } catch (e: any) {
-    console.error("[ORCHESTRATOR] Error:", e.message)
+    console.error("[ORCHESTRATOR] CRASH in processMessage:", e.message)
+    console.error("[ORCHESTRATOR] Stack:", e.stack)
+    
+    // Log crash to database for diagnosis
+    try {
+      await supabase.from("debug_logs").insert({
+        level: "error",
+        scope: "agent-orchestrator",
+        message: e.message,
+        metadata: { 
+          stack: e.stack, 
+          workspace_id: payload.workspace_id, 
+          customer_jid: payload.customer_jid,
+          message: payload.message 
+        }
+      })
+    } catch (dbErr) {
+      console.error("[ORCHESTRATOR] Failed to log crash to DB:", dbErr.message)
+    }
+
     await dispatchFallback(supabase, payload)
+    return { handled: true, response: STATIC_FALLBACK_MESSAGE, reason: "crash" }
   }
 }
 
@@ -132,7 +161,7 @@ async function dispatchFallback(supabase: any, payload: WebhookPayload) {
   const { data: gs } = await supabase.from("gowa_sessions").select("gowa_session_id").eq("workspace_id", payload.workspace_id).maybeSingle()
   if (!gs?.gowa_session_id) return
 
-  const msg = "I'm having a small technical hiccup right now! Our team has been notified and will get back to you very shortly."
+  const msg = STATIC_FALLBACK_MESSAGE
   await fetch(`${gowaBase}/send/message`, {
     method: "POST",
     headers: { Authorization: `Basic ${btoa(gowaKey)}`, "Content-Type": "application/json", "X-Device-Id": gs.gowa_session_id },

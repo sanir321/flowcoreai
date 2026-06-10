@@ -441,34 +441,24 @@ function flattenObject(obj: any, prefix = ""): Record<string, string> {
 }
 
 async function handleHandoff(ctx: PipelineContext, targetAgent: string, context: string): Promise<TierResult> {
-  const buildPrompt = AGENT_SYSTEM_PROMPTS[targetAgent] || AGENT_SYSTEM_PROMPTS.customer_support;
-  const systemPrompt = buildPrompt(ctx);
-  const messages = await buildMessages(ctx);
-
-  const llmResponse = await callLLM({
-    model: "llama-3.3-70b-versatile",
-    max_tokens: 800,
-    temperature: 0.3,
-    system: systemPrompt + `\n\n[HANDOFF] Previous agent handed off with: ${context}`,
-    messages,
-    tools: [SUBMIT_PLAN_TOOL, ...getAgentToolDefinitions(targetAgent)],
-    tool_choice: { type: "function", function: { name: "submit_plan" } }
-  });
-
-  const plan = JSON.parse(llmResponse.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments || "{}");
-  const toolResults = await Promise.allSettled(
-    (plan.actions || []).map((a: any) => toolExecutor.run(a.tool, a.params, ctx))
-  );
-  const response = plan.response || plan.fallback || "Let me transfer you to the right person.";
-
+  console.log(`[T3] Executing handoff to: ${targetAgent}. Context: ${context.substring(0, 50)}...`);
+  
+  // 1. Update the session state in the database immediately
   await ctx.supabase.from("conversation_sessions")
-    .update({ agent_type: targetAgent, updated_at: new Date().toISOString() })
+    .update({ 
+      agent_type: targetAgent, 
+      updated_at: new Date().toISOString() 
+    })
     .eq("id", ctx.session.id);
 
+  // 2. Update the context for the current execution
   ctx.agentType = targetAgent;
-  await postProcess(ctx, llmResponse, plan, response, targetAgent);
-
-  return { handled: true, response, reason: `t3_handoff_to_${targetAgent}` };
+  ctx.routingReason = "handoff_execution";
+  
+  // 3. RE-RUN T3 with the new agent persona and tools
+  // We return the result of runT3 directly to avoid recursion depth issues 
+  // (though handoffs are usually only 1 level deep).
+  return await runT3(ctx);
 }
 
 async function postProcess(
@@ -608,9 +598,20 @@ async function validatePlanActions(ctx: PipelineContext, plan: AgentPlan) {
     kbCalledThisSession = !!recentTraces;
   }
   if (hasPricingClaim && !kbUsed && !kbCalledThisSession) {
-    // Strip pricing claims from response
-    plan.response = plan.response.replace(/₹\s*\d+[\d,.]*/g, "[price]");
-    plan.response += " [Correction: You provided pricing information without consulting the knowledge base. Only provide pricing if returned by match_kb_chunks.]";
+    // Log the hallucination for developer review but don't ruin the customer experience
+    console.warn(`[T3] Hallucination detected: Pricing info provided without KB search.`);
+    
+    try {
+      await ctx.supabase.from("debug_logs").insert({
+        level: "warning",
+        scope: "t3-planner",
+        message: "AI provided pricing info without KB search",
+        metadata: { session_id: ctx.session.id, response: plan.response }
+      });
+    } catch (_) {}
+    
+    // Auto-inject KB search for the next pass
+    plan.actions.push({ tool: "match_kb_chunks", params: { query: "pricing and plans" }, required: false });
   }
 }
 

@@ -17,7 +17,7 @@ export async function getOrCreateSession(supabase: any, {
   // 1. Try to find existing active session (latest first)
   let { data: session } = await supabase
     .from('conversation_sessions')
-    .select('*, workspaces(name, is_ai_enabled, credits_balance, owner_personal_phone, owner_id, welcome_template, guardrail_config)')
+    .select('*, workspaces(name, is_ai_enabled, credits_balance, owner_personal_phone, owner_id, welcome_template, guardrail_config, services_offered)')
     .eq('workspace_id', workspace_id)
     .eq('customer_jid', customer_jid)
     .eq('status', 'active')
@@ -32,7 +32,7 @@ export async function getOrCreateSession(supabase: any, {
   if (!session) {
     const { data: escalatedSession } = await supabase
       .from('conversation_sessions')
-      .select('*, workspaces(name, is_ai_enabled, credits_balance, owner_personal_phone, owner_id, welcome_template, guardrail_config)')
+      .select('*, workspaces(name, is_ai_enabled, credits_balance, owner_personal_phone, owner_id, welcome_template, guardrail_config, services_offered)')
       .eq('workspace_id', workspace_id)
       .eq('customer_jid', customer_jid)
       .eq('status', 'escalated')
@@ -84,7 +84,7 @@ export async function getOrCreateSession(supabase: any, {
         failed_attempts: 0,
         message_count: 0
       })
-      .select('*, workspaces(name, is_ai_enabled, credits_balance, owner_personal_phone, owner_id, welcome_template, guardrail_config)')
+      .select('*, workspaces(name, is_ai_enabled, credits_balance, owner_personal_phone, owner_id, welcome_template, guardrail_config, services_offered)')
       .single();
     
     if (createError) throw createError;
