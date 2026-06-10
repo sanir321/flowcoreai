@@ -21,10 +21,9 @@
 
   // Constants
   const TRUE_BLACK = "#050505";
-  const ACCENT_ORANGE = "#f9510b";
   const SOFT_GRAY = "#F5F5F7";
 
-  // Inject Styles
+  // Inject Styles (STRICT OLD UI STYLE)
   const style = document.createElement('style');
   style.textContent = `
     @keyframes fc-fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -58,6 +57,10 @@
       .fc-widget { bottom: 20px; right: 20px; }
     }
 
+    .fc-view { display: none; flex: 1; flex-direction: column; height: 100%; }
+    .fc-view.active { display: flex; }
+
+    /* Header (Universal) */
     .fc-header { 
       padding: 32px; background: #fff; border-bottom: 1px solid ${SOFT_GRAY}; 
       display: flex; align-items: center; gap: 16px;
@@ -73,96 +76,83 @@
     }
     .fc-header-info p { margin: 4px 0 0; font-size: 12px; color: #888; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
 
+    /* Form Styles */
+    .fc-form { padding: 32px; flex: 1; display: flex; flex-direction: column; gap: 20px; }
+    .fc-field { display: flex; flex-direction: column; gap: 8px; }
+    .fc-field label { font-size: 12px; font-weight: 600; color: #666; }
+    .fc-field input { padding: 12px 16px; border-radius: 12px; border: 1.5px solid ${SOFT_GRAY}; outline: none; font-size: 14px; }
+    .fc-field input:focus { border-color: ${TRUE_BLACK}; }
+    .fc-submit { 
+      padding: 14px; border-radius: 14px; background: ${TRUE_BLACK}; color: #fff; 
+      border: none; font-weight: 600; cursor: pointer; margin-top: 10px;
+    }
+
+    /* Chat Styles */
     .fc-messages { 
       flex: 1; overflow-y: auto; padding: 24px; display: flex; 
       flex-direction: column; gap: 16px; background: #fff;
-      scrollbar-width: thin; scrollbar-color: rgba(0,0,0,0.1) transparent;
+      scrollbar-width: thin;
     }
-    .fc-messages::-webkit-scrollbar { width: 4px; }
-    .fc-messages::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
-
     .fc-bubble { 
       max-width: 82%; padding: 14px 18px; border-radius: 20px; font-size: 14px; 
-      line-height: 1.5; font-weight: 450; animation: fc-fade-in 0.4s ease-out both;
+      line-height: 1.5; animation: fc-fade-in 0.4s ease-out both;
     }
-    .fc-bubble.ai { 
-      align-self: flex-start; background: ${SOFT_GRAY}; color: ${TRUE_BLACK}; 
-      border-bottom-left-radius: 4px; border: 1px solid rgba(0,0,0,0.02);
-    }
-    .fc-bubble.user { 
-      align-self: flex-end; background: ${TRUE_BLACK}; color: #fff; 
-      border-bottom-right-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
+    .fc-bubble.ai { align-self: flex-start; background: ${SOFT_GRAY}; color: ${TRUE_BLACK}; border-bottom-left-radius: 4px; }
+    .fc-bubble.user { align-self: flex-end; background: ${TRUE_BLACK}; color: #fff; border-bottom-right-radius: 4px; }
 
-    .fc-typing {
-      align-self: flex-start; padding: 12px 16px; background: ${SOFT_GRAY};
-      border-radius: 16px; border-bottom-left-radius: 4px; display: none;
-      align-items: center; gap: 4px; margin-bottom: 8px;
-    }
-    .fc-typing.active { display: flex; }
-    .fc-dot { width: 4px; height: 4px; border-radius: 50%; background: ${TRUE_BLACK}; opacity: 0.4; animation: fc-dot-pulse 1.4s infinite; }
-    .fc-dot:nth-child(2) { animation-delay: 0.2s; }
-    .fc-dot:nth-child(3) { animation-delay: 0.4s; }
+    .fc-input-area { padding: 24px; border-top: 1px solid ${SOFT_GRAY}; display: flex; gap: 12px; }
+    .fc-input { flex: 1; border: none; outline: none; font-size: 14px; font-family: inherit; }
+    .fc-send { color: ${TRUE_BLACK}; background: none; border: none; cursor: pointer; }
 
-    .fc-input-area { 
-      padding: 24px; background: #fff; border-top: 1px solid ${SOFT_GRAY}; 
-      display: flex; flex-direction: column; gap: 12px;
-    }
-    .fc-input-wrapper {
-      position: relative; display: flex; align-items: center;
-    }
-    .fc-input { 
-      flex: 1; border: 1.5px solid ${SOFT_GRAY}; border-radius: 18px; 
-      padding: 14px 50px 14px 20px; font-size: 14px; outline: none; 
-      transition: all 0.3s ease; font-family: inherit; font-weight: 500;
-    }
-    .fc-input:focus { border-color: ${TRUE_BLACK}; background: #fff; }
-    .fc-send { 
-      position: absolute; right: 8px; width: 36px; height: 36px;
-      background: ${TRUE_BLACK}; color: #fff; border: none; border-radius: 12px; 
-      cursor: pointer; display: flex; items-center: center; justify-content: center;
-      transition: all 0.2s;
-    }
-    .fc-send:hover { transform: scale(1.05); }
-    .fc-send:disabled { opacity: 0.3; cursor: not-allowed; }
-    
-    .fc-footer { text-align: center; font-size: 10px; color: #ccc; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; padding-top: 4px; }
-    .fc-footer span { color: ${TRUE_BLACK}; }
+    .fc-footer { text-align: center; font-size: 10px; color: #ccc; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; padding: 16px; }
   `;
   document.head.appendChild(style);
 
-  // Icons
   const Icons = {
     chat: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/></svg>',
     close: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>',
-    send: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>'
+    send: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>'
   };
 
-  // HTML Structure
   const container = document.createElement('div');
   container.className = 'fc-widget';
   container.innerHTML = `
     <div class="fc-panel" id="fc-panel">
       <div class="fc-header">
-        <div class="fc-avatar" id="fc-avatar">C</div>
+        <div class="fc-avatar" id="fc-avatar">F</div>
         <div class="fc-header-info">
-          <h3 id="fc-agent-name">Conduit Assistant</h3>
-          <p>Automated Agent</p>
+          <h3 id="fc-agent-name">Assistant</h3>
+          <p id="fc-header-status">Support Specialist</p>
         </div>
       </div>
-      <div class="fc-messages" id="fc-messages"></div>
-      <div class="fc-typing" id="fc-typing">
-        <div class="fc-dot"></div><div class="fc-dot"></div><div class="fc-dot"></div>
-      </div>
-      <div class="fc-input-area">
-        <div class="fc-input-wrapper">
-          <input type="text" class="fc-input" id="fc-input" placeholder="How can I help you?">
-          <button class="fc-send" id="fc-send">${Icons.send}</button>
+      
+      <!-- FORM VIEW -->
+      <div id="fc-view-form" class="fc-view active">
+        <div class="fc-form">
+          <div class="fc-field">
+            <label>Full Name</label>
+            <input type="text" id="fc-name" placeholder="John Doe">
+          </div>
+          <div class="fc-field">
+            <label>Email Address</label>
+            <input type="email" id="fc-email" placeholder="john@example.com">
+          </div>
+          <button class="fc-submit" onclick="window.fcStartChat()">Start Chat</button>
         </div>
-        <div class="fc-footer">Powered by <span>Conduit</span></div>
       </div>
+
+      <!-- CHAT VIEW -->
+      <div id="fc-view-chat" class="fc-view">
+        <div class="fc-messages" id="fc-messages"></div>
+        <div class="fc-input-area">
+          <input type="text" class="fc-input" id="fc-input" placeholder="Type a message...">
+          <button class="fc-send" onclick="window.fcSendMessage()">${Icons.send}</button>
+        </div>
+      </div>
+
+      <div class="fc-footer">Powered by <span>FlowCore</span></div>
     </div>
-    <button class="fc-fab" id="fc-fab">${Icons.chat}</button>
+    <button class="fc-fab" id="fc-fab" onclick="window.fcToggle()">${Icons.chat}</button>
   `;
   document.body.appendChild(container);
 
@@ -170,26 +160,22 @@
   const fab = document.getElementById('fc-fab');
   const messages = document.getElementById('fc-messages');
   const input = document.getElementById('fc-input');
-  const send = document.getElementById('fc-send');
-  const agentName = document.getElementById('fc-agent-name');
-  const avatar = document.getElementById('fc-avatar');
-  const typing = document.getElementById('fc-typing');
 
-  let config = {};
-  let isProcessing = false;
+  window.fcToggle = () => {
+    const isOpen = panel.classList.toggle('open');
+    fab.innerHTML = isOpen ? Icons.close : Icons.chat;
+  };
 
-  // Fetch Config
-  fetch(`${baseUrl}/api/widget/config?id=${workspaceId}`)
-    .then(r => r.json())
-    .then(data => {
-      config = data;
-      agentName.innerText = data.agent_name || 'Conduit Assistant';
-      avatar.innerText = (data.agent_name || 'C').charAt(0);
-      if (data.accent_color) {
-          // Optional: Apply accent color to small highlights if desired
-      }
-      addMessage(data.greeting || "Hi! I'm your automated assistant. How can I help you today?", 'ai');
-    });
+  window.fcStartChat = () => {
+    const name = document.getElementById('fc-name').value;
+    const email = document.getElementById('fc-email').value;
+    if (!name || !email) return alert("Please provide your details");
+
+    document.getElementById('fc-view-form').classList.remove('active');
+    document.getElementById('fc-view-chat').classList.add('active');
+    
+    addMessage(`Hi ${name.split(' ')[0]}! How can I help you today?`, 'ai');
+  };
 
   function addMessage(text, role) {
     const bubble = document.createElement('div');
@@ -199,51 +185,39 @@
     messages.scrollTop = messages.scrollHeight;
   }
 
-  function setTyping(active) {
-    if (active) typing.classList.add('active');
-    else typing.classList.remove('active');
-    messages.scrollTop = messages.scrollHeight;
-  }
-
-  fab.onclick = () => {
-    const isOpen = panel.classList.toggle('open');
-    fab.classList.toggle('open', isOpen);
-    fab.innerHTML = isOpen ? Icons.close : Icons.chat;
-    if (isOpen) input.focus();
-  };
-
-  async function handleSend() {
+  window.fcSendMessage = async () => {
     const text = input.value.trim();
-    if (!text || isProcessing) return;
-    
+    if (!text) return;
     input.value = '';
-    isProcessing = true;
-    send.disabled = true;
-    
     addMessage(text, 'user');
-    setTyping(true);
 
     try {
       const res = await fetch(`${baseUrl}/api/widget/message`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          workspace_id: workspaceId,
-          session_token: sessionToken,
-          message: text
-        })
+        body: JSON.stringify({ workspace_id: workspaceId, session_token: sessionToken, message: text })
       });
       const data = await res.json();
       addMessage(data.reply, 'ai');
     } catch (e) {
-      addMessage("I'm sorry, I'm having trouble connecting. Please try again in a moment.", 'ai');
-    } finally {
-      isProcessing = false;
-      send.disabled = false;
-      setTyping(false);
+      addMessage("Technical hiccup. Please try again.", 'ai');
     }
-  }
+  };
 
-  send.onclick = handleSend;
-  input.onkeypress = (e) => { if (e.key === 'Enter') handleSend(); };
+  input.onkeypress = (e) => { if (e.key === 'Enter') window.fcSendMessage(); };
+
+  fetch(`${baseUrl}/api/widget/config?id=${workspaceId}`)
+    .then(r => r.json())
+    .then(d => {
+      if (d.agent_name) {
+        document.getElementById('fc-agent-name').innerText = d.agent_name;
+        document.getElementById('fc-avatar').innerText = d.agent_name.charAt(0);
+      }
+      if (d.allow_anonymous) {
+        window.fcStartChat = () => {}; // No-op
+        document.getElementById('fc-view-form').classList.remove('active');
+        document.getElementById('fc-view-chat').classList.add('active');
+        addMessage(d.greeting || "Hi! How can I help?", 'ai');
+      }
+    });
 })();
