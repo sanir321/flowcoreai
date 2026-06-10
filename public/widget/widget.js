@@ -30,39 +30,42 @@
   fontLink.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700&display=swap';
   document.head.appendChild(fontLink);
 
-  // Constants
-  const TRUE_BLACK = "#050505";
-  const SOFT_GRAY = "#F5F5F7";
-
-  // Inject Styles (STRICT OLD UI STYLE)
+  // Inject Styles using CSS custom properties for dynamic theming
   const style = document.createElement('style');
   style.textContent = `
     @keyframes fc-fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes fc-slide-up { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
     @keyframes fc-dot-pulse { 0%, 100% { opacity: 0.3; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1); } }
 
-    .fc-widget { position: fixed; bottom: 32px; right: 32px; z-index: 2147483647; font-family: 'Inter', -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
-    
-    .fc-fab { 
-      width: 56px; height: 56px; border-radius: 18px; cursor: pointer; 
-      box-shadow: 0 8px 24px rgba(0,0,0,0.12); display: flex; align-items: center; 
-      justify-content: center; transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1); 
-      border: none; outline: none; background: ${TRUE_BLACK}; color: #fff;
+    .fc-widget {
+      --fc-accent: #050505;
+      --fc-accent-light: #F5F5F7;
+      --fc-bg: #fff;
+      --fc-text: #050505;
+      position: fixed; bottom: 32px; right: 32px; z-index: 2147483647;
+      font-family: 'Inter', -apple-system, sans-serif; -webkit-font-smoothing: antialiased;
+    }
+
+    .fc-fab {
+      width: 56px; height: 56px; border-radius: 18px; cursor: pointer;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12); display: flex; align-items: center;
+      justify-content: center; transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+      border: none; outline: none; background: var(--fc-accent); color: #fff;
     }
     .fc-fab:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 12px 32px rgba(0,0,0,0.18); }
     .fc-fab:active { transform: scale(0.95); }
     .fc-fab svg { width: 28px; height: 28px; transition: transform 0.4s ease; }
     .fc-fab.open svg { transform: rotate(90deg); }
 
-    .fc-panel { 
-      position: absolute; bottom: 84px; right: 0; width: 360px; height: 520px; 
-      background: #fff; border-radius: 28px; display: none; flex-direction: column; 
-      overflow: hidden; box-shadow: 0 20px 48px rgba(0,0,0,0.15); 
+    .fc-panel {
+      position: absolute; bottom: 84px; right: 0; width: 360px; height: 520px;
+      background: var(--fc-bg); border-radius: 28px; display: none; flex-direction: column;
+      overflow: hidden; box-shadow: 0 20px 48px rgba(0,0,0,0.15);
       border: 1px solid rgba(0,0,0,0.04); transform-origin: bottom right;
       animation: fc-slide-up 0.5s cubic-bezier(0.19, 1, 0.22, 1);
     }
     .fc-panel.open { display: flex; }
-    
+
     @media (max-width: 480px) {
       .fc-panel { width: calc(100vw - 32px); height: calc(100vh - 100px); right: -8px; }
       .fc-widget { bottom: 16px; right: 16px; }
@@ -71,19 +74,19 @@
     .fc-view { display: none; flex: 1; flex-direction: column; height: 100%; }
     .fc-view.active { display: flex; }
 
-    /* Header (Universal) */
-    .fc-header { 
-      padding: 24px; background: #fff; border-bottom: 1px solid ${SOFT_GRAY}; 
+    /* Header */
+    .fc-header {
+      padding: 24px; background: var(--fc-bg); border-bottom: 1px solid var(--fc-accent-light);
       display: flex; align-items: center; gap: 12px;
     }
-    .fc-avatar { 
-      width: 40px; height: 40px; border-radius: 14px; 
-      background: ${TRUE_BLACK}; display: flex; align-items: center; 
+    .fc-avatar {
+      width: 40px; height: 40px; border-radius: 14px;
+      background: var(--fc-accent); display: flex; align-items: center;
       justify-content: center; color: #fff; font-weight: 700; font-family: 'Outfit';
     }
-    .fc-header-info h3 { 
-      margin: 0; font-family: 'Outfit'; font-size: 16px; font-weight: 600; 
-      color: ${TRUE_BLACK}; letter-spacing: -0.01em; 
+    .fc-header-info h3 {
+      margin: 0; font-family: 'Outfit'; font-size: 16px; font-weight: 600;
+      color: var(--fc-text); letter-spacing: -0.01em;
     }
     .fc-header-info p { margin: 4px 0 0; font-size: 12px; color: #888; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
 
@@ -91,35 +94,35 @@
     .fc-form { padding: 24px; flex: 1; display: flex; flex-direction: column; gap: 16px; }
     .fc-field { display: flex; flex-direction: column; gap: 8px; }
     .fc-field label { font-size: 12px; font-weight: 600; color: #666; }
-    .fc-field input { padding: 12px 16px; border-radius: 12px; border: 1.5px solid ${SOFT_GRAY}; outline: none; font-size: 14px; }
-    .fc-field input:focus { border-color: ${TRUE_BLACK}; }
-    .fc-submit { 
-      padding: 14px; border-radius: 14px; background: ${TRUE_BLACK}; color: #fff; 
+    .fc-field input { padding: 12px 16px; border-radius: 12px; border: 1.5px solid var(--fc-accent-light); outline: none; font-size: 14px; }
+    .fc-field input:focus { border-color: var(--fc-accent); }
+    .fc-submit {
+      padding: 14px; border-radius: 14px; background: var(--fc-accent); color: #fff;
       border: none; font-weight: 600; cursor: pointer; margin-top: 10px;
     }
 
     /* Chat Styles */
-    .fc-messages { 
-      flex: 1; overflow-y: auto; padding: 20px; display: flex; 
-      flex-direction: column; gap: 12px; background: #fff;
+    .fc-messages {
+      flex: 1; overflow-y: auto; padding: 20px; display: flex;
+      flex-direction: column; gap: 12px; background: var(--fc-bg);
       scrollbar-width: thin; scroll-behavior: smooth;
     }
-    .fc-bubble { 
-      max-width: 82%; padding: 12px 16px; border-radius: 18px; font-size: 13px; 
+    .fc-bubble {
+      max-width: 82%; padding: 12px 16px; border-radius: 18px; font-size: 13px;
       line-height: 1.5; animation: fc-fade-in 0.3s ease-out both;
     }
-    .fc-bubble.ai { align-self: flex-start; background: ${SOFT_GRAY}; color: ${TRUE_BLACK}; border-bottom-left-radius: 4px; }
-    .fc-bubble.user { align-self: flex-end; background: ${TRUE_BLACK}; color: #fff; border-bottom-right-radius: 4px; }
+    .fc-bubble.ai { align-self: flex-start; background: var(--fc-accent-light); color: var(--fc-text); border-bottom-left-radius: 4px; }
+    .fc-bubble.user { align-self: flex-end; background: var(--fc-accent); color: #fff; border-bottom-right-radius: 4px; }
 
-    .fc-typing { align-self: flex-start; background: ${SOFT_GRAY}; border-radius: 18px; border-bottom-left-radius: 4px; padding: 14px 20px; display: none; gap: 5px; align-items: center; }
+    .fc-typing { align-self: flex-start; background: var(--fc-accent-light); border-radius: 18px; border-bottom-left-radius: 4px; padding: 14px 20px; display: none; gap: 5px; align-items: center; }
     .fc-typing.active { display: flex; }
     .fc-typing-dot { width: 7px; height: 7px; border-radius: 50%; background: #999; animation: fc-dot-pulse 1.2s ease-in-out infinite; }
     .fc-typing-dot:nth-child(2) { animation-delay: 0.15s; }
     .fc-typing-dot:nth-child(3) { animation-delay: 0.3s; }
 
-    .fc-input-area { padding: 16px; border-top: 1px solid ${SOFT_GRAY}; display: flex; gap: 10px; }
-    .fc-input { flex: 1; border: none; outline: none; font-size: 13px; font-family: inherit; }
-    .fc-send { color: ${TRUE_BLACK}; background: none; border: none; cursor: pointer; }
+    .fc-input-area { padding: 16px; border-top: 1px solid var(--fc-accent-light); display: flex; gap: 10px; }
+    .fc-input { flex: 1; border: none; outline: none; font-size: 13px; font-family: inherit; background: transparent; }
+    .fc-send { color: var(--fc-accent); background: none; border: none; cursor: pointer; }
 
     .fc-footer { text-align: center; font-size: 9px; color: #ccc; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; padding: 12px; }
 
@@ -150,7 +153,7 @@
           <p id="fc-header-status">Support Specialist</p>
         </div>
       </div>
-      
+
       <!-- FORM VIEW -->
       <div id="fc-view-form" class="fc-view active">
         <div class="fc-form">
@@ -201,6 +204,17 @@
   let config = {};
   const typingEl = document.getElementById('fc-typing');
 
+  // Apply accent color dynamically via CSS custom properties
+  function applyTheme(accentColor) {
+    if (!accentColor) return;
+    container.style.setProperty('--fc-accent', accentColor);
+    // Generate lighter variant for backgrounds (10% opacity)
+    const r = parseInt(accentColor.slice(1,3), 16);
+    const g = parseInt(accentColor.slice(3,5), 16);
+    const b = parseInt(accentColor.slice(5,7), 16);
+    container.style.setProperty('--fc-accent-light', `rgba(${r},${g},${b},0.08)`);
+  }
+
   fab.onclick = () => {
     const isOpen = panel.classList.toggle('open');
     fab.innerHTML = isOpen ? Icons.close : Icons.chat;
@@ -229,7 +243,7 @@
 
     document.getElementById('fc-view-form').classList.remove('active');
     document.getElementById('fc-view-chat').classList.add('active');
-    
+
     addMessage(`Hi ${name.split(' ')[0]}! How can I help you today?`, 'ai');
   };
 
@@ -276,10 +290,15 @@
   sendBtn.onclick = sendMessage;
   input.onkeypress = (e) => { if (e.key === 'Enter') sendMessage(); };
 
+  // Fetch config and apply theme immediately
   fetch(`${baseUrl}/api/widget/config?id=${workspaceId}`)
     .then(r => r.json())
     .then(d => {
       config = d;
+
+      // Apply accent color immediately
+      applyTheme(d.accent_color);
+
       if (d.agent_name) {
         document.getElementById('fc-agent-name').innerText = d.agent_name;
         document.getElementById('fc-avatar').innerText = d.agent_name.charAt(0);

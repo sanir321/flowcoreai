@@ -70,8 +70,8 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(responseData, {
       headers: {
-        "Cache-Control": "public, max-age=300",
-        "Access-Control-Allow-Origin": "*", // Required: widget embedded on external domains
+        "Cache-Control": "no-store, no-cache, must-revalidate",
+        "Access-Control-Allow-Origin": "*",
       },
     });
 

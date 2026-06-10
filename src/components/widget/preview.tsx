@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useRef, useEffect, useCallback } from "react"
-import { motion, AnimatePresence } from "framer-motion"
 import { Loader2, Send, X, MessageSquare, Bot, User, Sparkles, ChevronLeft, ChevronRight, Mail, Phone, ExternalLink } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -48,6 +47,7 @@ export default function WidgetPreview({ workspaceId, view = "chat", isOpen = tru
   }, [workspaceId])
 
   const config = { ...dbConfig, ...localConfig } as any
+  const accent = config.accent_color || "#050505"
 
   useEffect(() => {
     if (view === "chat" && msgs.length === 0) {
@@ -85,7 +85,7 @@ export default function WidgetPreview({ workspaceId, view = "chat", isOpen = tru
   const name = config.agent_name || "Assistant"
 
   if (!isOpen) return (
-    <div className="w-14 h-14 rounded-[18px] bg-[#050505] flex items-center justify-center text-white shadow-lg">
+    <div className="w-14 h-14 rounded-[18px] flex items-center justify-center text-white shadow-lg" style={{ background: accent }}>
       <MessageSquare className="w-6 h-6" />
     </div>
   )
@@ -93,7 +93,7 @@ export default function WidgetPreview({ workspaceId, view = "chat", isOpen = tru
   return (
     <div className="w-[360px] h-[520px] bg-white rounded-[28px] shadow-2xl border border-gray-100 flex flex-col overflow-hidden font-sans">
       <div className="p-6 border-b border-gray-100 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-[14px] bg-black flex items-center justify-center text-white font-bold font-outfit">
+        <div className="w-10 h-10 rounded-[14px] flex items-center justify-center text-white font-bold font-outfit" style={{ background: accent }}>
           {name.charAt(0)}
         </div>
         <div className="flex-1">
@@ -118,14 +118,14 @@ export default function WidgetPreview({ workspaceId, view = "chat", isOpen = tru
                  <label className="text-xs font-bold text-gray-600">Email Address</label>
                  <input disabled placeholder="john@example.com" className="w-full h-11 border border-gray-100 bg-gray-50 rounded-lg px-4 text-sm" />
               </div>
-              <button className="w-full h-11 bg-black text-white rounded-lg font-bold text-sm mt-4">Start Chat</button>
+              <button className="w-full h-11 text-white rounded-lg font-bold text-sm mt-4" style={{ background: accent }}>Start Chat</button>
            </div>
         </div>
       ) : (
         <>
           <div ref={bodyRef} className="flex-1 overflow-y-auto p-5 space-y-3">
             {msgs.map((m, i) => (
-              <div key={i} className={cn("max-w-[80%] px-4 py-2.5 rounded-2xl text-[13px] leading-relaxed", m.role === 'user' ? "ml-auto bg-black text-white rounded-br-md" : "mr-auto bg-gray-100 text-gray-800 rounded-bl-md")}>
+              <div key={i} className={cn("max-w-[80%] px-4 py-2.5 rounded-2xl text-[13px] leading-relaxed", m.role === 'user' ? "ml-auto text-white rounded-br-md" : "mr-auto bg-gray-100 text-gray-800 rounded-bl-md")} style={m.role === 'user' ? { background: accent } : undefined}>
                 {m.text}
               </div>
             ))}
@@ -133,7 +133,7 @@ export default function WidgetPreview({ workspaceId, view = "chat", isOpen = tru
           </div>
           <div className="p-4 border-t border-gray-100 flex items-center gap-2">
              <input disabled placeholder="Type a message..." className="flex-1 text-[13px] outline-none bg-transparent" />
-             <Send className="w-5 h-5 text-black opacity-30" />
+             <Send className="w-5 h-5 opacity-30" style={{ color: accent }} />
           </div>
         </>
       )}
