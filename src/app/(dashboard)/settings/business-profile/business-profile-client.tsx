@@ -16,6 +16,7 @@ import { updateBusinessProfile } from "@/app/actions/business-profile"
 import type { BusinessProfile } from "@/app/actions/business-profile"
 import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
+import { createClient } from "@/lib/supabase/client"
 
 const DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const
 const DAY_LABELS: Record<string, string> = {
@@ -65,11 +66,13 @@ interface Props {
   workspaceId: string
   initialProfile: BusinessProfile
   businessType: string
+  initialServicesOffered?: string
 }
 
-export function BusinessProfileClient({ workspaceId, initialProfile, businessType }: Props) {
+export function BusinessProfileClient({ workspaceId, initialProfile, businessType, initialServicesOffered = "" }: Props) {
   const router = useRouter()
   const [isSaving, setIsSaving] = useState(false)
+  const [servicesOffered, setServicesOffered] = useState(initialServicesOffered)
   const [profile, setProfile] = useState<BusinessProfile>({
     workspace_id: workspaceId,
     contact: initialProfile.contact || { phone: "", email: "", address: "", google_maps_link: "" },
@@ -101,10 +104,19 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
 
   const handleSave = async () => {
     setIsSaving(true)
+    
+    // Save the services_offered directly to the workspaces table
+    const supabase = createClient()
+    await supabase.from("workspaces")
+      .update({ services_offered: servicesOffered } as any)
+      .eq("id", workspaceId)
+
+    // Save the JSONB profile
     const result = await updateBusinessProfile({
       workspace_id: workspaceId,
       profile,
     })
+    
     if (result.error) {
       toast.error(result.error)
     } else {
@@ -258,39 +270,53 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
         </div>
 
         <div className="space-y-8">
-          {/* Amenities & Policies */}
+          {/* Amenities & Services */}
           <Card className="p-8 border-gray-100 rounded-[2rem] shadow-sm space-y-8">
              <div className="space-y-6">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-xl bg-purple-50 flex items-center justify-center text-purple-500">
                     <Sparkles className="h-5 w-5" />
                   </div>
-                  <h2 className="text-lg font-semibold text-gray-900 tracking-tight">Amenities & Services</h2>
+                  <h2 className="text-lg font-semibold text-gray-900 tracking-tight">Services Offered</h2>
                 </div>
 
-                <div className="flex flex-wrap gap-2">
-                  {AMENITIES_LIST.map(item => {
-                    const isActive = profile.amenities?.includes(item.label)
-                    return (
-                      <button
-                        key={item.key}
-                        onClick={() => {
-                          const newAmenities = isActive
-                            ? profile.amenities?.filter(a => a !== item.label)
-                            : [...(profile.amenities || []), item.label]
-                          setField("amenities", newAmenities)
-                        }}
-                        className={cn(
-                          "px-4 py-2 rounded-xl text-xs font-semibold transition-all border",
-                          isActive 
-                            ? "bg-[#c65f39] border-[#c65f39] text-white shadow-md shadow-[#c65f39]/20" 
-                            : "bg-gray-50/50 border-gray-100 text-gray-500 hover:bg-white hover:border-gray-200"
-                        )}
-                      >
-                        {item.label}
-                      </button>
-                    )
-                  })}
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">Main Services (Comma Separated)</Label>
+                  <Textarea 
+                    value={servicesOffered} 
+                    onChange={e => setServicesOffered(e.target.value)}
+                    placeholder="Consultation, Site Visit, Design, etc."
+                    className="min-h-[80px] rounded-xl bg-gray-50/50 border-gray-100 focus:bg-white focus:border-[#c65f39] focus:ring-1 focus:ring-[#c65f39]/10 transition-all text-sm resize-none"
+                  />
+                  <p className="text-xs text-gray-400 mt-1 ml-1">This list will be directly read by the AI Booking Agent to offer options to the customer.</p>
+                </div>
+
+                <div className="pt-4 space-y-3">
+                  <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">Additional Amenities</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {AMENITIES_LIST.map(item => {
+                      const isActive = profile.amenities?.includes(item.label)
+                      return (
+                        <button
+                          key={item.key}
+                          onClick={() => {
+                            const newAmenities = isActive
+                              ? profile.amenities?.filter(a => a !== item.label)
+                              : [...(profile.amenities || []), item.label]
+                            setField("amenities", newAmenities)
+                          }}
+                          className={cn(
+                            "px-4 py-2 rounded-xl text-xs font-semibold transition-all border",
+                            isActive 
+                              ? "bg-[#c65f39] border-[#c65f39] text-white shadow-md shadow-[#c65f39]/20" 
+                              : "bg-gray-50/50 border-gray-100 text-gray-500 hover:bg-white hover:border-gray-200"
+                          )}
+                        >
+                          {item.label}
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
              </div>
 

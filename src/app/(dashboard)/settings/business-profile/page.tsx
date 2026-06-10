@@ -16,7 +16,7 @@ export default async function BusinessProfilePage() {
 
   const { data: workspace } = await (supabase as any)
     .from("workspaces")
-    .select("business_profile, business_type, name")
+    .select("business_profile, business_type, name, services_offered")
     .eq("id", workspaceId)
     .eq("owner_id", user.id)
     .single()
@@ -26,6 +26,7 @@ export default async function BusinessProfilePage() {
       workspaceId={workspaceId}
       initialProfile={(workspace?.business_profile as any) || {}}
       businessType={workspace?.business_type || "hotel"}
+      initialServicesOffered={workspace?.services_offered || ""}
     />
   )
 }
