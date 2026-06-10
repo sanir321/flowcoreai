@@ -32,11 +32,11 @@
     @keyframes fc-bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
     @keyframes fc-pulse-soft { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
 
-    .fc-widget { position: fixed; bottom: 32px; right: 32px; z-index: 2147483647; font-family: 'Inter', -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
+    .fc-widget { position: fixed; bottom: 24px; right: 24px; z-index: 2147483647; font-family: 'Inter', -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
     
     .fc-fab { 
-      width: 64px; height: 64px; border-radius: 22px; cursor: pointer; 
-      box-shadow: 0 12px 40px rgba(0,0,0,0.15); display: flex; align-items: center; 
+      width: 56px; height: 56px; border-radius: 18px; cursor: pointer; 
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15); display: flex; align-items: center; 
       justify-content: center; transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1); 
       border: none; outline: none; background: ${BRAND_DARK}; color: #fff;
       position: relative; overflow: hidden;
@@ -46,114 +46,115 @@
       background: linear-gradient(45deg, ${ACCENT_ORANGE}33, transparent); 
       opacity: 0; transition: opacity 0.3s;
     }
-    .fc-fab:hover { transform: translateY(-5px) scale(1.03); box-shadow: 0 16px 48px rgba(0,0,0,0.22); }
+    .fc-fab:hover { transform: translateY(-4px) scale(1.05); box-shadow: 0 12px 40px rgba(0,0,0,0.2); }
     .fc-fab:hover::after { opacity: 1; }
     .fc-fab:active { transform: scale(0.92); }
-    .fc-fab svg { width: 28px; height: 28px; transition: transform 0.5s cubic-bezier(0.19, 1, 0.22, 1); position: relative; z-index: 2; }
+    .fc-fab svg { width: 24px; height: 24px; transition: transform 0.5s cubic-bezier(0.19, 1, 0.22, 1); position: relative; z-index: 2; }
     .fc-fab.open svg { transform: rotate(90deg) scale(0.8); }
 
     .fc-panel { 
-      position: absolute; bottom: 84px; right: 0; width: 400px; height: 640px; 
-      background: #fff; border-radius: 32px; display: none; flex-direction: column; 
-      overflow: hidden; box-shadow: 0 24px 64px rgba(0,0,0,0.18); 
-      border: 1px solid rgba(0,0,0,0.06); transform-origin: bottom right;
+      position: absolute; bottom: 72px; right: 0; width: 360px; height: 580px; 
+      background: #fff; border-radius: 28px; display: none; flex-direction: column; 
+      overflow: hidden; box-shadow: 0 20px 56px rgba(0,0,0,0.15); 
+      border: 1px solid rgba(0,0,0,0.05); transform-origin: bottom right;
       animation: fc-slide-up 0.6s cubic-bezier(0.19, 1, 0.22, 1);
     }
     .fc-panel.open { display: flex; }
     
     @media (max-width: 480px) {
-      .fc-panel { width: calc(100vw - 40px); height: calc(100vh - 120px); right: -10px; }
-      .fc-widget { bottom: 20px; right: 20px; }
+      .fc-panel { width: calc(100vw - 32px); height: calc(100vh - 100px); right: -8px; }
+      .fc-widget { bottom: 16px; right: 16px; }
     }
 
     .fc-header { 
-      padding: 32px; background: #fff; border-bottom: 1px solid rgba(0,0,0,0.03); 
-      display: flex; align-items: center; gap: 16px; position: relative;
+      padding: 24px; background: #fff; border-bottom: 1px solid rgba(0,0,0,0.03); 
+      display: flex; align-items: center; gap: 12px; position: relative;
     }
     .fc-avatar { 
-      width: 52px; height: 52px; border-radius: 18px; 
+      width: 44px; height: 44px; border-radius: 14px; 
       background: ${BRAND_DARK}; display: flex; align-items: center; 
       justify-content: center; color: #fff; font-weight: 700; font-family: 'Outfit';
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid rgba(255,255,255,0.1);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08); border: 1px solid rgba(255,255,255,0.1);
+      font-size: 18px;
     }
     .fc-header-info h3 { 
-      margin: 0; font-family: 'Outfit'; font-size: 20px; font-weight: 700; 
-      color: ${BRAND_DARK}; letter-spacing: -0.02em; line-height: 1.1;
+      margin: 0; font-family: 'Outfit'; font-size: 17px; font-weight: 700; 
+      color: ${BRAND_DARK}; letter-spacing: -0.01em; line-height: 1.1;
     }
-    .fc-status { display: flex; align-items: center; gap: 6px; mt: 6px; }
-    .fc-dot-live { width: 6px; height: 6px; border-radius: 50%; background: #10b981; animation: fc-pulse-soft 2s infinite; }
-    .fc-status span { font-size: 11px; color: #999; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; }
+    .fc-status { display: flex; align-items: center; gap: 4px; mt: 4px; }
+    .fc-dot-live { width: 5px; height: 5px; border-radius: 50%; background: #10b981; animation: fc-pulse-soft 2s infinite; }
+    .fc-status span { font-size: 10px; color: #999; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
 
     .fc-messages { 
-      flex: 1; overflow-y: auto; padding: 32px 24px; display: flex; 
-      flex-direction: column; gap: 20px; background: #fff;
+      flex: 1; overflow-y: auto; padding: 24px 20px; display: flex; 
+      flex-direction: column; gap: 16px; background: #fff;
       scrollbar-width: none;
     }
     .fc-messages::-webkit-scrollbar { display: none; }
 
-    .fc-msg-group { display: flex; gap: 12px; max-width: 88%; }
+    .fc-msg-group { display: flex; gap: 10px; max-width: 90%; }
     .fc-msg-group.user { align-self: flex-end; flex-direction: row-reverse; }
     .fc-msg-group.ai { align-self: flex-start; }
 
     .fc-msg-avatar { 
-      width: 24px; height: 24px; border-radius: 8px; background: ${BRAND_DARK}; 
+      width: 22px; height: 22px; border-radius: 7px; background: ${BRAND_DARK}; 
       display: flex; align-items: center; justify-content: center; shrink-0;
-      margin-top: 4px; border: 1px solid rgba(0,0,0,0.05);
+      margin-top: 2px; border: 1px solid rgba(0,0,0,0.04);
     }
     .fc-msg-avatar.user { background: #fff; }
-    .fc-msg-avatar svg { width: 12px; height: 12px; color: #fff; }
+    .fc-msg-avatar svg { width: 10px; height: 12px; color: #fff; }
     .fc-msg-avatar.user svg { color: #ccc; }
 
     .fc-bubble { 
-      padding: 14px 18px; border-radius: 22px; font-size: 14px; 
-      line-height: 1.55; font-weight: 450; animation: fc-fade-in 0.5s ease-out both;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+      padding: 12px 16px; border-radius: 18px; font-size: 13.5px; 
+      line-height: 1.5; font-weight: 450; animation: fc-fade-in 0.5s ease-out both;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.01);
     }
     .fc-bubble.ai { 
       background: ${BG_GRAY}; color: ${BRAND_DARK}; 
-      border-top-left-radius: 4px; border: 1px solid rgba(0,0,0,0.03);
+      border-top-left-radius: 3px; border: 1px solid rgba(0,0,0,0.02);
     }
     .fc-bubble.user { 
       background: ${BRAND_DARK}; color: #fff; 
-      border-top-right-radius: 4px; box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+      border-top-right-radius: 3px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);
     }
 
     .fc-typing {
-      align-self: flex-start; padding: 14px 20px; background: ${BG_GRAY};
-      border-radius: 18px; border-top-left-radius: 4px; display: none;
-      align-items: center; gap: 4px; margin-left: 36px;
+      align-self: flex-start; padding: 12px 16px; background: ${BG_GRAY};
+      border-radius: 16px; border-top-left-radius: 3px; display: none;
+      align-items: center; gap: 4px; margin-left: 32px;
     }
     .fc-typing.active { display: flex; }
-    .fc-dot { width: 4px; height: 4px; border-radius: 50%; background: #999; opacity: 0.6; animation: fc-bounce 1s infinite; }
+    .fc-dot { width: 3.5px; height: 4px; border-radius: 50%; background: #999; opacity: 0.6; animation: fc-bounce 1s infinite; }
     .fc-dot:nth-child(2) { animation-delay: 0.2s; }
     .fc-dot:nth-child(3) { animation-delay: 0.4s; }
 
     .fc-input-area { 
-      padding: 24px 32px 32px; background: #fff; border-top: 1px solid rgba(0,0,0,0.03); 
-      display: flex; flex-direction: column; gap: 16px;
+      padding: 16px 24px 24px; background: #fff; border-top: 1px solid rgba(0,0,0,0.03); 
+      display: flex; flex-direction: column; gap: 12px;
     }
     .fc-input-wrapper { position: relative; display: flex; align-items: center; }
     .fc-input { 
-      flex: 1; border: 1.5px solid ${BG_GRAY}; border-radius: 20px; 
-      padding: 16px 56px 16px 20px; font-size: 14px; outline: none; 
+      flex: 1; border: 1.5px solid ${BG_GRAY}; border-radius: 16px; 
+      padding: 14px 50px 14px 18px; font-size: 13.5px; outline: none; 
       transition: all 0.3s ease; font-family: inherit; font-weight: 500;
       background: ${BG_GRAY};
     }
-    .fc-input:focus { border-color: ${ACCENT_ORANGE}; background: #fff; box-shadow: 0 0 0 4px ${ACCENT_ORANGE}10; }
+    .fc-input:focus { border-color: ${ACCENT_ORANGE}; background: #fff; box-shadow: 0 0 0 3px ${ACCENT_ORANGE}08; }
     .fc-send { 
-      position: absolute; right: 8px; width: 40px; height: 40px;
-      background: ${ACCENT_ORANGE}; color: #fff; border: none; border-radius: 14px; 
+      position: absolute; right: 6px; width: 36px; height: 36px;
+      background: ${ACCENT_ORANGE}; color: #fff; border: none; border-radius: 12px; 
       cursor: pointer; display: flex; align-items: center; justify-content: center;
       transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
-      box-shadow: 0 4px 12px ${ACCENT_ORANGE}33;
+      box-shadow: 0 3px 10px ${ACCENT_ORANGE}22;
     }
-    .fc-send:hover { transform: scale(1.08) translateY(-2px); box-shadow: 0 6px 16px ${ACCENT_ORANGE}44; }
+    .fc-send:hover { transform: scale(1.05) translateY(-1px); }
     .fc-send:active { transform: scale(0.95); }
     .fc-send:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
     
-    .fc-footer { text-align: center; display: flex; align-items: center; justify-content: center; gap: 6px; }
-    .fc-footer-label { font-size: 9px; color: #bbb; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; }
-    .fc-footer-brand { font-size: 9px; color: ${BRAND_DARK}; font-weight: 900; text-transform: uppercase; letter-spacing: 0.12em; opacity: 0.7; }
+    .fc-footer { text-align: center; display: flex; align-items: center; justify-content: center; gap: 4px; }
+    .fc-footer-label { font-size: 8.5px; color: #ccc; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; }
+    .fc-footer-brand { font-size: 8.5px; color: ${BRAND_DARK}; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.6; }
   `;
   document.head.appendChild(style);
 
