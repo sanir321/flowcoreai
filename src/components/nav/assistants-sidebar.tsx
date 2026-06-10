@@ -1,7 +1,7 @@
 "use client"
 
 import { usePathname, useRouter } from "next/navigation"
-import { LayoutGrid, Zap, Plus, Bot, MessageSquare, Target, Terminal, PanelLeftClose, PanelLeft } from "lucide-react"
+import { LayoutGrid, Zap, Plus, Bot, MessageSquare, Target, Terminal, PanelLeftClose, PanelLeft, Wrench } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useState, useEffect, useCallback } from "react"
@@ -173,6 +173,34 @@ export function AssistantsSidebar({ onAddAssistant }: AssistantsSidebarProps) {
               {pathname === '/agent-hub/test' && (
                 <motion.div 
                   layoutId="active-dot-test"
+                  className="ml-auto h-1.5 w-1.5 rounded-full bg-gray-900" 
+                />
+              )}
+            </>
+          )}
+        </button>
+
+        <button 
+          onClick={() => router.push('/agent-hub/tools')}
+          className={cn(
+            "w-full flex items-center rounded-xl transition-all duration-300 group text-left",
+            collapsed ? "justify-center h-10 gap-0" : "gap-3 px-4 py-3",
+            pathname === '/agent-hub/tools'
+              ? "bg-gray-100 text-gray-900"
+              : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+          )}
+          title="Agent Tools"
+        >
+          <Wrench className={cn(
+            "h-4 w-4 shrink-0 transition-colors",
+            pathname === '/agent-hub/tools' ? "text-gray-900" : "text-gray-400 group-hover:text-gray-900"
+          )} />
+          {!collapsed && (
+            <>
+              <span className="text-[13px] font-semibold tracking-tight">Agent Tools</span>
+              {pathname === '/agent-hub/tools' && (
+                <motion.div 
+                  layoutId="active-dot-tools"
                   className="ml-auto h-1.5 w-1.5 rounded-full bg-gray-900" 
                 />
               )}
