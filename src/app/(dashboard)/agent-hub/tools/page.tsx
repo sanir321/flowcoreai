@@ -1,81 +1,145 @@
 "use client"
 
-import { useState } from "react"
+import { motion } from "framer-motion"
+import { Card } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { 
-  Wrench, 
-  ChevronRight, 
-  ChevronDown, 
-  Search,
-  Calendar,
-  MessageSquare,
-  Bot
+  Calendar, ShoppingCart, Users, BookOpen, LifeBuoy, 
+  Search, CheckCircle2, Clock, MapPin, CreditCard, 
+  MessageSquare, History, UserCog, Send, FileText,
+  ShieldCheck, ArrowRightLeft, Sparkles
 } from "lucide-react"
-import { cn } from "@/lib/utils"
 
-const TOOL_GROUPS = [
+const TOOL_CATEGORIES = [
   {
-    id: "availability",
-    title: "Search and manage availability",
-    desc: "AI can check availability, search listings, and help with booking-related queries",
+    title: "Appointment & Calendar",
+    icon: Calendar,
+    color: "text-blue-500",
+    bgColor: "bg-blue-50",
     tools: [
-      { name: "find-contact-by-phone", desc: "Look up a contact by their phone number. Generally used when a caller's number is not recognized." }
+      { name: "check_availability", desc: "Scans Google Calendar for free/busy slots on a specific date.", icon: Search },
+      { name: "create_appointment", desc: "Books an appointment, creates Google Meet link, and sends WhatsApp/Email alerts.", icon: CheckCircle2 },
+      { name: "update_appointment", desc: "Reschedules existing bookings and syncs changes with Google Calendar.", icon: Clock },
+      { name: "cancel_appointment", desc: "Deletes bookings from the database and removes Google Calendar events.", icon: ShieldCheck },
     ]
   },
   {
-    id: "bookings",
-    title: "Create and manage bookings",
-    desc: "AI can create booking links, schedule appointments, and manage tours",
+    title: "Sales & Ordering",
+    icon: ShoppingCart,
+    color: "text-emerald-500",
+    bgColor: "bg-emerald-50",
     tools: [
-      { name: "create-booking-link", desc: "Generate a self-service booking link that contacts can use to schedule their own meetings." },
-      { name: "get-booking-calendar-availability", desc: "Retrieve available appointment time slots from the scheduling system for a specified agent." },
-      { name: "book-appointment", desc: "Schedule an appointment by collecting contact information (name, and at least one of email/phone)." },
-      { name: "reschedule-appointment", desc: "Change the date and time of an existing appointment to a new start and end time." },
-      { name: "cancel-appointment", desc: "Cancel an existing scheduled appointment using its booking ID." }
+      { name: "search_menu", desc: "Fuzzy-search the product database for prices, availability, and categories.", icon: Search },
+      { name: "send_menu_media", desc: "Sends the business menu (Image or PDF) as a native WhatsApp attachment.", icon: Send },
+      { name: "create_order", desc: "Generates an order, calculates 18% tax, and creates a secure UPI payment link.", icon: CreditCard },
+      { name: "get_order_status", desc: "Checks if a specific order is pending, paid, shipped, or delivered.", icon: History },
+      { name: "confirm_payment", desc: "Marks an order as paid after verifying transaction ID or screenshot.", icon: ShieldCheck },
+    ]
+  },
+  {
+    title: "CRM & Lead Management",
+    icon: Users,
+    color: "text-orange-500",
+    bgColor: "bg-orange-50",
+    tools: [
+      { name: "capture_lead", desc: "Automatically saves new customer details for marketing and sales follow-ups.", icon: UserCog },
+      { name: "update_lead_stage", desc: "Moves leads through the sales pipeline (New → Qualified → Won).", icon: ArrowRightLeft },
+      { name: "get_pipeline", desc: "Retrieves a summary of active leads and their current conversion stages.", icon: FileText },
+      { name: "schedule_follow_up", desc: "Schedules automated WhatsApp re-engagement messages after X hours.", icon: MessageSquare },
+      { name: "generate_quote", desc: "Generates a formal, time-limited price quote for bulk or custom requests.", icon: FileText },
+    ]
+  },
+  {
+    title: "Business Knowledge",
+    icon: BookOpen,
+    color: "text-purple-500",
+    bgColor: "bg-purple-50",
+    tools: [
+      { name: "get_business_profile", desc: "Retrieves core info: address, hours, amenities, and service list.", icon: MapPin },
+      { name: "match_kb_chunks", desc: "Semantic search across documentation to answer complex customer questions.", icon: Sparkles },
+      { name: "get_contact_history", desc: "Retrieves past interactions, appointments, and orders for a specific user.", icon: History },
+      { name: "update_contact", desc: "Updates customer names, emails, or phone numbers in the CRM database.", icon: UserCog },
+    ]
+  },
+  {
+    title: "System & Support",
+    icon: LifeBuoy,
+    color: "text-sky-500",
+    bgColor: "bg-sky-50",
+    tools: [
+      { name: "create_ticket", desc: "Opens a support ticket for issues requiring manual human intervention.", icon: MessageSquare },
+      { name: "get_ticket_status", desc: "Provides live updates on the resolution progress of an active ticket.", icon: History },
+      { name: "request_handoff", desc: "Instantly transfers a session to a different agent or a human manager.", icon: ArrowRightLeft },
     ]
   }
 ]
 
-export default function AiToolsPage() {
+export default function AgentToolsPage() {
   return (
-    <div className="max-w-5xl mx-auto font-sans">
-      <header className="mb-10">
-        <h1 className="text-sm font-semibold text-gray-900 mb-1">Internal tools</h1>
-        <p className="text-xs text-gray-500">FlowCore tools that your AI agent could have access to</p>
-      </header>
+    <div className="max-w-[1200px] mx-auto space-y-10 pb-20">
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="bg-orange-50 text-[#c65f39] border-orange-100 rounded-lg px-2.5 py-0.5 font-semibold text-[10px] uppercase tracking-wider">
+            Capabilities
+          </Badge>
+        </div>
+        <h1 className="text-3xl font-bold tracking-tight text-gray-900">Agent Tool Registry</h1>
+        <p className="text-gray-500 text-sm max-w-2xl">
+          A comprehensive overview of the specialized tools integrated into the FlowCore engine. 
+          These tools allow agents to interact with your database, calendar, and external services in real-time.
+        </p>
+      </div>
 
-      <div className="space-y-8">
-        {TOOL_GROUPS.map((group) => (
-          <div key={group.id} className="border border-gray-100 rounded-xl overflow-hidden bg-white shadow-sm">
-             {/* Group Header */}
-             <div className="p-5 border-b border-gray-100 flex items-center justify-between group cursor-pointer hover:bg-gray-50/50 transition-colors">
-                <div className="space-y-1">
-                   <h3 className="text-sm font-semibold text-gray-900">{group.title}</h3>
-                   <p className="text-xs text-gray-500">{group.desc}</p>
-                </div>
-                <div className="flex items-center gap-3">
-                   <span className="text-[11px] font-medium text-gray-400">{group.tools.length} tools</span>
-                   <ChevronDown className="h-4 w-4 text-gray-400" />
-                </div>
-             </div>
+      <div className="grid grid-cols-1 gap-12">
+        {TOOL_CATEGORIES.map((category, idx) => (
+          <motion.section
+            key={category.title}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: idx * 0.1 }}
+            className="space-y-6"
+          >
+            <div className="flex items-center gap-3 pb-2 border-b border-gray-100">
+              <div className={cn("p-2 rounded-xl", category.bgColor, category.color)}>
+                <category.icon className="w-5 h-5" />
+              </div>
+              <h2 className="text-xl font-semibold text-gray-800">{category.title}</h2>
+              <Badge className="ml-auto bg-gray-50 text-gray-400 border-none font-medium">
+                {category.tools.length} Tools
+              </Badge>
+            </div>
 
-             {/* Tools List */}
-             <div className="divide-y divide-gray-100">
-                {group.tools.map((tool) => (
-                  <div key={tool.name} className="p-4 pl-6 flex items-center gap-5 hover:bg-gray-50/50 transition-all cursor-pointer group">
-                     <div className="h-10 w-10 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400 group-hover:text-gray-900 transition-colors">
-                        <Wrench className="h-5 w-5 stroke-[1.5]" />
-                     </div>
-                     <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-semibold text-gray-900 mb-0.5">{tool.name}</h4>
-                        <p className="text-xs text-gray-500 truncate pr-10">{tool.desc}</p>
-                     </div>
-                     <ChevronRight className="h-4 w-4 text-gray-300 group-hover:text-gray-900 transition-all" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {category.tools.map((tool) => (
+                <Card key={tool.name} className="p-5 border-gray-100 hover:border-orange-200 transition-all hover:shadow-md group relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <tool.icon className="w-12 h-12 text-orange-50/50 absolute -top-2 -right-2" />
                   </div>
-                ))}
-             </div>
-          </div>
+                  
+                  <div className="space-y-3 relative z-10">
+                    <div className="flex items-center justify-between">
+                      <code className="text-[12px] font-mono font-bold text-[#c65f39] bg-orange-50/50 px-2 py-0.5 rounded border border-orange-100/50">
+                        {tool.name}
+                      </code>
+                    </div>
+                    <p className="text-[13px] text-gray-600 leading-relaxed min-h-[40px]">
+                      {tool.desc}
+                    </p>
+                    <div className="flex items-center gap-1.5 pt-1">
+                      <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Active & Integrated</span>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </motion.section>
         ))}
       </div>
     </div>
   )
+}
+
+function cn(...inputs: any[]) {
+  return inputs.filter(Boolean).join(" ")
 }
