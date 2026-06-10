@@ -30,7 +30,7 @@ interface PreviewProps {
   config: PreviewConfig
 }
 
-export default function WidgetPreview({ view, isOpen, config }: PreviewProps) {
+export default function WidgetPreview({ workspaceId, view, isOpen, config }: PreviewProps) {
   const bodyRef = useRef<HTMLDivElement>(null)
   
   // Fake chat data
@@ -50,23 +50,28 @@ export default function WidgetPreview({ view, isOpen, config }: PreviewProps) {
   const launcherColor = config.launcher_color || config.accent_color || "#000000"
 
   return (
-    <div className="relative w-full h-full flex flex-col items-end justify-end p-8 font-sans">
+    <div className="relative font-sans select-none pointer-events-none sm:pointer-events-auto">
       <AnimatePresence mode="wait">
         {!isOpen ? (
-          <motion.button
-            key="fab"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            className="w-14 h-14 rounded-xl flex items-center justify-center shadow-xl border-none outline-none text-white"
-            style={{ backgroundColor: launcherColor }}
+          <motion.div
+            key="fab-container"
+            className="flex justify-end pt-[544px] w-[380px]" // Align FAB to where it would be in the panel
           >
-             <MessageSquare className="w-6 h-6 fill-current" />
-          </motion.button>
+            <motion.button
+              key="fab"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              className="w-14 h-14 rounded-xl flex items-center justify-center shadow-xl border-none outline-none text-white"
+              style={{ backgroundColor: launcherColor }}
+            >
+               <MessageSquare className="w-6 h-6 fill-current" />
+            </motion.button>
+          </motion.div>
         ) : (
           <motion.div
             key="panel"
-            initial={{ opacity: 0, y: 20, scale: 0.95, transformOrigin: "bottom right" }}
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             className="w-[380px] h-[600px] bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-gray-100 flex flex-col overflow-hidden relative"

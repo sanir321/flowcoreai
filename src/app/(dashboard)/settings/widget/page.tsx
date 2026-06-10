@@ -110,22 +110,22 @@ export default function WidgetSettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white font-sans">
-      <div className="flex flex-col lg:flex-row h-screen overflow-hidden">
+    <div className="min-h-screen bg-white font-sans overflow-hidden">
+      <div className="flex h-screen">
         
         {/* LEFT COLUMN: Scrollable Settings (55%) */}
-        <div className="w-full lg:w-[55%] h-full overflow-y-auto border-r border-gray-100 scrollbar-none">
-          <div className="max-w-[640px] px-6 lg:ml-auto lg:mr-12 py-16 space-y-16">
+        <div className="w-[55%] h-full overflow-y-auto border-r border-gray-100 scrollbar-none bg-white z-10">
+          <div className="max-w-[720px] px-8 lg:px-16 py-16 space-y-16 ml-auto">
             
             {/* Header Info */}
             <div className="space-y-4">
-               <div className="flex items-center gap-2 text-gray-400 text-xs font-medium uppercase tracking-wider">
-                  <span>Chat Widget</span>
+               <div className="flex items-center gap-2 text-gray-400 text-[10px] font-black uppercase tracking-[0.2em]">
+                  <span>Engagement</span>
                   <ChevronRight className="w-3 h-3" />
-                  <span className="text-gray-900">{config.agent_name}</span>
+                  <span className="text-gray-900">Web Widget</span>
                </div>
-               <h1 className="text-3xl font-extrabold tracking-tight text-gray-900">{config.agent_name}</h1>
-               <p className="text-gray-500 text-sm leading-relaxed">Customize the settings of your widget and connect it to your site</p>
+               <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 leading-none">Web Widget</h1>
+               <p className="text-gray-500 text-sm leading-relaxed max-w-md">Customize and deploy your AI-powered chat interface to any website with a single line of code.</p>
             </div>
 
             {/* 1. DESIGN */}
@@ -187,7 +187,7 @@ export default function WidgetSettingsPage() {
                      <Label className="text-[13px] font-bold text-gray-900">Logo</Label>
                      <p className="text-[11px] text-gray-400 mb-4">Recommended size is 256×256 px</p>
                      <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 border border-gray-100 flex items-center justify-center shadow-inner text-gray-400 font-black text-xs uppercase">Logo</div>
+                        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 border border-gray-100 flex items-center justify-center shadow-inner text-gray-400 font-black text-[10px] uppercase">Logo</div>
                         <Button variant="outline" className="h-9 rounded-lg text-xs font-bold border-gray-200 hover:bg-gray-50 px-4">Change logo</Button>
                      </div>
                   </div>
@@ -231,7 +231,7 @@ export default function WidgetSettingsPage() {
                      <div className="flex items-center justify-between group">
                         <div className="space-y-1">
                            <Label className="text-[13px] font-bold text-gray-900">Enable WhatsApp</Label>
-                           <p className="text-[11px] text-gray-400 max-w-xs">Give users the option to message your WhatsApp</p>
+                           <p className="text-[12px] text-gray-400 max-w-xs">Give users the option to message your WhatsApp</p>
                         </div>
                         <Switch checked={config.enable_whatsapp} onCheckedChange={val => setConfig({ ...config, enable_whatsapp: val })} />
                      </div>
@@ -285,8 +285,8 @@ export default function WidgetSettingsPage() {
                </div>
                <div className="space-y-4">
                   <p className="text-[11px] text-gray-400 italic">Drag and drop to reorder routes. Routes are shown in order from top to bottom.</p>
-                  <div className="p-16 border-2 border-dashed border-gray-100 rounded-[2rem] text-center bg-gray-50/50">
-                     <p className="text-xs text-gray-300 font-bold uppercase tracking-widest">No custom routes active</p>
+                  <div className="p-16 border-2 border-dashed border-gray-100 rounded-[2.5rem] text-center bg-gray-50/50">
+                     <p className="text-[10px] text-gray-300 font-bold uppercase tracking-widest">No custom routes active</p>
                   </div>
                </div>
             </section>
@@ -308,7 +308,7 @@ export default function WidgetSettingsPage() {
 
                   <div className="space-y-4">
                      <p className="text-[12px] font-bold text-gray-600 ml-1">Add the following code snippet right before the <code className="text-gray-400 font-black">&lt;/head&gt;</code> tag</p>
-                     <div className="p-8 bg-[#1a1a1a] rounded-2xl relative group shadow-2xl">
+                     <div className="p-8 bg-[#1a1a1a] rounded-2xl relative group shadow-2xl overflow-hidden">
                         <button 
                            onClick={() => copySnippet('html')}
                            className="absolute top-4 right-4 text-gray-500 hover:text-[#c65f39] transition-colors p-2"
@@ -434,35 +434,36 @@ export default function WidgetSettingsPage() {
         </div>
 
         {/* RIGHT COLUMN: Sticky Preview (45%) */}
-        <div className="hidden lg:flex w-[45%] h-full bg-[#f9fafb] border-l border-gray-100 flex-col items-center justify-center relative">
+        <div className="hidden lg:flex w-[45%] h-full bg-[#f9fafb] border-l border-gray-100 flex-col items-center justify-center relative overflow-hidden">
+           
            {/* Preview Controller Bar */}
            <div className="absolute top-16 flex items-center gap-10 z-50">
               <div className="flex items-center gap-4">
                  <span className="text-[13px] font-black text-gray-900 uppercase tracking-widest">Preview:</span>
-                 <div className="flex items-center gap-1.5 p-1.5 bg-gray-100/80 rounded-[14px] backdrop-blur-md border border-white/50">
+                 <div className="flex items-center gap-1.5 p-1.5 bg-white border border-gray-100 shadow-sm rounded-xl">
                     <button 
                       onClick={() => setPreviewView("start")}
-                      className={cn("px-5 py-2 rounded-[10px] text-[11px] font-black uppercase tracking-widest transition-all", previewView === 'start' ? "bg-white text-gray-900 shadow-md" : "text-gray-400 hover:text-gray-600")}
+                      className={cn("px-5 py-2 rounded-[10px] text-[11px] font-black uppercase tracking-widest transition-all", previewView === 'start' ? "bg-black text-white shadow-lg shadow-black/20" : "text-gray-400 hover:text-gray-600")}
                     >Start</button>
                     <button 
                       onClick={() => setPreviewView("form")}
-                      className={cn("px-5 py-2 rounded-[10px] text-[11px] font-black uppercase tracking-widest transition-all", previewView === 'form' ? "bg-white text-gray-900 shadow-md" : "text-gray-400 hover:text-gray-600")}
+                      className={cn("px-5 py-2 rounded-[10px] text-[11px] font-black uppercase tracking-widest transition-all", previewView === 'form' ? "bg-black text-white shadow-lg shadow-black/20" : "text-gray-400 hover:text-gray-600")}
                     >Form</button>
                     <button 
                       onClick={() => setPreviewView("chat")}
-                      className={cn("px-5 py-2 rounded-[10px] text-[11px] font-black uppercase tracking-widest transition-all", previewView === 'chat' ? "bg-white text-gray-900 shadow-md" : "text-gray-400 hover:text-gray-600")}
+                      className={cn("px-5 py-2 rounded-[10px] text-[11px] font-black uppercase tracking-widest transition-all", previewView === 'chat' ? "bg-black text-white shadow-lg shadow-black/20" : "text-gray-400 hover:text-gray-600")}
                     >Chat</button>
                  </div>
               </div>
 
-              <div className="flex items-center gap-1.5 p-1.5 bg-gray-100/80 rounded-[14px] backdrop-blur-md border border-white/50">
+              <div className="flex items-center gap-1.5 p-1.5 bg-white border border-gray-100 shadow-sm rounded-xl">
                  <button 
                   onClick={() => setPreviewOpen(true)}
-                  className={cn("px-6 py-2 rounded-[10px] text-[11px] font-black uppercase tracking-widest transition-all", previewOpen ? "bg-black text-white shadow-xl shadow-black/10" : "text-gray-400 hover:text-gray-600")}
+                  className={cn("px-6 py-2 rounded-[10px] text-[11px] font-black uppercase tracking-widest transition-all", previewOpen ? "bg-black text-white shadow-lg shadow-black/20" : "text-gray-400 hover:text-gray-600")}
                  >Open</button>
                  <button 
                   onClick={() => setPreviewOpen(false)}
-                  className={cn("px-6 py-2 rounded-[10px] text-[11px] font-black uppercase tracking-widest transition-all", !previewOpen ? "bg-black text-white shadow-xl shadow-black/10" : "text-gray-400 hover:text-gray-600")}
+                  className={cn("px-6 py-2 rounded-[10px] text-[11px] font-black uppercase tracking-widest transition-all", !previewOpen ? "bg-black text-white shadow-lg shadow-black/20" : "text-gray-400 hover:text-gray-600")}
                  >Closed</button>
               </div>
            </div>
@@ -480,7 +481,7 @@ export default function WidgetSettingsPage() {
            </div>
 
            {/* Decorative Background grid for preview column */}
-           <div className="absolute inset-0 opacity-[0.4] pointer-events-none -z-10" style={{ backgroundImage: 'radial-gradient(#e5e7eb 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+           <div className="absolute inset-0 opacity-[0.4] pointer-events-none -z-10" style={{ backgroundImage: 'radial-gradient(#e5e7eb 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
         </div>
 
       </div>
