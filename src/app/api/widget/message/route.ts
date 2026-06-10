@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     // Verify widget is configured and active for this workspace
     const { data: widgetConfig } = await supabaseAdmin
       .from("widget_config")
-      .select("id, is_active, allowed_domains")
+      .select("workspace_id, is_active, allowed_domains")
       .eq("workspace_id", workspace_id)
       .is("deleted_at", null)
       .maybeSingle();
