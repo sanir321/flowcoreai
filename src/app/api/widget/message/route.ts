@@ -15,6 +15,14 @@ const MessageSchema = z.object({
   message: z.string().min(1).max(2000),
 });
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+  "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+  "X-Content-Type-Options": "nosniff",
+};
+
 export async function POST(req: NextRequest) {
   try {
     // 0. Rate Limiting
@@ -59,13 +67,17 @@ export async function POST(req: NextRequest) {
 
     // Optional domain allowlist check (Origin header vs configured domains)
     const origin = req.headers.get("origin") || req.headers.get("referer") || "";
-    if (widgetConfig.allowed_domains && Array.isArray(widgetConfig.allowed_domains) && widgetConfig.allowed_domains.length > 0) {
-      const originDomain = new URL(origin).hostname;
-      const allowed = (widgetConfig.allowed_domains as string[]).some(d => 
-        originDomain === d || originDomain.endsWith("." + d)
-      );
-      if (!allowed && origin) {
-        return new Response("Domain not allowed", { status: 403 });
+    if (origin && widgetConfig.allowed_domains && Array.isArray(widgetConfig.allowed_domains) && widgetConfig.allowed_domains.length > 0) {
+      try {
+        const originDomain = new URL(origin).hostname;
+        const allowed = (widgetConfig.allowed_domains as string[]).some(d => 
+          originDomain === d || originDomain.endsWith("." + d)
+        );
+        if (!allowed) {
+          return new Response("Domain not allowed", { status: 403 });
+        }
+      } catch {
+        // Invalid URL — skip domain check
       }
     }
 
@@ -126,10 +138,11 @@ export async function POST(req: NextRequest) {
       body: {
         workspace_id,
         customer_jid: session_token,
-        customer_name: "Widget User",
+        customer_name: session?.customer_name || "Widget User",
         message,
         channel: "widget",
         agent_type: "customer_support",
+        is_test: true,
       },
     });
 
@@ -216,14 +229,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ messages: [] }, { status: 500, headers: corsHeaders });
   }
 }
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-  "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
-  "X-Content-Type-Options": "nosniff",
-};
 
 export async function OPTIONS() {
   return new Response(null, {

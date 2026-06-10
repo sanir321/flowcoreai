@@ -63,6 +63,9 @@ export async function GET(req: NextRequest) {
       greeting: config?.greeting || "Hi! How can I help you today?",
       theme: config?.theme || "dark",
       avatar_url: config?.avatar_url || null,
+      enable_whatsapp: config?.enable_whatsapp ?? false,
+      allow_anonymous: config?.allow_anonymous ?? false,
+      whatsapp_number: config?.whatsapp_number || null,
     };
 
     return NextResponse.json(responseData, {

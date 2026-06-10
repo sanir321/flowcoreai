@@ -239,22 +239,32 @@ export const ALL_TOOLS: Record<string, ToolDefinition> = {
       },
       required: ["subject"]
     }
+  },
+  get_business_profile: {
+    name: "get_business_profile",
+    description: "Retrieve the business profile (contact info, hours, policies, pricing, amenities) for this workspace.",
+    parameters: {
+      type: "object",
+      properties: {
+        sections: { type: "array", items: { type: "string" }, description: "Optional: specific sections to retrieve (e.g. ['contact', 'hours', 'policies']). Omit for full profile." }
+      }
+    }
   }
 };
 
 export const AGENT_TOOLS: Record<string, string[]> = {
   customer_support: [
-    "match_kb_chunks", "get_contact_history", "update_contact", "request_handoff", "create_ticket"
+    "match_kb_chunks", "get_contact_history", "update_contact", "request_handoff", "create_ticket", "get_business_profile"
   ],
   appointment_booking: [
     "check_availability", "create_appointment", "update_appointment",
-    "cancel_appointment", "get_contact_history", "update_contact", "request_handoff"
+    "cancel_appointment", "get_contact_history", "update_contact", "request_handoff", "get_business_profile"
   ],
   sales: [
     "match_kb_chunks", "capture_lead", "get_contact_history", "update_contact",
     "update_lead_stage", "get_pipeline", "schedule_follow_up",
     "generate_quote", "search_menu", "send_menu_media",
-    "create_order", "confirm_payment", "get_order_status", "request_handoff"
+    "create_order", "confirm_payment", "get_order_status", "request_handoff", "get_business_profile"
   ]
 };
 

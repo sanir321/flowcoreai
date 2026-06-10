@@ -2,7 +2,6 @@ import { PipelineContext, TierResult, AgentPlan } from "../lib/types.ts";
 import { callLLM } from "../lib/llm.ts";
 import { toolExecutor } from "../tools/executor.ts";
 import { SUBMIT_PLAN_TOOL, getAgentToolDefinitions } from "../tools/registry.ts";
-import { sanitizeLlmOutput } from "../lib/sanitize.ts";
 import { handleBooking, loadOrCreateBookingSession, buildBookingSystemPrompt } from "../agents/booking.ts";
 import { buildSupportSystemPrompt } from "../agents/support.ts";
 import { buildSalesSystemPrompt } from "../agents/sales.ts";
@@ -441,7 +440,13 @@ function flattenObject(obj: any, prefix = ""): Record<string, string> {
 }
 
 async function handleHandoff(ctx: PipelineContext, targetAgent: string, context: string): Promise<TierResult> {
-  console.log(`[T3] Executing handoff to: ${targetAgent}. Context: ${context.substring(0, 50)}...`);
+  const depth = (ctx.handoffDepth ?? 0) + 1;
+  if (depth > 2) {
+    console.log(`[T3] Handoff depth limit reached (${depth}). Returning fallback.`);
+    return { handled: true, response: "I've reached the limit for transferring between specialists. A human agent will follow up with you shortly.", reason: "handoff_depth_limit" };
+  }
+
+  console.log(`[T3] Executing handoff to: ${targetAgent}. Depth: ${depth}. Context: ${context.substring(0, 50)}...`);
   
   // 1. Update the session state in the database immediately
   await ctx.supabase.from("conversation_sessions")
@@ -454,10 +459,9 @@ async function handleHandoff(ctx: PipelineContext, targetAgent: string, context:
   // 2. Update the context for the current execution
   ctx.agentType = targetAgent;
   ctx.routingReason = "handoff_execution";
+  ctx.handoffDepth = depth;
   
   // 3. RE-RUN T3 with the new agent persona and tools
-  // We return the result of runT3 directly to avoid recursion depth issues 
-  // (though handoffs are usually only 1 level deep).
   return await runT3(ctx);
 }
 

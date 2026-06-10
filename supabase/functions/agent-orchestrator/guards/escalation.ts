@@ -5,14 +5,10 @@ const CRON_SECRET = Deno.env.get("INTERNAL_CRON_SECRET") || "";
 
 const DEFAULT_KEYWORDS = [
   "human", "agent", "person", "manager", "staff", "real person",
-  "manav", "insaan", "human chahiye", "real agent", "talk to someone",
-  "refund", "refund chahiye", "complaint",
-  // Tamil escalation keywords
-  "owner", "samir", "paal", "dabbaaa", "call owner", "call samir",
-  "owner ah kupuda", "owner ah kupududa", "owner ah kootu",
-  "contact person", "contact samir", "talk to owner",
-  "enna da nadakku", "nadakku da", "director", "boss ah",
-  "owner number", "samir number", "paal dabbaaa",
+  "talk to someone", "talk to a person",
+  "refund", "complaint",
+  // Generic escalation keywords
+  "owner", "call owner", "contact person", "talk to owner", "director", "boss",
   // Emotional escalation signals
   "frustrated", "fed up", "waste", "useless", "scam", "cheating",
   "terrible service", "worst", "hopeless", "not helpful"

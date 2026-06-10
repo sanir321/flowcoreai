@@ -52,6 +52,7 @@ export interface PipelineContext {
   kbSearchPromise?: Promise<any>;
   pricingBlocked?: boolean;
   salesBlocked?: boolean;
+  handoffDepth?: number;
 }
 
 export interface AgentPlan {
