@@ -17,6 +17,8 @@ export default function WidgetPage() {
   const [origin, setOrigin] = useState("")
   const [saving, setSaving] = useState(false)
   const [preview, setPreview] = useState(true)
+  const [previewView, setPreviewView] = useState<"start" | "form" | "chat">("start")
+  const [previewOpen, setPreviewOpen] = useState(true)
   const [workspaceId, setWorkspaceId] = useState<string | null>(null)
   const [config, setConfig] = useState({ color: "#c65f39", greeting: "Hi! How can I help you today? ✨" })
 
@@ -207,20 +209,44 @@ export default function WidgetPage() {
              <div className="absolute bottom-[10%] right-[-10%] w-[400px] h-[400px] bg-blue-100/30 rounded-full blur-[100px]" />
 
              <div className="absolute top-10 left-1/2 -translate-x-1/2 flex items-center gap-6 px-6 py-3 rounded-full bg-white/80 border border-gray-100 backdrop-blur-xl shadow-sm z-20">
-                <div className="flex items-center gap-2">
-                   <Layout className="w-3.5 h-3.5 text-gray-400" />
-                   <span className="text-[10px] font-black uppercase tracking-widest text-gray-900">Desktop</span>
-                </div>
+                <button 
+                  onClick={() => setPreviewView("start")}
+                  className={cn("text-[9px] font-black uppercase tracking-widest transition-colors", previewView === 'start' ? "text-[#c65f39]" : "text-gray-400")}
+                >
+                  Start
+                </button>
                 <div className="w-px h-3 bg-gray-200" />
-                <div className="flex items-center gap-2 opacity-30">
-                   <Smartphone className="w-3.5 h-3.5 text-gray-400" />
-                   <span className="text-[10px] font-black uppercase tracking-widest text-gray-900">Mobile</span>
-                </div>
+                <button 
+                  onClick={() => setPreviewView("form")}
+                  className={cn("text-[9px] font-black uppercase tracking-widest transition-colors", previewView === 'form' ? "text-[#c65f39]" : "text-gray-400")}
+                >
+                  Form
+                </button>
+                <div className="w-px h-3 bg-gray-200" />
+                <button 
+                  onClick={() => setPreviewView("chat")}
+                  className={cn("text-[9px] font-black uppercase tracking-widest transition-colors", previewView === 'chat' ? "text-[#c65f39]" : "text-gray-400")}
+                >
+                  Chat
+                </button>
+                <div className="w-px h-3 bg-gray-200" />
+                <button 
+                  onClick={() => setPreviewOpen(!previewOpen)}
+                  className={cn("text-[9px] font-black uppercase tracking-widest transition-colors", !previewOpen ? "text-[#c65f39]" : "text-gray-400")}
+                >
+                  {previewOpen ? "Open" : "Closed"}
+                </button>
              </div>
 
             {workspaceId && preview ? (
               <div className="relative z-10 w-full flex justify-center">
-                 <WidgetPreview workspaceId={workspaceId} accentColor={config.color} greeting={config.greeting} />
+                 <WidgetPreview 
+                    workspaceId={workspaceId} 
+                    accentColor={config.color} 
+                    greeting={config.greeting} 
+                    view={previewView}
+                    isOpen={previewOpen}
+                 />
               </div>
             ) : (
               <div className="text-center space-y-4 relative z-10">
