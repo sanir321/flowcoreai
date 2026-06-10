@@ -65,6 +65,10 @@ export async function POST(req: NextRequest) {
       return new Response("Widget not configured for this workspace", { status: 403 });
     }
 
+    if (widgetConfig.is_active === false) {
+      return new Response("Widget is currently disabled", { status: 403 });
+    }
+
     // Optional domain allowlist check (Origin header vs configured domains)
     const origin = req.headers.get("origin") || req.headers.get("referer") || "";
     if (origin && widgetConfig.allowed_domains && Array.isArray(widgetConfig.allowed_domains) && widgetConfig.allowed_domains.length > 0) {

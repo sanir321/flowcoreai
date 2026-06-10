@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect, useCallback } from "react"
-import { Loader2, Send, X, MessageSquare, Bot, User, Sparkles, ChevronLeft, ChevronRight, Mail, Phone, ExternalLink } from "lucide-react"
+import { Send, X, MessageSquare } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface WidgetConfig {

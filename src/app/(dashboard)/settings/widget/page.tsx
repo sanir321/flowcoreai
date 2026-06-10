@@ -3,11 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { 
   Palette, Code, Check, Copy, Eye, Loader2, Save, 
-  MessageSquare, Sparkles, Layout, Globe, Smartphone, 
-  ShieldCheck, Trash2, Link2, Monitor, Bell, Bot,
-  Settings, UserCog, ExternalLink, ChevronRight,
-  Plus, MoreHorizontal, Info, ChevronDown, Wrench,
-  Laptop, X
+  ShieldCheck, Settings
 } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
