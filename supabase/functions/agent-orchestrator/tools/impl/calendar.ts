@@ -116,6 +116,31 @@ export async function createAppointment(
     return { error: "That time slot has already been booked. Please suggest an alternative time." };
   }
 
+  const { data: curSession } = await ctx.supabase.from("conversation_sessions")
+    .select("contact_id, customer_jid")
+    .eq("id", ctx.session.id)
+    .single();
+  const jidPhone = curSession?.customer_jid?.split("@")[0] || null;
+  const customerPhone = params.phone && /^\d{7,15}$/.test(params.phone.replace(/\D/g, "")) ? params.phone : jidPhone;
+  const customerEmail = params.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(params.email) ? params.email : null;
+
+  const { data: appt, error: insertErr } = await ctx.supabase.from("appointments").insert({
+    workspace_id: ctx.payload.workspace_id,
+    session_id: ctx.session.id,
+    contact_id: curSession?.contact_id || null,
+    customer_name: customerName,
+    customer_phone: customerPhone,
+    customer_email: customerEmail,
+    service: params.service,
+    start_at: startAt,
+    end_at: endAt,
+    status: "confirmed"
+  }).select().single();
+
+  if (insertErr || !appt) {
+    return { error: "Failed to save appointment. Please try again." };
+  }
+
   let googleEventId: string | null = null;
   let meetLink: string | null = null;
   try {
@@ -135,31 +160,11 @@ export async function createAppointment(
       const gEvent = await gRes.json();
       googleEventId = gEvent.id;
       meetLink = gEvent.hangoutLink || gEvent.conferenceData?.entryPoints?.[0]?.uri || null;
+      await ctx.supabase.from("appointments")
+        .update({ google_event_id: googleEventId, meeting_link: meetLink })
+        .eq("id", appt.id);
     }
   } catch (_) {}
-
-  const { data: curSession } = await ctx.supabase.from("conversation_sessions")
-    .select("contact_id, customer_jid")
-    .eq("id", ctx.session.id)
-    .single();
-  const jidPhone = curSession?.customer_jid?.split("@")[0] || null;
-  const customerPhone = params.phone && /^\d{7,15}$/.test(params.phone.replace(/\D/g, "")) ? params.phone : jidPhone;
-  const customerEmail = params.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(params.email) ? params.email : null;
-
-  const { data: appt } = await ctx.supabase.from("appointments").insert({
-    workspace_id: ctx.payload.workspace_id,
-    session_id: ctx.session.id,
-    contact_id: curSession?.contact_id || null,
-    customer_name: customerName,
-    customer_phone: customerPhone,
-    customer_email: customerEmail,
-    service: params.service,
-    start_at: startAt,
-    end_at: endAt,
-    status: "confirmed",
-    google_event_id: googleEventId,
-    meeting_link: meetLink
-  }).select().single();
 
   if (params.email && curSession?.contact_id) {
     await ctx.supabase.from("contacts").update({ email: params.email, updated_at: new Date().toISOString() }).eq("id", curSession.contact_id);
