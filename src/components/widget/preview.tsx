@@ -24,6 +24,7 @@ interface PreviewConfig {
 }
 
 interface PreviewProps {
+  workspaceId: string
   view: "start" | "form" | "chat"
   isOpen: boolean
   config: PreviewConfig
