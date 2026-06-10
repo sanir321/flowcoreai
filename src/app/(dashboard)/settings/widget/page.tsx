@@ -6,7 +6,8 @@ import {
   MessageSquare, Sparkles, Layout, Globe, Smartphone, 
   ShieldCheck, Trash2, Link2, Monitor, Bell, Bot,
   Settings, UserCog, ExternalLink, ChevronRight,
-  Plus, MoreHorizontal, Info, ChevronDown
+  Plus, MoreHorizontal, Info, ChevronDown, Wrench,
+  Laptop, X
 } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -25,6 +26,7 @@ import { createClient } from "@/lib/supabase/client"
 import { updateWidgetConfig } from "@/app/actions/settings"
 import WidgetPreview from "@/components/widget/preview"
 import { cn } from "@/lib/utils"
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 export default function WidgetSettingsPage() {
   const [copied, setCopied] = useState(false)
@@ -43,8 +45,8 @@ export default function WidgetSettingsPage() {
     agent_name: "Support AI",
     greeting: "Hi there, how can we help?",
     post_form_message: "Thank you for filling out the form. Feel free to add any more info while we connect you with the right person!",
-    accent_color: "#000000",
-    launcher_color: "#000000",
+    accent_color: "#c65f39",
+    launcher_color: "#c65f39",
     launcher_icon: "chat",
     enable_whatsapp: false,
     allow_anonymous: false,
@@ -70,8 +72,8 @@ export default function WidgetSettingsPage() {
               agent_name: d.agent_name || "Support AI",
               greeting: d.greeting || "Hi there, how can we help?",
               post_form_message: d.post_form_message || "Thank you for filling out the form. Feel free to add any more info while we connect you with the right person!",
-              accent_color: d.accent_color || "#000000",
-              launcher_color: d.launcher_color || d.accent_color || "#000000",
+              accent_color: d.accent_color || "#c65f39",
+              launcher_color: d.launcher_color || d.accent_color || "#c65f39",
               launcher_icon: d.launcher_icon || "chat",
               enable_whatsapp: d.enable_whatsapp || false,
               allow_anonymous: d.allow_anonymous || false,
@@ -110,162 +112,132 @@ export default function WidgetSettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white font-sans overflow-hidden">
-      <div className="flex h-screen">
-        
-        {/* LEFT COLUMN: Scrollable Settings (55%) */}
-        <div className="w-[55%] h-full overflow-y-auto border-r border-gray-100 scrollbar-none bg-white z-10">
-          <div className="max-w-[720px] px-8 lg:px-16 py-16 space-y-16 ml-auto">
+    <div className="flex h-screen bg-[#050505] overflow-hidden">
+      
+      {/* LEFT COLUMN: Scrollable Settings */}
+      <div className="flex-1 h-full overflow-hidden flex flex-col relative z-10">
+        <ScrollArea className="flex-1 scrollbar-none">
+          <div className="max-w-[800px] px-8 lg:px-16 py-20 space-y-24 mx-auto pb-48">
             
             {/* Header Info */}
             <div className="space-y-4">
-               <div className="flex items-center gap-2 text-gray-400 text-[10px] font-black uppercase tracking-[0.2em]">
-                  <span>Engagement</span>
+               <div className="flex items-center gap-2 text-white/40 text-[10px] font-black uppercase tracking-[0.2em]">
+                  <span>Configuration</span>
                   <ChevronRight className="w-3 h-3" />
-                  <span className="text-gray-900">Web Widget</span>
+                  <span className="text-[#c65f39]">Web Widget</span>
                </div>
-               <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 leading-none">Web Widget</h1>
-               <p className="text-gray-500 text-sm leading-relaxed max-w-md">Customize and deploy your AI-powered chat interface to any website with a single line of code.</p>
+               <h1 className="text-5xl font-black tracking-tight text-white leading-none font-outfit">Web Widget</h1>
+               <p className="text-white/50 text-base leading-relaxed max-w-lg font-medium">Customize your AI-powered chat interface and integrate it anywhere with a single snippet.</p>
             </div>
 
             {/* 1. DESIGN */}
-            <section className="space-y-10">
-               <div className="space-y-1">
-                  <h2 className="text-lg font-bold text-gray-900">1. Design</h2>
-                  <p className="text-[13px] text-gray-500 font-medium">Customize the appearance of your widget</p>
+            <section className="space-y-12">
+               <div className="flex items-center gap-5">
+                  <div className="h-12 w-12 rounded-[1.25rem] bg-[#c65f39]/10 border border-[#c65f39]/20 text-[#c65f39] flex items-center justify-center font-black text-xl shadow-[0_0_30px_-5px_rgba(198,95,57,0.3)]">1</div>
+                  <div className="space-y-1">
+                    <h2 className="text-2xl font-bold text-white tracking-tight font-outfit">Identity & Design</h2>
+                    <p className="text-sm text-white/40 font-medium">Shape the personality and look of your assistant</p>
+                  </div>
                </div>
 
-               <div className="space-y-8">
-                  {/* Header Input */}
-                  <div className="space-y-1">
-                     <Label className="text-[13px] font-bold text-gray-900">Header</Label>
-                     <p className="text-[11px] text-gray-400 mb-2">The heading of your widget</p>
-                     <input 
-                        value={config.header_text}
-                        onChange={e => setConfig({ ...config, header_text: e.target.value })}
-                        className="w-full h-11 px-4 border border-gray-200 rounded-xl focus:ring-4 focus:ring-black/5 transition-all outline-none text-sm font-medium" 
-                     />
+               <div className="grid grid-cols-1 gap-10 pl-16">
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-black text-white/30 uppercase tracking-[0.15em] ml-1">Widget Heading</Label>
+                    <input 
+                      value={config.header_text}
+                      onChange={e => setConfig({ ...config, header_text: e.target.value })}
+                      className="w-full h-14 px-5 bg-white/[0.03] border border-white/5 rounded-2xl focus:border-[#c65f39]/50 focus:ring-4 focus:ring-[#c65f39]/5 transition-all outline-none text-white font-semibold text-base" 
+                    />
                   </div>
 
-                  {/* Name Input */}
-                  <div className="space-y-1">
-                     <Label className="text-[13px] font-bold text-gray-900">Name</Label>
-                     <p className="text-[11px] text-gray-400 mb-2">The name of your assistant</p>
-                     <input 
-                        value={config.agent_name}
-                        onChange={e => setConfig({ ...config, agent_name: e.target.value })}
-                        className="w-full h-11 px-4 border border-gray-200 rounded-xl focus:ring-4 focus:ring-black/5 transition-all outline-none text-sm font-medium" 
-                     />
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-black text-white/30 uppercase tracking-[0.15em] ml-1">Assistant Display Name</Label>
+                    <input 
+                      value={config.agent_name}
+                      onChange={e => setConfig({ ...config, agent_name: e.target.value })}
+                      className="w-full h-14 px-5 bg-white/[0.03] border border-white/5 rounded-2xl focus:border-[#c65f39]/50 focus:ring-4 focus:ring-[#c65f39]/5 transition-all outline-none text-white font-semibold text-base" 
+                    />
                   </div>
 
-                  {/* Greeting Input */}
-                  <div className="space-y-1">
-                     <Label className="text-[13px] font-bold text-gray-900">Greeting</Label>
-                     <p className="text-[11px] text-gray-400 mb-2">The initial message shown when the widget opens</p>
-                     <textarea 
-                        value={config.greeting}
-                        onChange={e => setConfig({ ...config, greeting: e.target.value })}
-                        rows={3}
-                        className="w-full p-4 border border-gray-200 rounded-xl focus:ring-4 focus:ring-black/5 transition-all outline-none text-sm font-medium resize-none" 
-                     />
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-black text-white/30 uppercase tracking-[0.15em] ml-1">Welcome Message</Label>
+                    <textarea 
+                      value={config.greeting}
+                      onChange={e => setConfig({ ...config, greeting: e.target.value })}
+                      rows={3}
+                      className="w-full p-5 bg-white/[0.03] border border-white/5 rounded-2xl focus:border-[#c65f39]/50 focus:ring-4 focus:ring-[#c65f39]/5 transition-all outline-none text-white font-semibold text-base resize-none" 
+                    />
                   </div>
 
-                  {/* Post Form Message */}
-                  <div className="space-y-1">
-                     <Label className="text-[13px] font-bold text-gray-900">Post Form Message</Label>
-                     <p className="text-[11px] text-gray-400 mb-2">Shown after the user submits the form</p>
-                     <textarea 
-                        value={config.post_form_message}
-                        onChange={e => setConfig({ ...config, post_form_message: e.target.value })}
-                        rows={3}
-                        className="w-full p-4 border border-gray-200 rounded-xl focus:ring-4 focus:ring-black/5 transition-all outline-none text-sm font-medium resize-none" 
-                     />
-                  </div>
-
-                  {/* Logo Upload */}
-                  <div className="space-y-1">
-                     <Label className="text-[13px] font-bold text-gray-900">Logo</Label>
-                     <p className="text-[11px] text-gray-400 mb-4">Recommended size is 256×256 px</p>
-                     <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 border border-gray-100 flex items-center justify-center shadow-inner text-gray-400 font-black text-[10px] uppercase">Logo</div>
-                        <Button variant="outline" className="h-9 rounded-lg text-xs font-bold border-gray-200 hover:bg-gray-50 px-4">Change logo</Button>
-                     </div>
-                  </div>
-
-                  {/* Color Picker */}
-                  <div className="space-y-1 pt-2">
-                     <Label className="text-[13px] font-bold text-gray-900">Color</Label>
-                     <p className="text-[11px] text-gray-400 mb-4">Customize the inbound message bubble color</p>
-                     <div className="flex items-center gap-3">
-                        <input 
-                           type="color" 
-                           value={config.accent_color}
-                           onChange={e => setConfig({ ...config, accent_color: e.target.value })}
-                           className="w-8 h-8 rounded-lg border-none p-0 cursor-pointer shadow-sm overflow-hidden" 
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
+                    <div className="space-y-3">
+                      <Label className="text-[10px] font-black text-white/30 uppercase tracking-[0.15em] ml-1">Brand Accent Color</Label>
+                      <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/[0.02] border border-white/5 transition-all hover:bg-white/[0.04]">
+                        <input
+                          type="color"
+                          value={config.accent_color}
+                          onChange={(e) => setConfig({ ...config, accent_color: e.target.value })}
+                          className="h-10 w-10 rounded-xl border-none p-0 bg-transparent cursor-pointer ring-2 ring-white/10"
                         />
-                        <code className="text-xs font-bold text-gray-900 uppercase tracking-wider">{config.accent_color}</code>
+                        <code className="text-sm font-bold text-white/80 font-mono uppercase">{config.accent_color}</code>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <Label className="text-[10px] font-black text-white/30 uppercase tracking-[0.15em] ml-1">Launcher Icon Color</Label>
+                      <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/[0.02] border border-white/5 transition-all hover:bg-white/[0.04]">
+                        <input
+                          type="color"
+                          value={config.launcher_color}
+                          onChange={(e) => setConfig({ ...config, launcher_color: e.target.value })}
+                          className="h-10 w-10 rounded-xl border-none p-0 bg-transparent cursor-pointer ring-2 ring-white/10"
+                        />
+                        <div className="h-10 w-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-[#c65f39]">
+                           <MessageSquare className="w-5 h-5 fill-current" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+               </div>
+            </section>
+
+            {/* 2. BEHAVIOR */}
+            <section className="space-y-12">
+               <div className="flex items-center gap-5">
+                  <div className="h-12 w-12 rounded-[1.25rem] bg-[#c65f39]/10 border border-[#c65f39]/20 text-[#c65f39] flex items-center justify-center font-black text-xl shadow-[0_0_30px_-5px_rgba(198,95,57,0.3)]">2</div>
+                  <div className="space-y-1">
+                    <h2 className="text-2xl font-bold text-white tracking-tight font-outfit">Behavior & Logic</h2>
+                    <p className="text-sm text-white/40 font-medium">Control how users interact with your agent</p>
+                  </div>
+               </div>
+
+               <div className="space-y-6 pl-16">
+                  <div className="flex items-center justify-between p-6 rounded-3xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] transition-all group">
+                     <div className="space-y-1">
+                        <Label className="text-sm font-bold text-white group-hover:text-[#c65f39] transition-colors">Enable WhatsApp Bridge</Label>
+                        <p className="text-[11px] text-white/30 font-medium">Allow users to switch from web to WhatsApp</p>
                      </div>
+                     <Switch checked={config.enable_whatsapp} onCheckedChange={val => setConfig({ ...config, enable_whatsapp: val })} />
                   </div>
 
-                  {/* Launcher Customization */}
-                  <div className="space-y-1 pt-2">
-                     <Label className="text-[13px] font-bold text-gray-900">Widget Launcher</Label>
-                     <p className="text-[11px] text-gray-400 mb-4">Customize the color and icon of the launch button</p>
-                     <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2">
-                           <input 
-                              type="color" 
-                              value={config.launcher_color}
-                              onChange={e => setConfig({ ...config, launcher_color: e.target.value })}
-                              className="w-8 h-8 rounded-lg border-none p-0 cursor-pointer shadow-sm" 
-                           />
-                           <div className="w-8 h-8 rounded-lg bg-black flex items-center justify-center text-white cursor-pointer shadow-sm">
-                              <MessageSquare className="w-4 h-4 fill-current" />
-                           </div>
-                        </div>
+                  <div className="flex items-center justify-between p-6 rounded-3xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] transition-all group">
+                     <div className="space-y-1">
+                        <Label className="text-sm font-bold text-white group-hover:text-[#c65f39] transition-colors">Anonymous Conversations</Label>
+                        <p className="text-[11px] text-white/30 font-medium">Skip the identity form and chat instantly</p>
                      </div>
+                     <Switch checked={config.allow_anonymous} onCheckedChange={val => setConfig({ ...config, allow_anonymous: val })} />
                   </div>
 
-                  {/* Toggles */}
-                  <div className="space-y-8 pt-4">
-                     <div className="flex items-center justify-between group">
-                        <div className="space-y-1">
-                           <Label className="text-[13px] font-bold text-gray-900">Enable WhatsApp</Label>
-                           <p className="text-[12px] text-gray-400 max-w-xs">Give users the option to message your WhatsApp</p>
-                        </div>
-                        <Switch checked={config.enable_whatsapp} onCheckedChange={val => setConfig({ ...config, enable_whatsapp: val })} />
-                     </div>
-
-                     <div className="flex items-center justify-between group">
-                        <div className="space-y-1">
-                           <Label className="text-[13px] font-bold text-gray-900">Allow anonymous conversations</Label>
-                           <p className="text-[11px] text-gray-400 max-w-xs">Skip the contact form and let users start chatting immediately</p>
-                        </div>
-                        <Switch checked={config.allow_anonymous} onCheckedChange={val => setConfig({ ...config, allow_anonymous: val })} />
-                     </div>
-
-                     <div className="flex items-center justify-between group">
-                        <div className="space-y-1">
-                           <Label className="text-[13px] font-bold text-gray-900">Auto-insert form fill params on links</Label>
-                           <p className="text-[11px] text-gray-400 max-w-[280px]">Append UTM and collected form values to links clicked in the widget</p>
-                           <code className="text-[10px] text-[#c65f39] font-mono mt-1.5 block leading-none">?utm_source=widget&name=John&email=john@example.com</code>
-                        </div>
-                        <Switch checked={config.auto_fill_params} onCheckedChange={val => setConfig({ ...config, auto_fill_params: val })} />
-                     </div>
-                  </div>
-
-                  {/* Default Country */}
-                  <div className="space-y-1 pt-4">
-                     <Label className="text-[13px] font-bold text-gray-900">Default Country</Label>
-                     <p className="text-[11px] text-gray-400 mb-4">Default country code for phone number input</p>
+                  <div className="p-6 rounded-3xl bg-white/[0.02] border border-white/5 space-y-4">
+                     <Label className="text-[10px] font-black text-white/30 uppercase tracking-[0.15em] ml-1">Default Region</Label>
                      <Select 
                         value={config.default_country} 
                         onValueChange={val => setConfig({ ...config, default_country: val })}
                      >
-                        <SelectTrigger className="w-full h-11 bg-white border-gray-200 rounded-xl max-w-sm font-medium text-sm">
+                        <SelectTrigger className="h-14 bg-white/[0.03] border-white/10 rounded-2xl text-white font-semibold">
                            <SelectValue placeholder="Select country" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="bg-[#111] border-white/10 text-white">
                            <SelectItem value="IN">India (+91)</SelectItem>
                            <SelectItem value="US">United States (+1)</SelectItem>
                            <SelectItem value="GB">United Kingdom (+44)</SelectItem>
@@ -275,216 +247,131 @@ export default function WidgetSettingsPage() {
                </div>
             </section>
 
-            <hr className="border-gray-100" />
-
-            {/* 2. USER OPTIONS */}
-            <section className="space-y-6">
-               <div className="space-y-1">
-                  <h2 className="text-lg font-bold text-gray-900">2. User Options</h2>
-                  <p className="text-[13px] text-gray-500 font-medium">Additional options for users to choose from</p>
-               </div>
-               <div className="space-y-4">
-                  <p className="text-[11px] text-gray-400 italic">Drag and drop to reorder routes. Routes are shown in order from top to bottom.</p>
-                  <div className="p-16 border-2 border-dashed border-gray-100 rounded-[2.5rem] text-center bg-gray-50/50">
-                     <p className="text-[10px] text-gray-300 font-bold uppercase tracking-widest">No custom routes active</p>
+            {/* 3. INSTALLATION */}
+            <section className="space-y-12">
+               <div className="flex items-center gap-5">
+                  <div className="h-12 w-12 rounded-[1.25rem] bg-[#c65f39]/10 border border-[#c65f39]/20 text-[#c65f39] flex items-center justify-center font-black text-xl shadow-[0_0_30px_-5px_rgba(198,95,57,0.3)]">3</div>
+                  <div className="space-y-1">
+                    <h2 className="text-2xl font-bold text-white tracking-tight font-outfit">Installation</h2>
+                    <p className="text-sm text-white/40 font-medium">Deploy the widget to your production site</p>
                   </div>
                </div>
-            </section>
 
-            <hr className="border-gray-100" />
-
-            {/* 3. ADD TO WEBSITE */}
-            <section className="space-y-8">
-               <div className="space-y-1">
-                  <h2 className="text-lg font-bold text-gray-900">3. Add to your website</h2>
-                  <p className="text-[13px] text-gray-500 font-medium">Connect the widget on your site. Make sure you have access to your site settings.</p>
-               </div>
-
-               <div className="space-y-6">
-                  <div className="flex items-center gap-2 p-1 bg-gray-100 rounded-xl w-fit shadow-inner">
-                     <button className="px-5 py-2 rounded-lg bg-white shadow-sm text-xs font-bold text-gray-900">HTML</button>
-                     <button className="px-5 py-2 rounded-lg text-xs font-bold text-gray-400 hover:text-gray-600 transition-colors">Google Tag Manager</button>
+               <div className="space-y-8 pl-16">
+                  <div className="p-1.5 bg-white/[0.03] rounded-2xl border border-white/5 flex gap-2 w-fit">
+                     <button className="px-6 py-2 rounded-xl bg-[#c65f39] text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-[#c65f39]/20">HTML Snippet</button>
+                     <button className="px-6 py-2 rounded-xl text-white/30 hover:text-white/60 text-xs font-black uppercase tracking-widest transition-all">GTM Container</button>
                   </div>
 
-                  <div className="space-y-4">
-                     <p className="text-[12px] font-bold text-gray-600 ml-1">Add the following code snippet right before the <code className="text-gray-400 font-black">&lt;/head&gt;</code> tag</p>
-                     <div className="p-8 bg-[#1a1a1a] rounded-2xl relative group shadow-2xl overflow-hidden">
-                        <button 
-                           onClick={() => copySnippet('html')}
-                           className="absolute top-4 right-4 text-gray-500 hover:text-[#c65f39] transition-colors p-2"
-                        >
-                           {copied ? <Check className="w-4.5 h-4.5" /> : <Copy className="w-4.5 h-4.5" />}
-                        </button>
-                        <code className="text-[12px] text-gray-400 font-mono leading-relaxed break-all block">
-                           {`<script async\n  data-workspace="${workspaceId || "..."}"\n  src="${origin}/widget/widget.js">\n</script>`}
-                        </code>
+                  <div className="p-8 bg-black border border-white/10 rounded-3xl relative group overflow-hidden shadow-2xl">
+                     <div className="absolute inset-0 bg-gradient-to-tr from-[#c65f39]/5 to-transparent pointer-events-none" />
+                     <button 
+                        onClick={() => copySnippet('html')}
+                        className="absolute top-6 right-6 h-10 w-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/40 hover:text-[#c65f39] hover:border-[#c65f39]/30 transition-all z-20"
+                     >
+                        {copied ? <Check className="w-4.5 h-4.5" /> : <Copy className="w-4.5 h-4.5" />}
+                     </button>
+                     <pre className="text-sm text-[#c65f39]/70 font-mono leading-relaxed select-all overflow-x-auto relative z-10 scrollbar-none">
+                        {`<script async\n  data-workspace="${workspaceId || "..."}"\n  src="${origin}/widget/widget.js">\n</script>`}
+                     </pre>
+                  </div>
+
+                  <div className="flex items-start gap-4 p-6 rounded-3xl bg-white/[0.01] border border-dashed border-white/10">
+                     <div className="h-10 w-10 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center shrink-0">
+                        <Info className="w-5 h-5" />
+                     </div>
+                     <div className="space-y-1">
+                        <p className="text-sm font-bold text-white">Developer Tip</p>
+                        <p className="text-xs text-white/40 leading-relaxed">Paste this code right before the <code className="text-white font-mono">&lt;/body&gt;</code> tag on every page you want the widget to appear.</p>
                      </div>
                   </div>
-
-                  <div className="border-b border-gray-100 last:border-0">
-                     <button 
-                       onClick={() => setPrefillOpen(!prefillOpen)}
-                       className="w-full flex items-center justify-between py-4 group"
-                     >
-                        <span className="text-[13px] font-bold text-gray-900 group-hover:text-[#c65f39] transition-colors">Pre-fill contact info on authenticated pages (optional)</span>
-                        <ChevronDown className={cn("w-4 h-4 text-gray-400 transition-transform", prefillOpen && "rotate-180")} />
-                     </button>
-                     {prefillOpen && (
-                        <div className="pb-6 pt-2">
-                           <p className="text-[12px] text-gray-500 leading-relaxed max-w-lg">
-                              You can automatically identify users by setting <code className="font-bold text-gray-900">window.FlowCoreConfig.user</code> before the script loads. This will skip the lead form for known users.
-                           </p>
-                        </div>
-                     )}
-                  </div>
                </div>
             </section>
 
-            <hr className="border-gray-100" />
-
-            {/* 4. PROGRAMMATIC API */}
-            <section className="space-y-10">
-               <div className="space-y-1">
-                  <h2 className="text-lg font-bold text-gray-900">4. Programmatic API</h2>
-                  <p className="text-[13px] text-gray-500 font-medium max-w-sm">Control the widget from your own code. These methods are available on <code className="font-black text-gray-900">window.FlowCoreSettings</code> after the widget loads.</p>
-               </div>
-
-               <div className="grid grid-cols-2 gap-x-12 gap-y-10">
-                  <div className="space-y-1">
-                     <p className="text-sm font-black text-gray-900 tracking-tight">expand()</p>
-                     <p className="text-[12px] text-gray-400 font-medium">Open the chat window</p>
-                  </div>
-                  <div className="space-y-1">
-                     <p className="text-sm font-black text-gray-900 tracking-tight">hide()</p>
-                     <p className="text-[12px] text-gray-400 font-medium">Hide the widget entirely</p>
-                  </div>
-                  <div className="space-y-1">
-                     <p className="text-sm font-black text-gray-900 tracking-tight">collapse()</p>
-                     <p className="text-[12px] text-gray-400 font-medium">Close the chat window</p>
-                  </div>
-                  <div className="space-y-1">
-                     <p className="text-sm font-black text-gray-900 tracking-tight">show()</p>
-                     <p className="text-[12px] text-gray-400 font-medium">Show the widget after hiding</p>
-                  </div>
-               </div>
-
-               <div className="p-8 bg-[#1a1a1a] rounded-2xl relative group overflow-hidden shadow-2xl">
-                  <button className="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors p-2">
-                     <Copy className="w-4 h-4" />
-                  </button>
-                  <code className="text-[12px] text-gray-400 font-mono leading-relaxed block">
-                     {`// Open chat when a CTA button is clicked\ndocument.querySelector("#contact-us").addEventListener("click", () => {\n  window.FlowCoreSettings.expand();\n});`}
-                  </code>
-               </div>
-            </section>
-
-            <hr className="border-gray-100" />
-
-            {/* 5. TRUSTED DOMAINS */}
-            <section className="space-y-8">
-               <div className="space-y-1">
-                  <h2 className="text-lg font-bold text-gray-900">5. Trusted Domains</h2>
-                  <p className="text-[13px] text-gray-500 font-medium max-w-md">In addition to your main company website, you can make sure this widget shows up on other domains.</p>
-               </div>
-
-               <div className="space-y-4">
-                  <Label className="text-[13px] font-bold text-gray-900 ml-1">Domains</Label>
-                  <div className="h-14 w-full bg-white border-2 border-red-50 rounded-2xl flex items-center px-5 focus-within:border-[#c65f39] transition-all shadow-sm">
-                     <input 
-                        value={config.trusted_domains}
-                        onChange={e => setConfig({ ...config, trusted_domains: e.target.value })}
-                        placeholder="flowcore.app, yourdomain.com"
-                        className="bg-transparent border-none outline-none text-sm w-full font-bold placeholder:text-gray-200" 
-                     />
-                  </div>
-                  <p className="text-[11px] text-gray-400 font-medium italic ml-1">List domains and subdomains, separated by commas. Use *.example.com for all subdomains. Leave blank to allow any domain.</p>
-               </div>
-            </section>
-
-            <hr className="border-gray-100" />
-
-            {/* 6. EMAIL NOTIFICATIONS */}
-            <section className="space-y-10 pb-40">
-               <div className="space-y-1">
-                  <h2 className="text-lg font-bold text-gray-900">6. Email Notifications</h2>
-                  <p className="text-[13px] text-gray-500 font-medium">Send an email to offline users when they receive a reply</p>
-               </div>
-
-               <div className="flex items-center justify-between group">
-                  <div className="space-y-1.5">
-                     <Label className="text-[13px] font-bold text-gray-900">Enable email notifications</Label>
-                     <p className="text-[12px] text-gray-400 max-w-sm leading-relaxed">When a user leaves the widget, email them new replies so they can continue the conversation</p>
-                  </div>
-                  <Switch checked={config.email_notifications} onCheckedChange={val => setConfig({ ...config, email_notifications: val })} />
-               </div>
-
-               <div className="pt-10">
-                  <Button 
-                     onClick={handleSave} 
-                     disabled={saving}
-                     className="w-full h-14 rounded-2xl bg-black text-white font-black text-base shadow-[0_20px_40px_rgba(0,0,0,0.1)] active:scale-[0.98] transition-all flex items-center justify-center gap-3"
-                  >
-                     {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                     {saving ? "Saving Configuration..." : "Save Changes"}
-                  </Button>
-               </div>
-            </section>
+            {/* SAVE BUTTON */}
+            <div className="fixed bottom-10 left-1/2 -translate-x-1/2 lg:left-[calc(27.5%+64px)] z-[100]">
+               <Button 
+                  onClick={handleSave} 
+                  disabled={saving}
+                  className="h-16 px-12 rounded-[2rem] bg-[#c65f39] hover:bg-[#b55533] text-white font-black text-lg shadow-[0_20px_50px_rgba(198,95,57,0.4)] transition-all active:scale-95 flex items-center gap-4 border-none"
+               >
+                  {saving ? <Loader2 className="w-6 h-6 animate-spin" /> : <Save className="w-6 h-6" />}
+                  {saving ? "Deploying Changes..." : "Deploy Widget Config"}
+               </Button>
+            </div>
 
           </div>
-        </div>
-
-        {/* RIGHT COLUMN: Sticky Preview (45%) */}
-        <div className="hidden lg:flex w-[45%] h-full bg-[#f9fafb] border-l border-gray-100 flex-col items-center justify-center relative overflow-hidden">
-           
-           {/* Preview Controller Bar */}
-           <div className="absolute top-16 flex items-center gap-10 z-50">
-              <div className="flex items-center gap-4">
-                 <span className="text-[13px] font-black text-gray-900 uppercase tracking-widest">Preview:</span>
-                 <div className="flex items-center gap-1.5 p-1.5 bg-white border border-gray-100 shadow-sm rounded-xl">
-                    <button 
-                      onClick={() => setPreviewView("start")}
-                      className={cn("px-5 py-2 rounded-[10px] text-[11px] font-black uppercase tracking-widest transition-all", previewView === 'start' ? "bg-black text-white shadow-lg shadow-black/20" : "text-gray-400 hover:text-gray-600")}
-                    >Start</button>
-                    <button 
-                      onClick={() => setPreviewView("form")}
-                      className={cn("px-5 py-2 rounded-[10px] text-[11px] font-black uppercase tracking-widest transition-all", previewView === 'form' ? "bg-black text-white shadow-lg shadow-black/20" : "text-gray-400 hover:text-gray-600")}
-                    >Form</button>
-                    <button 
-                      onClick={() => setPreviewView("chat")}
-                      className={cn("px-5 py-2 rounded-[10px] text-[11px] font-black uppercase tracking-widest transition-all", previewView === 'chat' ? "bg-black text-white shadow-lg shadow-black/20" : "text-gray-400 hover:text-gray-600")}
-                    >Chat</button>
-                 </div>
-              </div>
-
-              <div className="flex items-center gap-1.5 p-1.5 bg-white border border-gray-100 shadow-sm rounded-xl">
-                 <button 
-                  onClick={() => setPreviewOpen(true)}
-                  className={cn("px-6 py-2 rounded-[10px] text-[11px] font-black uppercase tracking-widest transition-all", previewOpen ? "bg-black text-white shadow-lg shadow-black/20" : "text-gray-400 hover:text-gray-600")}
-                 >Open</button>
-                 <button 
-                  onClick={() => setPreviewOpen(false)}
-                  className={cn("px-6 py-2 rounded-[10px] text-[11px] font-black uppercase tracking-widest transition-all", !previewOpen ? "bg-black text-white shadow-lg shadow-black/20" : "text-gray-400 hover:text-gray-600")}
-                 >Closed</button>
-              </div>
-           </div>
-
-           {/* The Preview Widget Wrapper */}
-           <div className="w-full flex justify-center mt-12 transform scale-110">
-              {workspaceId && (
-                <WidgetPreview 
-                  workspaceId={workspaceId}
-                  view={previewView} 
-                  isOpen={previewOpen} 
-                  config={config as any}
-                />
-              )}
-           </div>
-
-           {/* Decorative Background grid for preview column */}
-           <div className="absolute inset-0 opacity-[0.4] pointer-events-none -z-10" style={{ backgroundImage: 'radial-gradient(#e5e7eb 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
-        </div>
-
+        </ScrollArea>
       </div>
+
+      {/* RIGHT COLUMN: Sticky Preview Area */}
+      <div className="hidden lg:flex w-[45%] h-full flex-col items-center justify-center relative overflow-hidden bg-[#080808]">
+         {/* Background Visuals */}
+         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#c65f39]/5 rounded-full blur-[120px] -mr-48 -mt-48" />
+         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-blue-500/5 rounded-full blur-[100px] -ml-24 -mb-24" />
+
+         {/* Preview Controller */}
+         <div className="absolute top-16 space-y-6 flex flex-col items-center z-50">
+            <div className="flex items-center gap-1.5 p-1.5 bg-white/[0.03] border border-white/5 rounded-2xl backdrop-blur-xl shadow-2xl">
+               <button 
+                onClick={() => setPreviewView("start")}
+                className={cn("px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all", previewView === 'start' ? "bg-white text-black shadow-xl" : "text-white/30 hover:text-white/60")}
+               >Start</button>
+               <button 
+                onClick={() => setPreviewView("form")}
+                className={cn("px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all", previewView === 'form' ? "bg-white text-black shadow-xl" : "text-white/30 hover:text-white/60")}
+               >Form</button>
+               <button 
+                onClick={() => setPreviewView("chat")}
+                className={cn("px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all", previewView === 'chat' ? "bg-white text-black shadow-xl" : "text-white/30 hover:text-white/60")}
+               >Chat</button>
+            </div>
+
+            <div className="flex items-center gap-3">
+               <button 
+                  onClick={() => setPreviewOpen(!previewOpen)}
+                  className="flex items-center gap-3 px-6 py-2 rounded-full border border-white/5 bg-white/[0.01] hover:bg-white/[0.05] transition-all group"
+               >
+                  {previewOpen ? <X className="w-3.5 h-3.5 text-white/20 group-hover:text-[#c65f39]" /> : <MessageSquare className="w-3.5 h-3.5 text-white/20 group-hover:text-[#c65f39]" />}
+                  <span className="text-[9px] font-black text-white/40 uppercase tracking-widest group-hover:text-white transition-colors">{previewOpen ? "Close Widget" : "Open Widget"}</span>
+               </button>
+            </div>
+         </div>
+
+         {/* The Widget Preview (Compact) */}
+         <div className="relative z-10 transform scale-90 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]">
+            {workspaceId && (
+              <WidgetPreview 
+                workspaceId={workspaceId}
+                view={previewView} 
+                isOpen={previewOpen} 
+                config={config as any}
+              />
+            )}
+         </div>
+
+         {/* Stats Cards */}
+         <div className="absolute bottom-16 grid grid-cols-2 gap-6 w-full max-w-[440px] px-8">
+            <div className="p-6 rounded-[2rem] bg-white/[0.02] border border-white/5 backdrop-blur-md space-y-3">
+               <div className="h-8 w-8 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center">
+                  <Layout className="w-4 h-4" />
+               </div>
+               <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.15em]">Interface</p>
+               <p className="text-xs font-bold text-white/80 leading-tight">Pixel-perfect responsive design.</p>
+            </div>
+            <div className="p-6 rounded-[2rem] bg-white/[0.02] border border-white/5 backdrop-blur-md space-y-3">
+               <div className="h-8 w-8 rounded-xl bg-[#c65f39]/10 border border-[#c65f39]/20 text-[#c65f39] flex items-center justify-center">
+                  <Sparkles className="w-4 h-4" />
+               </div>
+               <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.15em]">Intelligence</p>
+               <p className="text-xs font-bold text-white/80 leading-tight">Groq-powered Support agent.</p>
+            </div>
+         </div>
+
+         {/* Background Grid */}
+         <div className="absolute inset-0 opacity-[0.03] pointer-events-none -z-10" style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+      </div>
+
     </div>
   )
 }
