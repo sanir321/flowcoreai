@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect, useCallback } from "react"
+import { motion } from "framer-motion"
 import { Loader2, Send, X, MessageSquare, Bot, User, Sparkles } from "lucide-react"
 
 interface WidgetConfig {
