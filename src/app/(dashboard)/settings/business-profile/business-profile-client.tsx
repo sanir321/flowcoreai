@@ -1,3 +1,5 @@
+"use client"
+
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Card } from "@/components/ui/card"
@@ -72,6 +74,7 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
   const [mounted, setMounted] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [servicesOffered, setServicesOffered] = useState(initialServicesOffered)
+  
   const [profile, setProfile] = useState<BusinessProfile>(() => ({
     workspace_id: workspaceId,
     contact: initialProfile?.contact || { phone: "", email: "", address: "", google_maps_link: "" },
@@ -89,7 +92,7 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
 
   useEffect(() => {
     if (initialServicesOffered) {
-       setServicesOffered(initialServicesOffered)
+      setServicesOffered(initialServicesOffered)
     }
   }, [initialServicesOffered])
 
@@ -114,13 +117,11 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
   const handleSave = async () => {
     setIsSaving(true)
     try {
-      // Save the services_offered directly to the workspaces table
       const supabase = createClient()
       await supabase.from("workspaces")
         .update({ services_offered: servicesOffered } as any)
         .eq("id", workspaceId)
 
-      // Save the JSONB profile
       const result = await updateBusinessProfile({
         workspace_id: workspaceId,
         profile,
@@ -145,14 +146,13 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
     </div>
   )
 
-  const safeAmenities = (Array.isArray(profile.amenities) ? profile.amenities : []) as any[]
-  const safePolicies = ((profile.policies && typeof profile.policies === 'object') ? profile.policies : {}) as any
-  const safeSocial = ((profile.social && typeof profile.social === 'object') ? profile.social : {}) as any
-  const safeHours = ((profile.hours && typeof profile.hours === 'object') ? profile.hours : { daily: {} }) as any
-  const safeDaily = ((safeHours.daily && typeof safeHours.daily === 'object') ? safeHours.daily : {}) as any
-  const safeContact = ((profile.contact && typeof profile.contact === 'object') ? profile.contact : {}) as any
-  const safePricing = ((profile.pricing && typeof profile.pricing === 'object') ? profile.pricing : { description: "", currency: "INR" }) as any
-
+  const safeAmenities = (Array.isArray(profile.amenities) ? profile.amenities : []) as string[]
+  const safePolicies = (profile.policies && typeof profile.policies === "object" ? profile.policies : {}) as Record<string, string>
+  const safeSocial = (profile.social && typeof profile.social === "object" ? profile.social : {}) as any
+  const safeHours = (profile.hours && typeof profile.hours === "object" ? profile.hours : { daily: {} }) as any
+  const safeDaily = (safeHours.daily && typeof safeHours.daily === "object" ? safeHours.daily : {}) as Record<string, any>
+  const safeContact = (profile.contact && typeof profile.contact === "object" ? profile.contact : {}) as any
+  const safePricing = (profile.pricing && typeof profile.pricing === "object" ? profile.pricing : { description: "", currency: "INR" }) as any
 
   return (
     <div className="space-y-8 p-1">
@@ -325,6 +325,7 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
                       return (
                         <button
                           key={item.key}
+                          type="button"
                           onClick={() => {
                             const newAmenities = isActive
                               ? safeAmenities.filter(a => a !== item.label)
