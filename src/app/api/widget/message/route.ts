@@ -138,10 +138,9 @@ export async function POST(req: NextRequest) {
     }
 
     // 4. Extract AI response
-    const reply = aiResponse.response_parts.join("\n\n");
+    const reply = aiResponse.response || "I apologize, but I am unable to respond at the moment.";
 
     // Update session metadata
-    // NOTE: The AI response is stored by agent-orchestrator itself.
     await supabaseAdmin.from("conversation_sessions").update({
       message_count: (session.message_count || 0) + 2,
       last_message_at: new Date().toISOString(),
