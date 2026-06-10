@@ -33,7 +33,7 @@
     .fc-widget { position: fixed; bottom: 32px; right: 32px; z-index: 2147483647; font-family: 'Inter', -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
     
     .fc-fab { 
-      width: 64px; height: 64px; border-radius: 22px; cursor: pointer; 
+      width: 56px; height: 56px; border-radius: 18px; cursor: pointer; 
       box-shadow: 0 8px 24px rgba(0,0,0,0.12); display: flex; align-items: center; 
       justify-content: center; transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1); 
       border: none; outline: none; background: ${TRUE_BLACK}; color: #fff;
@@ -44,8 +44,8 @@
     .fc-fab.open svg { transform: rotate(90deg); }
 
     .fc-panel { 
-      position: absolute; bottom: 84px; right: 0; width: 400px; height: 620px; 
-      background: #fff; border-radius: 32px; display: none; flex-direction: column; 
+      position: absolute; bottom: 84px; right: 0; width: 360px; height: 520px; 
+      background: #fff; border-radius: 28px; display: none; flex-direction: column; 
       overflow: hidden; box-shadow: 0 20px 48px rgba(0,0,0,0.15); 
       border: 1px solid rgba(0,0,0,0.04); transform-origin: bottom right;
       animation: fc-slide-up 0.5s cubic-bezier(0.19, 1, 0.22, 1);
@@ -53,8 +53,8 @@
     .fc-panel.open { display: flex; }
     
     @media (max-width: 480px) {
-      .fc-panel { width: calc(100vw - 40px); height: calc(100vh - 120px); right: -10px; }
-      .fc-widget { bottom: 20px; right: 20px; }
+      .fc-panel { width: calc(100vw - 32px); height: calc(100vh - 100px); right: -8px; }
+      .fc-widget { bottom: 16px; right: 16px; }
     }
 
     .fc-view { display: none; flex: 1; flex-direction: column; height: 100%; }
@@ -62,22 +62,22 @@
 
     /* Header (Universal) */
     .fc-header { 
-      padding: 32px; background: #fff; border-bottom: 1px solid ${SOFT_GRAY}; 
-      display: flex; align-items: center; gap: 16px;
+      padding: 24px; background: #fff; border-bottom: 1px solid ${SOFT_GRAY}; 
+      display: flex; align-items: center; gap: 12px;
     }
     .fc-avatar { 
-      width: 48px; height: 48px; border-radius: 16px; 
+      width: 40px; height: 40px; border-radius: 14px; 
       background: ${TRUE_BLACK}; display: flex; align-items: center; 
       justify-content: center; color: #fff; font-weight: 700; font-family: 'Outfit';
     }
     .fc-header-info h3 { 
-      margin: 0; font-family: 'Outfit'; font-size: 18px; font-weight: 600; 
+      margin: 0; font-family: 'Outfit'; font-size: 16px; font-weight: 600; 
       color: ${TRUE_BLACK}; letter-spacing: -0.01em; 
     }
     .fc-header-info p { margin: 4px 0 0; font-size: 12px; color: #888; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
 
     /* Form Styles */
-    .fc-form { padding: 32px; flex: 1; display: flex; flex-direction: column; gap: 20px; }
+    .fc-form { padding: 24px; flex: 1; display: flex; flex-direction: column; gap: 16px; }
     .fc-field { display: flex; flex-direction: column; gap: 8px; }
     .fc-field label { font-size: 12px; font-weight: 600; color: #666; }
     .fc-field input { padding: 12px 16px; border-radius: 12px; border: 1.5px solid ${SOFT_GRAY}; outline: none; font-size: 14px; }
@@ -89,22 +89,22 @@
 
     /* Chat Styles */
     .fc-messages { 
-      flex: 1; overflow-y: auto; padding: 24px; display: flex; 
-      flex-direction: column; gap: 16px; background: #fff;
+      flex: 1; overflow-y: auto; padding: 20px; display: flex; 
+      flex-direction: column; gap: 12px; background: #fff;
       scrollbar-width: thin;
     }
     .fc-bubble { 
-      max-width: 82%; padding: 14px 18px; border-radius: 20px; font-size: 14px; 
+      max-width: 82%; padding: 12px 16px; border-radius: 18px; font-size: 13px; 
       line-height: 1.5; animation: fc-fade-in 0.4s ease-out both;
     }
     .fc-bubble.ai { align-self: flex-start; background: ${SOFT_GRAY}; color: ${TRUE_BLACK}; border-bottom-left-radius: 4px; }
     .fc-bubble.user { align-self: flex-end; background: ${TRUE_BLACK}; color: #fff; border-bottom-right-radius: 4px; }
 
-    .fc-input-area { padding: 24px; border-top: 1px solid ${SOFT_GRAY}; display: flex; gap: 12px; }
-    .fc-input { flex: 1; border: none; outline: none; font-size: 14px; font-family: inherit; }
+    .fc-input-area { padding: 16px; border-top: 1px solid ${SOFT_GRAY}; display: flex; gap: 10px; }
+    .fc-input { flex: 1; border: none; outline: none; font-size: 13px; font-family: inherit; }
     .fc-send { color: ${TRUE_BLACK}; background: none; border: none; cursor: pointer; }
 
-    .fc-footer { text-align: center; font-size: 10px; color: #ccc; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; padding: 16px; }
+    .fc-footer { text-align: center; font-size: 9px; color: #ccc; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; padding: 12px; }
 
     .fc-whatsapp {
       display: none; align-items: center; justify-content: center; gap: 8px;

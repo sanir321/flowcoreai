@@ -85,15 +85,15 @@ export default function WidgetPreview({ workspaceId, view = "chat", isOpen = tru
   const name = config.agent_name || "Assistant"
 
   if (!isOpen) return (
-    <div className="w-16 h-16 rounded-2xl bg-[#050505] flex items-center justify-center text-white shadow-lg">
-      <MessageSquare className="w-7 h-7" />
+    <div className="w-14 h-14 rounded-[18px] bg-[#050505] flex items-center justify-center text-white shadow-lg">
+      <MessageSquare className="w-6 h-6" />
     </div>
   )
 
   return (
-    <div className="w-[400px] h-[620px] bg-white rounded-[32px] shadow-2xl border border-gray-100 flex flex-col overflow-hidden font-sans">
-      <div className="p-8 border-b border-gray-100 flex items-center gap-4">
-        <div className="w-12 h-12 rounded-2xl bg-black flex items-center justify-center text-white font-bold font-outfit">
+    <div className="w-[360px] h-[520px] bg-white rounded-[28px] shadow-2xl border border-gray-100 flex flex-col overflow-hidden font-sans">
+      <div className="p-6 border-b border-gray-100 flex items-center gap-3">
+        <div className="w-10 h-10 rounded-[14px] bg-black flex items-center justify-center text-white font-bold font-outfit">
           {name.charAt(0)}
         </div>
         <div className="flex-1">
@@ -104,12 +104,12 @@ export default function WidgetPreview({ workspaceId, view = "chat", isOpen = tru
       </div>
 
       {view === "form" ? (
-        <div className="p-8 space-y-6">
+        <div className="p-6 space-y-4">
            <div className="space-y-1">
-              <h2 className="text-xl font-bold text-gray-900">Let&apos;s get some basic info</h2>
-              <p className="text-sm text-gray-400">This will help us know who you are</p>
+              <h2 className="text-lg font-bold text-gray-900">Let&apos;s get some basic info</h2>
+              <p className="text-xs text-gray-400">This will help us know who you are</p>
            </div>
-           <div className="space-y-4 pt-4">
+           <div className="space-y-3 pt-2">
               <div className="space-y-1.5">
                  <label className="text-xs font-bold text-gray-600">Full Name</label>
                  <input disabled placeholder="John Doe" className="w-full h-11 border border-gray-100 bg-gray-50 rounded-lg px-4 text-sm" />
@@ -123,21 +123,21 @@ export default function WidgetPreview({ workspaceId, view = "chat", isOpen = tru
         </div>
       ) : (
         <>
-          <div ref={bodyRef} className="flex-1 overflow-y-auto p-6 space-y-4">
+          <div ref={bodyRef} className="flex-1 overflow-y-auto p-5 space-y-3">
             {msgs.map((m, i) => (
-              <div key={i} className={cn("max-w-[80%] px-4 py-3 rounded-2xl text-sm leading-relaxed", m.role === 'user' ? "ml-auto bg-black text-white rounded-br-md" : "mr-auto bg-gray-100 text-gray-800 rounded-bl-md")}>
+              <div key={i} className={cn("max-w-[80%] px-4 py-2.5 rounded-2xl text-[13px] leading-relaxed", m.role === 'user' ? "ml-auto bg-black text-white rounded-br-md" : "mr-auto bg-gray-100 text-gray-800 rounded-bl-md")}>
                 {m.text}
               </div>
             ))}
-            {sending && <div className="mr-auto bg-gray-100 text-gray-400 rounded-2xl px-4 py-2 text-xs italic">Thinking...</div>}
+            {sending && <div className="mr-auto bg-gray-100 text-gray-400 rounded-2xl px-4 py-2 text-[11px] italic">Thinking...</div>}
           </div>
-          <div className="p-6 border-t border-gray-100 flex items-center gap-3">
-             <input disabled placeholder="Type a message..." className="flex-1 text-sm outline-none bg-transparent" />
+          <div className="p-4 border-t border-gray-100 flex items-center gap-2">
+             <input disabled placeholder="Type a message..." className="flex-1 text-[13px] outline-none bg-transparent" />
              <Send className="w-5 h-5 text-black opacity-30" />
           </div>
         </>
       )}
-      <div className="p-4 text-center border-t border-gray-50 text-[10px] font-bold text-gray-300 uppercase tracking-widest">
+      <div className="p-3 text-center border-t border-gray-50 text-[9px] font-bold text-gray-300 uppercase tracking-widest">
          Powered by <span className="text-gray-900">FlowCore</span>
       </div>
     </div>
