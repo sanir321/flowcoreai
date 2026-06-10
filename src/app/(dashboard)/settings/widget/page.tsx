@@ -14,13 +14,6 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
 import { updateWidgetConfig } from "@/app/actions/settings"
@@ -48,7 +41,6 @@ export default function WidgetSettingsPage() {
     enable_whatsapp: false,
     allow_anonymous: false,
     auto_fill_params: false,
-    default_country: "IN",
     trusted_domains: "",
     email_notifications: false
   })
@@ -74,7 +66,6 @@ export default function WidgetSettingsPage() {
               enable_whatsapp: d.enable_whatsapp || false,
               allow_anonymous: d.allow_anonymous || false,
               auto_fill_params: d.auto_fill_params || false,
-              default_country: d.default_country || "IN",
               trusted_domains: d.allowed_domains?.join(", ") || "",
               email_notifications: d.email_notifications || false
             })
@@ -144,35 +135,16 @@ export default function WidgetSettingsPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-gray-700 ml-1">Primary Color</Label>
-                  <div className="flex items-center gap-3 p-2 border border-gray-100 rounded-xl">
-                    <input 
-                       type="color" 
-                       value={config.accent_color} 
-                       onChange={e => setConfig({...config, accent_color: e.target.value})}
-                       className="w-10 h-10 border-none p-0 bg-transparent cursor-pointer" 
-                    />
-                    <code className="text-xs font-mono text-gray-400 uppercase font-bold">{config.accent_color}</code>
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-gray-700 ml-1">Default Region</Label>
-                  <Select 
-                    value={config.default_country} 
-                    onValueChange={val => setConfig({ ...config, default_country: val })}
-                  >
-                    <SelectTrigger className="h-14 border-gray-100 rounded-xl text-sm font-medium">
-                        <SelectValue placeholder="Select country" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="IN">India (+91)</SelectItem>
-                        <SelectItem value="US">United States (+1)</SelectItem>
-                        <SelectItem value="GB">United Kingdom (+44)</SelectItem>
-                    </SelectContent>
-                  </Select>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-gray-700 ml-1">Primary Color</Label>
+                <div className="flex items-center gap-3 p-2 border border-gray-100 rounded-xl">
+                  <input 
+                     type="color" 
+                     value={config.accent_color} 
+                     onChange={e => setConfig({...config, accent_color: e.target.value})}
+                     className="w-10 h-10 border-none p-0 bg-transparent cursor-pointer" 
+                  />
+                  <code className="text-xs font-mono text-gray-400 uppercase font-bold">{config.accent_color}</code>
                 </div>
               </div>
 

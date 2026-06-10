@@ -16,7 +16,6 @@ interface WidgetConfig {
   enable_whatsapp: boolean
   allow_anonymous: boolean
   auto_fill_params: boolean
-  default_country: string
   email_notifications: boolean
 }
 

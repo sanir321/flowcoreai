@@ -19,7 +19,6 @@ export const UpdateWidgetConfigSchema = z.object({
   agent_name: z.string().optional(),
   allow_anonymous: z.boolean().optional(),
   enable_whatsapp: z.boolean().optional(),
-  default_country: z.string().optional(),
   header_text: z.string().optional(),
   post_form_message: z.string().optional(),
   launcher_icon: z.string().optional(),

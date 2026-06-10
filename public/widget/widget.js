@@ -278,6 +278,11 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ workspace_id: workspaceId, session_token: sessionToken, message: text, customer_name: customerName, customer_email: customerEmail })
       });
+      if (res.status === 403) {
+        hideTyping();
+        addMessage("This chat is not available on this website.", 'ai');
+        return;
+      }
       const data = await res.json();
       hideTyping();
       addMessage(data.reply, 'ai');
@@ -292,8 +297,16 @@
 
   // Fetch config and apply theme immediately
   fetch(`${baseUrl}/api/widget/config?id=${workspaceId}`)
-    .then(r => r.json())
+    .then(r => {
+      if (r.status === 403) {
+        container.innerHTML = '<div style="position:fixed;bottom:32px;right:32px;z-index:2147483647;background:#fff;border-radius:18px;box-shadow:0 8px 24px rgba(0,0,0,0.12);padding:20px 24px;font-family:Inter,-apple-system,sans-serif;max-width:320px;border:1px solid #fecaca;"><p style="margin:0 0 4px;font-size:14px;font-weight:600;color:#dc2626;">Domain not authorized</p><p style="margin:0;font-size:12px;color:#666;">This widget is not configured to run on this website.</p></div>';
+        return;
+      }
+      if (!r.ok) throw new Error('Config failed');
+      return r.json();
+    })
     .then(d => {
+      if (!d) return;
       config = d;
 
       // Apply accent color immediately
