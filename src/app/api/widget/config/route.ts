@@ -64,6 +64,7 @@ export async function GET(req: NextRequest) {
       theme: config?.theme || "dark",
       avatar_url: config?.avatar_url || null,
       allow_anonymous: config?.allow_anonymous ?? false,
+      is_active: config?.is_active ?? true,
     };
 
     return NextResponse.json(responseData, {

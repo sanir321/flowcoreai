@@ -53,6 +53,10 @@ export async function POST(req: NextRequest) {
       return new Response("Workspace not found", { status: 404 });
     }
 
+    if (workspace.is_ai_enabled === false) {
+      return new Response("AI responses are currently disabled", { status: 403 });
+    }
+
     // Verify widget is configured and active for this workspace
     const { data: widgetConfig } = await supabaseAdmin
       .from("widget_config")

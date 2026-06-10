@@ -41,30 +41,65 @@ export async function checkEscalation(ctx: PipelineContext, workspace: any): Pro
     console.error("[ESCALATION] Failed to insert escalation_log:", e.message);
   }
 
+  // Fetch notification preferences
+  const { data: notifPref } = await ctx.supabase
+    .from("workspace_notifications")
+    .select("notification_mode, email_on_escalation, whatsapp_alert_number")
+    .eq("workspace_id", ctx.payload.workspace_id)
+    .maybeSingle();
+
+  // Skip notifications if mode is "off"
+  const notificationMode = notifPref?.notification_mode || "instant";
+
   // Send immediate email notification to workspace owner
-  try {
-    const ownerEmail = workspace.owner_id
-      ? await ctx.supabase.rpc("get_user_email", { user_id: workspace.owner_id })
-      : null;
-    if (ownerEmail?.data) {
-      await fetch(`${APP_URL}/api/emails/send`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${CRON_SECRET}` },
-        body: JSON.stringify({
-          to: ownerEmail.data,
-          subject: `Escalation Alert — ${workspace.name || "Your Workspace"}`,
-          template: "escalation",
-          data: {
-            workspaceName: workspace.name || "Your Workspace",
-            customerName: ctx.contact?.name || ctx.session?.customer_name || "A Customer",
-            reason: msgLower,
-            inboxUrl: `${APP_URL}/inbox`,
-          },
-        }),
-      });
+  if (notificationMode !== "off" && notifPref?.email_on_escalation !== false) {
+    try {
+      const ownerEmail = workspace.owner_id
+        ? await ctx.supabase.rpc("get_user_email", { user_id: workspace.owner_id })
+        : null;
+      if (ownerEmail?.data) {
+        await fetch(`${APP_URL}/api/emails/send`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${CRON_SECRET}` },
+          body: JSON.stringify({
+            to: ownerEmail.data,
+            subject: `Escalation Alert — ${workspace.name || "Your Workspace"}`,
+            template: "escalation",
+            data: {
+              workspaceName: workspace.name || "Your Workspace",
+              customerName: ctx.contact?.name || ctx.session?.customer_name || "A Customer",
+              reason: msgLower,
+              inboxUrl: `${APP_URL}/inbox`,
+            },
+          }),
+        });
+      }
+    } catch (e: any) {
+      console.error("[ESCALATION] Email notification error:", e.message);
     }
-  } catch (e: any) {
-    console.error("[ESCALATION] Email notification error:", e.message);
+  }
+
+  // Send WhatsApp alert if number is configured
+  if (notifPref?.whatsapp_alert_number) {
+    try {
+      const { data: device } = await ctx.supabase
+        .from("gowa_sessions")
+        .select("device_id")
+        .eq("workspace_id", ctx.payload.workspace_id)
+        .eq("status", "connected")
+        .maybeSingle();
+
+      if (device?.device_id) {
+        const alertMsg = `🚨 *Escalation Alert*\n\nCustomer: ${ctx.contact?.name || ctx.session?.customer_name || "Unknown"}\nReason: ${msgLower}\n\nView inbox: ${APP_URL}/inbox`;
+        await fetch(`${Deno.env.get("GOWA_BASE_URL")}/devices/${device.device_id}/send`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Basic ${Deno.env.get("GOWA_API_KEY")}` },
+          body: JSON.stringify({ to: notifPref.whatsapp_alert_number, message: alertMsg }),
+        });
+      }
+    } catch (e: any) {
+      console.error("[ESCALATION] WhatsApp alert error:", e.message);
+    }
   }
 
   return workspace.guardrail_config?.handoff_message

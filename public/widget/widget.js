@@ -83,7 +83,9 @@
       width: 40px; height: 40px; border-radius: 14px;
       background: var(--fc-accent); display: flex; align-items: center;
       justify-content: center; color: #fff; font-weight: 700; font-family: 'Outfit';
+      overflow: hidden;
     }
+    .fc-avatar img { width: 100%; height: 100%; object-fit: cover; }
     .fc-header-info h3 {
       margin: 0; font-family: 'Outfit'; font-size: 16px; font-weight: 600;
       color: var(--fc-text); letter-spacing: -0.01em;
@@ -193,14 +195,21 @@
   const typingEl = document.getElementById('fc-typing');
 
   // Apply accent color dynamically via CSS custom properties
-  function applyTheme(accentColor) {
+  function applyTheme(accentColor, theme) {
     if (!accentColor) return;
     container.style.setProperty('--fc-accent', accentColor);
-    // Generate lighter variant for backgrounds (10% opacity)
     const r = parseInt(accentColor.slice(1,3), 16);
     const g = parseInt(accentColor.slice(3,5), 16);
     const b = parseInt(accentColor.slice(5,7), 16);
     container.style.setProperty('--fc-accent-light', `rgba(${r},${g},${b},0.08)`);
+
+    if (theme === 'light') {
+      container.style.setProperty('--fc-bg', '#ffffff');
+      container.style.setProperty('--fc-text', '#050505');
+    } else {
+      container.style.setProperty('--fc-bg', '#0a0a0a');
+      container.style.setProperty('--fc-text', '#f0f0f0');
+    }
   }
 
   fab.onclick = () => {
@@ -297,12 +306,21 @@
       if (!d) return;
       config = d;
 
-      // Apply accent color immediately
-      applyTheme(d.accent_color);
+      // Widget disabled — hide everything
+      if (d.is_active === false) {
+        container.style.display = 'none';
+        return;
+      }
+
+      // Apply accent color and theme immediately
+      applyTheme(d.accent_color, d.theme);
 
       if (d.agent_name) {
         document.getElementById('fc-agent-name').innerText = d.agent_name;
         document.getElementById('fc-avatar').innerText = d.agent_name.charAt(0);
+      }
+      if (d.avatar_url) {
+        document.getElementById('fc-avatar').innerHTML = `<img src="${d.avatar_url}" alt="Avatar">`;
       }
       // Skip form if profile already saved or anonymous allowed
       if (d.allow_anonymous || savedProfile) {

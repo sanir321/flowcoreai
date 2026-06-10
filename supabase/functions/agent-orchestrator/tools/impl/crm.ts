@@ -1,6 +1,9 @@
 import { PipelineContext } from "../../lib/types.ts";
 import { getGoogleConfig } from "./google.ts";
 
+const APP_URL = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://7flowcore.vercel.app";
+const CRON_SECRET = Deno.env.get("INTERNAL_CRON_SECRET") || "";
+
 export async function captureLead(
   params: { name?: string; email?: string; phone?: string; notes?: string },
   ctx: PipelineContext
@@ -32,6 +35,45 @@ export async function captureLead(
       });
     }
   } catch (_) {}
+
+  // Send lead notification if enabled
+  try {
+    const { data: notifPref } = await ctx.supabase
+      .from("workspace_notifications")
+      .select("email_on_lead, notification_mode")
+      .eq("workspace_id", ctx.payload.workspace_id)
+      .maybeSingle();
+
+    if (notifPref?.email_on_lead && notifPref?.notification_mode !== "off") {
+      const { data: workspace } = await ctx.supabase
+        .from("workspaces")
+        .select("owner_id, name")
+        .eq("id", ctx.payload.workspace_id)
+        .maybeSingle();
+
+      if (workspace?.owner_id) {
+        const { data: ownerEmail } = await ctx.supabase.rpc("get_user_email", { user_id: workspace.owner_id });
+        if (ownerEmail) {
+          await fetch(`${APP_URL}/api/emails/send`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${CRON_SECRET}` },
+            body: JSON.stringify({
+              to: ownerEmail,
+              subject: `New Lead Captured — ${workspace.name || "Your Workspace"}`,
+              template: "welcome",
+              data: {
+                workspaceName: workspace.name || "Your Workspace",
+                customerName: params.name || "Unknown",
+                customerEmail: params.email || "No email",
+              },
+            }),
+          });
+        }
+      }
+    }
+  } catch (e: any) {
+    console.error("[CAPTURE_LEAD] Notification error:", e.message);
+  }
 
   return {
     success: true,
