@@ -38,7 +38,6 @@ export default function WidgetSettingsPage() {
     post_form_message: "Thank you! How can I help you today?",
     accent_color: "#050505",
     launcher_icon: "chat",
-    enable_whatsapp: false,
     allow_anonymous: false,
     auto_fill_params: false,
     trusted_domains: "",
@@ -63,7 +62,6 @@ export default function WidgetSettingsPage() {
               post_form_message: d.post_form_message || "Thank you! How can I help you today?",
               accent_color: d.accent_color || "#050505",
               launcher_icon: d.launcher_icon || "chat",
-              enable_whatsapp: d.enable_whatsapp || false,
               allow_anonymous: d.allow_anonymous || false,
               auto_fill_params: d.auto_fill_params || false,
               trusted_domains: d.allowed_domains?.join(", ") || "",
@@ -172,14 +170,6 @@ export default function WidgetSettingsPage() {
                     <p className="text-[11px] text-gray-400">Skip the lead form and start chatting immediately</p>
                   </div>
                   <Switch checked={config.allow_anonymous} onCheckedChange={val => setConfig({...config, allow_anonymous: val})} />
-               </div>
-
-               <div className="flex items-center justify-between p-5 border border-gray-100 rounded-2xl group hover:bg-gray-50/50 transition-all">
-                  <div className="space-y-0.5">
-                    <Label className="text-sm font-bold text-gray-800">Enable WhatsApp Bridge</Label>
-                    <p className="text-[11px] text-gray-400">Allow users to switch from web to WhatsApp</p>
-                  </div>
-                  <Switch checked={config.enable_whatsapp} onCheckedChange={val => setConfig({...config, enable_whatsapp: val })} />
                </div>
             </div>
           </section>

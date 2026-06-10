@@ -13,7 +13,6 @@ interface WidgetConfig {
   theme: string
   logo_url: string | null
   launcher_icon: string
-  enable_whatsapp: boolean
   allow_anonymous: boolean
   auto_fill_params: boolean
   email_notifications: boolean
