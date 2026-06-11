@@ -52,12 +52,16 @@ async function resolveWorkspace(supabase: any, rootPayload: any, sessionIdentifi
     if (byPhone) return byPhone.workspace_id
   }
 
-  // Auto-recover from incoming device_id
+  // Auto-recover from incoming device_id — filter by the actual device ID
   const rawDeviceId = rootPayload.device_id || rootPayload.session || rootPayload.deviceId
   if (rawDeviceId) {
-    const { data: existing } = await supabase.from('gowa_sessions').select('workspace_id').maybeSingle()
+    const isJid = rawDeviceId.includes('@')
+    const { data: existing } = await supabase
+      .from('gowa_sessions')
+      .select('workspace_id')
+      .eq(isJid ? 'phone_jid' : 'gowa_session_id', rawDeviceId)
+      .maybeSingle()
     if (existing) {
-      const isJid = rawDeviceId.includes('@')
       await supabase.from('gowa_sessions').update({
         gowa_session_id: isJid ? null : rawDeviceId,
         phone_jid: isJid ? rawDeviceId : null,

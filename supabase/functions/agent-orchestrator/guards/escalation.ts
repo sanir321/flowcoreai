@@ -84,17 +84,22 @@ export async function checkEscalation(ctx: PipelineContext, workspace: any): Pro
     try {
       const { data: device } = await ctx.supabase
         .from("gowa_sessions")
-        .select("device_id")
+        .select("gowa_session_id")
         .eq("workspace_id", ctx.payload.workspace_id)
         .eq("status", "connected")
         .maybeSingle();
 
-      if (device?.device_id) {
+      if (device?.gowa_session_id) {
+        const gowaKey = Deno.env.get("GOWA_API_KEY") || "";
         const alertMsg = `🚨 *Escalation Alert*\n\nCustomer: ${ctx.contact?.name || ctx.session?.customer_name || "Unknown"}\nReason: ${msgLower}\n\nView inbox: ${APP_URL}/inbox`;
-        await fetch(`${Deno.env.get("GOWA_BASE_URL")}/devices/${device.device_id}/send`, {
+        await fetch(`${Deno.env.get("GOWA_BASE_URL")}/send/message`, {
           method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Basic ${Deno.env.get("GOWA_API_KEY")}` },
-          body: JSON.stringify({ to: notifPref.whatsapp_alert_number, message: alertMsg }),
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Basic ${btoa(gowaKey)}`,
+            "X-Device-Id": device.gowa_session_id
+          },
+          body: JSON.stringify({ phone: notifPref.whatsapp_alert_number, message: alertMsg }),
         });
       }
     } catch (e: any) {

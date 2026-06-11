@@ -208,12 +208,13 @@ export const ALL_TOOLS: Record<string, ToolDefinition> = {
   },
   confirm_payment: {
     name: "confirm_payment",
-    description: "Mark an order as paid after the customer confirms payment.",
+    description: "Mark an order as paid after the customer provides payment proof. Requires transaction_id or proof.",
     parameters: {
       type: "object",
       properties: {
         order_id: { type: "string" },
-        payment_method: { type: "string", enum: ["upi", "cash"] }
+        payment_method: { type: "string", enum: ["upi", "cash"] },
+        transaction_id: { type: "string", description: "UPI transaction ID / UTR number from payment proof." }
       },
       required: ["order_id"]
     }

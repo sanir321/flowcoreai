@@ -56,15 +56,8 @@ export async function runT0(ctx: PipelineContext): Promise<TierResult> {
   // 2. Run all guardrails
   const guardResult = await runAllGuards(ctx, ctx.workspace);
   if (guardResult) {
-    // Escalation: return early so the handoff message is dispatched to the customer.
-    // Subsequent messages hit the already_escalated check above.
-    if (guardResult.reason?.includes("escalation")) {
-      return guardResult;
-    }
-    // Hard blocks: credits exhausted, blocked topics, 24h window expired
-    if (guardResult.reason?.includes("credits") || guardResult.reason?.includes("blocked") || guardResult.reason?.includes("window")) {
-      return guardResult;
-    }
+    // Return ALL guard results — each guard has already decided to handle the message
+    return guardResult;
   }
 
   return { handled: false };
