@@ -44,10 +44,22 @@ Deno.serve(async (req) => {
     const payload = await parseWebhook(req)
     if (!payload) return new Response("ok", { status: 200 })
 
-    const aiResult = await processMessage(payload)
+    const [aiResult, ctx] = await processMessage(payload)
     
     if (payload.is_test) {
-      return new Response(JSON.stringify(aiResult), { status: 200, headers: responseHeaders })
+      // Enrich test response with tool call trace
+      const toolCalls = (ctx._toolCalls || []).map((tc: any) => ({
+        tool: tc.tool,
+        params: tc.params,
+        success: tc.success,
+        result: tc.result,
+        duration_ms: tc.duration_ms,
+      }))
+      return new Response(JSON.stringify({
+        ...aiResult,
+        agent_type: ctx.agentType || "customer_support",
+        tool_calls: toolCalls,
+      }), { status: 200, headers: responseHeaders })
     }
     
     return new Response("ok", { status: 200 })
@@ -59,7 +71,7 @@ Deno.serve(async (req) => {
   }
 })
 
-async function processMessage(payload: WebhookPayload): Promise<TierResult> {
+async function processMessage(payload: WebhookPayload): Promise<[TierResult, PipelineContext]> {
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
@@ -88,7 +100,7 @@ async function processMessage(payload: WebhookPayload): Promise<TierResult> {
       t0.response = sanitizeLlmOutput(t0.response || "")
       await touchSession(ctx, "customer_support", t0.response)
       await dispatch(ctx, t0.response)
-      return t0
+      return [t0, ctx]
     }
 
     const t1 = await runT1(ctx)
@@ -97,7 +109,7 @@ async function processMessage(payload: WebhookPayload): Promise<TierResult> {
       t1.response = sanitizeLlmOutput(t1.response || "")
       await touchSession(ctx, "customer_support", t1.response)
       await dispatch(ctx, t1.response)
-      return t1
+      return [t1, ctx]
     }
 
     const t2 = await runT2(ctx)
@@ -106,7 +118,7 @@ async function processMessage(payload: WebhookPayload): Promise<TierResult> {
       t2.response = sanitizeLlmOutput(t2.response || "")
       await touchSession(ctx, ctx.agentType || "customer_support", t2.response)
       await dispatch(ctx, t2.response)
-      return t2
+      return [t2, ctx]
     }
 
     console.log(`[ORCHESTRATOR] Entering T3 for agent: ${ctx.agentType}`)
@@ -114,7 +126,7 @@ async function processMessage(payload: WebhookPayload): Promise<TierResult> {
     t3.response = sanitizeLlmOutput(t3.response || "")
     console.log(`[ORCHESTRATOR] T3 finished. Response length: ${t3.response?.length || 0}`)
     await dispatch(ctx, t3.response)
-    return { ...t3, agent_type: ctx.agentType }
+    return [{ ...t3, agent_type: ctx.agentType }, ctx]
   } catch (e: any) {
     console.error("[ORCHESTRATOR] CRASH in processMessage:", e.message)
     console.error("[ORCHESTRATOR] Stack:", e.stack)
@@ -137,7 +149,7 @@ async function processMessage(payload: WebhookPayload): Promise<TierResult> {
     }
 
     await dispatchFallback(supabase, payload)
-    return { handled: true, response: STATIC_FALLBACK_MESSAGE, reason: "crash" }
+    return [{ handled: true, response: STATIC_FALLBACK_MESSAGE, reason: "crash" }, { supabase, session: {}, payload } as PipelineContext]
   }
 }
 

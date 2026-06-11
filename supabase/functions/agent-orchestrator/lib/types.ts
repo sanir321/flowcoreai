@@ -67,6 +67,7 @@ export interface PipelineContext {
   pricingBlocked?: boolean;
   salesBlocked?: boolean;
   handoffDepth?: number;
+  _toolCalls?: { tool: string; params: any; success: boolean; result: any; duration_ms: number }[];
 }
 
 export interface AgentPlan {

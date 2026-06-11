@@ -58,6 +58,20 @@ export const toolExecutor = {
       result = { success: false, error: error.message };
     }
 
+    const durationMs = Date.now() - startTime;
+
+    // Track tool calls for test mode
+    if (ctx.payload.is_test) {
+      if (!ctx._toolCalls) ctx._toolCalls = [];
+      ctx._toolCalls.push({
+        tool: toolName,
+        params,
+        success: !result.error,
+        result: result.error ? result.error : result,
+        duration_ms: durationMs,
+      });
+    }
+
     await ctx.supabase.from("tool_call_logs").insert({
       session_id: ctx.session.id,
       workspace_id: ctx.payload.workspace_id,
@@ -66,7 +80,7 @@ export const toolExecutor = {
       result: result.data || result,
       error: result.error,
       success: !result.error,
-      duration_ms: Date.now() - startTime
+      duration_ms: durationMs
     });
 
     return result;
