@@ -1,15 +1,15 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname } from "next/navigation"
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
-  const router = useRouter()
   const pathname = usePathname()
   const supabase = createClient()
   const [isLoading, setIsLoading] = useState(true)
   const [isAuthorized, setIsAuthorized] = useState(false)
+  const hasCheckedAuth = useRef(false)
 
   const dashboardRoutes = [
     "/inbox",
@@ -30,9 +30,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
         setIsAuthorized(true);
       } else {
         setIsAuthorized(false);
-        // If NO user and trying to access protected routes, FORCE login
         if (isProtectedRoute) {
-          // Use window.location to force a full page reload to the login page
           window.location.href = `/login?redirect=${encodeURIComponent(pathname)}`;
           return;
         }
@@ -40,8 +38,11 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       setIsLoading(false);
     }
 
-    checkAuth()
-  }, [pathname, router, supabase, isProtectedRoute])
+    if (!hasCheckedAuth.current) {
+      hasCheckedAuth.current = true
+      checkAuth()
+    }
+  }, [isProtectedRoute])
 
   if (isLoading && (pathname === "/" || pathname === "/login" || isProtectedRoute)) {
     return null

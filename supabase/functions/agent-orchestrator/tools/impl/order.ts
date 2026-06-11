@@ -142,15 +142,20 @@ export async function createOrder(
 }
 
 export async function confirmPayment(
-  params: { order_id?: string; order_number?: string; payment_method?: string },
+  params: { order_id?: string; order_number?: string; payment_method?: string; transaction_id?: string; proof?: string },
   ctx: PipelineContext
 ) {
+  const transactionId = params.transaction_id || params.proof;
+  if (!transactionId) {
+    return { error: "Payment verification requires a transaction ID or payment proof. Please provide a UPI reference number or screenshot." };
+  }
+  console.log(`[confirmPayment] Verification: transaction_id=${transactionId}`);
   let orderId = params.order_id || "";
   let orderNum = params.order_number || "";
   if (!orderId && !orderNum) return { error: "Provide order_id or order_number" };
   if (orderId && orderId.startsWith("ORD-")) { orderNum = orderId; orderId = ""; }
   let query = ctx.supabase.from("orders").update({
-    status: "paid", payment_method: params.payment_method || "upi", updated_at: new Date().toISOString()
+    status: "paid", payment_method: params.payment_method || "upi", transaction_id: transactionId, updated_at: new Date().toISOString()
   }).eq("workspace_id", ctx.payload.workspace_id);
   if (orderId) query = query.eq("id", orderId);
   else query = query.eq("order_number", orderNum);

@@ -19,6 +19,10 @@ export async function finalizeOnboarding(input: unknown): Promise<ActionResponse
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
 
+    const userWorkspaceId = user.app_metadata?.workspace_id
+    if (!userWorkspaceId) return { data: null, error: "No workspace" }
+    if (workspace_id !== userWorkspaceId) return { data: null, error: "Unauthorized" }
+
     const agentsToInsert = agent_types.map(type => ({
       workspace_id,
       agent_type: type,
@@ -74,6 +78,18 @@ export async function setAgentStatus(input: unknown): Promise<ActionResponse<{ s
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
 
+    const workspaceId = user.app_metadata?.workspace_id
+    if (!workspaceId) return { data: null, error: "No workspace" }
+
+    const { data: agent } = await supabase
+      .from("workspace_agents")
+      .select("workspace_id")
+      .eq("id", agent_id)
+      .single()
+
+    if (!agent) return { data: null, error: "Agent not found" }
+    if (agent.workspace_id !== workspaceId) return { data: null, error: "Unauthorized" }
+
     const { error } = await supabase
       .from("workspace_agents")
       .update({ status })
@@ -100,6 +116,10 @@ export async function addAgent(input: unknown): Promise<ActionResponse<{ agent_i
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
+
+    const userWorkspaceId = user.app_metadata?.workspace_id
+    if (!userWorkspaceId) return { data: null, error: "No workspace" }
+    if (workspace_id !== userWorkspaceId) return { data: null, error: "Unauthorized" }
 
     const { data: agent, error } = await supabase
       .from("workspace_agents")
@@ -133,6 +153,18 @@ export async function deleteAgent(input: unknown): Promise<ActionResponse<{ succ
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
 
+    const workspaceId = user.app_metadata?.workspace_id
+    if (!workspaceId) return { data: null, error: "No workspace" }
+
+    const { data: agent } = await supabase
+      .from("workspace_agents")
+      .select("workspace_id")
+      .eq("id", agent_id)
+      .single()
+
+    if (!agent) return { data: null, error: "Agent not found" }
+    if (agent.workspace_id !== workspaceId) return { data: null, error: "Unauthorized" }
+
     const { error } = await supabase
       .from("workspace_agents")
       .update({ deleted_at: new Date().toISOString() } as any)
@@ -141,10 +173,10 @@ export async function deleteAgent(input: unknown): Promise<ActionResponse<{ succ
     if (error) throw error
 
     // Fetch workspace_id for audit logging
-    const { data: agent } = await supabase.from("workspace_agents").select("workspace_id").eq("id", agent_id).maybeSingle()
-    if (agent) {
+    const { data: agentAudit } = await supabase.from("workspace_agents").select("workspace_id").eq("id", agent_id).maybeSingle()
+    if (agentAudit) {
       await logAudit({
-        workspace_id: agent.workspace_id,
+        workspace_id: agentAudit.workspace_id,
         action: 'delete_agent',
         entity_type: 'agent',
         entity_id: agent_id
@@ -170,8 +202,15 @@ export async function updateAgentConfig(input: unknown): Promise<ActionResponse<
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
 
+    const workspaceId = user.app_metadata?.workspace_id
+    if (!workspaceId) return { data: null, error: "No workspace" }
+
     // Fetch existing config to merge
     const { data: agent } = await supabase.from("workspace_agents").select("workspace_id, config").eq("id", agent_id).single()
+
+    if (!agent) return { data: null, error: "Agent not found" }
+    if (agent.workspace_id !== workspaceId) return { data: null, error: "Unauthorized" }
+
     const mergedConfig = { ...(agent?.config as any || {}), ...config }
 
     const { error } = await supabase

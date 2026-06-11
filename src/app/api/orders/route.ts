@@ -39,6 +39,6 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ order: data });
   } catch (e: any) {
     console.error("Orders PUT error:", e);
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return NextResponse.json({ error: "Failed to update order" }, { status: 500 });
   }
 }

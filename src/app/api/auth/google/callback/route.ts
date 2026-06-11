@@ -25,7 +25,10 @@ export async function GET(req: NextRequest) {
   }
   const workspaceId = state.substring(0, dotIndex);
   const signature = state.substring(dotIndex + 1);
-  const hmac = createHmac("sha256", process.env.INTERNAL_CRON_SECRET || "fallback-secret");
+  if (!process.env.INTERNAL_CRON_SECRET) {
+    return NextResponse.redirect(`${origin}/settings/integrations?error=Server configuration error`);
+  }
+  const hmac = createHmac("sha256", process.env.INTERNAL_CRON_SECRET);
   hmac.update(workspaceId);
   const expectedSig = hmac.digest("hex");
   if (signature !== expectedSig) {

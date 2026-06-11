@@ -48,6 +48,6 @@ export async function GET(req: NextRequest) {
 
   } catch (error: any) {
     console.error("[API_INIT_ERROR]", error)
-    return new NextResponse(error.message || "Internal Server Error", { status: 500 })
+    return new NextResponse("Failed to initialize connection", { status: 500 })
   }
 }

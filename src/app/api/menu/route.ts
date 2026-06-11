@@ -85,7 +85,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ items: items || [] });
   } catch (e: any) {
     console.error("Menu GET error:", e);
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return NextResponse.json({ error: "Failed to fetch menu items" }, { status: 500 });
   }
 }
 
@@ -118,7 +118,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ item: data });
   } catch (e: any) {
     console.error("Menu POST error:", e);
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return NextResponse.json({ error: "Failed to create menu item" }, { status: 500 });
   }
 }
 
@@ -154,7 +154,7 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ item: data });
   } catch (e: any) {
     console.error("Menu PUT error:", e);
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return NextResponse.json({ error: "Failed to update menu item" }, { status: 500 });
   }
 }
 
@@ -205,6 +205,6 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (e: any) {
     console.error("Menu DELETE error:", e);
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return NextResponse.json({ error: "Failed to delete menu item" }, { status: 500 });
   }
 }

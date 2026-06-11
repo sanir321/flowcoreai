@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Lora } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { StructuredData } from "@/components/seo/structured-data";
 import { AuthGuard } from "@/components/auth/auth-guard";
@@ -75,18 +74,16 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} ${lora.variable} font-sans antialiased`}>
-        <ThemeProvider>
-          <PostHogProvider>
-            <QueryProvider>
-              <AuthGuard>
-                <StructuredData />
-                {children}
-                <Toaster />
-                <CookieConsent />
-              </AuthGuard>
-            </QueryProvider>
-          </PostHogProvider>
-        </ThemeProvider>
+        <PostHogProvider>
+          <QueryProvider>
+            <AuthGuard>
+              <StructuredData />
+              {children}
+              <Toaster />
+              <CookieConsent />
+            </AuthGuard>
+          </QueryProvider>
+        </PostHogProvider>
       </body>
     </html>
   );

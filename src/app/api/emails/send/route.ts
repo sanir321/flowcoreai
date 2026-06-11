@@ -25,9 +25,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
 
+    const internalSecret = process.env.INTERNAL_CRON_SECRET;
+    if (!internalSecret) {
+      return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
+    }
     const authHeader = req.headers.get("Authorization");
-    const isValidRequest = authHeader === `Bearer ${process.env.INTERNAL_CRON_SECRET}`;
-    if (!isValidRequest) {
+    if (authHeader !== `Bearer ${internalSecret}`) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

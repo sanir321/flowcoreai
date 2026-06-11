@@ -34,6 +34,13 @@ export async function addUrlSource(input: unknown): Promise<ActionResponse<{ id:
     const { workspace_id, url, label, source_type, storage_path } = result.data
     const supabase = await createClient()
 
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) return { data: null, error: "Unauthorized" }
+
+    const userWorkspaceId = user.app_metadata?.workspace_id
+    if (!userWorkspaceId) return { data: null, error: "No workspace" }
+    if (workspace_id !== userWorkspaceId) return { data: null, error: "Unauthorized" }
+
     const { data, error } = await (supabase
       .from("kb_sources") as any)
       .insert({
@@ -220,8 +227,12 @@ export async function pasteKbText(input: { workspace_id: string; content: string
     if (!content.trim()) return { data: null, error: "Content is required" }
 
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { data: null, error: "Unauthorized" }
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) return { data: null, error: "Unauthorized" }
+
+    const userWorkspaceId = user.app_metadata?.workspace_id
+    if (!userWorkspaceId) return { data: null, error: "No workspace" }
+    if (workspace_id !== userWorkspaceId) return { data: null, error: "Unauthorized" }
 
     const { data: source, error: sourceError } = await (supabase
       .from("kb_sources") as any)

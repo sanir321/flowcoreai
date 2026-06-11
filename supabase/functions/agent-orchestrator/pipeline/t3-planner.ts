@@ -522,35 +522,9 @@ async function validatePlanActions(ctx: PipelineContext, plan: AgentPlan) {
     .maybeSingle();
   const customerMsg = (lastCustomerMsg?.content || "").toLowerCase();
 
-  // Check customer message for ordering intent (more reliable than checking LLM response)
-  const wantsOrder = /\b(order|buy|want|purchase|get|need)\b/.test(customerMsg) && !customerMsg.includes("order status") && !customerMsg.includes("my order");
-  if (wantsOrder && !actionTools.includes("create_order")) {
-    const items = parseOrderItemsFromText(customerMsg);
-    if (items.length > 0) {
-      plan.actions.push({ tool: "create_order", params: { items }, required: false });
-    }
-  }
-
-  // --- NEW: Booking intent detection ---
-  const wantsBooking = /\b(book|appointment|schedule|visit|consult|slot)\b/i.test(customerMsg)
-    && !/my appointment|existing|reschedule|rebook/i.test(customerMsg);
-  if (wantsBooking && !actionTools.includes("create_appointment")) {
-    // Only inject if no appointment already booked in this session
-    const { data: existingAppt } = await ctx.supabase
-      .from("appointments")
-      .select("id")
-      .eq("session_id", ctx.session.id)
-      .neq("status", "cancelled")
-      .limit(1)
-      .maybeSingle();
-    if (!existingAppt) {
-      plan.actions.push({ tool: "create_appointment", params: {}, required: false });
-    }
-  }
-
   // --- NEW: Lead capture hallucination detection ---
   const capturePhrases = /(captured|saved your (details|info)|added you as a lead|i have saved your)/i;
-  if (capturePhrases.test(resp) && !actionTools.includes("capture_lead")) {
+  if (capturePhrases.test(plan.response) && !actionTools.includes("capture_lead")) {
     // Strip the offending claim from response
     plan.response = plan.response.replace(/I have saved your (information|details|info)[^.]*\./gi, "");
     plan.response += " [Correction: You claimed to save contact info without calling capture_lead. Apologize and ask again.]";
@@ -558,14 +532,14 @@ async function validatePlanActions(ctx: PipelineContext, plan: AgentPlan) {
 
   // --- NEW: Pipeline stage hallucination detection ---
   const stagePhrases = /(moved (you|to|the (lead|contact)) to |promoted to|advanced to|stage (change|update)|qualified|proposal|negotiation)/i;
-  if (stagePhrases.test(resp) && !actionTools.includes("update_lead_stage")) {
+  if (stagePhrases.test(plan.response) && !actionTools.includes("update_lead_stage")) {
     plan.response = plan.response.replace(/(I['"]?ve|I have) (moved|promoted|advanced)( you| the)?[^.]*\./gi, "");
     plan.response += " [Correction: You claimed to update the pipeline stage without calling update_lead_stage. Apologize.]";
   }
 
   // --- NEW: Pricing/KB hallucination detection ---
   const pricingPhrases = /(₹|rs\.?\s*\d+|price|cost|subscription|tier|plan|worth|value)/i;
-  const hasPricingClaim = pricingPhrases.test(resp);
+  const hasPricingClaim = pricingPhrases.test(plan.response);
   const kbUsed = actionTools.includes("match_kb_chunks");
   // Check agent_traces to see if KB was called recently in this session
   let kbCalledThisSession = false;

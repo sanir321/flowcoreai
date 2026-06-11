@@ -15,7 +15,19 @@ export async function takeOverSession(input: unknown): Promise<ActionResponse<{ 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
 
+    const workspaceId = user.app_metadata?.workspace_id
+    if (!workspaceId) return { data: null, error: "No workspace" }
+
     const { session_id } = result.data
+
+    const { data: session } = await supabase
+      .from("conversation_sessions")
+      .select("workspace_id")
+      .eq("id", session_id)
+      .single()
+
+    if (!session) return { data: null, error: "Session not found" }
+    if (session.workspace_id !== workspaceId) return { data: null, error: "Unauthorized" }
 
     const { error } = await supabase
       .from("conversation_sessions")
@@ -52,6 +64,7 @@ export async function sendManualReply(input: unknown): Promise<ActionResponse<an
       .single()
 
     if (!session) return { data: null, error: "Session not found" }
+    if (session.workspace_id !== workspaceId) return { data: null, error: "Unauthorized" }
 
     // Insert outbound message
     const { data: message, error: msgError } = await supabase
@@ -116,10 +129,23 @@ export async function resolveEscalation(input: unknown): Promise<ActionResponse<
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
 
+    const workspaceId = user.app_metadata?.workspace_id
+    if (!workspaceId) return { data: null, error: "No workspace" }
+
     const { escalation_id, notes } = result.data
 
+    // Fetch escalation to verify workspace ownership
+    const { data: escalation } = await supabase
+      .from("escalation_logs")
+      .select("workspace_id, session_id")
+      .eq("id", escalation_id)
+      .single()
+
+    if (!escalation) return { data: null, error: "Escalation not found" }
+    if (escalation.workspace_id !== workspaceId) return { data: null, error: "Unauthorized" }
+
     // 1. Resolve the log
-    const { data: log, error: logError } = await supabase
+    const { error: logError } = await supabase
       .from("escalation_logs")
       .update({
         status: 'resolved',
@@ -128,8 +154,6 @@ export async function resolveEscalation(input: unknown): Promise<ActionResponse<
         notes
       })
       .eq("id", escalation_id)
-      .select()
-      .single()
 
     if (logError) return { data: null, error: logError.message }
 
@@ -137,7 +161,7 @@ export async function resolveEscalation(input: unknown): Promise<ActionResponse<
     await supabase
       .from("conversation_sessions")
       .update({ status: 'active' })
-      .eq("id", log.session_id)
+      .eq("id", escalation.session_id)
 
     revalidatePath("/inbox")
     revalidatePath("/agent-hub/escalations")
