@@ -314,30 +314,11 @@ function enrichResponseWithToolResults(
         }
         break;
       }
-      case "create_order": {
-        if (data.order_id || data.order_number) {
-          appended.push(`\n\nYour order ${data.order_number || ""} has been created. Total: Rs.${data.total || 0}. Pay via: ${data.upi_link || ""}`);
-        }
-        break;
-      }
       case "match_kb_chunks": {
         const chunks = data.chunks || data.results || [];
         if (Array.isArray(chunks) && chunks.length > 0) {
           const text = chunks.map((c: any) => c.content || c.text || "").filter(Boolean).join("\n").slice(0, 500);
           if (text) appended.push(`\n\n${text}`);
-        }
-        break;
-      }
-      case "confirm_payment": {
-        if (data.status === "paid") {
-          appended.push(`\n\n✅ Payment confirmed for order ${data.order_number || ""}. Thank you!`);
-        }
-        break;
-      }
-      case "get_order_status": {
-        if (data.order_number) {
-          const line = `Order ${data.order_number}: ${data.status}. Total: ₹${data.total || 0}.`;
-          appended.push(`\n\n${line}`);
         }
         break;
       }
@@ -570,20 +551,4 @@ async function validatePlanActions(ctx: PipelineContext, plan: AgentPlan) {
     // Auto-inject KB search for the next pass
     plan.actions.push({ tool: "match_kb_chunks", params: { query: "pricing and plans" }, required: false });
   }
-}
-
-function parseOrderItemsFromText(text: string): { name: string; qty?: number }[] {
-  const items: { name: string; qty?: number }[] = [];
-  const itemRegex = /(\d+(?:\.\d+)?)\s*(kg|g|gram|packet|dozen|litre|bottle|pack|bunch|piece|pcs)\s+(?:of\s+)?([a-z\s]+?)(?=[,.]|\s+and|\s+with|$)/gi;
-  let match;
-  while ((match = itemRegex.exec(text.toLowerCase())) !== null) {
-    let qty = parseFloat(match[1]);
-    const unit = match[2].toLowerCase();
-    const name = match[3].trim().replace(/[,.]$/, "");
-    if (["g", "gram"].includes(unit) && qty >= 100) qty = qty / 1000;
-    if (name && name.length < 50) {
-      items.push({ name, qty });
-    }
-  }
-  return items;
 }

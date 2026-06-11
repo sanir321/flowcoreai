@@ -3,7 +3,7 @@ import { matchChunks } from "./impl/kb.ts";
 import { checkAvailability, createAppointment, updateAppointment, cancelAppointment } from "./impl/calendar.ts";
 import { getHistory, update } from "./impl/contact.ts";
 import { captureLead, updateLeadStage, getPipeline, scheduleFollowUp, generateQuote } from "./impl/crm.ts";
-import { searchMenu, sendMenuMedia, createOrder, confirmPayment, getOrderStatus } from "./impl/order.ts";
+import { searchMenu, sendMenuMedia } from "./impl/order.ts";
 import { requestHandoff } from "./impl/handoff.ts";
 import { createTicket, getTicketStatus } from "./impl/support-ticket.ts";
 import { getBusinessProfile } from "./impl/business-profile.ts";
@@ -11,8 +11,6 @@ import { getBusinessProfile } from "./impl/business-profile.ts";
 const TOOL_RATE_LIMITS: Record<string, number> = {
   check_availability: 5,
   create_appointment: 2,
-  create_order: 3,
-  confirm_payment: 3,
   match_kb_chunks: 10,
   send_menu_media: 3,
   capture_lead: 2,
@@ -85,9 +83,6 @@ async function routeToImpl(toolName: string, params: any, ctx: PipelineContext):
     case "update_contact": return update(params, ctx);
     case "search_menu": return searchMenu(params, ctx);
     case "send_menu_media": return sendMenuMedia(params, ctx);
-    case "create_order": return createOrder(params, ctx);
-    case "confirm_payment": return confirmPayment(params, ctx);
-    case "get_order_status": return getOrderStatus(params, ctx);
     case "request_handoff": return requestHandoff(params, ctx);
     case "update_lead_stage": return updateLeadStage(params, ctx);
     case "get_pipeline": return getPipeline(params, ctx);

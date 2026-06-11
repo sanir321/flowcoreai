@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { 
   Calendar, ShoppingCart, Users, BookOpen, LifeBuoy, 
-  Search, CheckCircle2, Clock, MapPin, CreditCard, 
+  Search, CheckCircle2, Clock, MapPin, 
   MessageSquare, History, UserCog, Send, FileText,
   ShieldCheck, ArrowRightLeft, Sparkles
 } from "lucide-react"
@@ -25,16 +25,14 @@ const TOOL_CATEGORIES = [
     ]
   },
   {
-    title: "Sales & Ordering",
+    title: "Sales & Products",
     icon: ShoppingCart,
     color: "text-emerald-500",
     bgColor: "bg-emerald-50",
     tools: [
       { name: "search_menu", desc: "Fuzzy-search the product database for prices, availability, and categories.", icon: Search },
       { name: "send_menu_media", desc: "Sends the business menu (Image or PDF) as a native WhatsApp attachment.", icon: Send },
-      { name: "create_order", desc: "Generates an order, calculates 18% tax, and creates a secure UPI payment link.", icon: CreditCard },
-      { name: "get_order_status", desc: "Checks if a specific order is pending, paid, shipped, or delivered.", icon: History },
-      { name: "confirm_payment", desc: "Marks an order as paid after verifying transaction ID or screenshot.", icon: ShieldCheck },
+      { name: "generate_quote", desc: "Generates a formal, time-limited price quote for bulk or custom requests.", icon: FileText },
     ]
   },
   {
@@ -47,7 +45,6 @@ const TOOL_CATEGORIES = [
       { name: "update_lead_stage", desc: "Moves leads through the sales pipeline (New → Qualified → Won).", icon: ArrowRightLeft },
       { name: "get_pipeline", desc: "Retrieves a summary of active leads and their current conversion stages.", icon: FileText },
       { name: "schedule_follow_up", desc: "Schedules automated WhatsApp re-engagement messages after X hours.", icon: MessageSquare },
-      { name: "generate_quote", desc: "Generates a formal, time-limited price quote for bulk or custom requests.", icon: FileText },
     ]
   },
   {

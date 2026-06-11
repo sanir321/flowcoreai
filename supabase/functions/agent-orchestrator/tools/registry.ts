@@ -186,48 +186,6 @@ export const ALL_TOOLS: Record<string, ToolDefinition> = {
       }
     }
   },
-  create_order: {
-    name: "create_order",
-    description: "Create a new order with items. Generates a UPI payment link automatically.",
-    parameters: {
-      type: "object",
-      properties: {
-        items: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              menu_item_id: { type: "string" }, name: { type: "string" }, qty: { type: "number" }, price: { type: "number" }
-            }
-          }
-        },
-        notes: { type: "string" }
-      },
-      required: ["items"]
-    }
-  },
-  confirm_payment: {
-    name: "confirm_payment",
-    description: "Mark an order as paid after the customer provides payment proof. Requires transaction_id or proof.",
-    parameters: {
-      type: "object",
-      properties: {
-        order_id: { type: "string" },
-        payment_method: { type: "string", enum: ["upi", "cash"] },
-        transaction_id: { type: "string", description: "UPI transaction ID / UTR number from payment proof." }
-      },
-      required: ["order_id"]
-    }
-  },
-  get_order_status: {
-    name: "get_order_status",
-    description: "Check the status of an order by its ID.",
-    parameters: {
-      type: "object",
-      properties: { order_id: { type: "string" } },
-      required: ["order_id"]
-    }
-  },
   create_ticket: {
     name: "create_ticket",
     description: "Create a support ticket for issues that need tracking and follow-up.",
@@ -265,7 +223,7 @@ export const AGENT_TOOLS: Record<string, string[]> = {
     "match_kb_chunks", "capture_lead", "get_contact_history", "update_contact",
     "update_lead_stage", "get_pipeline", "schedule_follow_up",
     "generate_quote", "search_menu", "send_menu_media",
-    "create_order", "confirm_payment", "get_order_status", "request_handoff", "get_business_profile"
+    "request_handoff", "get_business_profile"
   ]
 };
 
@@ -273,14 +231,14 @@ export const SUBMIT_PLAN_TOOL = {
   type: "function",
   function: {
     name: "submit_plan",
-    description: "Submit your final plan. CRITICAL: Every action you claim to perform (creating orders, confirming payments, capturing leads) MUST have a corresponding tool in the 'actions' array. Writing about it in 'response' does NOT execute it. Examples: ordering → add create_order to actions; payment → add confirm_payment to actions; lead → add capture_lead to actions.",
+    description: "Submit your final plan. CRITICAL: Every action you claim to perform (capturing leads, scheduling follow-ups) MUST have a corresponding tool in the 'actions' array. Writing about it in 'response' does NOT execute it. Examples: lead → add capture_lead to actions; follow-up → add schedule_follow_up to actions.",
     parameters: {
       type: "object",
       properties: {
         response: { type: "string", description: "Natural language response to the user." },
         actions: {
           type: "array",
-          description: "List of tools to execute. REQUIRED for booking, ordering, payment, lead capture, etc. CRITICAL: If your response says an action was completed (payment confirmed, lead saved, order created), the corresponding tool MUST be in this array.",
+          description: "List of tools to execute. REQUIRED for lead capture, scheduling follow-ups, etc. CRITICAL: If your response says an action was completed (lead saved, follow-up scheduled), the corresponding tool MUST be in this array.",
           items: {
             type: "object",
             properties: {
