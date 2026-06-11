@@ -45,8 +45,6 @@ export interface PipelineContext {
   workspace?: {
     name?: string;
     description?: string;
-    location?: string;
-    preferred_language?: string;
     is_ai_enabled?: boolean;
     credits_balance?: number;
     owner_personal_phone?: string;
@@ -57,7 +55,6 @@ export interface PipelineContext {
     business_profile?: Record<string, any>;
     website_url?: string;
     business_type?: string;
-    kb_enabled?: boolean;
     [key: string]: any;
   };
   contact?: any;

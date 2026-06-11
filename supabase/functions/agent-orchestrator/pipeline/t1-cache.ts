@@ -23,8 +23,6 @@ export async function runT1(ctx: PipelineContext): Promise<TierResult> {
 
   // 2. Embedding similarity
   const workspace = ctx.workspace;
-  if (!workspace?.kb_enabled) return { handled: false };
-
   try {
     const embedding = await generateEmbedding(ctx.payload.message);
     ctx.embedding = embedding;

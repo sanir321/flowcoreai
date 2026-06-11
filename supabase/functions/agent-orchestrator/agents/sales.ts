@@ -9,8 +9,6 @@ export function buildSalesSystemPrompt(ctx: PipelineContext): string {
   return `
 ## Business Context
 ${workspace.name || workspace.business_name || "Business"} — ${workspace.description || workspace.business_description || ""}
-Location: ${workspace.location ?? "Not specified"}
-Language: Respond in ${workspace.preferred_language ?? "English"}.
 Personality: ${personaInstructions}
 
 ## Your Role

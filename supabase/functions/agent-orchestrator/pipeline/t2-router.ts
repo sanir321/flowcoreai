@@ -90,7 +90,7 @@ export async function runT2(ctx: PipelineContext): Promise<TierResult> {
   }
 
   // Speculative KB search: start fetching chunks while LLM is planning
-  if (ctx.agentType === "customer_support" && ctx.workspace?.kb_enabled) {
+  if (ctx.agentType === "customer_support") {
     ctx.kbSearchPromise = matchChunks({ query: ctx.payload.message }, ctx);
   }
 
