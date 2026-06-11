@@ -459,7 +459,7 @@ export function InboxClient({
                         </div>
                         <div className="flex items-center gap-1.5">
                            <ShieldCheck className="h-2.5 w-2.5 text-emerald-500" />
-                           <span className="text-[9px] font-medium text-gray-500">{selectedSession.contacts?.phone || "Verified Contact"}</span>
+                            <span className="text-[9px] font-medium text-gray-500">{selectedSession.contacts?.phone || "No contact info"}</span>
                         </div>
                      </div>
                   </div>

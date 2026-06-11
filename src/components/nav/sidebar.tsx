@@ -138,29 +138,7 @@ export function Sidebar() {
            </div>
         </div>
 
-        {/* Status Card - Conduit Aesthetic */}
-        <div className="px-2 pt-4">
-           <div className="p-5 rounded-2xl bg-gray-50 border border-gray-100 space-y-4 relative overflow-hidden group">
-              <div className="absolute top-0 right-0 p-2 opacity-20 group-hover:opacity-100 transition-opacity">
-                 <Zap className="h-3 w-3 text-[#c65f39] fill-[#c65f39]" />
-              </div>
-              <div className="space-y-1 relative z-10">
-                 {!isCollapsed && <span className="text-[9px] font-bold text-gray-400">Sync Status</span>}
-                 <div className="flex items-baseline gap-1">
-                    <span className="text-xl font-bold text-gray-900 leading-none tracking-tighter">98.2</span>
-                    {!isCollapsed && <span className="text-[10px] font-bold text-[#c65f39]">%</span>}
-                 </div>
-              </div>
-              <div className="h-1 w-full bg-gray-200 rounded-full overflow-hidden">
-                 <motion.div 
-                   initial={{ width: 0 }}
-                   animate={{ width: '98.2%' }}
-                   transition={{ duration: 1.5, ease: "easeOut" }}
-                   className="h-full bg-gradient-to-r from-[#c65f39] to-[#dd6b00] rounded-full shadow-[0_0_8px_rgba(198,95,57,0.2)]" 
-                 />
-              </div>
-           </div>
-        </div>
+
       </div>
 
       {/* Footer / Sign Out */}

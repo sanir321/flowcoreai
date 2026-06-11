@@ -142,7 +142,7 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
   const safeDaily = (safeHours.daily && typeof safeHours.daily === "object" ? safeHours.daily : {}) as Record<string, any>
   const safeContact = (profile.contact && typeof profile.contact === "object" ? profile.contact : {}) as any
 
-  const suggestedAmenities = AMENITIES_BY_TYPE[businessType] || AMENITIES_BY_TYPE.other
+  const suggestedAmenities = AMENITIES_BY_TYPE[businessType] || AMENITIES_BY_TYPE.other || []
 
   return (
     <div className="space-y-8 p-1">

@@ -217,14 +217,15 @@ export async function updateBookingSession(
 async function extractFields(
   message: string,
   missingFields: string[],
-  collected: Record<string, string>
+  collected: Record<string, string>,
+  servicesOffered?: string
 ): Promise<Record<string, { value: string | null; confidence: "high" | "low" }>> {
   const now = new Date();
   const today = now.toISOString().split("T")[0];
   const dayName = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][now.getDay()];
 
   const fieldDescriptions: Record<string, string> = {
-    service: "The dental service (e.g. cleaning, root canal, whitening).",
+    service: `The service the customer wants. Available services: ${servicesOffered || "our services"}.`,
     date: `The date. Today is ${today} (${dayName}). Convert relative dates like 'tomorrow', 'this afternoon', 'next Monday' to YYYY-MM-DD. If 'this afternoon' or 'tonight', use ${today}.`,
     time: "The time. Convert to HH:MM (24h format). If only a range (e.g. 'morning'), return null.",
     name: "The customer's name.",
@@ -242,7 +243,7 @@ async function extractFields(
       max_tokens: 150,
       temperature: 0,
       response_format: { type: "json_object" },
-      system: `You are a specialized dental booking data extractor.
+      system: `You are a specialized booking data extractor.
 Today is ${today} (${dayName}).
 Extract the following fields from the user's message if present:
 ${missingFields.map(f => `- ${f}: ${fieldDescriptions[f]}`).join("\n")}
@@ -328,7 +329,7 @@ export async function handleBooking(ctx: PipelineContext): Promise<TierResult | 
   const missing = getMissingFields(collected);
 
   // 1. Multi-field extraction from the current message
-  const extractions = await extractFields(ctx.payload.message, missing, collected);
+  const extractions = await extractFields(ctx.payload.message, missing, collected, ctx.workspace?.services_offered);
   let fieldsUpdated = false;
 
   for (const [field, data] of Object.entries(extractions)) {

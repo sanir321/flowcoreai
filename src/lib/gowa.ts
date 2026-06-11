@@ -274,6 +274,13 @@ export async function logoutSession(deviceId: string): Promise<void> {
   });
 }
 
+export async function deleteDevice(deviceId: string): Promise<void> {
+  await fetch(`${GOWA_BASE_URL}/devices/${deviceId}`, {
+    method: 'DELETE',
+    headers: gowaHeaders
+  });
+}
+
 /**
  * Get all chats for a specific device
  */

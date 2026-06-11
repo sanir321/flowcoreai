@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import { logAudit } from "@/lib/audit"
+import { logoutSession, deleteDevice } from "@/lib/gowa"
 
 export interface Workspace {
   id: string
@@ -205,6 +206,30 @@ export async function deleteWorkspace(): Promise<ActionResponse<{ success: true 
     const workspaceId = user.app_metadata?.workspace_id
     if (!workspaceId) return { data: null, error: "No workspace found" }
 
+    // Cleanup GoWA session before deleting workspace
+    const { data: gowaSession } = await supabase
+      .from("gowa_sessions")
+      .select("gowa_session_id")
+      .eq("workspace_id", workspaceId)
+      .is("deleted_at", null)
+      .maybeSingle()
+
+    if (gowaSession?.gowa_session_id) {
+      await logoutSession(gowaSession.gowa_session_id).catch(e =>
+        console.error("[WORKSPACE_DELETE_LOGOUT_FAILED]", e)
+      )
+      await deleteDevice(gowaSession.gowa_session_id).catch(e =>
+        console.error("[WORKSPACE_DELETE_DEVICE_FAILED]", e)
+      )
+    }
+
+    // Soft-delete gowa_sessions
+    await supabase
+      .from("gowa_sessions")
+      .update({ deleted_at: new Date().toISOString() } as any)
+      .eq("workspace_id", workspaceId)
+
+    // Soft-delete workspace
     const admin = createAdminClient()
     const { error } = await admin
       .from("workspaces")

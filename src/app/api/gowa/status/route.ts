@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { NextRequest, NextResponse } from "next/server"
 import { rateLimit } from "@/lib/rate-limit"
 
@@ -22,12 +23,13 @@ export async function GET(req: NextRequest) {
     if (!workspaceId) return new NextResponse("No workspace found for user", { status: 404 })
 
     // Check DB session
-    const { data: session } = await (supabase
+    const { data: session, error: sessionErr } = await (supabase
         .from("gowa_sessions")
         .select("status, phone_jid, display_name, error_message, gowa_session_id")
         .eq("workspace_id", workspaceId)
         .is("deleted_at", null)
         .maybeSingle() as any)
+    console.log("[STATUS_SESSION]", { workspaceId, session, sessionErr })
 
     // Check GoWA devices — match by device name or stored session ID only
     // Never fallback to any logged-in device (prevents cross-workspace contamination)
@@ -68,25 +70,53 @@ export async function GET(req: NextRequest) {
           gowaDisplay = candidate.display_name || ""
           gowaDeviceId = candidate.id || ""
         }
+        console.log("[STATUS_DEBUG]", { workspaceId, deviceName, deviceCount: devices.length, named: !!named, byId: !!byId, byJid: !!byJid, byDisplay: !!byDisplay, candidate: !!candidate, candidateState: candidate?.state, gowaConnected, sessionStatus: session?.status })
       }
-    } catch {}
+    } catch (e) {
+      console.error("[STATUS_GOWA_FETCH_ERROR]", e)
+    }
 
-    // Auto-update DB if device is connected on GoWA but DB is stale
+    // Auto-sync DB with GoWA state
     if (gowaConnected && gowaJid && session?.status !== "connected") {
-      await (supabase
+      // Device is connected on GoWA but DB is stale — update to connected
+      const admin = createAdminClient()
+      const { data: updated, error: upsertErr } = await admin
         .from("gowa_sessions")
-        .upsert({
-          workspace_id: workspaceId,
+        .update({
           gowa_session_id: gowaDeviceId,
           phone_jid: gowaJid,
           display_name: gowaDisplay,
           status: "connected",
           updated_at: new Date().toISOString(),
-        }) as any)
+        })
+        .eq("workspace_id", workspaceId)
+        .is("deleted_at", null)
+        .select()
+      console.log("[STATUS_SYNC]", { workspaceId, gowaDeviceId, gowaJid, updated, upsertErr })
       return NextResponse.json({
         status: "connected",
         phone: gowaJid,
         name: gowaDisplay,
+        message: null,
+      })
+    }
+
+    if (!gowaConnected && session?.status === "connected") {
+      // Device is disconnected on GoWA but DB says connected — update to disconnected
+      const admin = createAdminClient()
+      const { error: updateErr } = await admin
+        .from("gowa_sessions")
+        .update({
+          status: "disconnected",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("workspace_id", workspaceId)
+        .is("deleted_at", null)
+      if (updateErr) console.error("[STATUS_SYNC_DISCONNECT_FAILED]", updateErr)
+      return NextResponse.json({
+        status: "disconnected",
+        phone: null,
+        name: null,
         message: null,
       })
     }
