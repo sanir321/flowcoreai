@@ -13,6 +13,8 @@ const MessageSchema = z.object({
   workspace_id: z.string().uuid(),
   session_token: z.string().uuid(),
   message: z.string().min(1).max(2000),
+  customer_name: z.string().optional(),
+  customer_email: z.string().email().optional(),
 });
 
 const corsHeaders = {
@@ -39,7 +41,7 @@ export async function POST(req: NextRequest) {
       return new Response("Invalid request", { status: 400 });
     }
 
-    const { workspace_id, session_token, message } = result.data;
+    const { workspace_id, session_token, message, customer_name, customer_email } = result.data;
 
     // 0.5 Validate Workspace exists and widget is enabled for it
     const { data: workspace } = await supabaseAdmin
@@ -102,13 +104,15 @@ export async function POST(req: NextRequest) {
 
     if (!session) {
       // Upsert contact for widget user
+      const contactName = customer_name || "Widget User";
       const { data: contact } = await supabaseAdmin
         .from("contacts")
         .upsert({
           workspace_id,
           session_token,
           channel: "widget",
-          name: "Widget User",
+          name: contactName,
+          ...(customer_email ? { email: customer_email } : {}),
         }, { onConflict: "workspace_id,session_token,channel" })
         .select()
         .single();
@@ -121,7 +125,7 @@ export async function POST(req: NextRequest) {
             workspace_id,
             contact_id: contact?.id,
             customer_jid: session_token,
-            customer_name: "Widget User",
+            customer_name: contactName,
             channel: "widget",
             agent_type: "customer_support",
             status: "active",
@@ -147,6 +151,19 @@ export async function POST(req: NextRequest) {
 
     if (!session) throw new Error("Could not initialize session");
 
+    // Update contact/session with real name if provided and currently placeholder
+    if (customer_name && session.customer_name === "Widget User") {
+      await supabaseAdmin.from("conversation_sessions")
+        .update({ customer_name, updated_at: new Date().toISOString() })
+        .eq("id", session.id);
+      if (session.contact_id) {
+        await supabaseAdmin.from("contacts")
+          .update({ name: customer_name, ...(customer_email ? { email: customer_email } : {}), updated_at: new Date().toISOString() })
+          .eq("id", session.contact_id);
+      }
+      session.customer_name = customer_name;
+    }
+
     // 2. Store Inbound Message
     await supabaseAdmin.from("messages").insert({
       workspace_id,
@@ -161,7 +178,8 @@ export async function POST(req: NextRequest) {
       body: {
         workspace_id,
         customer_jid: session_token,
-        customer_name: session?.customer_name || "Widget User",
+        customer_name: customer_name || session?.customer_name || "Widget User",
+        customer_email: customer_email || null,
         message,
         channel: "widget",
         agent_type: "customer_support",
