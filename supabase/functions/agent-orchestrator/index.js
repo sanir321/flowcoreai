@@ -2780,7 +2780,7 @@ Deno.serve(async (req) => {
     const legacyKey = Deno.env.get("LEGACY_SERVICE_ROLE_KEY") || "";
     const authorized = token && (token === serviceRoleKey || token === internalSecret || legacyKey && token === legacyKey);
     if (!authorized) {
-      console.error(`[ORCHESTRATOR] Auth Mismatch. Recv: ${token.substring(0, 8)}... SRK: ${serviceRoleKey.substring(0, 8)}...`);
+      console.error(`[ORCHESTRATOR] Auth Mismatch`);
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: responseHeaders

@@ -32,6 +32,13 @@ export async function POST(req: NextRequest) {
 
     const workspaceId = user.app_metadata?.workspace_id
 
+    // Verify workspace exists (stale JWT guard)
+    if (workspaceId) {
+      const { data: workspace } = await supabase
+        .from("workspaces").select("id").eq("id", workspaceId).is("deleted_at", null).maybeSingle()
+      if (!workspace) return NextResponse.json({ error: "Workspace not found" }, { status: 404 })
+    }
+
     if (workspaceId) {
       // Get GoWA device IDs before deleting rows
       const { data: gowaDevices } = await supabase

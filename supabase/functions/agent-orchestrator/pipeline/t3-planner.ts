@@ -531,38 +531,6 @@ async function validatePlanActions(ctx: PipelineContext, plan: AgentPlan) {
     }
   }
 
-  // Check customer message for payment confirmation intent
-  const confirmsPayment = /(?:paid|payment\s*(?:done|confirm|complete|made|success)|confirm\s*(?:payment|paid)|upi)/i.test(customerMsg);
-  if (confirmsPayment && !actionTools.includes("confirm_payment")) {
-    const { data: lastOrder } = await ctx.supabase
-      .from("orders")
-      .select("id, order_number, status")
-      .eq("workspace_id", ctx.payload.workspace_id)
-      .eq("session_id", ctx.session.id)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (lastOrder && lastOrder.status !== "paid") {
-      plan.actions.push({ tool: "confirm_payment", params: { order_id: lastOrder.id }, required: false });
-    }
-  }
-
-  // Legacy: also check LLM response text for payment claims (backup)
-  const resp = plan.response.toLowerCase();
-  if (!actionTools.includes("confirm_payment") && /(?:paid|payment|confirm.*(?:paid|payment)|(?:paid|payment).*confirm)/i.test(resp) && !confirmsPayment) {
-    const { data: lastOrder } = await ctx.supabase
-      .from("orders")
-      .select("id, order_number, status")
-      .eq("workspace_id", ctx.payload.workspace_id)
-      .eq("session_id", ctx.session.id)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (lastOrder && lastOrder.status !== "paid") {
-      plan.actions.push({ tool: "confirm_payment", params: { order_id: lastOrder.id }, required: false });
-    }
-  }
-
   // --- NEW: Booking intent detection ---
   const wantsBooking = /\b(book|appointment|schedule|visit|consult|slot)\b/i.test(customerMsg)
     && !/my appointment|existing|reschedule|rebook/i.test(customerMsg);

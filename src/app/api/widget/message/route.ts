@@ -17,13 +17,15 @@ const MessageSchema = z.object({
   customer_email: z.string().email().optional(),
 });
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-  "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
-  "X-Content-Type-Options": "nosniff",
-};
+function getCorsHeaders(origin: string) {
+  return {
+    "Access-Control-Allow-Origin": origin || "*",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+    "X-Content-Type-Options": "nosniff",
+  };
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -75,17 +77,19 @@ export async function POST(req: NextRequest) {
       return new Response("Widget is currently disabled", { status: 403 });
     }
 
-    // Optional domain allowlist check (Origin header vs configured domains)
+    // Domain allowlist check (Origin header vs configured domains)
     const origin = req.headers.get("origin") || req.headers.get("referer") || "";
+    let allowedOrigin = "*";
     if (origin && widgetConfig.allowed_domains && Array.isArray(widgetConfig.allowed_domains) && widgetConfig.allowed_domains.length > 0) {
       try {
         const originDomain = new URL(origin).hostname;
-        const allowed = (widgetConfig.allowed_domains as string[]).some(d => 
+        const allowed = (widgetConfig.allowed_domains as string[]).some(d =>
           originDomain === d || originDomain.endsWith("." + d)
         );
         if (!allowed) {
           return new Response("Domain not allowed", { status: 403 });
         }
+        allowedOrigin = origin;
       } catch {
         // Invalid URL — skip domain check
       }
@@ -202,7 +206,7 @@ export async function POST(req: NextRequest) {
 
     // Return the combined reply for the widget UI
     return NextResponse.json({ reply }, {
-      headers: corsHeaders,
+      headers: getCorsHeaders(allowedOrigin),
     });
 
   } catch (error: any) {
@@ -242,7 +246,7 @@ export async function GET(req: NextRequest) {
       .maybeSingle();
 
     if (!session) {
-      return NextResponse.json({ messages: [] }, { headers: corsHeaders });
+      return NextResponse.json({ messages: [] }, { headers: getCorsHeaders("*") });
     }
 
     let query = supabaseAdmin
@@ -261,17 +265,17 @@ export async function GET(req: NextRequest) {
     if (error) throw error;
 
     return NextResponse.json({ messages: messages || [] }, {
-      headers: { ...corsHeaders, "Cache-Control": "no-cache" },
+      headers: { ...getCorsHeaders("*"), "Cache-Control": "no-cache" },
     });
 
   } catch (error: any) {
     console.error("Widget Poll Error:", error);
-    return NextResponse.json({ messages: [] }, { status: 500, headers: corsHeaders });
+    return NextResponse.json({ messages: [] }, { status: 500, headers: getCorsHeaders("*") });
   }
 }
 
 export async function OPTIONS() {
   return new Response(null, {
-    headers: corsHeaders,
+    headers: getCorsHeaders("*"),
   });
 }

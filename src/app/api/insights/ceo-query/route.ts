@@ -25,6 +25,11 @@ export async function POST(req: Request) {
     const workspaceId = user.app_metadata.workspace_id
     if (!workspaceId) return new NextResponse("No workspace", { status: 400 })
 
+    // Verify workspace exists (stale JWT guard)
+    const { data: workspace } = await supabase
+      .from("workspaces").select("id").eq("id", workspaceId).is("deleted_at", null).maybeSingle()
+    if (!workspace) return NextResponse.json({ reply: "Workspace not found" }, { status: 404 })
+
     const parsed = QuerySchema.safeParse(await req.json())
     if (!parsed.success) {
       return NextResponse.json({ reply: "Invalid request" }, { status: 400 })

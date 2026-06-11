@@ -17,6 +17,11 @@ export async function POST(req: NextRequest) {
     const workspaceId = user.app_metadata?.workspace_id
     if (!workspaceId) return NextResponse.json({ error: "No workspace found" }, { status: 404 })
 
+    // Verify workspace exists (stale JWT guard)
+    const { data: workspace } = await supabase
+      .from("workspaces").select("id").eq("id", workspaceId).is("deleted_at", null).maybeSingle()
+    if (!workspace) return NextResponse.json({ error: "Workspace not found" }, { status: 404 })
+
     const [workspaceRes, contactsRes, sessionsRes, messagesRes, agentsRes] = await Promise.all([
       supabase.from("workspaces").select("*").eq("id", workspaceId).single(),
       supabase.from("contacts").select("*").eq("workspace_id", workspaceId).is("deleted_at", null),

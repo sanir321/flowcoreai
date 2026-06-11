@@ -21,8 +21,8 @@ function normalizeJID(jid: string): string {
 
 async function verifySignature(payload: string, signature: string | null, secret: string | undefined): Promise<boolean> {
   if (!secret) {
-    console.warn('[WEBHOOK] GOWA_WEBHOOK_SECRET not configured, skipping verification')
-    return true
+    console.error('[WEBHOOK] GOWA_WEBHOOK_SECRET not configured — rejecting request')
+    return false
   }
   if (!signature) {
     console.error('[WEBHOOK] No signature header found')

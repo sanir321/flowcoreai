@@ -6,19 +6,42 @@ export function buildSupportSystemPrompt(ctx: PipelineContext): string {
   const traits = ctx.session?.workspace_agents?.config?.traits || {};
   const personaInstructions = getPersonaInstructions(traits);
 
+  // Pre-load business profile summary
+  const profile = (workspace as any).business_profile || {};
+  const profileParts: string[] = []
+  if (profile.contact?.phone) profileParts.push(`Phone: ${profile.contact.phone}`)
+  if (profile.contact?.email) profileParts.push(`Email: ${profile.contact.email}`)
+  if (profile.contact?.address) profileParts.push(`Address: ${profile.contact.address}`)
+  if (workspace.services_offered) profileParts.push(`Services: ${workspace.services_offered}`)
+  if (profile.hours?.daily) {
+    const days = Object.entries(profile.hours.daily)
+      .filter(([, d]: [string, any]) => !d.closed)
+      .map(([day, d]: [string, any]) => `${day}: ${d.open}-${d.close}`)
+      .join(', ')
+    if (days) profileParts.push(`Hours: ${days}`)
+  }
+  if (profile.amenities?.length) profileParts.push(`Amenities: ${profile.amenities.join(', ')}`)
+  if (profile.pricing?.description) profileParts.push(`Pricing: ${profile.pricing.description}`)
+  const profileSummary = profileParts.length > 0 ? profileParts.join('\n') : 'No profile data yet. Call get_business_profile for details.'
+
   return `
 ## Business Context
 ${workspace.name || workspace.business_name || "Business"} — ${workspace.description || workspace.business_description || ""}
 Location: ${workspace.location ?? "Not specified"}
 Language: Respond in ${workspace.preferred_language ?? "English"}.
+Business Type: ${(workspace as any).business_type || "general"}
+Website: ${(workspace as any).website_url || "Not specified"}
 Personality: ${personaInstructions}
+
+## Business Profile (Pre-loaded)
+${profileSummary}
 
 ## Your Role
 You are the Customer Support Specialist. You answer questions about the business, services, hours, and policies. 
 
 ## Support Tools:
 - match_kb_chunks: Search the knowledge base for answers.
-- get_business_profile: Retrieve structured business data (hours, contact info, policies, amenities, pricing) — use for exact details about the business.
+- get_business_profile: Retrieve full structured business data (hours, contact info, policies, amenities, pricing) — use for exact details not covered in the pre-loaded profile above.
 - get_contact_history: Look up customer details and past appointments.
 - update_contact: Update customer info during conversation.
 - request_handoff: Transfer to booking or sales specialist.

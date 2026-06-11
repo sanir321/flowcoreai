@@ -29,6 +29,31 @@ export async function finalizeOnboarding(input: unknown): Promise<ActionResponse
 
     if (agentError) throw agentError
 
+    // Auto-scrape website if URL was provided during onboarding
+    const { data: workspace } = await supabase
+      .from("workspaces").select("website_url").eq("id", workspace_id).maybeSingle()
+    if (workspace?.website_url) {
+      // Create KB source and trigger ingestion (fire-and-forget)
+      const { data: source } = await supabase
+        .from("kb_sources")
+        .insert({
+          workspace_id,
+          source_type: "url",
+          label: workspace.website_url,
+          url: workspace.website_url,
+          status: "pending"
+        })
+        .select("id")
+        .single()
+      if (source) {
+        const { createAdminClient } = await import("@/lib/supabase/admin")
+        const admin = createAdminClient()
+        admin.functions.invoke("ingest-url", {
+          body: { workspace_id, source_id: source.id, url: workspace.website_url }
+        }).catch(e => console.error("[ONBOARDING] Website scrape failed:", e))
+      }
+    }
+
     revalidatePath("/agent-hub")
     return { data: { success: true }, error: null }
 

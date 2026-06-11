@@ -42,7 +42,24 @@ export interface PipelineContext {
   supabase: any;
   session: any;
   payload: WebhookPayload;
-  workspace?: any;
+  workspace?: {
+    name?: string;
+    description?: string;
+    location?: string;
+    preferred_language?: string;
+    is_ai_enabled?: boolean;
+    credits_balance?: number;
+    owner_personal_phone?: string;
+    owner_id?: string;
+    welcome_template?: string;
+    guardrail_config?: any;
+    services_offered?: string;
+    business_profile?: Record<string, any>;
+    website_url?: string;
+    business_type?: string;
+    kb_enabled?: boolean;
+    [key: string]: any;
+  };
   contact?: any;
   agentType?: string;
   routingReason?: string;

@@ -313,6 +313,16 @@ export default function OnboardingPage() {
                     )}
                   </div>
 
+                  <div className="space-y-2.5 text-left text-gray-900">
+                    <Label className="text-[11px] font-bold text-neutral-400 ml-1">Website URL</Label>
+                    <Input 
+                      {...form.register("website_url")}
+                      placeholder="https://acme.com"
+                      className="h-14 bg-white/5 border-white/10 rounded-xl focus:border-[#D95E46] text-white placeholder:text-neutral-600 transition-all"
+                    />
+                    <p className="text-[10px] text-neutral-500 ml-1">We'll auto-populate your business profile from your website</p>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-6 text-left text-gray-900">
                     <div className="space-y-2.5">
                       <Label className="text-[11px] font-bold text-neutral-400 ml-1">Company size</Label>
@@ -351,15 +361,6 @@ export default function OnboardingPage() {
                        <p className="text-red-500 text-[10px] font-bold ml-1 mt-1">Required</p>
                       )}
                     </div>
-                  </div>
-
-                  <div className="space-y-2.5 text-left text-gray-900">
-                    <Label className="text-[11px] font-bold text-neutral-400 ml-1">Website URL (Optional)</Label>
-                    <Input 
-                      {...form.register("website_url")}
-                      placeholder="https://acme.com"
-                      className="h-14 bg-white/5 border-white/10 rounded-xl focus:border-[#D95E46] text-white placeholder:text-neutral-600 transition-all"
-                    />
                   </div>
                 </div>
 

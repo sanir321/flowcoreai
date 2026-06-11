@@ -40,11 +40,17 @@ export async function GET(req: NextRequest) {
 
     // 2. Validate allowed domains
     const origin = req.headers.get("origin") || req.headers.get("referer") || "";
+    let allowedOrigin = "*";
     if (config?.allowed_domains && config.allowed_domains.length > 0) {
-      const hostname = origin ? new URL(origin).hostname : "";
-      const allowed = config.allowed_domains.some((d: string) => hostname === d || hostname.endsWith("." + d));
-      if (!allowed) {
-        return new Response("Domain not allowed", { status: 403 });
+      try {
+        const hostname = origin ? new URL(origin).hostname : "";
+        const allowed = config.allowed_domains.some((d: string) => hostname === d || hostname.endsWith("." + d));
+        if (!allowed) {
+          return new Response("Domain not allowed", { status: 403 });
+        }
+        allowedOrigin = origin;
+      } catch {
+        // Invalid URL — skip domain check
       }
     }
 
@@ -70,7 +76,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(responseData, {
       headers: {
         "Cache-Control": "no-store, no-cache, must-revalidate",
-        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Origin": allowedOrigin,
       },
     });
 

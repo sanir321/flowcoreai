@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { motion } from "framer-motion"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -9,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import {
   Loader2, MapPin, Phone, Mail, Globe, Clock, Plus, Trash2,
-  Wifi, Sparkles, Building2, DollarSign, AtSign, Link2, Hash, Tag,
+  Sparkles, Building2, AtSign, Link2,
 } from "lucide-react"
 import { toast } from "sonner"
 import { updateBusinessProfile } from "@/app/actions/business-profile"
@@ -24,30 +23,19 @@ const DAY_LABELS: Record<string, string> = {
   friday: "Fri", saturday: "Sat", sunday: "Sun",
 }
 
-const AMENITIES_LIST = [
-  { key: "general_construction", label: "General Construction" },
-  { key: "architectural_design", label: "Architectural Design" },
-  { key: "interior_design", label: "Interior Design" },
-  { key: "lighting_design", label: "Lighting Design" },
-  { key: "cctv_installation", label: "CCTV Installation" },
-  { key: "electrical_plumbing", label: "Electrical & Plumbing" },
-  { key: "planning_estimation", label: "Planning & Estimation" },
-  { key: "budgeting", label: "Budgeting" },
-  { key: "property_management", label: "Property Management" },
-  { key: "residential_construction", label: "Residential Construction" },
-  { key: "commercial_construction", label: "Commercial Construction" },
-  { key: "home_automation", label: "Home Automation" },
-  { key: "solar_integration", label: "Solar Integration" },
-  { key: "wifi", label: "WiFi" },
-  { key: "parking", label: "Parking" },
-  { key: "restaurant", label: "Restaurant" },
-  { key: "pet_friendly", label: "Pet Friendly" },
-  { key: "outdoor_seating", label: "Outdoor Seating" },
-  { key: "online_booking", label: "Online Booking" },
-  { key: "telehealth", label: "Telehealth" },
-  { key: "delivery", label: "Delivery" },
-  { key: "takeaway", label: "Takeaway" },
-]
+const AMENITIES_BY_TYPE: Record<string, string[]> = {
+  restaurant: ["Dine-in", "Takeaway", "Delivery", "Reservations", "Outdoor Seating", "Private Dining", "Catering", "Full Bar", "Wifi", "Parking"],
+  hotel: ["Wifi", "Parking", "Pool", "Spa", "Gym", "Room Service", "Restaurant", "Bar", "Conference Room", "Airport Shuttle", "Laundry", "Pet Friendly"],
+  clinic: ["Parking", "Wheelchair Access", "Telehealth", "Lab On-Site", "Pharmacy", "Waiting Area", "Wifi", "Insurance Accepted"],
+  dental: ["Parking", "Wheelchair Access", "Telehealth", "Emergency Services", "X-Ray On-Site", "Wifi", "Insurance Accepted"],
+  salon: ["Walk-ins Welcome", "Online Booking", "Wifi", "Parking", "Private Rooms", "Gift Cards"],
+  fitness: ["Group Classes", "Personal Training", "Wifi", "Parking", "Lockers", "Showers", "Sauna", "Childcare"],
+  retail: ["Online Ordering", "In-Store Pickup", "Delivery", "Gift Cards", "Loyalty Program", "Wifi"],
+  real_estate: ["Virtual Tours", "Open Houses", "Free Consultation", "Market Analysis", "Property Management"],
+  tech: ["Remote Support", "Free Consultation", "On-Site Service", "Maintenance Plans", "Cloud Hosting"],
+  education: ["Online Classes", "In-Person Classes", "Group Sessions", "Private Tutoring", "Study Materials", "Wifi"],
+  other: ["Wifi", "Parking", "Online Booking", "Delivery"],
+}
 
 const POLICY_PRESETS = [
   { key: "privacy", label: "Privacy Policy" },
@@ -74,6 +62,7 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
   const [mounted, setMounted] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [servicesOffered, setServicesOffered] = useState(initialServicesOffered)
+  const [customAmenity, setCustomAmenity] = useState("")
   
   const [profile, setProfile] = useState<BusinessProfile>(() => ({
     workspace_id: workspaceId,
@@ -152,7 +141,8 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
   const safeHours = (profile.hours && typeof profile.hours === "object" ? profile.hours : { daily: {} }) as any
   const safeDaily = (safeHours.daily && typeof safeHours.daily === "object" ? safeHours.daily : {}) as Record<string, any>
   const safeContact = (profile.contact && typeof profile.contact === "object" ? profile.contact : {}) as any
-  const safePricing = (profile.pricing && typeof profile.pricing === "object" ? profile.pricing : { description: "", currency: "INR" }) as any
+
+  const suggestedAmenities = AMENITIES_BY_TYPE[businessType] || AMENITIES_BY_TYPE.other
 
   return (
     <div className="space-y-8 p-1">
@@ -178,7 +168,7 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
               <div className="h-10 w-10 rounded-xl bg-orange-50 flex items-center justify-center text-[#c65f39]">
                 <Phone className="h-5 w-5" />
               </div>
-              <h2 className="text-lg font-semibold text-gray-900 tracking-tight">Contact Channels</h2>
+              <h2 className="text-lg font-semibold text-gray-900 tracking-tight">Contact</h2>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -241,7 +231,7 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
               <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500">
                 <Clock className="h-5 w-5" />
               </div>
-              <h2 className="text-lg font-semibold text-gray-900 tracking-tight">Operating Hours</h2>
+              <h2 className="text-lg font-semibold text-gray-900 tracking-tight">Hours</h2>
             </div>
 
             <div className="space-y-4">
@@ -296,14 +286,14 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
         </div>
 
         <div className="space-y-8">
-          {/* Amenities & Services */}
+          {/* Services & Amenities */}
           <Card className="p-8 border-gray-100 rounded-[2rem] shadow-sm space-y-8">
              <div className="space-y-6">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-xl bg-purple-50 flex items-center justify-center text-purple-500">
                     <Sparkles className="h-5 w-5" />
                   </div>
-                  <h2 className="text-lg font-semibold text-gray-900 tracking-tight">Services Offered</h2>
+                  <h2 className="text-lg font-semibold text-gray-900 tracking-tight">What We Offer</h2>
                 </div>
 
                 <div className="space-y-1.5">
@@ -318,18 +308,18 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
                 </div>
 
                 <div className="pt-4 space-y-3">
-                  <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">Additional Amenities</Label>
+                  <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">Amenities</Label>
                   <div className="flex flex-wrap gap-2">
-                    {AMENITIES_LIST.map(item => {
-                      const isActive = safeAmenities.includes(item.label)
+                    {suggestedAmenities.map(item => {
+                      const isActive = safeAmenities.includes(item)
                       return (
                         <button
-                          key={item.key}
+                          key={item}
                           type="button"
                           onClick={() => {
                             const newAmenities = isActive
-                              ? safeAmenities.filter(a => a !== item.label)
-                              : [...safeAmenities, item.label]
+                              ? safeAmenities.filter(a => a !== item)
+                              : [...safeAmenities, item]
                             setField("amenities", newAmenities)
                           }}
                           className={cn(
@@ -339,38 +329,42 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
                               : "bg-gray-50/50 border-gray-100 text-gray-500 hover:bg-white hover:border-gray-200"
                           )}
                         >
-                          {item.label}
+                          {item}
                         </button>
                       )
                     })}
                   </div>
-                </div>
-             </div>
-
-             <div className="pt-8 border-t border-gray-100 space-y-6">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-500">
-                    <Building2 className="h-5 w-5" />
+                  <div className="flex gap-2 mt-2">
+                    <Input
+                      value={customAmenity}
+                      onChange={e => setCustomAmenity(e.target.value)}
+                      placeholder="Add custom amenity..."
+                      className="h-9 text-xs rounded-lg"
+                      onKeyDown={e => {
+                        if (e.key === "Enter" && customAmenity.trim()) {
+                          e.preventDefault()
+                          if (!safeAmenities.includes(customAmenity.trim())) {
+                            setField("amenities", [...safeAmenities, customAmenity.trim()])
+                          }
+                          setCustomAmenity("")
+                        }
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-9 px-3"
+                      onClick={() => {
+                        if (customAmenity.trim() && !safeAmenities.includes(customAmenity.trim())) {
+                          setField("amenities", [...safeAmenities, customAmenity.trim()])
+                          setCustomAmenity("")
+                        }
+                      }}
+                    >
+                      <Plus className="h-3 w-3" />
+                    </Button>
                   </div>
-                  <h2 className="text-lg font-semibold text-gray-900 tracking-tight">Business Policies</h2>
-                </div>
-
-                <div className="grid grid-cols-1 gap-6">
-                  {POLICY_PRESETS.map(item => (
-                    <div key={item.key} className="space-y-1.5">
-                      <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">{item.label}</Label>
-                      <Textarea 
-                        value={safePolicies[item.key] || ""}
-                        onChange={e => {
-                          const newPolicies = { ...safePolicies }
-                          newPolicies[item.key] = e.target.value
-                          setField("policies", newPolicies)
-                        }}
-                        placeholder={`Describe your ${item.label.toLowerCase()}...`}
-                        className="min-h-[80px] rounded-xl bg-gray-50/50 border-gray-100 focus:bg-white focus:border-[#c65f39] focus:ring-1 focus:ring-[#c65f39]/10 transition-all text-xs resize-none"
-                      />
-                    </div>
-                  ))}
                 </div>
              </div>
           </Card>
@@ -381,17 +375,17 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
               <div className="h-10 w-10 rounded-xl bg-sky-50 flex items-center justify-center text-sky-500">
                 <Globe className="h-5 w-5" />
               </div>
-              <h2 className="text-lg font-semibold text-gray-900 tracking-tight">Social Media</h2>
+              <h2 className="text-lg font-semibold text-gray-900 tracking-tight">Social</h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {[
-                { key: "facebook", label: "Facebook", icon: "facebook" },
-                { key: "instagram", label: "Instagram", icon: "instagram" },
-                { key: "linkedin", label: "LinkedIn", icon: "linkedin" },
-                { key: "youtube", label: "YouTube", icon: "youtube" },
-                { key: "twitter", label: "Twitter / X", icon: "twitter" },
-                { key: "whatsapp", label: "WhatsApp", icon: "whatsapp" },
+                { key: "facebook", label: "Facebook" },
+                { key: "instagram", label: "Instagram" },
+                { key: "linkedin", label: "LinkedIn" },
+                { key: "youtube", label: "YouTube" },
+                { key: "twitter", label: "Twitter / X" },
+                { key: "whatsapp", label: "WhatsApp" },
               ].map(sm => (
                 <div key={sm.key} className="space-y-1.5">
                   <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">{sm.label}</Label>
@@ -409,34 +403,20 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
             </div>
           </Card>
 
-          {/* Pricing & Extras */}
-          <Card className="p-8 border-gray-100 rounded-[2rem] shadow-sm space-y-6">
+          {/* Policies — link to Knowledge Base */}
+          <Card className="p-6 border-gray-100 rounded-[2rem] shadow-sm">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-green-50 flex items-center justify-center text-green-600">
-                <DollarSign className="h-5 w-5" />
+              <div className="h-10 w-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-500">
+                <Building2 className="h-5 w-5" />
               </div>
-              <h2 className="text-lg font-semibold text-gray-900 tracking-tight">Pricing & Currency</h2>
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 tracking-tight">Policies</h2>
+                <p className="text-xs text-gray-400">Add policies as Knowledge Base entries for AI to reference them.</p>
+              </div>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-               <div className="space-y-1.5">
-                  <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">Currency</Label>
-                  <Input 
-                    value={safePricing.currency || ""}
-                    onChange={e => setNestedField("pricing", "currency", e.target.value)}
-                    className="h-11 rounded-xl bg-gray-50/50 border-gray-100 text-sm font-bold" 
-                  />
-               </div>
-               <div className="md:col-span-2 space-y-1.5">
-                  <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">General Pricing Note</Label>
-                  <Input 
-                    value={safePricing.description || ""}
-                    onChange={e => setNestedField("pricing", "description", e.target.value)}
-                    placeholder="e.g. Prices exclude 18% GST"
-                    className="h-11 rounded-xl bg-gray-50/50 border-gray-100 text-sm" 
-                  />
-               </div>
-            </div>
+            <a href="/knowledge" className="mt-4 inline-flex items-center text-sm font-medium text-[#c65f39] hover:underline">
+              Go to Knowledge Base →
+            </a>
           </Card>
         </div>
       </div>
