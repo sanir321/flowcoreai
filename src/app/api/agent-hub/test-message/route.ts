@@ -104,8 +104,8 @@ export async function POST(req: NextRequest) {
 
     // Return response with metadata for the test UI
     return NextResponse.json({ 
-      reply: aiResponse.response_parts.join("\n\n"),
-      metadata: aiResponse.metadata 
+      reply: aiResponse.response || aiResponse.response_parts?.join("\n\n") || "No response",
+      metadata: aiResponse.metadata || { reason: aiResponse.reason, agent_type: aiResponse.agent_type }
     });
 
   } catch (error: any) {
