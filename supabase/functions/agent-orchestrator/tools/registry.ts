@@ -176,6 +176,27 @@ export const ALL_TOOLS: Record<string, ToolDefinition> = {
       }
     }
   },
+  check_stock: {
+    name: "check_stock",
+    description: "Check if a specific product is available or in stock. Search by product name.",
+    parameters: {
+      type: "object",
+      properties: {
+        product_name: { type: "string", description: "Name of the product to check availability for." }
+      },
+      required: ["product_name"]
+    }
+  },
+  send_catalog: {
+    name: "send_catalog",
+    description: "Send the full product catalog as a formatted text message via WhatsApp.",
+    parameters: {
+      type: "object",
+      properties: {
+        category: { type: "string", description: "Optional: only send items from this category." }
+      }
+    }
+  },
   send_menu_media: {
     name: "send_menu_media",
     description: "Send the uploaded menu image/PDF via WhatsApp. Auto-fallbacks to text menu if no image uploaded.",
@@ -222,7 +243,7 @@ export const AGENT_TOOLS: Record<string, string[]> = {
   sales: [
     "match_kb_chunks", "capture_lead", "get_contact_history", "update_contact",
     "update_lead_stage", "get_pipeline", "schedule_follow_up",
-    "generate_quote", "search_menu", "send_menu_media",
+    "generate_quote", "search_menu", "check_stock", "send_catalog", "send_menu_media",
     "request_handoff", "get_business_profile"
   ]
 };

@@ -3,7 +3,7 @@ import { matchChunks } from "./impl/kb.ts";
 import { checkAvailability, createAppointment, updateAppointment, cancelAppointment } from "./impl/calendar.ts";
 import { getHistory, update } from "./impl/contact.ts";
 import { captureLead, updateLeadStage, getPipeline, scheduleFollowUp, generateQuote } from "./impl/crm.ts";
-import { searchMenu, sendMenuMedia } from "./impl/order.ts";
+import { searchMenu, sendMenuMedia, checkStock, sendCatalog } from "./impl/order.ts";
 import { requestHandoff } from "./impl/handoff.ts";
 import { createTicket, getTicketStatus } from "./impl/support-ticket.ts";
 import { getBusinessProfile } from "./impl/business-profile.ts";
@@ -13,6 +13,8 @@ const TOOL_RATE_LIMITS: Record<string, number> = {
   create_appointment: 2,
   match_kb_chunks: 10,
   send_menu_media: 3,
+  check_stock: 10,
+  send_catalog: 3,
   capture_lead: 2,
   request_handoff: 1,
   create_ticket: 3,
@@ -82,6 +84,8 @@ async function routeToImpl(toolName: string, params: any, ctx: PipelineContext):
     case "get_contact_history": return getHistory(params, ctx);
     case "update_contact": return update(params, ctx);
     case "search_menu": return searchMenu(params, ctx);
+    case "check_stock": return checkStock(params, ctx);
+    case "send_catalog": return sendCatalog(params, ctx);
     case "send_menu_media": return sendMenuMedia(params, ctx);
     case "request_handoff": return requestHandoff(params, ctx);
     case "update_lead_stage": return updateLeadStage(params, ctx);

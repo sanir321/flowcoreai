@@ -31,6 +31,8 @@ const TOOL_CATEGORIES = [
     bgColor: "bg-emerald-50",
     tools: [
       { name: "search_menu", desc: "Fuzzy-search the product database for prices, availability, and categories.", icon: Search },
+      { name: "check_stock", desc: "Checks if a specific product is available or in stock by name.", icon: CheckCircle2 },
+      { name: "send_catalog", desc: "Sends the full product catalog as a formatted text message via WhatsApp.", icon: Send },
       { name: "send_menu_media", desc: "Sends the business menu (Image or PDF) as a native WhatsApp attachment.", icon: Send },
       { name: "generate_quote", desc: "Generates a formal, time-limited price quote for bulk or custom requests.", icon: FileText },
     ]
