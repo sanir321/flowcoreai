@@ -101,7 +101,7 @@ export async function getPipeline(params: Record<string, unknown>, ctx: Pipeline
   const stages = ["new", "contacted", "qualified", "proposal", "negotiation", "won", "lost"];
   const { data: contacts } = await ctx.supabase
     .from("contacts")
-    .select("pipeline_stage")
+    .select("pipeline_stage, name")
     .eq("workspace_id", ctx.payload.workspace_id)
     .not("pipeline_stage", "is", null)
     .in("pipeline_stage", stages);
@@ -110,7 +110,24 @@ export async function getPipeline(params: Record<string, unknown>, ctx: Pipeline
   for (const c of contacts || []) {
     if (c.pipeline_stage) counts[c.pipeline_stage] = (counts[c.pipeline_stage] || 0) + 1;
   }
-  return { success: true, pipeline: counts };
+  const totalLeads = Object.values(counts).reduce((a, b) => a + b, 0);
+  
+  if (totalLeads === 0) {
+    return { 
+      success: true, 
+      pipeline: counts, 
+      summary: "Your pipeline is empty. Start capturing leads to build your sales pipeline!",
+      total_leads: 0
+    };
+  }
+  
+  const activeStages = stages.filter(s => counts[s] > 0).map(s => `${s}: ${counts[s]}`);
+  return { 
+    success: true, 
+    pipeline: counts, 
+    summary: `Pipeline: ${activeStages.join(", ")}. Total: ${totalLeads} leads.`,
+    total_leads: totalLeads
+  };
 }
 
 export async function scheduleFollowUp(
@@ -136,7 +153,35 @@ export async function generateQuote(
 ) {
   const { data: session } = await ctx.supabase.from("conversation_sessions").select("contact_id, customer_name, customer_jid").eq("id", ctx.session.id).single();
   if (!session) return { error: "Session not found" };
-  const subtotal = (params.items || []).reduce((sum: number, item) => sum + (item.qty || 1) * (item.price || 0), 0);
+
+  // Look up prices from menu_items for items without prices
+  const itemsWithPrices = await Promise.all((params.items || []).map(async (item) => {
+    if (item.price && item.price > 0) return item;
+    // Try to find price from menu_items
+    const { data: menuItems } = await ctx.supabase
+      .from("menu_items")
+      .select("price, name")
+      .eq("workspace_id", ctx.payload.workspace_id)
+      .ilike("name", `%${item.name}%`)
+      .eq("is_available", true)
+      .limit(1);
+    if (menuItems && menuItems.length > 0 && menuItems[0].price > 0) {
+      return { ...item, price: menuItems[0].price };
+    }
+    return item;
+  }));
+
+  const subtotal = itemsWithPrices.reduce((sum, item) => sum + (item.qty || 1) * (item.price || 0), 0);
+  
+  // If all items have no price, return helpful message instead of ₹0 quote
+  if (subtotal === 0 && itemsWithPrices.some(i => !i.price || i.price === 0)) {
+    const itemNames = itemsWithPrices.map(i => i.name).join(", ");
+    return { 
+      success: false, 
+      error: `I don't have pricing information for: ${itemNames}. Let me connect you with our team to get you an accurate quote.`,
+      needs_handoff: true
+    };
+  }
   const tax = Math.round(subtotal * 0.18 * 100) / 100;
   const total = subtotal + tax;
   const quoteNumber = `Q-${Date.now().toString(36).toUpperCase()}`;
@@ -144,11 +189,11 @@ export async function generateQuote(
     workspace_id: ctx.payload.workspace_id,
     contact_id: session.contact_id || null,
     quote_number: quoteNumber,
-    items: params.items,
+    items: itemsWithPrices,
     subtotal, tax, total, status: "draft",
-    notes: params.notes || null,
+    notes: ctx.workspace?.services_offered || params.notes || null,
     valid_until: new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0]
   }).select().single();
-  const quoteText = `*Quote ${quoteNumber}*\n\n${(params.items || []).map(i => `${i.name} × ${i.qty || 1} = ₹${((i.qty || 1) * i.price).toLocaleString()}`).join("\n")}\n\nSubtotal: ₹${subtotal.toLocaleString()}\nTax (18%): ₹${tax.toLocaleString()}\n*Total: ₹${total.toLocaleString()}*\n\nValid until: ${new Date(Date.now() + 30 * 86400000).toLocaleDateString()}`;
+  const quoteText = `*Quote ${quoteNumber}*\n\n${itemsWithPrices.map(i => `${i.name} × ${i.qty || 1} = ₹${((i.qty || 1) * (i.price || 0)).toLocaleString()}`).join("\n")}\n\nSubtotal: ₹${subtotal.toLocaleString()}\nTax (18%): ₹${tax.toLocaleString()}\n*Total: ₹${total.toLocaleString()}*\n\nValid until: ${new Date(Date.now() + 30 * 86400000).toLocaleDateString()}`;
   return { success: true, quote_id: quote?.id, quote_number: quoteNumber, total, quote_text: quoteText };
 }

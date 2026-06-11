@@ -335,7 +335,9 @@ function enrichResponseWithToolResults(
         break;
       }
       case "get_pipeline": {
-        if (data.pipeline) {
+        if (data.summary) {
+          appended.push(`\n\n${data.summary}`);
+        } else if (data.pipeline) {
           const lines = Object.entries(data.pipeline)
             .filter(([_, c]) => (c as number) > 0)
             .map(([stage, count]) => `- ${stage}: ${count}`)

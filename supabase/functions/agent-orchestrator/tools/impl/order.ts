@@ -32,7 +32,10 @@ export async function sendMenuMedia(
 
     if (!media) {
       const searchResult = await searchMenu({ query: "", category: undefined }, ctx);
-      return { success: true, auto_fallback: true, items: searchResult.items, message: "No uploaded menu image. Here are our items instead." };
+      if (searchResult.items && searchResult.items.length > 0) {
+        return { success: true, auto_fallback: true, items: searchResult.items, message: "Here are our available items:" };
+      }
+      return { success: true, message: "No menu available yet. Please contact us directly for more information." };
     }
 
     if (ctx.payload.is_test) {
@@ -141,7 +144,12 @@ export async function sendCatalog(
 
     const { data: items } = await query.limit(50);
     if (!items || items.length === 0) {
-      return { success: true, message: "No products found in the catalog." };
+      // Try to get services from workspace profile instead
+      const services = ctx.workspace?.services_offered;
+      if (services) {
+        return { success: true, message: `We don't have a product catalog, but here are our services:\n${services}\n\nWould you like to know more about any of these?` };
+      }
+      return { success: true, message: "Our catalog is being set up. In the meantime, feel free to ask about our services or contact us directly!" };
     }
 
     // Group by category

@@ -10,7 +10,8 @@ const SALES_KEYWORDS = [
   "order", "buy", "purchase", "price", "pricing", "cost", "menu",
   "how much", "rate", "quote", "payment", "pay", "offer",
   "discount", "deal", "product", "service list", "what do you sell",
-  "b2b", "tiers", "subscription", "plan", "enterprise", "integration"
+  "b2b", "tiers", "subscription", "plan", "enterprise", "integration",
+  "pipeline", "leads", "sales"
 ];
 
 export async function runT2(ctx: PipelineContext): Promise<TierResult> {

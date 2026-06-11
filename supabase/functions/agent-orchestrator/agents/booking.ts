@@ -272,6 +272,14 @@ export async function handleBooking(ctx: PipelineContext): Promise<TierResult | 
   const managementKeywords = ["reschedule", "move", "cancel", "change", "rebook", "re-schedule", "modify"];
   const hasManagementIntent = managementKeywords.some(kw => msgLower.includes(kw));
   
+  // Availability check — user wants to know if slots exist, not start a booking
+  const availabilityKeywords = ["available", "availability", "slot", "free", "open", "any appointment", "any slot", "do you have"];
+  const isAvailabilityCheck = availabilityKeywords.some(kw => msgLower.includes(kw)) && !hasManagementIntent;
+  if (isAvailabilityCheck && bs.state === "idle") {
+    // Let T3 handle this — it will call check_availability tool
+    return null;
+  }
+  
   if (hasManagementIntent) {
     // If they want to manage, bypass FSM to let Planner use tools (get_contact_history, update_appointment, etc.)
     return null;
