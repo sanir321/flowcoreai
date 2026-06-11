@@ -38,23 +38,15 @@ export async function runT2(ctx: PipelineContext): Promise<TierResult> {
   const midBooking = bookingState && !["idle", "booked", "cancelled"].includes(bookingState.state);
   const managementKeywords = ["reschedule", "move", "cancel", "change", "rebook", "re-schedule", "modify"];
   const hasManagementIntent = managementKeywords.some(kw => msgLower.includes(kw));
+  const channel = ctx.payload.source || ctx.payload.channel;
 
-  if (midBooking) {
+  if (midBooking && channel !== "widget") {
     ctx.agentType = "appointment_booking";
     ctx.routingReason = "mid_booking";
   } else {
-    const channel = ctx.payload.source || ctx.payload.channel;
-
-    // Widget channel: respect session's assigned agent, only route on explicit booking intent
+    // Widget channel: always customer_support (no booking/sales routing)
     if (channel === "widget") {
-      if (midBooking) {
-        ctx.agentType = "appointment_booking";
-        ctx.routingReason = "mid_booking";
-      } else if (activeAgents.has("appointment_booking") && BOOKING_KEYWORDS.some(k => msgLower.includes(k))) {
-        ctx.agentType = "appointment_booking";
-        ctx.routingReason = "keyword_booking";
-        if (hasManagementIntent) ctx.routingReason = "management_intent";
-      } else if (ctx.session.agent_type && activeAgents.has(ctx.session.agent_type)) {
+      if (ctx.session.agent_type && activeAgents.has(ctx.session.agent_type)) {
         ctx.agentType = ctx.session.agent_type;
         ctx.routingReason = "session_continuity";
       } else if (activeAgents.has("customer_support")) {
