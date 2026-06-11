@@ -241,8 +241,7 @@ export const AGENT_TOOLS: Record<string, string[]> = {
     "cancel_appointment", "get_contact_history", "update_contact", "request_handoff", "get_business_profile"
   ],
   sales: [
-    "match_kb_chunks", "capture_lead", "get_contact_history", "update_contact",
-    "update_lead_stage", "get_pipeline", "schedule_follow_up",
+    "match_kb_chunks", "capture_lead", "schedule_follow_up",
     "generate_quote", "search_menu", "check_stock", "send_catalog", "send_menu_media",
     "request_handoff", "get_business_profile"
   ]
