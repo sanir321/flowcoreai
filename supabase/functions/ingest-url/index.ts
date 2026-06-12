@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
     }
 
     const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', serviceRoleKey ?? '')
-    const groqKey = Deno.env.get('GROQ_API_KEY')
+    const opencodeKey = Deno.env.get('OPENCODE_ZEN_API_KEY')
 
     const { workspace_id, source_id, url: rawUrl } = await req.json()
     const url = validateUrl(rawUrl)
@@ -81,8 +81,8 @@ Deno.serve(async (req) => {
     await supabase.from('kb_sources').update({ error_message: 'Extracting content with AI...' }).eq('id', source_id)
 
     let text = ""
-    if (groqKey) {
-      text = await extractContentWithGroq(html, groqKey)
+    if (opencodeKey) {
+      text = await extractContentWithOpenCode(html, opencodeKey)
     }
 
     if (!text || text.length < 10) {
@@ -123,7 +123,7 @@ Deno.serve(async (req) => {
 
     await supabase.from('ingestion_jobs').update({ status: 'completed' }).eq('source_id', source_id)
 
-    if (groqKey && chunks.length > 0) {
+    if (opencodeKey && chunks.length > 0) {
       fireAndForget(supabase, "extract-business-profile", { workspace_id, source_id })
     }
 
@@ -144,16 +144,17 @@ Deno.serve(async (req) => {
   }
 })
 
-async function extractContentWithGroq(html: string, apiKey: string): Promise<string> {
+async function extractContentWithOpenCode(html: string, apiKey: string): Promise<string> {
   const stripped = convertHtmlToText(html)
+  const baseUrl = Deno.env.get("OPENCODE_ZEN_BASE_URL") || "https://opencode.ai/zen/v1"
 
   if (stripped.length < 50) return stripped
 
-  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+  const response = await fetch(`${baseUrl}/chat/completions`, {
     method: "POST",
     headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "llama-3.3-70b-versatile",
+      model: "nemotron-3-ultra-free",
       messages: [
         {
           role: "system",
@@ -170,7 +171,7 @@ async function extractContentWithGroq(html: string, apiKey: string): Promise<str
   })
 
   if (!response.ok) {
-    console.error("[GroqURL] API error:", response.status)
+    console.error("[OpenCodeURL] API error:", response.status)
     return stripped
   }
 

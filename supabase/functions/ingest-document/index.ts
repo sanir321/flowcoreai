@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
     }
 
     const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', serviceRoleKey ?? '')
-    const groqKey = Deno.env.get('GROQ_API_KEY')
+    const opencodeKey = Deno.env.get('OPENCODE_ZEN_API_KEY')
 
     const { workspace_id, source_id, storage_path } = await req.json()
 
@@ -54,8 +54,8 @@ Deno.serve(async (req) => {
       if (text.includes("[Image PDF")) {
         throw new Error("This PDF appears to be a scanned document (image-only). Please upload a text-based PDF or use a TXT/DOCX file instead.")
       }
-      if (groqKey && (text.length < 50 || isGarbled(text))) {
-        text = await cleanTextWithGroq(text, groqKey)
+      if (opencodeKey && (text.length < 50 || isGarbled(text))) {
+        text = await cleanTextWithOpenCode(text, opencodeKey)
       }
     } else {
       text = await fileData.text()
@@ -96,7 +96,7 @@ Deno.serve(async (req) => {
 
     await supabase.from('ingestion_jobs').update({ status: 'completed' }).eq('source_id', source_id)
 
-    if (groqKey && chunks.length > 0) {
+    if (opencodeKey && chunks.length > 0) {
       fireAndForget(supabase, "extract-business-profile", { workspace_id, source_id })
     }
 
@@ -149,15 +149,16 @@ function isGarbled(text: string): boolean {
   return alphaRatio < 0.3
 }
 
-async function cleanTextWithGroq(rawText: string, apiKey: string): Promise<string> {
+async function cleanTextWithOpenCode(rawText: string, apiKey: string): Promise<string> {
   const chunk = rawText.slice(0, 30000)
+  const baseUrl = Deno.env.get("OPENCODE_ZEN_BASE_URL") || "https://opencode.ai/zen/v1"
   if (chunk.length < 20) return rawText
 
-  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+  const response = await fetch(`${baseUrl}/chat/completions`, {
     method: "POST",
     headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "llama-3.3-70b-versatile",
+      model: "nemotron-3-ultra-free",
       messages: [
         { role: "system", content: "You are a PDF text recovery expert. The input is raw bytes from a PDF that may contain garbled text, binary noise, or be from a scanned/image PDF. Your job: find and clean any readable text. Skip binary garbage, control characters, and non-readable sequences. If the page is mostly binary (image-based), return a clear message: '[Image-based page — no text recovered]'. Return ONLY cleaned text, no commentary." },
         { role: "user", content: `Recover any readable text from this raw PDF content:\n\n${chunk}` }

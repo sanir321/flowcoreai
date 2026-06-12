@@ -59,14 +59,14 @@ Deno.serve(async (req) => {
 
     const fullText = chunks.map(c => c.content).join("\n\n").slice(0, 15000)
 
-    const groqKey = Deno.env.get("GROQ_API_KEY")
-    if (!groqKey) {
-      console.log("[ExtractBP] No GROQ_API_KEY, skipping")
-      return new Response(JSON.stringify({ skipped: true, reason: "no_groq_key" }),
+    const opencodeKey = Deno.env.get("OPENCODE_ZEN_API_KEY")
+    if (!opencodeKey) {
+      console.log("[ExtractBP] No OPENCODE_ZEN_API_KEY, skipping")
+      return new Response(JSON.stringify({ skipped: true, reason: "no_opencode_key" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } })
     }
 
-    const extracted = await extractBusinessProfile(fullText, businessType, groqKey)
+    const extracted = await extractBusinessProfile(fullText, businessType, opencodeKey)
 
     if (!extracted || Object.keys(extracted).length === 0) {
       console.log("[ExtractBP] No data extracted")
@@ -142,14 +142,15 @@ Rules:
 Website text:
 ${text.slice(0, 14000)}`
 
-  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+  const baseUrl = Deno.env.get("OPENCODE_ZEN_BASE_URL") || "https://opencode.ai/zen/v1"
+  const response = await fetch(`${baseUrl}/chat/completions`, {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "llama-3.3-70b-versatile",
+      model: "nemotron-3-ultra-free",
       messages: [
         { role: "system", content: "You extract structured business data from website content. Return only valid JSON. Omit fields that are not found — do not include empty strings or arrays." },
         { role: "user", content: prompt }
@@ -161,21 +162,21 @@ ${text.slice(0, 14000)}`
 
   if (!response.ok) {
     const errText = await response.text()
-    throw new Error(`Groq API error: ${response.status} ${errText}`)
+      throw new Error(`OpenCode API error: ${response.status} ${errText}`)
   }
 
   const result = await response.json()
   const content = result.choices?.[0]?.message?.content
 
   if (!content) {
-    console.log("[ExtractBP] Empty Groq response")
+    console.log("[ExtractBP] Empty OpenCode response")
     return {}
   }
 
   try {
     return JSON.parse(content)
   } catch {
-    console.error("[ExtractBP] Failed to parse Groq response as JSON")
+    console.error("[ExtractBP] Failed to parse OpenCode response as JSON")
     return {}
   }
 }

@@ -114,16 +114,17 @@ GUIDELINES:
 3. Use the performance trends to suggest improvements.
 4. Format with clean Markdown. Use bolding for key metrics.`;
 
-    const groqApiKey = process.env.GROQ_API_KEY;
+    const opencodeApiKey = process.env.OPENCODE_ZEN_API_KEY;
+    const opencodeBaseUrl = process.env.OPENCODE_ZEN_BASE_URL || 'https://opencode.ai/zen/v1';
 
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const response = await fetch(`${opencodeBaseUrl}/chat/completions`, {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${groqApiKey}`,
+        "Authorization": `Bearer ${opencodeApiKey}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
+        model: "nemotron-3-ultra-free",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: message }
@@ -133,7 +134,7 @@ GUIDELINES:
       })
     });
 
-    if (!response.ok) throw new Error(`Groq AI Error: ${response.status}`);
+    if (!response.ok) throw new Error(`OpenCode AI Error: ${response.status}`);
 
     const result = await response.json();
     const rawText = result.choices?.[0]?.message?.content || "No analysis available.";

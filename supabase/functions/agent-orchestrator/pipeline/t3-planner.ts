@@ -520,6 +520,42 @@ async function validatePlanActions(ctx: PipelineContext, plan: AgentPlan) {
     plan.response += " [Correction: You claimed to update the pipeline stage without calling update_lead_stage. Apologize.]";
   }
 
+  // --- NEW: Booking hallucination detection ---
+  const bookingPhrases = /(booked|confirmed|appointment is (set|created|booked|scheduled|confirmed)|i have (booked|created|scheduled|confirmed) (your|the) appointment)/i;
+  if (bookingPhrases.test(plan.response) && !actionTools.includes("create_appointment")) {
+    const bs = (ctx as any).bookingSession;
+    const collected = bs?.collected || {};
+    const hasRealDetails = collected.name || collected.service || collected.date || collected.time;
+    const availabilityAction = plan.actions.find(a => a.tool === "check_availability");
+    if (availabilityAction && hasRealDetails) {
+      plan.actions.push({
+        tool: "create_appointment",
+        params: {
+          name: collected.name || "",
+          service: collected.service || "",
+          date: availabilityAction.params?.date || collected.date || "",
+          time: availabilityAction.params?.time || collected.time || ""
+        },
+        required: true,
+        result_key: "appointment"
+      });
+      plan.needs_second_pass = true;
+      plan.response += " [Correction: create_appointment was missing — auto-injected.]";
+    } else {
+      plan.response = plan.response
+        .replace(/Your[^.]+(booked|confirmed|scheduled)[^.]*\./gi, "")
+        .replace(/I['"]?ve (booked|created|scheduled|confirmed)[^.]*\./gi, "")
+        .replace(/i have (booked|created|scheduled|confirmed)[^.]*\./gi, "")
+        .trim();
+      plan.needs_second_pass = true;
+      if (!plan.response) {
+        plan.response = "I'd be happy to help you book! Could you tell me which service you're looking for?";
+      } else {
+        plan.response += " [Correction: You claimed the appointment was booked without required details. Ask for their name, service, date and time, then call check_availability AND create_appointment.]";
+      }
+    }
+  }
+
   // --- NEW: Pricing/KB hallucination detection ---
   const pricingPhrases = /(₹|rs\.?\s*\d+|price|cost|subscription|tier|plan|worth|value)/i;
   const hasPricingClaim = pricingPhrases.test(plan.response);
