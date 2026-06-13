@@ -47,20 +47,24 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
   try {
-    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    const srk = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+    const legacySrk = Deno.env.get('SERVICE_KEY') || Deno.env.get('LEGACY_SERVICE_ROLE_KEY') || ''
+    const secretKeysStr = Deno.env.get('SUPABASE_SECRET_KEYS')
+    let secretKeys: string[] = []
+    try { const parsed = JSON.parse(secretKeysStr || '{}'); secretKeys = Object.values(parsed) } catch {}
     const internalSecret = Deno.env.get('INTERNAL_CRON_SECRET')
-    const publishableKeys = Deno.env.get('SUPABASE_PUBLISHABLE_KEYS') || ''
     const authHeader = req.headers.get('Authorization') || ''
     const token = authHeader.replace('Bearer ', '')
-    if (!token || !(token === serviceRoleKey || token === internalSecret || publishableKeys.includes(token))) {
-      const verifyClient = createClient(Deno.env.get('SUPABASE_URL') ?? '', serviceRoleKey ?? '')
+    const validTokens = new Set([srk, legacySrk, internalSecret || '', ...secretKeys].filter(Boolean))
+    if (!token || !validTokens.has(token)) {
+      const verifyClient = createClient(Deno.env.get('SUPABASE_URL') ?? '', srk || legacySrk)
       const { data: { user }, error: authError } = await verifyClient.auth.getUser(token)
       if (authError || !user) {
         return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
       }
     }
 
-    const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', serviceRoleKey ?? '')
+    const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', srk || legacySrk)
     const opencodeKey = Deno.env.get('OPENCODE_ZEN_API_KEY')
 
     const { workspace_id, source_id, url: rawUrl } = await req.json()
@@ -82,7 +86,7 @@ Deno.serve(async (req) => {
 
     let text = ""
     if (opencodeKey) {
-      text = await extractContentWithOpenCode(html, opencodeKey)
+      text = await extractContentWithOpenCode(html, raw, opencodeKey)
     }
 
     if (!text || text.length < 10) {
@@ -144,44 +148,86 @@ Deno.serve(async (req) => {
   }
 })
 
-async function extractContentWithOpenCode(html: string, apiKey: string): Promise<string> {
+async function extractContentWithOpenCode(html: string, rawHtml: string, apiKey: string): Promise<string> {
   const stripped = convertHtmlToText(html)
   const baseUrl = Deno.env.get("OPENCODE_ZEN_BASE_URL") || "https://opencode.ai/zen/v1"
 
   if (stripped.length < 50) return stripped
 
-  const response = await fetch(`${baseUrl}/chat/completions`, {
-    method: "POST",
-    headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "nemotron-3-ultra-free",
-      messages: [
-        {
-          role: "system",
-          content: "You are a web content extractor. Given raw website text, extract the main body content: remove navigation menus, sidebars, footers, header banners, cookie notices, ads, and boilerplate. Preserve the core article or page content — headings, paragraphs, lists, tables — in clean readable text. Return ONLY the extracted content, no commentary."
-        },
-        {
-          role: "user",
-          content: `Extract the main content from this website text. Return only the cleaned text:\n\n${stripped.slice(0, 25000)}`
-        }
-      ],
-      temperature: 0.1,
-      max_tokens: 16000,
-    }),
-  })
+  let extracted = stripped
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 30000)
+  try {
+    const response = await fetch(`${baseUrl}/chat/completions`, {
+      method: "POST",
+      signal: controller.signal,
+      headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "nemotron-3-ultra-free",
+        messages: [
+          {
+            role: "system",
+            content: "You are a web content extractor. Given raw website text, extract the main body content. Remove: navigation menus, sidebars, header banners, cookie notices, ads, boilerplate, HTML comment artifacts, orphaned tags like '-->', repeated whitespace, and '\\r\\n' markers. Collapse excessive blank lines. PRESERVE: footer sections that contain social media links (Facebook, Instagram, LinkedIn, Twitter, YouTube), contact info, email addresses, phone numbers, and business addresses. Preserve the core article or page content — headings, paragraphs, lists, tables — in clean readable text. Return ONLY the extracted content, no commentary."
+          },
+          {
+            role: "user",
+            content: `Extract the main content from this website text. Clean up any HTML artifacts, normalize whitespace, and return only the readable text:\n\n${stripped.slice(0, 25000)}`
+          }
+        ],
+        temperature: 0.1,
+        max_tokens: 16000,
+      }),
+    })
 
-  if (!response.ok) {
-    console.error("[OpenCodeURL] API error:", response.status)
-    return stripped
+    if (response.ok) {
+      const result = await response.json()
+      const content = result.choices?.[0]?.message?.content
+      if (content && content.length > 10) extracted = content
+    } else {
+      console.error("[OpenCodeURL] API error:", response.status)
+    }
+  } catch (err) {
+    console.error("[OpenCodeURL] fetch error:", err)
+  } finally {
+    clearTimeout(timeout)
   }
 
-  const result = await response.json()
-  const content = result.choices?.[0]?.message?.content
-  return (content && content.length > 10) ? content : stripped
+  const socialUrls = extractSocialUrls(rawHtml)
+  const missingSocial = socialUrls.filter(url => !extracted.includes(url))
+  if (missingSocial.length > 0) {
+    const labeled = missingSocial.map(u => {
+      if (u.includes('facebook')) return `Facebook: ${u}`
+      if (u.includes('instagram')) return `Instagram: ${u}`
+      if (u.includes('linkedin')) return `LinkedIn: ${u}`
+      if (u.includes('youtube')) return `YouTube: ${u}`
+      if (u.includes('twitter') || u.includes('x.com')) return `Twitter: ${u}`
+      if (u.includes('pinterest')) return `Pinterest: ${u}`
+      if (u.startsWith('mailto:')) return `Email: ${u.replace('mailto:', '')}`
+      return u
+    })
+    return extracted + '\n\n---\nSocial Links:\n' + labeled.join('\n')
+  }
+  return extracted
+}
+
+function extractSocialUrls(html: string): string[] {
+  const social: string[] = []
+  const hrefRegex = /href=["'](https?:\/\/(?:www\.)?(?:facebook|instagram|linkedin|youtube|twitter|x|pinterest)[^\s"']+)["']/gi
+  let match
+  while ((match = hrefRegex.exec(html)) !== null) {
+    social.push(match[1])
+  }
+  const emailRegex = /href=["']mailto:([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})["']/gi
+  while ((match = emailRegex.exec(html)) !== null) {
+    social.push('mailto:' + match[1])
+  }
+  return [...new Set(social)]
 }
 
 function convertHtmlToText(html: string): string {
-  html = html.replace(/<(script|style|svg|noscript|nav|footer|header|aside|form)[^>]*>[\s\S]*?<\/\1>/gi, '')
+  html = html.replace(/<!--[\s\S]*?-->/g, '')
+  html = html.replace(/\r\n/g, '\n')
+  html = html.replace(/<(script|style|svg|noscript|nav|header|aside|form)[^>]*>[\s\S]*?<\/\1>/gi, '')
   html = html.replace(/<br\s*\/?>/gi, '\n')
   html = html.replace(/<\/p>/gi, '\n\n')
   html = html.replace(/<\/h([1-6])>/gi, '\n\n')
@@ -199,32 +245,67 @@ function convertHtmlToText(html: string): string {
   html = html.replace(/<\/code>/gi, '`')
   html = html.replace(/<pre[^>]*>/gi, '\n```\n')
   html = html.replace(/<\/pre>/gi, '\n```\n')
-  html = html.replace(/<a\s+(?:[^>]*?\s+)?href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi, '[$2]($1)')
-  html = html.replace(/<a\s+(?:[^>]*?\s+)?href='([^']*)'[^>]*>([\s\S]*?)<\/a>/gi, '[$2]($1)')
+  html = html.replace(/<a\s+(?:[^>]*?\s+)?href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi, (_, url, text) => {
+    const cleaned = text.replace(/<[^>]*>/g, '').trim()
+    return cleaned ? `[${cleaned}](${url})` : url
+  })
+  html = html.replace(/<a\s+(?:[^>]*?\s+)?href='([^']*)'[^>]*>([\s\S]*?)<\/a>/gi, (_, url, text) => {
+    const cleaned = text.replace(/<[^>]*>/g, '').trim()
+    return cleaned ? `[${cleaned}](${url})` : url
+  })
   html = html.replace(/<[^>]*>/g, '')
   html = html.replace(/&(?:amp|lt|gt|quot|#39|nbsp|#x27|#x60|#x2F);/g, (m: string) => ({ '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'", '&nbsp;': ' ', '&#x27;': "'", '&#x60;': '`', '&#x2F;': '/' })[m] || m)
-  html = html.replace(/\n{3,}/g, '\n\n')
+  html = html.replace(/\n{4,}/g, '\n\n\n')
   html = html.replace(/[ \t]+/g, ' ')
+  html = html.replace(/^\s*[\r\n]+/gm, '')
   return html.trim()
 }
 
 function splitIntoChunks(text: string, maxSize: number): string[] {
-  const sentences = text.match(/[^.!?]+[.!?]+/g) || [text]
+  const urls: string[] = []
+  const cleaned = text.replace(/https?:\/\/[^\s<>"]+/g, (url) => {
+    urls.push(url)
+    return `\x00URL_${urls.length - 1}\x00`
+  })
+
+  const sentenceRegex = /[^.!?]+[.!?]+/g
+  const sentences: string[] = []
+  let lastIndex = 0
+  let m: RegExpExecArray | null
+  while ((m = sentenceRegex.exec(cleaned)) !== null) {
+    sentences.push(m[0])
+    lastIndex = sentenceRegex.lastIndex
+  }
+  const tail = cleaned.slice(lastIndex).trim()
+  if (tail) sentences.push(tail)
+
+  if (sentences.length === 0) return [text.slice(0, maxSize)]
+
   const chunks: string[] = []
   let current = ""
   for (const sentence of sentences) {
-    if ((current + sentence).length > maxSize && current.length > 0) {
+    const restored = sentence.replace(/\x00URL_(\d+)\x00/g, (_, i) => urls[Number(i)] || "")
+    if ((current.length + restored.length) > maxSize && current.length > 0) {
       chunks.push(current.trim())
-      current = sentence
+      current = restored
     } else {
-      current += sentence
+      current += restored
     }
   }
   if (current.trim()) chunks.push(current.trim())
-  return chunks.length > 0 ? chunks : [text.slice(0, maxSize)]
+  return chunks
 }
 
 function fireAndForget(supabase: any, functionName: string, body: object) {
   const secret = Deno.env.get('INTERNAL_CRON_SECRET')
-  supabase.functions.invoke(functionName, { body, headers: { Authorization: `Bearer ${secret}` } }).catch(() => {})
+  supabase.functions.invoke(functionName, { body, headers: { Authorization: `Bearer ${secret}` } })
+    .then(r => r.text())
+    .then(t => { try { const j = JSON.parse(t); if (j.error) throw new Error(j.error) } catch { if (!t.includes('success')) throw new Error(t) } })
+    .then(() => console.log(`[FireAndForget] ${functionName} succeeded`))
+    .catch((err) => {
+      console.error(`[FireAndForget] ${functionName} failed:`, err.message)
+      supabase.from('kb_sources').update({ error_message: `BP extraction failed: ${err.message}` }).eq('id', (body as any).source_id).catch(() => {})
+    })
 }
+
+

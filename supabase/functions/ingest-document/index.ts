@@ -14,20 +14,24 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
   try {
-    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    const srk = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+    const legacySrk = Deno.env.get('SERVICE_KEY') || Deno.env.get('LEGACY_SERVICE_ROLE_KEY') || ''
+    const secretKeysStr = Deno.env.get('SUPABASE_SECRET_KEYS')
+    let secretKeys: string[] = []
+    try { const parsed = JSON.parse(secretKeysStr || '{}'); secretKeys = Object.values(parsed) } catch {}
     const internalSecret = Deno.env.get('INTERNAL_CRON_SECRET')
-    const publishableKeys = Deno.env.get('SUPABASE_PUBLISHABLE_KEYS') || ''
     const authHeader = req.headers.get('Authorization') || ''
     const token = authHeader.replace('Bearer ', '')
-    if (!token || !(token === serviceRoleKey || token === internalSecret || publishableKeys.includes(token))) {
-      const verifyClient = createClient(Deno.env.get('SUPABASE_URL') ?? '', serviceRoleKey ?? '')
+    const validTokens = new Set([srk, legacySrk, internalSecret || '', ...secretKeys].filter(Boolean))
+    if (!token || !validTokens.has(token)) {
+      const verifyClient = createClient(Deno.env.get('SUPABASE_URL') ?? '', srk || legacySrk)
       const { data: { user }, error: authError } = await verifyClient.auth.getUser(token)
       if (authError || !user) {
         return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
       }
     }
 
-    const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', serviceRoleKey ?? '')
+    const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', srk || legacySrk)
     const opencodeKey = Deno.env.get('OPENCODE_ZEN_API_KEY')
 
     const { workspace_id, source_id, storage_path } = await req.json()
@@ -63,6 +67,13 @@ Deno.serve(async (req) => {
 
     text = text.replace(/\s+/g, ' ').trim()
     if (text.length < 10) throw new Error("No meaningful content found in document.")
+
+    const docSocial = parseSocialUrls(text)
+    const docSocialKeys = Object.keys(docSocial)
+    if (docSocialKeys.length > 0) {
+      const labeled = docSocialKeys.map(k => `${k.charAt(0).toUpperCase() + k.slice(1)}: ${docSocial[k]}`)
+      text = text + '\n\n---\nSocial Links:\n' + labeled.join('\n')
+    }
 
     await supabase.from('kb_sources').update({ error_message: 'Chunking content...' }).eq('id', source_id)
 
@@ -176,23 +187,74 @@ async function cleanTextWithOpenCode(rawText: string, apiKey: string): Promise<s
   return cleaned
 }
 
+function parseSocialUrls(text: string): Record<string, string> {
+  const social: Record<string, string> = {}
+  const labelMap: Record<string, string> = {
+    facebook: "facebook", instagram: "instagram", linkedin: "linkedin",
+    youtube: "youtube", twitter: "twitter", pinterest: "pinterest",
+  }
+  for (const [domain, key] of Object.entries(labelMap)) {
+    const re = new RegExp(`${domain}:\\s*(https?://[^\\s]+)`, "i")
+    const match = text.match(re)
+    if (match) social[key] = match[1].replace(/\/+$/, "")
+  }
+
+  const hrefRe = /https?:\/\/(?:www\.)?(facebook|instagram|linkedin|youtube|twitter|x|pinterest)[^\s"'>]+/gi
+  let m
+  while ((m = hrefRe.exec(text)) !== null) {
+    const domain = m[1].toLowerCase()
+    const key = domain === "x" ? "twitter" : domain
+    if (!social[key]) {
+      social[key] = m[0].replace(/\/+$/, "")
+    }
+  }
+
+  return social
+}
+
 function splitIntoChunks(text: string, maxSize: number): string[] {
-  const sentences = text.match(/[^.!?]+[.!?]+/g) || [text]
+  const urls: string[] = []
+  const cleaned = text.replace(/https?:\/\/[^\s<>"]+/g, (url) => {
+    urls.push(url)
+    return `\x00URL_${urls.length - 1}\x00`
+  })
+
+  const sentenceRegex = /[^.!?]+[.!?]+/g
+  const sentences: string[] = []
+  let lastIndex = 0
+  let m: RegExpExecArray | null
+  while ((m = sentenceRegex.exec(cleaned)) !== null) {
+    sentences.push(m[0])
+    lastIndex = sentenceRegex.lastIndex
+  }
+  const tail = cleaned.slice(lastIndex).trim()
+  if (tail) sentences.push(tail)
+
+  if (sentences.length === 0) return [text.slice(0, maxSize)]
+
   const chunks: string[] = []
   let current = ""
   for (const sentence of sentences) {
-    if ((current + sentence).length > maxSize && current.length > 0) {
+    const restored = sentence.replace(/\x00URL_(\d+)\x00/g, (_, i) => urls[Number(i)] || "")
+    if ((current.length + restored.length) > maxSize && current.length > 0) {
       chunks.push(current.trim())
-      current = sentence
+      current = restored
     } else {
-      current += sentence
+      current += restored
     }
   }
   if (current.trim()) chunks.push(current.trim())
-  return chunks.length > 0 ? chunks : [text.slice(0, maxSize)]
+  return chunks
 }
 
 function fireAndForget(supabase: any, functionName: string, body: object) {
   const secret = Deno.env.get('INTERNAL_CRON_SECRET')
-  supabase.functions.invoke(functionName, { body, headers: { Authorization: `Bearer ${secret}` } }).catch(() => {})
+  supabase.functions.invoke(functionName, { body, headers: { Authorization: `Bearer ${secret}` } })
+    .then(r => r.text())
+    .then(t => { try { const j = JSON.parse(t); if (j.error) throw new Error(j.error) } catch { if (!t.includes('success')) throw new Error(t) } })
+    .then(() => console.log(`[FireAndForget] ${functionName} succeeded`))
+    .catch((err) => {
+      console.error(`[FireAndForget] ${functionName} failed:`, err.message)
+      supabase.from('kb_sources').update({ error_message: `BP extraction failed: ${err.message}` }).eq('id', (body as any).source_id).catch(() => {})
+    })
 }

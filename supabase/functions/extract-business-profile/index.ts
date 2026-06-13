@@ -12,10 +12,15 @@ Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get("Authorization") || ""
     const token = authHeader.replace("Bearer ", "")
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    const srk = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
+    const legacySrk = Deno.env.get("SERVICE_KEY") || Deno.env.get("LEGACY_SERVICE_ROLE_KEY") || ""
+    const secretKeysStr = Deno.env.get("SUPABASE_SECRET_KEYS")
+    let secretKeys: string[] = []
+    try { const parsed = JSON.parse(secretKeysStr || '{}'); secretKeys = Object.values(parsed) } catch {}
     const cronSecret = Deno.env.get("INTERNAL_CRON_SECRET") || ""
 
-    if (!token || (token !== serviceKey && token !== cronSecret)) {
+    const validTokens = new Set([srk, legacySrk, cronSecret, ...secretKeys].filter(Boolean))
+    if (!token || !validTokens.has(token)) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" }
       })
@@ -23,71 +28,21 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      serviceKey
+      srk || legacySrk
     )
 
-    const { workspace_id, source_id } = await req.json()
+    const body = await req.json()
+    const { workspace_id, source_id, mode } = body
+
+    if (mode === "batch" || (!workspace_id && !source_id)) {
+      return await processBatch(supabase)
+    }
+
     if (!workspace_id || !source_id) {
-      throw new Error("workspace_id and source_id are required")
+      throw new Error("Provide workspace_id + source_id, or mode: 'batch'")
     }
 
-    const { data: chunks, error: chunkError } = await supabase
-      .from("kb_chunks")
-      .select("content")
-      .eq("source_id", source_id)
-      .eq("workspace_id", workspace_id)
-      .order("chunk_index", { ascending: true })
-
-    if (chunkError) throw new Error(`Failed to read chunks: ${chunkError.message}`)
-    if (!chunks || chunks.length === 0) {
-      console.log(`[ExtractBP] No chunks found for source ${source_id}, skipping`)
-      return new Response(JSON.stringify({ skipped: true, reason: "no_chunks" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      })
-    }
-
-    const { data: workspace, error: wsError } = await supabase
-      .from("workspaces")
-      .select("business_type, business_profile")
-      .eq("id", workspace_id)
-      .single()
-
-    if (wsError) throw new Error(`Failed to read workspace: ${wsError.message}`)
-
-    const businessType = workspace?.business_type || "hotel"
-    const existingProfile = (workspace?.business_profile || {}) as Record<string, unknown>
-
-    const fullText = chunks.map(c => c.content).join("\n\n").slice(0, 15000)
-
-    const opencodeKey = Deno.env.get("OPENCODE_ZEN_API_KEY")
-    if (!opencodeKey) {
-      console.log("[ExtractBP] No OPENCODE_ZEN_API_KEY, skipping")
-      return new Response(JSON.stringify({ skipped: true, reason: "no_opencode_key" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } })
-    }
-
-    const extracted = await extractBusinessProfile(fullText, businessType, opencodeKey)
-
-    if (!extracted || Object.keys(extracted).length === 0) {
-      console.log("[ExtractBP] No data extracted")
-      return new Response(JSON.stringify({ skipped: true, reason: "no_data_extracted" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } })
-    }
-
-    const merged = mergeProfiles(existingProfile, extracted)
-
-    const { error: updateError } = await supabase
-      .from("workspaces")
-      .update({ business_profile: merged, updated_at: new Date().toISOString() })
-      .eq("id", workspace_id)
-
-    if (updateError) throw new Error(`Failed to update workspace: ${updateError.message}`)
-
-    console.log(`[ExtractBP] Updated business profile for workspace ${workspace_id} from source ${source_id}`)
-
-    return new Response(JSON.stringify({ success: true, extracted: Object.keys(extracted) }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" }
-    })
+    return await processSingle(supabase, workspace_id, source_id)
   } catch (error: any) {
     console.error("[ExtractBP]", error.message)
     return new Response(JSON.stringify({ error: error.message }), {
@@ -95,6 +50,189 @@ Deno.serve(async (req) => {
     })
   }
 })
+
+async function processBatch(supabase: any): Promise<Response> {
+  const { data: workspaces, error: wsError } = await supabase
+    .from("workspaces")
+    .select("id, name, business_type, business_profile")
+
+  if (wsError) throw new Error(`Failed to list workspaces: ${wsError.message}`)
+  if (!workspaces || workspaces.length === 0) {
+    return new Response(JSON.stringify({ skipped: true, reason: "no_workspaces" }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } })
+  }
+
+  const opencodeKey = Deno.env.get("OPENCODE_ZEN_API_KEY")
+  if (!opencodeKey) {
+    return new Response(JSON.stringify({ skipped: true, reason: "no_opencode_key" }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } })
+  }
+
+  const results: { workspace: string; status: string; fields?: string[] }[] = []
+
+  for (const ws of workspaces) {
+    const { data: sources, error: srcError } = await supabase
+      .from("kb_sources")
+      .select("id, source_type, bp_extracted_fields, created_at")
+      .eq("workspace_id", ws.id)
+      .eq("status", "active")
+      .order("created_at", { ascending: false })
+      .limit(5)
+
+    if (srcError) {
+      console.error(`[Batch] Error fetching sources for ${ws.id}: ${srcError.message}`)
+      results.push({ workspace: ws.id, status: "error" })
+      continue
+    }
+
+    if (!sources || sources.length === 0) {
+      results.push({ workspace: ws.id, status: "skip_no_sources" })
+      continue
+    }
+
+    const { data: chunks, error: chunkError } = await supabase
+      .from("kb_chunks")
+      .select("content")
+      .eq("workspace_id", ws.id)
+      .limit(1)
+
+    if (chunkError || !chunks || chunks.length === 0) {
+      results.push({ workspace: ws.id, status: "skip_no_chunks" })
+      continue
+    }
+
+    const bp = ws.business_profile as Record<string, unknown> || {}
+    const hasSocial = bp.social && !isEmpty(bp.social)
+    const hasContact = bp.contact && !isEmpty(bp.contact)
+    const hasExtras = bp.extras && !isEmpty(bp.extras)
+    if (hasSocial && hasContact && hasExtras) {
+      results.push({ workspace: ws.id, status: "skip_already_complete" })
+      continue
+    }
+
+    const unextracted = (sources as any[]).find(s => {
+      const fields = s.bp_extracted_fields as string[] || []
+      return fields.length === 0
+    })
+    const bestSource = unextracted || sources[0]
+    if (!bestSource) {
+      results.push({ workspace: ws.id, status: "skip_no_new_source" })
+      continue
+    }
+
+    const sourceResult = await processSingle(supabase, ws.id, bestSource.id)
+    const data = await sourceResult.json()
+    results.push({
+      workspace: ws.id,
+      status: data.skipped ? "skipped" : "done",
+      fields: data.extracted,
+    })
+  }
+
+  return new Response(JSON.stringify({ batch: true, total: workspaces.length, results }), {
+    headers: { ...corsHeaders, "Content-Type": "application/json" }
+  })
+}
+
+async function processSingle(supabase: any, workspace_id: string, source_id: string): Promise<Response> {
+  const { data: chunks, error: chunkError } = await supabase
+    .from("kb_chunks")
+    .select("content")
+    .eq("source_id", source_id)
+    .eq("workspace_id", workspace_id)
+    .order("chunk_index", { ascending: true })
+
+  if (chunkError) throw new Error(`Failed to read chunks: ${chunkError.message}`)
+  if (!chunks || chunks.length === 0) {
+    console.log(`[ExtractBP] No chunks found for source ${source_id}, skipping`)
+    return new Response(JSON.stringify({ skipped: true, reason: "no_chunks" }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } })
+  }
+
+  const { data: workspace, error: wsError } = await supabase
+    .from("workspaces")
+    .select("business_type, business_profile")
+    .eq("id", workspace_id)
+    .single()
+
+  if (wsError) throw new Error(`Failed to read workspace: ${wsError.message}`)
+
+  const businessType = workspace?.business_type || "construction_company"
+  const existingProfile = (workspace?.business_profile || {}) as Record<string, unknown>
+
+  const fullText = chunks.map(c => c.content).join("\n\n").slice(0, 20000)
+
+  const parsedSocial = parseSocialUrls(fullText)
+
+  const opencodeKey = Deno.env.get("OPENCODE_ZEN_API_KEY")
+  if (!opencodeKey) {
+    console.log("[ExtractBP] No OPENCODE_ZEN_API_KEY, skipping")
+    return new Response(JSON.stringify({ skipped: true, reason: "no_opencode_key" }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } })
+  }
+
+  const extracted = await extractBusinessProfile(fullText, businessType, opencodeKey)
+
+  if (parsedSocial && Object.keys(parsedSocial).length > 0) {
+    extracted.social = { ...extracted.social as Record<string, string> || {}, ...parsedSocial }
+  }
+
+  if (!extracted || Object.keys(extracted).length === 0) {
+    console.log("[ExtractBP] No data extracted")
+    return new Response(JSON.stringify({ skipped: true, reason: "no_data_extracted" }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } })
+  }
+
+  const merged = mergeProfiles(existingProfile, extracted)
+
+  const { error: updateError } = await supabase
+    .from("workspaces")
+    .update({ business_profile: merged, updated_at: new Date().toISOString() })
+    .eq("id", workspace_id)
+
+  if (updateError) throw new Error(`Failed to update workspace: ${updateError.message}`)
+
+  const extractedFields = Object.keys(extracted)
+  const { error: fieldsError } = await supabase
+    .from("kb_sources")
+    .update({ bp_extracted_fields: extractedFields })
+    .eq("id", source_id)
+
+  if (fieldsError) {
+    console.error(`[ExtractBP] Failed to update bp_extracted_fields: ${fieldsError.message}`)
+  }
+
+  console.log(`[ExtractBP] Updated business profile for workspace ${workspace_id} from source ${source_id}: ${extractedFields.join(", ")}`)
+
+  return new Response(JSON.stringify({ success: true, extracted: extractedFields }), {
+    headers: { ...corsHeaders, "Content-Type": "application/json" }
+  })
+}
+
+function parseSocialUrls(text: string): Record<string, string> {
+  const social: Record<string, string> = {}
+  const labelMap: Record<string, string> = {
+    facebook: "facebook", instagram: "instagram", linkedin: "linkedin",
+    youtube: "youtube", twitter: "twitter", pinterest: "pinterest",
+  }
+  for (const [domain, key] of Object.entries(labelMap)) {
+    const re = new RegExp(`${domain}:\\s*(https?://[^\\s]+)`, "i")
+    const match = text.match(re)
+    if (match) social[key] = match[1].replace(/\/+$/, "")
+  }
+
+  const hrefRe = /https?:\/\/(?:www\.)?(facebook|instagram|linkedin|youtube|twitter|x|pinterest)[^\s"'>]+/gi
+  let m
+  while ((m = hrefRe.exec(text)) !== null) {
+    const domain = m[1].toLowerCase()
+    const key = domain === "x" ? "twitter" : domain
+    if (!social[key]) {
+      social[key] = m[0].replace(/\/+$/, "")
+    }
+  }
+
+  return social
+}
 
 async function extractBusinessProfile(text: string, businessType: string, apiKey: string): Promise<Record<string, unknown>> {
   const prompt = `Extract structured business information from the website text below. Return ONLY valid JSON.
@@ -105,7 +243,7 @@ For a ${businessType}, extract ALL available information into this shape:
 
 {
   "contact": { "phone": "...", "email": "...", "address": "..." },
-  "social": { "instagram": "...", "facebook": "...", "twitter": "..." },
+  "social": { "instagram": "...", "facebook": "...", "twitter": "...", "linkedin": "...", "youtube": "...", "pinterest": "..." },
   "hours": { "daily": { "monday": { "open": "09:00", "close": "18:00", "closed": false }, "tuesday": {...}, ...all 7 days } },
   "policies": { "cancellation": "...", "pets": "...", "smoking": "...", "children": "...", "payment": "..." },
   "amenities": ["wifi", "parking", "pool", ...],
@@ -140,7 +278,7 @@ Rules:
 10. For dental clinics: include specialties, services, appointment_duration
 
 Website text:
-${text.slice(0, 14000)}`
+${text.slice(0, 19000)}`
 
   const baseUrl = Deno.env.get("OPENCODE_ZEN_BASE_URL") || "https://opencode.ai/zen/v1"
   const response = await fetch(`${baseUrl}/chat/completions`, {
