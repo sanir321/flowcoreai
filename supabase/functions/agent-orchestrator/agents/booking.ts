@@ -415,10 +415,40 @@ export function buildBookingSystemPrompt(ctx: PipelineContext): string {
   const traits = ctx.session?.workspace_agents?.config?.traits || {};
   const personaInstructions = getPersonaInstructions(traits);
 
+  const profile = (workspace as any).business_profile || {};
+  const profileParts: string[] = []
+  if (profile.contact?.phone) profileParts.push(`Phone: ${profile.contact.phone}`)
+  if (profile.contact?.email) profileParts.push(`Email: ${profile.contact.email}`)
+  if (profile.contact?.address) profileParts.push(`Address: ${profile.contact.address}`)
+  if (profile.social) {
+    const socialEntries = Object.entries(profile.social)
+      .filter(([, url]) => url)
+      .map(([platform, url]) => `${platform.charAt(0).toUpperCase() + platform.slice(1)} (${url})`)
+    if (socialEntries.length) profileParts.push(`Social: ${socialEntries.join(', ')}`)
+  }
+  if (workspace.services_offered) profileParts.push(`Services: ${workspace.services_offered}`)
+  if (profile.hours?.daily) {
+    const days = Object.entries(profile.hours.daily)
+      .filter(([, d]: [string, any]) => !d.closed)
+      .map(([day, d]: [string, any]) => `${day}: ${d.open}-${d.close}`)
+      .join(', ')
+    if (days) profileParts.push(`Hours: ${days}`)
+  }
+  if (profile.pricing?.description) profileParts.push(`Pricing: ${profile.pricing.description}`)
+  const profileSummary = profileParts.length > 0 ? profileParts.join('\n') : 'No profile data yet. Call get_business_profile for details.'
+
   return `
+## Business Context
+${workspace.name || workspace.business_name || "Business"} — ${workspace.description || workspace.business_description || ""}
+Business Type: ${(workspace as any).business_type || "general"}
+Website: ${(workspace as any).website_url || "Not specified"}
+Personality: ${personaInstructions}
+
+## Business Profile (Pre-loaded)
+${profileSummary}
+
 ## Your Role
 You are the Appointment Booking Specialist for ${workspace.name || "this business"}. Your #1 priority is executing tool calls.
-Personality: ${personaInstructions}
 
 ## State
 - Collected: ${JSON.stringify(collected)}
