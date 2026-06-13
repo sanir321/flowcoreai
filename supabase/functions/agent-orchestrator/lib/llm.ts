@@ -6,11 +6,14 @@ const BLUESMINDS_BASE_URL = "https://api.bluesminds.com/v1";
 export const STATIC_FALLBACK_MESSAGE = "I'm having a small technical hiccup right now! Our team has been notified and will get back to you very shortly. Sorry for the inconvenience!";
 
 export async function callLLM(payload: AgentPayload) {
-  const PRIMARY = "gpt-5-mini";
   const FALLBACK_1 = "gpt-4o";
   const FALLBACK_2 = "gemini-3-flash-preview";
+  const DEFAULT_PRIMARY = "gpt-5-mini";
+  const modelChain = payload.model
+    ? [payload.model, FALLBACK_1, FALLBACK_2]
+    : [DEFAULT_PRIMARY, FALLBACK_1, FALLBACK_2];
 
-  for (const model of [PRIMARY, FALLBACK_1, FALLBACK_2]) {
+  for (const model of modelChain) {
     for (let attempt = 0; attempt <= 2; attempt++) {
       try {
         return await callBluesMinds({ ...payload, model });

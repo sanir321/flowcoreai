@@ -1,6 +1,7 @@
 import { PipelineContext, TierResult } from "../lib/types.ts";
 import { callLLM } from "../lib/llm.ts";
 import { getPersonaInstructions } from "../lib/persona.ts";
+import { getTemplate, DEFAULT_TEMPLATES, renderTemplate, TemplateKey } from "../lib/templates.ts";
 
 type BookingFlowStage =
   | "idle"
@@ -154,6 +155,79 @@ const CLARIFICATION_PROMPTS: Record<string, (attempt: number) => string> = {
   },
 };
 
+function diceCoefficient(a: string, b: string): number {
+  const bigrams = (s: string) => {
+    const map = new Map<string, number>();
+    for (let i = 0; i < s.length - 1; i++) {
+      const bg = s.substring(i, i + 2);
+      map.set(bg, (map.get(bg) || 0) + 1);
+    }
+    return map;
+  };
+  if (a === b) return 1;
+  if (a.length < 2 || b.length < 2) return 0;
+  const aBg = bigrams(a);
+  const bBg = bigrams(b);
+  let intersection = 0;
+  for (const [bg, count] of aBg) {
+    intersection += Math.min(count, bBg.get(bg) || 0);
+  }
+  return (2 * intersection) / (a.length - 1 + b.length - 1);
+}
+
+export function matchService(
+  userInput: string,
+  validServices: string[],
+  synonyms: Record<string, string[]> = {}
+): { matched: string | null; method: "exact" | "synonym" | "fuzzy" | null } {
+  const normalizedInput = userInput.toLowerCase().trim();
+  if (!normalizedInput) return { matched: null, method: null };
+
+  const exactMatch = validServices.find(s => s.toLowerCase() === normalizedInput);
+  if (exactMatch) return { matched: exactMatch, method: "exact" };
+
+  for (const [service, aliases] of Object.entries(synonyms)) {
+    if (aliases.some(a => a.toLowerCase() === normalizedInput)) {
+      return { matched: service, method: "synonym" };
+    }
+  }
+
+  let bestScore = 0;
+  let bestService: string | null = null;
+  for (const service of validServices) {
+    const score = diceCoefficient(normalizedInput, service.toLowerCase());
+    if (score > bestScore) {
+      bestScore = score;
+      bestService = service;
+    }
+  }
+
+  if (bestScore >= 0.4) {
+    return { matched: bestService, method: "fuzzy" };
+  }
+  return { matched: null, method: null };
+}
+
+export function validateService(
+  service: string,
+  validServices: string[]
+): { valid: boolean; suggestions: string[]; matchedService: string | null } {
+  const normalized = service.toLowerCase().trim();
+  const exactMatch = validServices.find(s => s.toLowerCase() === normalized);
+  if (exactMatch) return { valid: true, suggestions: [], matchedService: exactMatch };
+
+  const scored = validServices
+    .map(s => ({ service: s, score: diceCoefficient(normalized, s.toLowerCase()) }))
+    .sort((a, b) => b.score - a.score);
+  const top3 = scored.filter(s => s.score >= 0.3).slice(0, 3).map(s => s.service);
+
+  return {
+    valid: false,
+    suggestions: top3.length > 0 ? top3 : validServices.slice(0, 3),
+    matchedService: null
+  };
+}
+
 export async function loadOrCreateBookingSession(ctx: PipelineContext): Promise<BookingSession | null> {
   const { data: existing } = await ctx.supabase
     .from("booking_sessions")
@@ -205,13 +279,24 @@ export async function updateBookingSession(
   id: string,
   updates: Partial<BookingSession>
 ): Promise<void> {
-  const { data } = await ctx.supabase
-    .from("booking_sessions")
-    .update({ ...updates, updated_at: new Date().toISOString() })
-    .eq("id", id)
-    .select()
-    .single();
-  if (data) ctx.bookingSession = data;
+  for (let attempt = 0; attempt <= 2; attempt++) {
+    try {
+      const { data } = await ctx.supabase
+        .from("booking_sessions")
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq("id", id)
+        .select()
+        .single();
+      if (data) ctx.bookingSession = data;
+      return;
+    } catch (err) {
+      if (attempt < 2) {
+        await new Promise(res => setTimeout(res, 100 * Math.pow(2, attempt)));
+      } else {
+        throw err;
+      }
+    }
+  }
 }
 
 async function extractFields(
@@ -337,13 +422,38 @@ export async function handleBooking(ctx: PipelineContext): Promise<TierResult | 
   const missing = getMissingFields(collected);
 
   // 1. Multi-field extraction from the current message
+  const validServices = ctx.workspace?.services_offered || [];
+  const synonyms = (ctx.workspace as any)?.service_synonyms || {};
   const extractions = await extractFields(ctx.payload.message, missing, collected, ctx.workspace?.services_offered);
   let fieldsUpdated = false;
 
   for (const [field, data] of Object.entries(extractions)) {
     if (data.confidence === "high" && data.value) {
-      collected[field] = data.value;
-      fieldsUpdated = true;
+      if (field === "service") {
+        const matched = matchService(data.value, validServices, synonyms);
+        const validation = validateService(matched.matched || data.value, validServices);
+        if (!validation.valid) {
+          if (matched.matched && matched.method === "fuzzy") {
+            collected[field] = matched.matched;
+            fieldsUpdated = true;
+          } else {
+            const prompt = await getTemplate(ctx.payload.workspace_id, "invalid_service_response", DEFAULT_TEMPLATES.invalid_service_response);
+            return {
+              handled: true,
+              response: renderTemplate(prompt, {
+                services: validation.suggestions.join(", ")
+              }),
+              reason: "booking_invalid_service"
+            };
+          }
+        } else {
+          collected[field] = validation.matchedService || data.value;
+          fieldsUpdated = true;
+        }
+      } else {
+        collected[field] = data.value;
+        fieldsUpdated = true;
+      }
     }
   }
 
@@ -364,7 +474,7 @@ export async function handleBooking(ctx: PipelineContext): Promise<TierResult | 
     }
 
     // If we just started (idle) and successfully got some fields, continue to ask for the next one
-    const prompt = FIELD_PROMPTS[nextStage]?.(ctx.workspace)
+    const prompt = await resolveBookingPrompt(ctx, nextStage, collected)
       ?? "Could you please provide more details?";
     return { handled: true, response: prompt, reason: `booking_jump_${nextStage}` };
   }
@@ -379,7 +489,7 @@ export async function handleBooking(ctx: PipelineContext): Promise<TierResult | 
       return null;
     }
 
-    const retry = RETRY_PROMPTS[bs.state]?.(attempts[bs.state], ctx.workspace)
+    const retry = await resolveBookingRetryPrompt(ctx, bs.state, attempts[bs.state])
       ?? "Could you please clarify?";
     return { handled: true, response: retry, reason: "booking_retry" };
   }
@@ -405,6 +515,44 @@ function getNextStage(current: BookingFlowStage, collected: Record<string, strin
 export function getMissingFields(collected: Record<string, any>): string[] {
   const required = ["service", "date", "time", "name", "email"];
   return required.filter(f => !collected[f]);
+}
+
+const STAGE_TEMPLATE_KEY: Record<string, string> = {
+  collecting_service: "booking_service_prompt",
+  collecting_date: "booking_date_prompt",
+  collecting_time: "booking_time_prompt",
+  collecting_name: "booking_name_prompt",
+  collecting_email: "booking_email_prompt"
+};
+
+async function resolveBookingPrompt(
+  ctx: PipelineContext,
+  stage: string,
+  collected: Record<string, string>
+): Promise<string | null> {
+  const key = STAGE_TEMPLATE_KEY[stage];
+  if (!key) return FIELD_PROMPTS[stage]?.(ctx.workspace) ?? null;
+
+  const templateKey = key as TemplateKey;
+  const defaultPrompt = FIELD_PROMPTS[stage]?.(ctx.workspace)
+    ?? DEFAULT_TEMPLATES[templateKey]
+    ?? null;
+  if (!defaultPrompt) return null;
+
+  const wsId = ctx.payload.workspace_id;
+  const template = await getTemplate(wsId, templateKey, defaultPrompt);
+  return renderTemplate(template, {
+    services: (ctx.workspace?.services_offered || []).join(", "),
+    ...collected
+  });
+}
+
+async function resolveBookingRetryPrompt(
+  ctx: PipelineContext,
+  stage: string,
+  attempt: number
+): Promise<string | null> {
+  return RETRY_PROMPTS[stage]?.(attempt, ctx.workspace) ?? null;
 }
 
 export function buildBookingSystemPrompt(ctx: PipelineContext): string {
