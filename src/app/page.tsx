@@ -432,27 +432,23 @@ export default function LandingPage() {
           <div className="max-w-[820px] mx-auto text-center flex flex-col items-center">
             <p className="text-sm font-normal mb-4" style={{ color: "#c65f39" }}>Community</p>
             <h2 className="font-normal tracking-tight mb-8" style={{ fontSize: "35.2508px", lineHeight: "44.0635px", letterSpacing: "-0.15667px", color: "#171717" }}>
-              Support our launch on Product Hunt
+              Featured on Smol Launch
             </h2>
-            <a 
-              href="https://www.producthunt.com/products/flowcore"
+            <a
+              href="https://smollaunch.com"
               target="_blank"
               rel="noopener noreferrer"
               className="group relative flex flex-col sm:flex-row items-center gap-6 p-6 rounded-2xl transition-all duration-300 hover:shadow-xl hover:-translate-y-1 w-full max-w-[500px] text-left"
               style={{ background: "#fafafa", border: "1px solid #e5e5e5" }}
             >
-              <img 
-                alt="FlowCore logo" 
-                src="https://ph-files.imgix.net/e8f6dc47-6f1d-46cb-bb41-2def66ff4cdc.svg?auto=compress,format&codec=mozjpeg&cs=strip&fit=crop&h=80&w=80" 
-                className="w-16 h-16 rounded-xl object-cover shrink-0 shadow-sm border border-gray-200"
+              <img
+                src="https://smollaunch.com/badges/featured-dark.svg"
+                alt="Flowcore AI — Featured on Smol Launch"
+                loading="lazy"
+                width="250"
+                height="60"
+                className="shrink-0"
               />
-              <div className="flex-1 min-w-0 text-center sm:text-left">
-                <h3 className="text-lg font-semibold tracking-tight text-gray-900 mb-1">FlowCore</h3>
-                <p className="text-sm text-gray-500 line-clamp-2 leading-relaxed">AI customer service agents for clinics and restaurants</p>
-              </div>
-              <div className="shrink-0 flex items-center justify-center p-3 rounded-full transition-colors bg-white border border-gray-200 group-hover:border-[#ff6154] group-hover:bg-[#ff6154]/5">
-                <svg viewBox="0 0 24 24" fill="#ff6154" className="w-5 h-5"><path d="M12 0C5.372 0 0 5.372 0 12s5.372 12 12 12 12-5.372 12-12S18.628 0 12 0zm1.758 15.656h-2.5v4.542H8.718V4.316h5.811c3.159 0 5.438 2.054 5.438 5.67 0 3.615-2.279 5.67-5.451 5.67zm-2.5-2.203h2.463c1.678 0 2.92-1.047 2.92-3.467 0-2.42-1.242-3.468-2.92-3.468H11.258v6.935z"/></svg>
-              </div>
             </a>
           </div>
         </motion.section>
