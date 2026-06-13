@@ -12,6 +12,12 @@ export function buildSupportSystemPrompt(ctx: PipelineContext): string {
   if (profile.contact?.phone) profileParts.push(`Phone: ${profile.contact.phone}`)
   if (profile.contact?.email) profileParts.push(`Email: ${profile.contact.email}`)
   if (profile.contact?.address) profileParts.push(`Address: ${profile.contact.address}`)
+  if (profile.social) {
+    const socialEntries = Object.entries(profile.social)
+      .filter(([, url]) => url)
+      .map(([platform, url]) => `${platform.charAt(0).toUpperCase() + platform.slice(1)} (${url})`)
+    if (socialEntries.length) profileParts.push(`Social: ${socialEntries.join(', ')}`)
+  }
   if (workspace.services_offered) profileParts.push(`Services: ${workspace.services_offered}`)
   if (profile.hours?.daily) {
     const days = Object.entries(profile.hours.daily)

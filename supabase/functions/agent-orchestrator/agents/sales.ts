@@ -6,10 +6,29 @@ export function buildSalesSystemPrompt(ctx: PipelineContext): string {
   const traits = ctx.session?.workspace_agents?.config?.traits || {};
   const personaInstructions = getPersonaInstructions(traits);
 
+  const profile = (workspace as any).business_profile || {};
+  const profileParts: string[] = []
+  if (profile.contact?.phone) profileParts.push(`Phone: ${profile.contact.phone}`)
+  if (profile.contact?.email) profileParts.push(`Email: ${profile.contact.email}`)
+  if (profile.contact?.address) profileParts.push(`Address: ${profile.contact.address}`)
+  if (profile.social) {
+    const socialEntries = Object.entries(profile.social)
+      .filter(([, url]) => url)
+      .map(([platform, url]) => `${platform.charAt(0).toUpperCase() + platform.slice(1)} (${url})`)
+    if (socialEntries.length) profileParts.push(`Social: ${socialEntries.join(', ')}`)
+  }
+  if (workspace.services_offered) profileParts.push(`Services: ${workspace.services_offered}`)
+  const profileSummary = profileParts.length > 0 ? profileParts.join('\n') : 'No profile data yet. Call get_business_profile for details.'
+
   return `
 ## Business Context
 ${workspace.name || workspace.business_name || "Business"} — ${workspace.description || workspace.business_description || ""}
+Business Type: ${(workspace as any).business_type || "general"}
+Website: ${(workspace as any).website_url || "Not specified"}
 Personality: ${personaInstructions}
+
+## Business Profile (Pre-loaded)
+${profileSummary}
 
 ## Your Role
 You are the Sales Specialist for ${workspace.name || "this business"}. Your goal is to help customers find products, understand pricing, and get quotes. You are a helpful sales assistant — NOT an internal CRM tool.

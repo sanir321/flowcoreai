@@ -123,10 +123,10 @@ export default function LandingPage() {
                 Connect specialized AI to manage and resolve your customer conversations with business precision.
               </p>
 
-              {/* Product Hunt Badge */}
+              {/* Smol Launch Badge */}
               <div className="flex justify-center pt-4">
-                <a href="https://www.producthunt.com/products/flowcore?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-flowcore" target="_blank" rel="noopener noreferrer">
-                  <img alt=" FlowCore - AI customer service agents for clinics and restaurants | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1159292&theme=dark&t=1781015516632" />
+                <a href="https://smollaunch.com" target="_blank" rel="noopener">
+                  <img src="https://smollaunch.com/badges/featured-dark.svg" alt="Flowcore AI — Featured on Smol Launch" loading="lazy" width="250" height="60" />
                 </a>
               </div>
             </motion.div>
