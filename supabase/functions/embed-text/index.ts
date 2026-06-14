@@ -72,11 +72,11 @@ Deno.serve(async (req) => {
       .delete()
       .eq('source_id', source_id)
 
-    if (deleteError) throw new Error(`Failed to clear old chunks: ${deleteError.message}`)
+    if (deleteError) throw new Error("Failed to clear old chunks")
 
     if (chunksToInsert.length > 0) {
       const { error: insertError } = await supabase.from('kb_chunks').insert(chunksToInsert)
-      if (insertError) throw new Error(`Failed to save chunks: ${insertError.message}`)
+      if (insertError) throw new Error("Failed to save chunks")
     }
 
     await supabase.from('kb_sources').update({
@@ -101,7 +101,7 @@ Deno.serve(async (req) => {
       if (source_id) {
         await supabase.from('kb_sources').update({
           status: 'failed',
-          error_message: error.message
+          error_message: "Embedding failed"
         }).eq('id', source_id)
       }
     } catch {}

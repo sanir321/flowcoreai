@@ -63,7 +63,7 @@ export async function finalizeOnboarding(input: unknown): Promise<ActionResponse
 
   } catch (err) {
     console.error(err)
-    return { data: null, error: err instanceof Error ? err.message : "Failed to finalize setup" }
+    return { data: null, error: "Failed to finalize setup" }
   }
 }
 
@@ -138,7 +138,7 @@ export async function addAgent(input: unknown): Promise<ActionResponse<{ agent_i
 
   } catch (err) {
     console.error("[addAgent] Error:", err)
-    return { data: null, error: err instanceof Error ? err.message : "Failed to add agent" }
+    return { data: null, error: "Failed to add agent" }
   }
 }
 

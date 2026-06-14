@@ -64,6 +64,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ media: { ...media, public_url: publicUrl.publicUrl } });
   } catch (e: any) {
     console.error("Menu upload error:", e);
-    return NextResponse.json({ error: e.message || "Failed to process menu upload" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to process menu upload" }, { status: 500 });
   }
 }

@@ -125,7 +125,7 @@ export async function updateBusinessProfile(input: unknown) {
     return { data: { success: true }, error: null }
   } catch (err) {
     console.error(err)
-    return { data: null, error: err instanceof Error ? err.message : "Failed to update business profile" }
+    return { data: null, error: "Failed to update business profile" }
   }
 }
 
@@ -225,6 +225,6 @@ export async function getRequiredInfo(workspaceId: string): Promise<{ data: Requ
     return { data: { items, progress }, error: null }
   } catch (err) {
     console.error(err)
-    return { data: null, error: err instanceof Error ? err.message : "Failed to get required info" }
+    return { data: null, error: "Failed to get required info" }
   }
 }

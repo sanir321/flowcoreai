@@ -9,7 +9,7 @@ export async function getBusinessProfile(params: { sections?: string[] }, ctx: P
 
   if (error) {
     console.error("[BusinessProfile] Query error:", error.message);
-    return { business_profile: null, success: false, error: error.message };
+    return { business_profile: null, success: false, error: "Failed to load profile" };
   }
 
   const profile = workspace?.business_profile;

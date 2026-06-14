@@ -187,7 +187,7 @@ Deno.serve(async (req) => {
       const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '')
       const { source_id } = await req.clone().json().catch(() => ({}))
       if (source_id) {
-        await supabase.from('kb_sources').update({ status: 'failed', error_message: error.message }).eq('id', source_id)
+        await supabase.from('kb_sources').update({ status: 'failed', error_message: "URL ingestion failed" }).eq('id', source_id)
       }
     } catch {}
     return new Response(JSON.stringify({ error: "URL ingestion failed" }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })

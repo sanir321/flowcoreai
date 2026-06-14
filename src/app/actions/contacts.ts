@@ -85,7 +85,7 @@ export async function sendManualMessage(input: unknown): Promise<ActionResponse<
     return { data: { success: true }, error: null }
   } catch (err) {
     console.error("[MANUAL_SEND_ERROR]", err)
-    return { data: null, error: err instanceof Error ? err.message : "Failed to send message" }
+    return { data: null, error: "Failed to send message" }
   }
 }
 
@@ -133,7 +133,7 @@ export async function createContact(input: unknown): Promise<ActionResponse<{ id
     return { data: { id: data.id }, error: null }
   } catch (err) {
     console.error("[CREATE_CONTACT_ERROR]", err)
-    return { data: null, error: err instanceof Error ? err.message : "Failed to create contact" }
+    return { data: null, error: "Failed to create contact" }
   }
 }
 
@@ -206,7 +206,7 @@ export async function getContactsPaginated(
     return { data: { contacts: contacts || [], total: null }, error: null }
   } catch (err) {
     console.error("[GET_CONTACTS_ERROR]", err)
-    return { data: null, error: err instanceof Error ? err.message : "Failed to load contacts" }
+    return { data: null, error: "Failed to load contacts" }
   }
 }
 

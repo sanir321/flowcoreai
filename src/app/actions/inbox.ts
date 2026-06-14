@@ -40,7 +40,7 @@ export async function takeOverSession(input: unknown): Promise<ActionResponse<{ 
     return { data: { success: true }, error: null }
   } catch (err) {
     console.error(err)
-    return { data: null, error: err instanceof Error ? err.message : "Failed to take over session" }
+    return { data: null, error: "Failed to take over session" }
   }
 }
 
@@ -116,7 +116,7 @@ export async function sendManualReply(input: unknown): Promise<ActionResponse<an
     return { data: message, error: null }
   } catch (err) {
     console.error(err)
-    return { data: null, error: err instanceof Error ? err.message : "Failed to send message" }
+    return { data: null, error: "Failed to send message" }
   }
 }
 
@@ -168,6 +168,6 @@ export async function resolveEscalation(input: unknown): Promise<ActionResponse<
     return { data: { success: true }, error: null }
   } catch (err) {
     console.error(err)
-    return { data: null, error: err instanceof Error ? err.message : "Failed to resolve escalation" }
+    return { data: null, error: "Failed to resolve escalation" }
   }
 }

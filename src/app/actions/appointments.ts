@@ -66,7 +66,7 @@ export async function createAppointment(input: unknown): Promise<ActionResponse<
     return { data: { ...data, calendar_synced }, error: null }
   } catch (err) {
     console.error(err)
-    return { data: null, error: err instanceof Error ? err.message : "Failed to create appointment" }
+    return { data: null, error: "Failed to create appointment" }
   }
 }
 
@@ -130,7 +130,7 @@ export async function rescheduleAppointment(input: unknown): Promise<ActionRespo
     return { data, error: null }
   } catch (err) {
     console.error(err)
-    return { data: null, error: err instanceof Error ? err.message : "Failed to reschedule appointment" }
+    return { data: null, error: "Failed to reschedule appointment" }
   }
 }
 
@@ -189,6 +189,6 @@ export async function cancelAppointment(input: unknown): Promise<ActionResponse<
     return { data, error: null }
   } catch (err) {
     console.error(err)
-    return { data: null, error: err instanceof Error ? err.message : "Failed to cancel appointment" }
+    return { data: null, error: "Failed to cancel appointment" }
   }
 }

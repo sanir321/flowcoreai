@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
     return await processSingle(supabase, workspace_id, source_id)
   } catch (error: any) {
     console.error("[ExtractBP]", error.message)
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: "Failed to extract business profile" }), {
       status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" }
     })
   }

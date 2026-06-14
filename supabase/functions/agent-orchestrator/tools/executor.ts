@@ -55,7 +55,8 @@ export const toolExecutor = {
     try {
       result = await routeToImpl(toolName, params, ctx);
     } catch (error: any) {
-      result = { success: false, error: error.message };
+      console.error(`[ToolExecutor] ${toolName} error:`, error.message);
+      result = { success: false, error: "Tool execution failed" };
     }
 
     const durationMs = Date.now() - startTime;

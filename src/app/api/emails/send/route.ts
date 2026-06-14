@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const parsed = EmailBodySchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+      return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
     }
 
     const { to, subject, template, data } = parsed.data;
@@ -113,7 +113,7 @@ export async function POST(req: NextRequest) {
 
     if (error) {
       console.error("[EMAIL_API] SMTP Error:", error);
-      return NextResponse.json({ error }, { status: 500 });
+      return NextResponse.json({ error: "Failed to send email" }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, id: (result as any)?.messageId });

@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
     return new Response("ok", { status: 200 })
   } catch (e: any) {
     console.error("[ORCHESTRATOR] Request error:", e.message)
-    return new Response(JSON.stringify({ error: e.message }), {
+    return new Response(JSON.stringify({ error: "Internal error" }), {
       status: 200, headers: responseHeaders
     })
   }

@@ -158,11 +158,12 @@ export async function generateQuote(
   const itemsWithPrices = await Promise.all((params.items || []).map(async (item) => {
     if (item.price && item.price > 0) return item;
     // Try to find price from menu_items
+    const safeItemName = item.name.replace(/\\/g, '\\\\').replace(/[%_]/g, '\\$&');
     const { data: menuItems } = await ctx.supabase
       .from("menu_items")
       .select("price, name")
       .eq("workspace_id", ctx.payload.workspace_id)
-      .ilike("name", `%${item.name}%`)
+      .ilike("name", `%${safeItemName}%`)
       .eq("is_available", true)
       .limit(1);
     if (menuItems && menuItems.length > 0 && menuItems[0].price > 0) {

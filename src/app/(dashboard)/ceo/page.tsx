@@ -253,7 +253,12 @@ const renderInline = (text: string) => {
       return <code key={i} className="px-1.5 py-0.5 rounded-md bg-gray-100 text-[#c65f39] text-[11px] font-mono">{part.slice(1, -1)}</code>
     }
     if (part.startsWith('http')) {
-      return <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="text-[#c65f39] underline underline-offset-2 decoration-[#c65f39]/30 hover:decoration-[#c65f39] transition-all">{part}</a>
+      try {
+        const u = new URL(part);
+        if (u.protocol === 'https:' || u.protocol === 'http:') {
+          return <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="text-[#c65f39] underline underline-offset-2 decoration-[#c65f39]/30 hover:decoration-[#c65f39] transition-all">{part}</a>
+        }
+      } catch {}
     }
     return part
   })

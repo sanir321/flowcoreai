@@ -77,7 +77,7 @@ export async function createWorkspace(input: unknown): Promise<ActionResponse<{ 
     return { data: { workspace_id: data.id }, error: null }
   } catch (err) {
     console.error(err)
-    return { data: null, error: err instanceof Error ? err.message : "Failed to create workspace" }
+    return { data: null, error: "Failed to create workspace" }
   }
 }
 
@@ -127,7 +127,7 @@ export async function updateWorkspace(input: unknown): Promise<ActionResponse<{ 
     return { data: { success: true }, error: null }
   } catch (err) {
     console.error(err)
-    return { data: null, error: err instanceof Error ? err.message : "Failed to update workspace" }
+    return { data: null, error: "Failed to update workspace" }
   }
 }
 
@@ -166,7 +166,7 @@ export async function updateWelcomeTemplate(workspace_id: string, template: stri
     return { data: { success: true }, error: null }
   } catch (err) {
     console.error(err)
-    return { data: null, error: err instanceof Error ? err.message : "Failed to update welcome template" }
+    return { data: null, error: "Failed to update welcome template" }
   }
 }
 
@@ -250,6 +250,6 @@ export async function deleteWorkspace(): Promise<ActionResponse<{ success: true 
     return { data: { success: true }, error: null }
   } catch (err) {
     console.error(err)
-    return { data: null, error: err instanceof Error ? err.message : "Failed to delete workspace" }
+    return { data: null, error: "Failed to delete workspace" }
   }
 }
