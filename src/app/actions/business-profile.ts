@@ -45,6 +45,9 @@ export async function getBusinessProfile(workspaceId: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { data: null, error: "Unauthorized" }
 
+  const userWsId = user.app_metadata?.workspace_id
+  if (!userWsId || userWsId !== workspaceId) return { data: null, error: "Unauthorized" }
+
   const { data, error } = await (supabase as any)
     .from("workspaces")
     .select("business_profile")
@@ -76,6 +79,8 @@ export async function updateBusinessProfile(input: unknown) {
     if (!user) return { data: null, error: "Unauthorized" }
 
     const workspaceId = result.data.workspace_id
+    const userWsId = user.app_metadata?.workspace_id
+    if (!userWsId || userWsId !== workspaceId) return { data: null, error: "Unauthorized" }
 
     const { data: existing } = await (supabase as any)
       .from("workspaces")
@@ -145,6 +150,9 @@ export async function getRequiredInfo(workspaceId: string): Promise<{ data: Requ
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
+
+    const userWsId = user.app_metadata?.workspace_id
+    if (!userWsId || userWsId !== workspaceId) return { data: null, error: "Unauthorized" }
 
     const wsResult = await (supabase as any)
       .from("workspaces")

@@ -43,12 +43,15 @@ export default function WidgetSettingsPage() {
   useEffect(() => {
     if (typeof window === "undefined") return
     setOrigin(window.location.origin)
+    let aborted = false
     const supabase = createClient()
     supabase.auth.getUser().then(({ data: { user } }) => {
+      if (aborted) return
       const wid = user?.app_metadata?.workspace_id as string
       if (wid) {
         setWorkspaceId(wid)
         supabase.from("widget_config").select("*").eq("workspace_id", wid).maybeSingle().then(({ data }) => {
+          if (aborted) return
           const d = data as any
           if (d) {
             setConfig({
@@ -67,6 +70,7 @@ export default function WidgetSettingsPage() {
         })
       }
     })
+    return () => { aborted = true }
   }, [])
 
   const handleSave = async () => {
