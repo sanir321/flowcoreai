@@ -9,7 +9,9 @@ export async function searchMenu(
   let query = ctx.supabase.from("menu_items").select("id, name, description, price, category")
     .eq("workspace_id", ctx.payload.workspace_id).eq("is_available", true);
   if (!isGeneric && params.query) {
-    query = query.or(`name.ilike.%${params.query}%,category.ilike.%${params.query}%,description.ilike.%${params.query}%`);
+    // Escape LIKE wildcards and PostgREST filter metacharacters
+    const safe = String(params.query).replace(/[%_(),]/g, '\\$&');
+    query = query.or(`name.ilike.%${safe}%,category.ilike.%${safe}%,description.ilike.%${safe}%`);
   }
   if (params.category) query = query.eq("category", params.category);
   const { data: items } = await query.order("name").limit(20);
@@ -94,11 +96,14 @@ export async function checkStock(
   const name = params.product_name?.trim();
   if (!name) return { success: false, error: "product_name is required" };
 
+  // Escape LIKE wildcards and PostgREST filter metacharacters
+  const safeName = name.replace(/[%_(),]/g, '\\$&');
+
   const { data: items } = await ctx.supabase
     .from("menu_items")
     .select("id, name, description, price, category, is_available, stock_count")
     .eq("workspace_id", ctx.payload.workspace_id)
-    .or(`name.ilike.%${name}%,description.ilike.%${name}%`)
+    .or(`name.ilike.%${safeName}%,description.ilike.%${safeName}%`)
     .order("name")
     .limit(5);
 

@@ -82,7 +82,7 @@ export async function addUrlSource(input: unknown): Promise<ActionResponse<{ id:
     return { data: { id: data.id }, error: null }
   } catch (err: any) {
     console.error(err)
-    return { data: null, error: err.message || "Failed to add URL source" }
+    return { data: null, error: "Failed to add URL source" }
   }
 }
 
@@ -97,6 +97,12 @@ export async function deleteSource(id: string): Promise<ActionResponse<{ success
 
     const { data: source } = await (supabase.from("kb_sources") as any).select("workspace_id, bp_extracted_fields").eq("id", res.data).maybeSingle()
     if (!source) return { data: null, error: "Source not found" }
+
+    // Verify workspace ownership
+    const userWsId = user.app_metadata?.workspace_id
+    if (!userWsId || source.workspace_id !== userWsId) {
+      return { data: null, error: "Unauthorized" }
+    }
 
     const { error: chunkError } = await supabase
       .from("kb_chunks")
@@ -161,7 +167,7 @@ export async function deleteSource(id: string): Promise<ActionResponse<{ success
     return { data: { success: true }, error: null }
   } catch (err: any) {
     console.error(err)
-    return { data: null, error: err.message || "Failed to delete knowledge source" }
+    return { data: null, error: "Failed to delete knowledge source" }
   }
 }
 
@@ -217,7 +223,7 @@ export async function createDocumentSource(input: unknown): Promise<ActionRespon
     return { data: { id: data.id }, error: null }
   } catch (err: any) {
     console.error(err)
-    return { data: null, error: err.message || "Failed to create document source" }
+    return { data: null, error: "Failed to create document source" }
   }
 }
 
@@ -274,7 +280,7 @@ export async function pasteKbText(input: { workspace_id: string; content: string
     return { data: { id: source.id }, error: null }
   } catch (err: any) {
     console.error(err)
-    return { data: null, error: err.message || "Failed to save pasted text" }
+    return { data: null, error: "Failed to save pasted text" }
   }
 }
 
@@ -347,6 +353,6 @@ export async function uploadDocumentSource(input: unknown): Promise<ActionRespon
     return { data: { id: data.id }, error: null }
   } catch (err: any) {
     console.error(err)
-    return { data: null, error: err.message || "Failed to upload knowledge source" }
+    return { data: null, error: "Failed to upload knowledge source" }
   }
 }

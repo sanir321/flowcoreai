@@ -182,7 +182,7 @@ export async function disconnectGoogleIntegration(workspace_id: string): Promise
     return { data: { success: true }, error: null }
   } catch (err: any) {
     console.error(err)
-    return { data: null, error: err.message || "Failed to disconnect" }
+    return { data: null, error: "Failed to disconnect" }
   }
 }
 
@@ -208,7 +208,7 @@ export async function exportToSheets(workspace_id: string): Promise<ActionRespon
       return { data: { exported: data.exported || 0 }, error: null }
     } catch (err: any) {
       console.error(err)
-      return { data: null, error: err.message || "Failed to export to Sheets" }
+      return { data: null, error: "Failed to export to Sheets" }
     }
   }
 

@@ -17,11 +17,11 @@ export async function GET() {
         .is("deleted_at", null)
         .maybeSingle()
     
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return NextResponse.json({ error: "Failed to fetch Google status" }, { status: 500 })
 
     return NextResponse.json(googleTokens)
   } catch (error: any) {
     console.error("[GOOGLE_STATUS_ERROR]", error)
-    return NextResponse.json({ error: error?.message || "Internal Error" }, { status: 500 })
+    return NextResponse.json({ error: "Internal Error" }, { status: 500 })
   }
 }

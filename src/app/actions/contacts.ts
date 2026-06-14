@@ -148,13 +148,25 @@ export async function updateContact(input: unknown): Promise<ActionResponse<{ su
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
 
-    // RLS will handle workspace isolation, but we verify we have a workspace_id in metadata
-    if (!user.app_metadata.workspace_id) return { data: null, error: "No workspace assigned" }
+    const userWsId = user.app_metadata?.workspace_id
+    if (!userWsId) return { data: null, error: "No workspace assigned" }
+
+    // Verify contact belongs to user's workspace before update
+    const { data: contact } = await supabase
+      .from("contacts")
+      .select("workspace_id")
+      .eq("id", contact_id)
+      .maybeSingle()
+
+    if (!contact || contact.workspace_id !== userWsId) {
+      return { data: null, error: "Unauthorized" }
+    }
 
     const { error } = await supabase
       .from("contacts")
       .update(updates)
       .eq("id", contact_id)
+      .eq("workspace_id", userWsId)
 
     if (error) throw error
 

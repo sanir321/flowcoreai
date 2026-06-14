@@ -80,7 +80,10 @@ export async function POST(req: NextRequest) {
     // Domain allowlist check (Origin header vs configured domains)
     const origin = req.headers.get("origin") || req.headers.get("referer") || "";
     let allowedOrigin = "*";
-    if (origin && widgetConfig.allowed_domains && Array.isArray(widgetConfig.allowed_domains) && widgetConfig.allowed_domains.length > 0) {
+    if (widgetConfig.allowed_domains && Array.isArray(widgetConfig.allowed_domains) && widgetConfig.allowed_domains.length > 0) {
+      if (!origin) {
+        return new Response("Missing origin header", { status: 403 });
+      }
       try {
         const originDomain = new URL(origin).hostname;
         const allowed = (widgetConfig.allowed_domains as string[]).some(d =>
@@ -91,7 +94,7 @@ export async function POST(req: NextRequest) {
         }
         allowedOrigin = origin;
       } catch {
-        // Invalid URL — skip domain check
+        return new Response("Invalid origin", { status: 403 });
       }
     }
 

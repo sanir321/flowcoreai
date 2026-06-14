@@ -14,7 +14,7 @@ function getAdmin() {
 /**
  * Basic IP-based or Workspace-based rate limiter using a temporary Supabase table
  * Requirement: 30 req/min
- * Fail-open: if the table doesn't exist or errors, requests proceed (success: true)
+ * Fail-closed: if the table doesn't exist or errors, requests are denied
  */
 export async function rateLimit(ip: string, limit = 30, windowSeconds = 60, workspace_id?: string): Promise<{ success: boolean }> {
   const now = Math.floor(Date.now() / 1000);
@@ -36,8 +36,8 @@ export async function rateLimit(ip: string, limit = 30, windowSeconds = 60, work
     const { count, error } = await query;
 
     if (error) {
-      console.warn("Rate limit table missing or error:", error.message);
-      return { success: true }; // fail open
+      console.warn("Rate limit table error:", error.message);
+      return { success: false }; // fail closed
     }
 
     if ((count || 0) >= limit) {
@@ -49,6 +49,6 @@ export async function rateLimit(ip: string, limit = 30, windowSeconds = 60, work
     return { success: true };
   } catch (e) {
     console.error("Rate limit error:", e);
-    return { success: true }; // fail open
+    return { success: false }; // fail closed
   }
 }
