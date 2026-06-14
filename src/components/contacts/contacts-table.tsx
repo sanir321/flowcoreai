@@ -159,7 +159,7 @@ export function ContactsTable({ initialContacts = [], workspaceId }: ContactsTab
         </div>
       </div>
 
-      {/* Main Table - Conduit Minimalist */}
+      {/* Main Table - FlowCore Minimalist */}
       <div className="bg-white border border-gray-100 rounded-[2rem] overflow-hidden shadow-sm">
         <Table>
           <TableHeader className="bg-white border-b border-gray-100">

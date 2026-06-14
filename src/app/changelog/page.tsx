@@ -60,7 +60,7 @@ const changes = [
     items: [
       "Visual polish pass across all pages",
       "WhatsApp compliance layer for GoWA integration",
-      "Conduit design language implementation",
+      "FlowCore design language implementation",
       "Appointment booking functionality",
     ],
   },
