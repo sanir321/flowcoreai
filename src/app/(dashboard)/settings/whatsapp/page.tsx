@@ -100,7 +100,6 @@ export default function WhatsAppPage() {
           filter: `workspace_id=eq.${workspaceId}`,
         },
         (payload) => {
-          console.log('[REALTIME] Change received!', payload);
           const newRecord = payload.new as any;
           if (payload.eventType === 'DELETE' || !newRecord) {
             setStatus('disconnected');

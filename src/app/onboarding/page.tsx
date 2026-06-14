@@ -239,7 +239,6 @@ export default function OnboardingPage() {
 
   const handleCreateWorkspace = async (values: z.infer<typeof CreateWorkspaceSchema>) => {
     setIsLoading(true)
-    console.log("Submitting values:", values)
     const result = await createWorkspace(values)
     if (result.error || !result.data) {
       toast.error(result.error || "Failed to create workspace")
