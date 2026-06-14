@@ -1,5 +1,3 @@
-import { createClient } from "jsr:@supabase/supabase-js@2";
-
 export type TemplateKey =
   | "booking_service_prompt"
   | "booking_date_prompt"
@@ -20,23 +18,22 @@ export const DEFAULT_TEMPLATES: Record<TemplateKey, string> = {
 };
 
 export async function getTemplate(
+  supabase: any,
   workspaceId: string,
   key: TemplateKey,
   fallback: string
 ): Promise<string> {
-  const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!supabaseUrl || !supabaseKey) return fallback;
-
-  const supabase = createClient(supabaseUrl, supabaseKey);
-  const { data } = await supabase
-    .from("business_templates")
-    .select("content")
-    .eq("workspace_id", workspaceId)
-    .eq("template_key", key)
-    .maybeSingle();
-
-  return data?.content || fallback;
+  try {
+    const { data } = await supabase
+      .from("business_templates")
+      .select("content")
+      .eq("workspace_id", workspaceId)
+      .eq("template_key", key)
+      .maybeSingle();
+    return data?.content || fallback;
+  } catch {
+    return fallback;
+  }
 }
 
 export function renderTemplate(template: string, vars: Record<string, string>): string {

@@ -9,7 +9,8 @@ export const ALL_TOOLS: Record<string, ToolDefinition> = {
       properties: {
         query: { type: "string", description: "The search query based on the user's question." }
       },
-      required: ["query"]
+      required: ["query"],
+      additionalProperties: false
     }
   },
   check_availability: {
@@ -21,7 +22,8 @@ export const ALL_TOOLS: Record<string, ToolDefinition> = {
         date: { type: "string", description: "The date to check (e.g. '2026-05-12' or 'tomorrow')." },
         time: { type: "string", description: "Optional specific time to check." }
       },
-      required: ["date"]
+      required: ["date"],
+      additionalProperties: false
     }
   },
   create_appointment: {
@@ -37,7 +39,8 @@ export const ALL_TOOLS: Record<string, ToolDefinition> = {
         date: { type: "string", description: "Date of appointment (e.g. '2026-05-20')." },
         time: { type: "string", description: "Time of appointment (e.g. '10am' or '14:00')." }
       },
-      required: ["name", "service", "date", "time"]
+      required: ["name", "service", "date", "time"],
+      additionalProperties: false
     }
   },
   update_appointment: {
@@ -53,7 +56,8 @@ export const ALL_TOOLS: Record<string, ToolDefinition> = {
         time: { type: "string" },
         duration: { type: "number", description: "Duration in minutes (default 30)." }
       },
-      required: ["appointment_id"]
+      required: ["appointment_id"],
+      additionalProperties: false
     }
   },
   cancel_appointment: {
@@ -65,7 +69,8 @@ export const ALL_TOOLS: Record<string, ToolDefinition> = {
         appointment_id: { type: "string" },
         reason: { type: "string" }
       },
-      required: ["appointment_id"]
+      required: ["appointment_id"],
+      additionalProperties: false
     }
   },
   capture_lead: {
@@ -79,7 +84,8 @@ export const ALL_TOOLS: Record<string, ToolDefinition> = {
         phone: { type: "string" },
         notes: { type: "string", description: "Context about the lead's interest." }
       },
-      required: ["name"]
+      required: ["name"],
+      additionalProperties: false
     }
   },
   request_handoff: {
@@ -92,7 +98,8 @@ export const ALL_TOOLS: Record<string, ToolDefinition> = {
         reason: { type: "string" },
         context: { type: "string", description: "Summary of relevant details for the receiving agent." }
       },
-      required: ["target_agent", "reason"]
+      required: ["target_agent", "reason"],
+      additionalProperties: false
     }
   },
   get_contact_history: {
@@ -100,7 +107,8 @@ export const ALL_TOOLS: Record<string, ToolDefinition> = {
     description: "Retrieve full contact details and past appointment history.",
     parameters: {
       type: "object",
-      properties: {}
+      properties: {},
+      additionalProperties: false
     }
   },
   update_contact: {
@@ -113,7 +121,8 @@ export const ALL_TOOLS: Record<string, ToolDefinition> = {
         email: { type: "string" },
         phone: { type: "string" },
         notes: { type: "string" }
-      }
+      },
+      additionalProperties: false
     }
   },
   update_lead_stage: {
@@ -125,13 +134,14 @@ export const ALL_TOOLS: Record<string, ToolDefinition> = {
         stage: { type: "string", enum: ["new", "contacted", "qualified", "proposal", "negotiation", "won", "lost"] },
         notes: { type: "string" }
       },
-      required: ["stage"]
+      required: ["stage"],
+      additionalProperties: false
     }
   },
   get_pipeline: {
     name: "get_pipeline",
     description: "Get an overview of all leads in the sales pipeline broken down by stage.",
-    parameters: { type: "object", properties: {} }
+    parameters: { type: "object", properties: {}, additionalProperties: false }
   },
   schedule_follow_up: {
     name: "schedule_follow_up",
@@ -142,7 +152,8 @@ export const ALL_TOOLS: Record<string, ToolDefinition> = {
         hours: { type: "number", description: "Hours from now." },
         message: { type: "string", description: "Content of the follow-up message." }
       },
-      required: ["hours", "message"]
+      required: ["hours", "message"],
+      additionalProperties: false
     }
   },
   generate_quote: {
@@ -157,12 +168,15 @@ export const ALL_TOOLS: Record<string, ToolDefinition> = {
             type: "object",
             properties: {
               name: { type: "string" }, qty: { type: "number" }, price: { type: "number" }
-            }
+            },
+            required: ["name", "qty", "price"],
+            additionalProperties: false
           }
         },
         notes: { type: "string" }
       },
-      required: ["items"]
+      required: ["items"],
+      additionalProperties: false
     }
   },
   search_menu: {
@@ -173,7 +187,8 @@ export const ALL_TOOLS: Record<string, ToolDefinition> = {
       properties: {
         query: { type: "string", description: "Optional search term." },
         category: { type: "string", description: "Optional category filter." }
-      }
+      },
+      additionalProperties: false
     }
   },
   check_stock: {
@@ -184,7 +199,8 @@ export const ALL_TOOLS: Record<string, ToolDefinition> = {
       properties: {
         product_name: { type: "string", description: "Name of the product to check availability for." }
       },
-      required: ["product_name"]
+      required: ["product_name"],
+      additionalProperties: false
     }
   },
   send_catalog: {
@@ -194,7 +210,8 @@ export const ALL_TOOLS: Record<string, ToolDefinition> = {
       type: "object",
       properties: {
         category: { type: "string", description: "Optional: only send items from this category." }
-      }
+      },
+      additionalProperties: false
     }
   },
   send_menu_media: {
@@ -204,7 +221,8 @@ export const ALL_TOOLS: Record<string, ToolDefinition> = {
       type: "object",
       properties: {
         caption: { type: "string", description: "Optional caption." }
-      }
+      },
+      additionalProperties: false
     }
   },
   create_ticket: {
@@ -217,7 +235,8 @@ export const ALL_TOOLS: Record<string, ToolDefinition> = {
         description: { type: "string", description: "Detailed description of the issue." },
         priority: { type: "string", enum: ["low", "normal", "high", "urgent"], description: "Priority level (default: normal)." }
       },
-      required: ["subject"]
+      required: ["subject"],
+      additionalProperties: false
     }
   },
   get_business_profile: {
@@ -227,7 +246,8 @@ export const ALL_TOOLS: Record<string, ToolDefinition> = {
       type: "object",
       properties: {
         sections: { type: "array", items: { type: "string" }, description: "Optional: specific sections to retrieve (e.g. ['contact', 'hours', 'policies']). Omit for full profile." }
-      }
+      },
+      additionalProperties: false
     }
   }
 };
@@ -251,33 +271,34 @@ export const SUBMIT_PLAN_TOOL = {
   type: "function",
   function: {
     name: "submit_plan",
-    description: "Submit your final plan. CRITICAL: Every action you claim to perform (capturing leads, scheduling follow-ups) MUST have a corresponding tool in the 'actions' array. Writing about it in 'response' does NOT execute it. Examples: lead → add capture_lead to actions; follow-up → add schedule_follow_up to actions.",
+    description: "Submit your final plan. CRITICAL: Every action you claim to perform (capturing leads, scheduling follow-ups) MUST have a corresponding tool in the 'actions' array. Writing about it in 'response' does NOT execute it.",
     parameters: {
       type: "object",
       properties: {
         response: { type: "string", description: "Natural language response to the user." },
         actions: {
           type: "array",
-          description: "List of tools to execute. REQUIRED for lead capture, scheduling follow-ups, etc. CRITICAL: If your response says an action was completed (lead saved, follow-up scheduled), the corresponding tool MUST be in this array.",
+          description: "List of tools to execute.",
           items: {
             type: "object",
             properties: {
               tool: { type: "string", description: "Name of the tool to call." },
-              params: { type: "object", description: "Arguments for the tool." },
-              required: { type: "boolean", description: "If true, failure halts the response.", default: false },
+              params: { type: "object", description: "Arguments for the tool.", additionalProperties: true },
+              required: { type: "boolean", description: "If true, failure halts the response." },
               result_key: { type: "string", description: "Key to store the result for templating." }
             },
-            required: ["tool", "params"]
+            required: ["tool", "params"],
+            additionalProperties: false
           }
         },
         fallback: { type: "string", description: "Fallback message if tools fail." },
         needs_second_pass: {
           type: "boolean",
-          description: "True if tool results are needed to write the natural response.",
-          default: false
+          description: "True if tool results are needed to write the natural response."
         }
       },
-      required: ["response", "actions"]
+      required: ["response", "actions"],
+      additionalProperties: false
     }
   }
 };

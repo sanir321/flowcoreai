@@ -322,29 +322,150 @@ async function extractFields(
     schema[f] = { type: "object", properties: { value: { type: "string" }, confidence: { enum: ["high", "low"] } } };
   });
 
+  // Regex-first extraction for reliable fields
+  const result: Record<string, { value: string | null; confidence: "high" | "low" }> = {};
+  const msgLower = message.toLowerCase();
+
+  for (const f of missingFields) {
+    if (f === "service" && servicesOffered) {
+      const svcList = servicesOffered.split(",").map(s => s.trim());
+      for (const svc of svcList) {
+        if (msgLower.includes(svc.toLowerCase())) {
+          result.service = { value: svc, confidence: "high" };
+          break;
+        }
+      }
+    } else if (f === "date") {
+      if (/\b(today|tonight|this afternoon)\b/i.test(message)) {
+        result.date = { value: today, confidence: "high" };
+      } else if (/\b(tomorrow)\b/i.test(message)) {
+        const d = new Date(now);
+        d.setDate(d.getDate() + 1);
+        result.date = { value: d.toISOString().split("T")[0], confidence: "high" };
+      }
+    } else if (f === "time") {
+      const timeMatch = message.match(/\b(\d{1,2})\s*[:.]?\s*(\d{2})?\s*(am|pm)?\b/i);
+      if (timeMatch) {
+        let h = parseInt(timeMatch[1]);
+        const m = timeMatch[2] ? parseInt(timeMatch[2]) : 0;
+        const pm = timeMatch[3]?.toLowerCase() === "pm";
+        if (pm && h < 12) h += 12;
+        if (!pm && h === 12) h = 0;
+        result.time = { value: `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`, confidence: "high" };
+      }
+    } else if (f === "email") {
+      const emailMatch = message.match(/[\w.-]+@[\w.-]+\.\w+/);
+      if (emailMatch) result.email = { value: emailMatch[0], confidence: "high" };
+    } else if (f === "name") {
+      // Name: remove emails, trim, check 2+ words, reject date/time-like patterns
+      const cleaned = message.replace(/@[\w.-]+\.\w+/g, "").trim();
+      const hasDateWords = /\b(today|tomorrow|tonight|monday|tuesday|wednesday|thursday|friday|saturday|sunday|next\s+week|this\s+week|morning|afternoon|evening|am|pm)\b/i.test(cleaned);
+      const hasTimePattern = /\d+\s*(am|pm|:\d)/i.test(cleaned);
+      if (cleaned.length >= 2 && cleaned.split(" ").filter(w => w.length > 1).length >= 2 && !hasDateWords && !hasTimePattern) {
+        result.name = { value: cleaned, confidence: "high" };
+      }
+    }
+  }
+
+  // If regex got everything, return immediately
+  const allFound = missingFields.every(f => result[f]);
+  if (allFound) {
+    return result;
+  }
+
+  // Only use LLM for fields regex can't handle well (service with fuzzy match, complex dates)
+  const remaining = missingFields.filter(f => !result[f] && f !== "name" && f !== "email");
+  if (remaining.length === 0) {
+    return result;
+  }
+
   try {
     const response = await callLLM({
-      model: "llama-3.1-8b-instant",
-      max_tokens: 150,
+      model: "gpt-5-mini",
+      max_tokens: 2000,
       temperature: 0,
       response_format: { type: "json_object" },
-      system: `You are a specialized booking data extractor.
+      system: `You are a booking field extractor. Output ONLY valid JSON.
+
+CRITICAL: Extract fields ONLY from the CURRENT user message below. Do NOT look at conversation history or collected context for new values.
+
 Today is ${today} (${dayName}).
-Extract the following fields from the user's message if present:
-${missingFields.map(f => `- ${f}: ${fieldDescriptions[f]}`).join("\n")}
 
-Rules:
-- If a field is already in the collected list, do NOT re-extract it unless the user is explicitly changing it.
-- Return null for fields not clearly present.
-- For 'this afternoon' or 'today', the date is ${today}.
+RULES:
+- Extract ONLY from the "User message" field below
+- Return null for fields not present in the CURRENT message
+- Do NOT re-extract fields already in collected
+- For relative dates: "tomorrow" = ${today}+1, "today" = ${today}
+- For time: convert to 24h HH:MM format
 
-Return ONLY JSON: { "extracted": { "field_name": { "value": "...", "confidence": "high|low" } } }`,
-      messages: [{ role: "user", content: `Existing context: ${JSON.stringify(collected)}\nUser message: ${message}` }]
+Missing fields: ${remaining.join(", ")}
+
+Available services: ${servicesList}
+
+OUTPUT SCHEMA:
+{"extracted":{"field_name":{"value":"string or null","confidence":"high|low"}}}`,
+      messages: [{ role: "user", content: `Collected so far (DO NOT re-extract these): ${JSON.stringify(collected)}\n\nCURRENT user message to extract from: "${message}"` }]
     });
-    const parsed = JSON.parse(response.choices?.[0]?.message?.content || "{}");
-    return parsed.extracted || {};
-  } catch {
-    return {};
+    const content = response.choices?.[0]?.message?.content || "{}";
+    const parsed = JSON.parse(content);
+    const llmResult = parsed.extracted || {};
+    // Merge: only use LLM results for fields in remaining (regex takes precedence)
+    for (const f of remaining) {
+      if (llmResult[f] && !result[f]) {
+        result[f] = llmResult[f];
+      }
+    }
+    // CRITICAL: Remove any fields NOT in missingFields (LLM may return extra fields)
+    for (const key of Object.keys(result)) {
+      if (!missingFields.includes(key)) {
+        delete result[key];
+      }
+    }
+    return result;
+  } catch (e: any) {
+    console.error("[extractFields] LLM error:", e?.message || e);
+    // Regex fallback when LLM fails — only for service/date/time (name/email need user context)
+    const result: Record<string, { value: string | null; confidence: "high" | "low" }> = {};
+    const msgLower = message.toLowerCase();
+    for (const f of missingFields) {
+      if (f === "name" || f === "email") continue; // Skip — these need dedicated prompts, not regex from random messages
+      if (f === "service" && servicesOffered) {
+        const svcList = servicesOffered.split(",").map(s => s.trim());
+        for (const svc of svcList) {
+          if (msgLower.includes(svc.toLowerCase())) {
+            result.service = { value: svc, confidence: "high" };
+            break;
+          }
+        }
+      } else if (f === "date") {
+        if (/\b(today|tonight|this afternoon)\b/i.test(message)) {
+          result.date = { value: today, confidence: "high" };
+        } else if (/\b(tomorrow)\b/i.test(message)) {
+          const d = new Date(now);
+          d.setDate(d.getDate() + 1);
+          result.date = { value: d.toISOString().split("T")[0], confidence: "high" };
+        }
+      } else if (f === "time") {
+        const timeMatch = message.match(/\b(\d{1,2})\s*[:.]?\s*(\d{2})?\s*(am|pm)?\b/i);
+        if (timeMatch) {
+          let h = parseInt(timeMatch[1]);
+          const m = timeMatch[2] ? parseInt(timeMatch[2]) : 0;
+          const pm = timeMatch[3]?.toLowerCase() === "pm";
+          if (pm && h < 12) h += 12;
+          if (!pm && h === 12) h = 0;
+          result.time = { value: `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`, confidence: "high" };
+        }
+      } else if (f === "email") {
+        const emailMatch = message.match(/[\w.-]+@[\w.-]+\.\w+/);
+        if (emailMatch) result.email = { value: emailMatch[0], confidence: "high" };
+      } else if (f === "name") {
+        const cleaned = message.replace(/@[\w.-]+\.\w+/g, "").trim();
+        if (cleaned.length >= 2 && cleaned.split(" ").length >= 2) {
+          result.name = { value: cleaned, confidence: "high" };
+        }
+      }
+    }
+    return result;
   }
 }
 
@@ -354,7 +475,7 @@ export async function handleBooking(ctx: PipelineContext): Promise<TierResult | 
 
   // 0. Intent checks — if message is NOT about booking, pass through to T3
   const msgLower = ctx.payload.message.toLowerCase();
-  const managementKeywords = ["reschedule", "move", "cancel", "change", "rebook", "re-schedule", "modify"];
+  const managementKeywords = ["reschedule", "move", "cancel", "change", "rebook", "re-schedule", "modify", "replace", "update my", "change my"];
   const hasManagementIntent = managementKeywords.some(kw => msgLower.includes(kw));
   
   // Availability check — user wants to know if slots exist, not start a booking
@@ -418,11 +539,39 @@ export async function handleBooking(ctx: PipelineContext): Promise<TierResult | 
     return null;
   }
 
+  // If in confirming state, check for yes/no response
+  if (bs.state === "confirming") {
+    const msgLower = ctx.payload.message.toLowerCase().trim();
+    const isConfirm = ["yes", "confirm", "ok", "sure", "yep", "yeah", "correct", "go ahead"].some(w => msgLower === w || msgLower.startsWith(w));
+    const isReject = ["no", "cancel", "never mind", "stop", "wrong", "change"].some(w => msgLower === w || msgLower.startsWith(w));
+
+    if (isConfirm) {
+      // User confirmed — mark as booked, T3 will call create_appointment tool
+      await updateBookingSession(ctx, bs.id, { state: "booked" });
+      return null; // Let T3 handle tool execution
+    }
+    if (isReject) {
+      await updateBookingSession(ctx, bs.id, {
+        state: "idle",
+        collected: {},
+        attempts: {}
+      });
+      return { handled: true, response: "No problem! The booking has been cancelled. Would you like to start over?", reason: "booking_cancelled_by_user" };
+    }
+    // Neither yes nor no — ask again
+    return { handled: true, response: "Please reply *yes* to confirm or *no* to cancel.", reason: "booking_awaiting_confirmation" };
+  }
+
   const collected = { ...(bs.collected || {}) };
   const missing = getMissingFields(collected);
 
   // 1. Multi-field extraction from the current message
-  const validServices = ctx.workspace?.services_offered || [];
+  const rawServices = ctx.workspace?.services_offered || [];
+  const validServices = Array.isArray(rawServices)
+    ? rawServices
+    : typeof rawServices === "string"
+      ? rawServices.split(",").map((s: string) => s.replace(/^or\s+/i, "").trim()).filter(Boolean)
+      : [];
   const synonyms = (ctx.workspace as any)?.service_synonyms || {};
   const extractions = await extractFields(ctx.payload.message, missing, collected, ctx.workspace?.services_offered);
   let fieldsUpdated = false;
@@ -437,7 +586,7 @@ export async function handleBooking(ctx: PipelineContext): Promise<TierResult | 
             collected[field] = matched.matched;
             fieldsUpdated = true;
           } else {
-            const prompt = await getTemplate(ctx.payload.workspace_id, "invalid_service_response", DEFAULT_TEMPLATES.invalid_service_response);
+            const prompt = await getTemplate(ctx.supabase, ctx.payload.workspace_id, "invalid_service_response", DEFAULT_TEMPLATES.invalid_service_response);
             return {
               handled: true,
               response: renderTemplate(prompt, {
@@ -467,10 +616,20 @@ export async function handleBooking(ctx: PipelineContext): Promise<TierResult | 
       attempts: {} // Reset attempts on successful data entry
     });
     
-    // If we've jumped to confirming, let T3 handle the final confirmation message/actions
+    // If we've jumped to confirming, show summary and ask user to confirm
     if (nextStage === "confirming") {
       ctx.bookingSession = { ...bs, state: nextStage, collected };
-      return null;
+      const summary = [
+        `📋 *Booking Summary*`,
+        `• Service: ${collected.service}`,
+        `• Date: ${collected.date}`,
+        `• Time: ${collected.time}`,
+        `• Name: ${collected.name}`,
+        `• Email: ${collected.email}`,
+        ``,
+        `Reply *yes* to confirm, or *no* to cancel.`
+      ].join("\n");
+      return { handled: true, response: summary, reason: "booking_confirming" };
     }
 
     // If we just started (idle) and successfully got some fields, continue to ask for the next one
@@ -540,9 +699,9 @@ async function resolveBookingPrompt(
   if (!defaultPrompt) return null;
 
   const wsId = ctx.payload.workspace_id;
-  const template = await getTemplate(wsId, templateKey, defaultPrompt);
+  const template = await getTemplate(ctx.supabase, wsId, templateKey, defaultPrompt);
   return renderTemplate(template, {
-    services: (ctx.workspace?.services_offered || []).join(", "),
+    services: Array.isArray(ctx.workspace?.services_offered) ? ctx.workspace.services_offered.join(", ") : (ctx.workspace?.services_offered || ""),
     ...collected
   });
 }

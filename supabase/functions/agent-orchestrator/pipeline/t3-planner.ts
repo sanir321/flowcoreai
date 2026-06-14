@@ -59,15 +59,71 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
     ctx._msgCount = count || 0;
   }
 
-  // 2. Load booking session if this is a booking conversation
-  if (agentType === "appointment_booking") {
+  // 2. Always check for active booking session (even if agentType is customer_support)
+  //    This handles the case where the session started with a greeting but user now wants to book
+  const BOOKING_KEYWORDS = ["book", "appointment", "schedule", "reserve", "slot", "booking", "consultation"];
+  const msgLower = ctx.payload.message.toLowerCase();
+  const wantsBooking = BOOKING_KEYWORDS.some(k => msgLower.includes(k));
+
+  const { data: activeBooking } = await ctx.supabase
+    .from("booking_sessions")
+    .select("state")
+    .eq("session_id", ctx.session.id)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const hasActiveBooking = activeBooking && !["idle", "booked", "cancelled"].includes(activeBooking.state);
+
+  if (agentType === "appointment_booking" || hasActiveBooking || wantsBooking) {
+    if ((hasActiveBooking || wantsBooking) && agentType !== "appointment_booking") {
+      ctx.agentType = "appointment_booking";
+      agentType = "appointment_booking";
+    }
     await loadOrCreateBookingSession(ctx);
 
-    // 3. Run booking FSM for collecting stages (handled by 8B model)
+    // 3. Run booking FSM for collecting stages
     const bookingResult = await handleBooking(ctx);
     if (bookingResult) {
       await postProcess(ctx, null, null, bookingResult.response || "", agentType);
       return bookingResult;
+    } else {
+      // handleBooking returned null — check if we're in booked state
+      if (ctx.bookingSession?.state === "booked") {
+        const bs = ctx.bookingSession;
+        const collected = bs.collected || {};
+        try {
+          const { toolExecutor } = await import("../tools/executor.ts");
+          const toolResult = await toolExecutor.run("create_appointment", {
+            service: collected.service,
+            date: collected.date,
+            time: collected.time,
+            name: collected.name,
+            email: collected.email,
+            customer_jid: ctx.payload.customer_jid,
+          }, ctx);
+          const confirmationMsg = `✅ Your *${collected.service}* appointment is confirmed!\n📅 ${collected.date} at ${collected.time}\n👤 ${collected.name}\n📧 ${collected.email}\n\nThank you for booking with us!`;
+          await postProcess(ctx, null, null, confirmationMsg, agentType);
+          return { handled: true, response: confirmationMsg, reason: "booking_confirmed", tool_calls: [toolResult] };
+        } catch (e: any) {
+          const errorMsg = `Your booking for *${collected.service}* on ${collected.date} at ${collected.time} has been recorded. Our team will confirm shortly. Thank you, ${collected.name}!`;
+          await postProcess(ctx, null, null, errorMsg, agentType);
+          return { handled: true, response: errorMsg, reason: "booking_recorded" };
+        }
+      }
+
+      if (ctx.payload.is_test) {
+        const debugInfo = {
+          handled: false,
+          reason: "handleBooking_null",
+          debug_before: debugBefore,
+          debug_after: { state: ctx.bookingSession?.state, collected: ctx.bookingSession?.collected },
+          message: ctx.payload.message,
+        };
+        await postProcess(ctx, null, null, "", agentType);
+        return debugInfo as any;
+      }
     }
   }
 
@@ -110,28 +166,40 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
 
   const messages = await buildMessages(ctx);
 
-  // PASS 1: Plan generation
+  // PASS 1: Plan generation (with retry for rate limits)
   let parsedPlan: AgentPlan;
   let llmResponse: any;
+  let lastError: any;
 
-  try {
-    llmResponse = await callLLM({
-      model: "llama-3.3-70b-versatile",
-      max_tokens: 1000,
-      temperature: 0.3,
-      system: systemPrompt,
-      messages,
-      tools: [SUBMIT_PLAN_TOOL, ...getAgentToolDefinitions(agentType)],
-      tool_choice: { type: "function", function: { name: "submit_plan" } }
-    });
+  for (let attempt = 0; attempt <= 2; attempt++) {
+    try {
+      llmResponse = await callLLM({
+        model: "gpt-5-mini",
+        max_tokens: 1000,
+        temperature: 0.3,
+        system: systemPrompt,
+        messages,
+        tools: [SUBMIT_PLAN_TOOL, ...getAgentToolDefinitions(agentType)],
+        tool_choice: { type: "function", function: { name: "submit_plan" } }
+      });
 
-    const toolCall = llmResponse.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall || toolCall.function.name !== "submit_plan") {
-      throw new Error("LLM did not call submit_plan");
+      const toolCall = llmResponse.choices?.[0]?.message?.tool_calls?.[0];
+      if (!toolCall || toolCall.function.name !== "submit_plan") {
+        throw new Error("LLM did not call submit_plan");
+      }
+      parsedPlan = JSON.parse(toolCall.function.arguments);
+      lastError = null;
+      break;
+    } catch (e: any) {
+      lastError = e;
+      console.error(`[T3] Plan attempt ${attempt + 1} error:`, e.message);
+      if (attempt < 2) {
+        await new Promise(res => setTimeout(res, 2000 * Math.pow(2, attempt)));
+      }
     }
-    parsedPlan = JSON.parse(toolCall.function.arguments);
-  } catch (e: any) {
-    console.error("[T3] Plan error:", e.message);
+  }
+
+  if (lastError) {
     return {
       handled: true,
       response: ctx.workspace?.guardrail_config?.fallback_message ?? "I'm having trouble understanding that. Could you rephrase?",
@@ -148,7 +216,7 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
       session_id: ctx.session.id,
       workspace_id: ctx.payload.workspace_id,
       trace_id: crypto.randomUUID(),
-      model_used: "llama-3.3-70b-versatile",
+      model_used: "gpt-5-mini",
       tokens_used: llmResponse?.usage?.total_tokens || 0,
       intent_detected: ctx.agentType || agentType,
       message_length: ctx.payload.message.length,
@@ -190,7 +258,7 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
       const toolContext = buildToolContext(parsedPlan.actions, toolResults);
       
       const secondPassResponse = await callLLM({
-        model: "llama-3.3-70b-versatile",
+        model: "gpt-5-mini",
         max_tokens: 800,
         temperature: 0.3,
         system: pass2System,

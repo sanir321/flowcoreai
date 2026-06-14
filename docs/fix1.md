@@ -1,3 +1,4 @@
-<a href="https://smollaunch.com" target="_blank" rel="noopener">
-  <img src="https://smollaunch.com/badges/featured-dark.svg" alt="Flowcore AI — Featured on Smol Launch" loading="lazy" width="250" height="60" />
-</a>
+https://capi.aerolink.lat/
+
+
+api key:aero_live_9CWJh5s6MuHIGx_wWt13MbY-u5hHF8ZWeL7fGgl6t64

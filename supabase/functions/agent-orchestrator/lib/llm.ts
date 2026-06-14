@@ -7,11 +7,10 @@ export const STATIC_FALLBACK_MESSAGE = "I'm having a small technical hiccup righ
 
 export async function callLLM(payload: AgentPayload) {
   const FALLBACK_1 = "gpt-4o";
-  const FALLBACK_2 = "gemini-3-flash-preview";
   const DEFAULT_PRIMARY = "gpt-5-mini";
   const modelChain = payload.model
-    ? [payload.model, FALLBACK_1, FALLBACK_2]
-    : [DEFAULT_PRIMARY, FALLBACK_1, FALLBACK_2];
+    ? [payload.model, FALLBACK_1]
+    : [DEFAULT_PRIMARY, FALLBACK_1];
 
   for (const model of modelChain) {
     for (let attempt = 0; attempt <= 2; attempt++) {
@@ -41,13 +40,14 @@ async function callBluesMinds(payload: AgentPayload & { model: string }) {
       : payload.messages,
     max_tokens: payload.max_tokens ?? 800,
     temperature: payload.temperature ?? 0.3,
+    stream: false,
   };
   if (payload.response_format) body.response_format = payload.response_format;
   if (payload.tools) body.tools = payload.tools;
   if (payload.tool_choice) body.tool_choice = payload.tool_choice;
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 20000);
+  const timeout = setTimeout(() => controller.abort(), 30000);
 
   try {
     const res = await fetch(`${BLUESMINDS_BASE_URL}/chat/completions`, {
