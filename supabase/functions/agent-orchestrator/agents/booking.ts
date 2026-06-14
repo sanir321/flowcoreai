@@ -342,9 +342,33 @@ async function extractFields(
         const d = new Date(now);
         d.setDate(d.getDate() + 1);
         result.date = { value: d.toISOString().split("T")[0], confidence: "high" };
+      } else {
+        // Try month-day patterns: "June 16", "jun 16", "16 June", "16 jun"
+        const months: Record<string, number> = { january: 0, february: 1, march: 2, april: 3, may: 4, june: 5, july: 6, august: 7, september: 8, october: 9, november: 10, december: 11, jan: 0, feb: 1, mar: 2, apr: 3, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11 };
+        const mdMatch = message.match(/\b(\w+)\s+(\d{1,2})\b/i) || message.match(/\b(\d{1,2})\s+(\w+)\b/i);
+        if (mdMatch) {
+          let month: number | undefined;
+          let day: number | undefined;
+          const m1 = mdMatch[1].toLowerCase();
+          const m2 = mdMatch[2].toLowerCase();
+          if (months[m1] !== undefined && /^\d{1,2}$/.test(m2)) {
+            month = months[m1]; day = parseInt(m2);
+          } else if (months[m2] !== undefined && /^\d{1,2}$/.test(m1)) {
+            month = months[m2]; day = parseInt(m1);
+          }
+          if (month !== undefined && day !== undefined && day >= 1 && day <= 31) {
+            const yr = now.getFullYear();
+            const d = new Date(yr, month, day);
+            if (d < now) d.setFullYear(yr + 1); // next year if past
+            result.date = { value: d.toISOString().split("T")[0], confidence: "high" };
+          }
+        }
       }
     } else if (f === "time") {
-      const timeMatch = message.match(/\b(\d{1,2})\s*[:.]?\s*(\d{2})?\s*(am|pm)?\b/i);
+      // Try AM/PM pattern first (e.g. "2pm", "10:30am"), then bare numbers
+      const ampmMatch = message.match(/\b(\d{1,2})\s*[:.]?\s*(\d{2})?\s*(am|pm)\b/i);
+      const bareMatch = message.match(/\b(\d{1,2})\s*[:.]\s*(\d{2})\b/); // Only match "10:30" style (with colon)
+      const timeMatch = ampmMatch || bareMatch;
       if (timeMatch) {
         let h = parseInt(timeMatch[1]);
         const m = timeMatch[2] ? parseInt(timeMatch[2]) : 0;
@@ -444,9 +468,31 @@ OUTPUT SCHEMA:
           const d = new Date(now);
           d.setDate(d.getDate() + 1);
           result.date = { value: d.toISOString().split("T")[0], confidence: "high" };
+        } else {
+          const months: Record<string, number> = { january: 0, february: 1, march: 2, april: 3, may: 4, june: 5, july: 6, august: 7, september: 8, october: 9, november: 10, december: 11, jan: 0, feb: 1, mar: 2, apr: 3, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11 };
+          const mdMatch = message.match(/\b(\w+)\s+(\d{1,2})\b/i) || message.match(/\b(\d{1,2})\s+(\w+)\b/i);
+          if (mdMatch) {
+            let month: number | undefined;
+            let day: number | undefined;
+            const m1 = mdMatch[1].toLowerCase();
+            const m2 = mdMatch[2].toLowerCase();
+            if (months[m1] !== undefined && /^\d{1,2}$/.test(m2)) {
+              month = months[m1]; day = parseInt(m2);
+            } else if (months[m2] !== undefined && /^\d{1,2}$/.test(m1)) {
+              month = months[m2]; day = parseInt(m1);
+            }
+            if (month !== undefined && day !== undefined && day >= 1 && day <= 31) {
+              const yr = now.getFullYear();
+              const d = new Date(yr, month, day);
+              if (d < now) d.setFullYear(yr + 1);
+              result.date = { value: d.toISOString().split("T")[0], confidence: "high" };
+            }
+          }
         }
       } else if (f === "time") {
-        const timeMatch = message.match(/\b(\d{1,2})\s*[:.]?\s*(\d{2})?\s*(am|pm)?\b/i);
+        const ampmMatch = message.match(/\b(\d{1,2})\s*[:.]?\s*(\d{2})?\s*(am|pm)\b/i);
+        const bareMatch = message.match(/\b(\d{1,2})\s*[:.]\s*(\d{2})\b/);
+        const timeMatch = ampmMatch || bareMatch;
         if (timeMatch) {
           let h = parseInt(timeMatch[1]);
           const m = timeMatch[2] ? parseInt(timeMatch[2]) : 0;
