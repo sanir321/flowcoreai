@@ -5,19 +5,12 @@ import Link from "next/link"
 import { 
   Inbox, 
   Bot, 
-  BarChart2, 
   Users, 
   BookOpen, 
   Settings, 
-  Bell,
   LogOut,
   User as UserIcon,
-  Layers,
-  Phone,
-  CheckCircle2,
   TrendingUp,
-  Heart,
-  Network,
   Calendar as CalendarIcon
 } from "lucide-react"
 import { cn } from "@/lib/utils"

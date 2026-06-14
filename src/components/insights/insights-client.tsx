@@ -8,9 +8,6 @@ import {
   AlertTriangle,
   Shield,
   BookOpen,
-  Phone,
-  Calendar,
-  Table,
   TrendingUp,
   TrendingDown,
   Minus

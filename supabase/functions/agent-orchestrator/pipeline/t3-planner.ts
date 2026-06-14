@@ -117,7 +117,6 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
         const debugInfo = {
           handled: false,
           reason: "handleBooking_null",
-          debug_before: debugBefore,
           debug_after: { state: ctx.bookingSession?.state, collected: ctx.bookingSession?.collected },
           message: ctx.payload.message,
         };

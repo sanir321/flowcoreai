@@ -4,7 +4,7 @@ import mammoth from "npm:mammoth@1.8.0"
 import { Buffer } from "node:buffer"
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': Deno.env.get('NEXT_PUBLIC_APP_URL') || '',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 

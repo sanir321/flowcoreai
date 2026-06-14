@@ -3,30 +3,18 @@
 import { useState, useRef, useEffect, useCallback } from "react"
 import { 
   Search, 
-  MoreHorizontal, 
   Phone, 
   Globe, 
-  Download,
   X,
   Loader2,
   ArrowRight,
   ShieldCheck,
   Zap,
-  MessageSquare,
-  Activity,
-  Fingerprint,
-  Cpu,
-  Layers,
   ChevronRight,
   User,
-  Plus,
-  Mail,
   Clock,
-  Trash2,
-  MoreVertical,
   Calendar,
   MessageCircle,
-  Hash
 } from "lucide-react"
 import { 
   Table, 
@@ -53,7 +41,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { updateContact, sendManualMessage, getContactsPaginated } from "@/app/actions/contacts"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
-import { motion, AnimatePresence } from "framer-motion"
+
 
 interface ContactsTableProps {
   initialContacts: any[]

@@ -1,5 +1,3 @@
-'use server';
-
 // /lib/gowa.ts
 import { SendTextPayload, SendImagePayload, SendLinkPayload } from "@/types/gowa";
 import { createAdminClient } from "@/lib/supabase/admin";

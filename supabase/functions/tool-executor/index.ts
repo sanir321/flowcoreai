@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7"
-import { executeTool } from "../agent-orchestrator/lib/tools.ts"
+import { toolExecutor } from "../agent-orchestrator/tools/executor.ts"
 
 // NOTE: No CORS — this is an internal function, not called from browsers
 // Auth via JWT verification (supabase.auth.getUser) in the handler below
@@ -37,13 +37,14 @@ Deno.serve(async (req) => {
       })
     }
 
-    const result = await executeTool({
-      tool_name,
-      args: args || {},
+    const result = await toolExecutor.run(tool_name, {
+      ...(args || {}),
       workspace_id,
-      session_id: session_id || crypto.randomUUID(),
-      supabase
-    })
+      customer_jid: session_id || crypto.randomUUID(),
+    }, {
+      payload: { workspace_id, customer_jid: session_id || crypto.randomUUID() },
+      supabase,
+    } as any)
 
     return new Response(JSON.stringify({ result }), {
       headers: { 'Content-Type': 'application/json' }

@@ -3,8 +3,8 @@
 import { useState, useEffect, useCallback } from "react"
 import {
   Plus, FileText, Globe, CheckCircle2, Trash2, Database, Loader2, RefreshCw,
-  ChevronRight, Clock, Link as LinkIcon, Phone, Mail, MapPin, Hash,
-  X, Circle, Square, Hotel, Sparkles, PenLine, Upload, AlertCircle
+  ChevronRight, Link as LinkIcon, Phone, Mail, MapPin,
+  X, Hotel, Sparkles, PenLine, Upload
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
