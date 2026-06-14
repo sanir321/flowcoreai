@@ -7,11 +7,17 @@ import { ActionResponse } from "./workspace"
 import { z } from "zod"
 import { logAudit } from "@/lib/audit"
 
-// Admin client for triggering background tasks
-const supabaseAdmin = createSupabaseClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+// Lazy-initialized admin client for triggering background tasks
+let _supabaseAdmin: ReturnType<typeof createSupabaseClient> | null = null
+function getSupabaseAdmin() {
+  if (!_supabaseAdmin) {
+    _supabaseAdmin = createSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+  }
+  return _supabaseAdmin
+}
 
 const ScrapeUrlSchema = z.object({
   workspace_id: z.string().uuid(),
@@ -60,11 +66,11 @@ export async function addUrlSource(input: unknown): Promise<ActionResponse<{ id:
 
     // Trigger the correct ingestion function based on type
     if (source_type === 'url' && url) {
-        supabaseAdmin.functions.invoke("ingest-url", {
+        getSupabaseAdmin().functions.invoke("ingest-url", {
             body: { workspace_id, source_id: data.id, url }
         }).catch(e => console.error("[KB_ACTION] URL Ingestion trigger failed:", e))
     } else if (storage_path) {
-        supabaseAdmin.functions.invoke("ingest-document", {
+        getSupabaseAdmin().functions.invoke("ingest-document", {
             body: { workspace_id, source_id: data.id, storage_path }
         }).catch(e => console.error("[KB_ACTION] Doc Ingestion trigger failed:", e))
     }
@@ -120,7 +126,7 @@ export async function deleteSource(id: string): Promise<ActionResponse<{ success
 
     const extractedFields = (source.bp_extracted_fields as string[]) || []
     if (extractedFields.length > 0) {
-      const { data: otherSources } = await supabaseAdmin
+      const { data: otherSources } = await getSupabaseAdmin()
         .from("kb_sources")
         .select("bp_extracted_fields")
         .eq("workspace_id", source.workspace_id)
@@ -136,7 +142,7 @@ export async function deleteSource(id: string): Promise<ActionResponse<{ success
       const fieldsToClear = extractedFields.filter(f => !fieldsStillProvided.has(f))
 
       if (fieldsToClear.length > 0) {
-        const { data: workspace } = await supabaseAdmin
+        const { data: workspace } = await getSupabaseAdmin()
           .from("workspaces")
           .select("business_profile")
           .eq("id", source.workspace_id)
@@ -147,7 +153,7 @@ export async function deleteSource(id: string): Promise<ActionResponse<{ success
           for (const field of fieldsToClear) {
             delete bp[field]
           }
-          await supabaseAdmin
+          await getSupabaseAdmin()
             .from("workspaces")
             .update({ business_profile: bp, updated_at: new Date().toISOString() })
             .eq("id", source.workspace_id)
@@ -266,13 +272,13 @@ export async function pasteKbText(input: { workspace_id: string; content: string
 
     // Fire-and-forget: generate real embeddings + extract business profile
     try {
-      supabaseAdmin.functions.invoke("embed-text", {
+      getSupabaseAdmin().functions.invoke("embed-text", {
         body: { workspace_id, source_id: source.id, content }
       }).catch(e => console.error("[KB_ACTION] Embed text failed:", e))
     } catch {}
 
     try {
-      supabaseAdmin.functions.invoke("extract-business-profile", {
+      getSupabaseAdmin().functions.invoke("extract-business-profile", {
         body: { workspace_id, source_id: source.id }
       }).catch(() => {})
     } catch {}

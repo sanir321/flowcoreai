@@ -16,10 +16,31 @@ const PRIVATE_CIDRS = [
   { prefix: [100, 64], mask: 10 },
 ]
 
+// IPv6 private/reserved ranges
+const PRIVATE_IPV6_PREFIXES = [
+  'fc', 'fd', // ULA
+  'fe80',     // Link-local
+  'ff',       // Multicast
+  '::1',      // Loopback
+  '::ffff:',  // IPv4-mapped IPv6
+  '0000:',    // Unspecified
+]
+
 function isPrivateIP(hostname: string): boolean {
   try {
+    // Check IPv6 private ranges first
+    const lower = hostname.toLowerCase()
+    for (const prefix of PRIVATE_IPV6_PREFIXES) {
+      if (lower.startsWith(prefix)) return true
+    }
+
+    // IPv4 check
     const isIPv4 = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname)
-    if (!isIPv4) return false
+    if (!isIPv4) {
+      // If not IPv4 and not matched IPv6 patterns, it's a domain name
+      // Domain names need DNS resolution check (handled separately)
+      return false
+    }
     const parts = hostname.split('.').map(Number)
     if (parts.some(p => p < 0 || p > 255)) return true
     for (const cidr of PRIVATE_CIDRS) {
@@ -31,6 +52,26 @@ function isPrivateIP(hostname: string): boolean {
     }
     return false
   } catch { return true }
+}
+
+// Resolve hostname and check all IP addresses
+async function resolveAndCheckPrivate(hostname: string): Promise<boolean> {
+  try {
+    // Use Deno's DNS resolution
+    const addresses = await Deno.resolveDns(hostname, 'A')
+    for (const addr of addresses) {
+      if (isPrivateIP(addr)) return true
+    }
+    // Also check AAAA records
+    const aaaaAddresses = await Deno.resolveDns(hostname, 'AAAA')
+    for (const addr of aaaaAddresses) {
+      if (isPrivateIP(addr)) return true
+    }
+    return false
+  } catch {
+    // If DNS resolution fails, block the request
+    return true
+  }
 }
 
 function validateUrl(raw: string): URL {
@@ -69,6 +110,11 @@ Deno.serve(async (req) => {
 
     const { workspace_id, source_id, url: rawUrl } = await req.json()
     const url = validateUrl(rawUrl)
+
+    // DNS rebinding protection: resolve and check all IPs before fetching
+    if (await resolveAndCheckPrivate(url.hostname)) {
+      throw new Error(`Access to ${url.hostname} is not allowed`)
+    }
 
     await supabase.from('kb_sources').update({ status: 'processing', error_message: 'Fetching website content...' }).eq('id', source_id)
 

@@ -17,6 +17,10 @@ const MessageSchema = z.object({
   customer_email: z.string().email().optional(),
 });
 
+// Rate limit per session: 10 messages per minute
+const SESSION_RATE_LIMIT = 10;
+const SESSION_RATE_WINDOW = 60;
+
 function getCorsHeaders(origin: string) {
   return {
     "Access-Control-Allow-Origin": origin || "*",
@@ -29,7 +33,7 @@ function getCorsHeaders(origin: string) {
 
 export async function POST(req: NextRequest) {
   try {
-    // 0. Rate Limiting
+    // 0. Rate Limiting - IP-based
     const ip = req.headers.get("x-forwarded-for") || "127.0.0.1";
     const { success: isAllowed } = await rateLimit(ip);
     if (!isAllowed) {
@@ -44,6 +48,12 @@ export async function POST(req: NextRequest) {
     }
 
     const { workspace_id, session_token, message, customer_name, customer_email } = result.data;
+
+    // 0.5 Rate Limiting - per session token
+    const { success: sessionAllowed } = await rateLimit(`widget:${session_token}`, SESSION_RATE_LIMIT, SESSION_RATE_WINDOW);
+    if (!sessionAllowed) {
+      return new Response("Too many messages from this session. Please wait.", { status: 429 });
+    }
 
     // 0.5 Validate Workspace exists and widget is enabled for it
     const { data: workspace } = await supabaseAdmin

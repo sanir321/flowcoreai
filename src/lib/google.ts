@@ -6,7 +6,15 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+// Per-workspace mutex to prevent concurrent token refreshes
+const refreshLocks = new Map<string, Promise<string>>();
+
 export async function getValidAccessToken(workspace_id: string): Promise<string> {
+  // If a refresh is already in progress for this workspace, wait for it
+  if (refreshLocks.has(workspace_id)) {
+    return refreshLocks.get(workspace_id)!;
+  }
+
   const { data: tokens, error } = await supabaseAdmin
     .from("google_oauth_tokens")
     .select("*")
@@ -21,45 +29,56 @@ export async function getValidAccessToken(workspace_id: string): Promise<string>
 
   // Refresh if expiring in less than 5 minutes
   if (expiry.getTime() - now.getTime() < 5 * 60 * 1000) {
-    const response = await fetch("https://oauth2.googleapis.com/token", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        client_id: process.env.GOOGLE_CLIENT_ID!,
-        client_secret: process.env.GOOGLE_CLIENT_SECRET!,
-        refresh_token: tokens.refresh_token,
-        grant_type: "refresh_token",
-      }),
-    });
+    // Create a lock for this workspace
+    const refreshPromise = performTokenRefresh(workspace_id, tokens.refresh_token);
+    refreshLocks.set(workspace_id, refreshPromise);
 
-    const newTokens = await response.json();
-    if (!response.ok) {
-        console.error("Failed to refresh Google token:", newTokens);
-        // If the refresh token is invalid/expired, we should notify the user or mark as disconnected
-        if (newTokens.error === 'invalid_grant') {
-            await supabaseAdmin
-                .from("google_oauth_tokens")
-                .delete()
-                .eq("workspace_id", workspace_id);
-            throw new Error("Google session expired. Please re-authenticate.");
-        }
-        throw new Error("Failed to refresh Google token");
+    try {
+      return await refreshPromise;
+    } finally {
+      refreshLocks.delete(workspace_id);
     }
-
-    const newExpiry = new Date(Date.now() + newTokens.expires_in * 1000).toISOString();
-
-    await supabaseAdmin
-      .from("google_oauth_tokens")
-      .update({
-        access_token: newTokens.access_token,
-        token_expiry: newExpiry,
-      })
-      .eq("workspace_id", workspace_id);
-
-    return newTokens.access_token;
   }
 
   return tokens.access_token;
+}
+
+async function performTokenRefresh(workspace_id: string, refreshToken: string): Promise<string> {
+  const response = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      client_id: process.env.GOOGLE_CLIENT_ID!,
+      client_secret: process.env.GOOGLE_CLIENT_SECRET!,
+      refresh_token: refreshToken,
+      grant_type: "refresh_token",
+    }),
+  });
+
+  const newTokens = await response.json();
+  if (!response.ok) {
+    console.error("Failed to refresh Google token:", newTokens);
+    if (newTokens.error === 'invalid_grant') {
+      await supabaseAdmin
+        .from("google_oauth_tokens")
+        .delete()
+        .eq("workspace_id", workspace_id);
+      throw new Error("Google session expired. Please re-authenticate.");
+    }
+    throw new Error("Failed to refresh Google token");
+  }
+
+  const newExpiry = new Date(Date.now() + newTokens.expires_in * 1000).toISOString();
+
+  await supabaseAdmin
+    .from("google_oauth_tokens")
+    .update({
+      access_token: newTokens.access_token,
+      token_expiry: newExpiry,
+    })
+    .eq("workspace_id", workspace_id);
+
+  return newTokens.access_token;
 }
 
 export async function createCalendarEvent(workspace_id: string, event: any) {

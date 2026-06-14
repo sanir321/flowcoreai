@@ -7,10 +7,17 @@ import { revalidatePath } from "next/cache"
 import { ActionResponse } from "./workspace"
 import { z } from "zod"
 
-const supabaseAdmin = createSupabaseClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+// Lazy-initialized admin client
+let _supabaseAdmin: ReturnType<typeof createSupabaseClient> | null = null
+function getSupabaseAdmin() {
+  if (!_supabaseAdmin) {
+    _supabaseAdmin = createSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+  }
+  return _supabaseAdmin
+}
 
 export async function updateNotifications(input: unknown): Promise<ActionResponse<{ success: true }>> {
   try {
@@ -200,7 +207,7 @@ export async function exportToSheets(workspace_id: string): Promise<ActionRespon
         return { data: null, error: "Forbidden: Workspace mismatch" }
       }
 
-      const { data, error } = await supabaseAdmin.functions.invoke("crm-export", {
+      const { data, error } = await getSupabaseAdmin().functions.invoke("crm-export", {
         body: { workspace_id: res.data }
       })
 

@@ -190,10 +190,13 @@ export async function checkUserExists(email: string): Promise<ActionResponse<{ e
     if (error) throw error
     
     const exists = users.length > 0
+    // Always return success to prevent user enumeration
+    // The actual check happens during login/signup
     return { data: { exists }, error: null }
   } catch (err) {
     console.error(err)
-    return { data: null, error: err instanceof Error ? err.message : "Failed to check user" }
+    // Return generic error to prevent information leakage
+    return { data: null, error: "Failed to check user" }
   }
 }
 
