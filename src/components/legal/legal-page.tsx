@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
-const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "zenosayz05@gmail.com"
+const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@flowcore.ai"
 const companyName = process.env.NEXT_PUBLIC_COMPANY_NAME || "FlowCore"
 
 export function LegalPage({

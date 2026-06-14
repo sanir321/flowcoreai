@@ -29,7 +29,6 @@ export async function GET(req: NextRequest) {
         .eq("workspace_id", workspaceId)
         .is("deleted_at", null)
         .maybeSingle() as any)
-    console.log("[STATUS_SESSION]", { workspaceId, session, sessionErr })
 
     // Check GoWA devices — match by device name or stored session ID only
     // Never fallback to any logged-in device (prevents cross-workspace contamination)
@@ -70,7 +69,6 @@ export async function GET(req: NextRequest) {
           gowaDisplay = candidate.display_name || ""
           gowaDeviceId = candidate.id || ""
         }
-        console.log("[STATUS_DEBUG]", { workspaceId, deviceName, deviceCount: devices.length, named: !!named, byId: !!byId, byJid: !!byJid, byDisplay: !!byDisplay, candidate: !!candidate, candidateState: candidate?.state, gowaConnected, sessionStatus: session?.status })
       }
     } catch (e) {
       console.error("[STATUS_GOWA_FETCH_ERROR]", e)
@@ -92,7 +90,6 @@ export async function GET(req: NextRequest) {
         .eq("workspace_id", workspaceId)
         .is("deleted_at", null)
         .select()
-      console.log("[STATUS_SYNC]", { workspaceId, gowaDeviceId, gowaJid, updated, upsertErr })
       return NextResponse.json({
         status: "connected",
         phone: gowaJid,

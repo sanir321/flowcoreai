@@ -229,7 +229,12 @@ export async function exportContacts(workspace_id: string): Promise<ActionRespon
       c.channel,
       c.last_active || "",
       c.conversation_count
-    ])
+    ].map(cell => {
+      const s = String(cell);
+      // Prevent CSV injection: prefix formula-triggering chars with single quote
+      if (/^[=+\-@\t]/.test(s)) return `'${s}`;
+      return s;
+    }))
 
     const csvContent = [
       headers.join(","),

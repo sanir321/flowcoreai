@@ -31,13 +31,16 @@ export async function POST(req: NextRequest) {
 
     const { firstName, lastName, email } = parsed.data;
 
+    // Escape HTML to prevent injection
+    const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
     await sendEmail({
       to: process.env.SMTP_USER!,
       subject: `New pricing request from ${firstName} ${lastName}`,
       html: `
         <h2>New Pricing Request</h2>
-        <p><strong>Name:</strong> ${firstName} ${lastName}</p>
-        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Name:</strong> ${esc(firstName)} ${esc(lastName)}</p>
+        <p><strong>Email:</strong> ${esc(email)}</p>
       `,
     }).catch((e) => console.error("[PRICING_REQUEST] Email notification failed:", e));
 

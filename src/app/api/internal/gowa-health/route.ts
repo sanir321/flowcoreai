@@ -40,7 +40,6 @@ export async function GET(req: NextRequest) {
         .lt("created_at", new Date(Date.now() - 30 * 60 * 1000).toISOString()); // 30 mins old
 
     if (pendingEscalations && pendingEscalations.length > 0) {
-        console.log(`[GOWA_HEALTH] Processing ${pendingEscalations.length} pending escalation(s)`);
         for (const esc of pendingEscalations) {
             try {
                 const { data: workspace } = await supabaseAdmin

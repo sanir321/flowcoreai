@@ -96,7 +96,10 @@ export async function getGoogleAuthUrl(workspace_id: string): Promise<ActionResp
 
   // Sign the state parameter to prevent IDOR during OAuth callback
   const { createHmac } = await import('node:crypto');
-  const hmac = createHmac('sha256', process.env.INTERNAL_CRON_SECRET || 'fallback-secret');
+  if (!process.env.INTERNAL_CRON_SECRET) {
+    return { data: null, error: "Server configuration error: missing secret" };
+  }
+  const hmac = createHmac('sha256', process.env.INTERNAL_CRON_SECRET);
   hmac.update(result.data);
   const stateSig = hmac.digest('hex');
   const state = `${result.data}.${stateSig}`;

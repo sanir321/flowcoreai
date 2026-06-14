@@ -61,7 +61,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Failed to save media reference." }, { status: 500 });
     }
 
-    console.log(`[MENU UPLOAD] Stored menu media: ${fileName}`);
     return NextResponse.json({ media: { ...media, public_url: publicUrl.publicUrl } });
   } catch (e: any) {
     console.error("Menu upload error:", e);

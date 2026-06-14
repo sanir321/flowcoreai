@@ -13,7 +13,7 @@ export function StructuredData() {
     "description": "AI-powered customer service orchestration platform for WhatsApp and webchat.",
     "contactPoint": {
       "@type": "ContactPoint",
-      "email": "zenosayz05@gmail.com",
+      "email": process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@flowcore.ai",
       "contactType": "support"
     }
   }

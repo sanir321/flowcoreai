@@ -31,7 +31,10 @@ export async function GET(req: NextRequest) {
   const hmac = createHmac("sha256", process.env.INTERNAL_CRON_SECRET);
   hmac.update(workspaceId);
   const expectedSig = hmac.digest("hex");
-  if (signature !== expectedSig) {
+  // Constant-time comparison to prevent timing attack
+  const sigBuf = Buffer.from(signature, 'hex');
+  const expectedBuf = Buffer.from(expectedSig, 'hex');
+  if (sigBuf.length !== expectedBuf.length || !require('node:crypto').timingSafeEqual(sigBuf, expectedBuf)) {
     return NextResponse.redirect(`${origin}/settings/integrations?error=Invalid state signature`);
   }
 
