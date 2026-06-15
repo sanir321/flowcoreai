@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Lora } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
@@ -23,6 +23,12 @@ const lora = Lora({
 });
 
 const siteUrl = getSiteUrl()
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: '#050505',
+}
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -84,6 +90,11 @@ export default async function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+        <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+        <link rel="manifest" href="/manifest.webmanifest" />
+      </head>
       <body className={`${inter.variable} ${lora.variable} font-sans antialiased`} nonce={nonce}>
         <PostHogProvider>
           <QueryProvider>

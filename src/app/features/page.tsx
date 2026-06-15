@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { getSiteUrl } from "@/lib/site"
 import Link from "next/link"
 import Script from "next/script"
+import { PublicNav, PublicFooter } from "@/components/public-nav"
 
 const siteUrl = getSiteUrl()
 
@@ -148,7 +149,7 @@ export default function FeaturesPage() {
       color: "#fff",
       fontFamily: "'Söhne', 'Inter', ui-sans-serif, system-ui, sans-serif",
     }}>
-      <Script id="features-howto-schema" type="application/ld+json" strategy="afterInteractive"
+      <Script id="features-itemlist-schema" type="application/ld+json" strategy="afterInteractive"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify({
             "@context": "https://schema.org",
@@ -165,28 +166,22 @@ export default function FeaturesPage() {
             ),
           })
         }} />
-      <nav style={{
-        position: "sticky", top: 0, zIndex: 50,
-        background: "rgba(5,5,5,0.9)", backdropFilter: "blur(12px)",
-        borderBottom: "1px solid rgba(255,255,255,0.06)",
-      }}>
-        <div style={{
-          maxWidth: "1024px", margin: "0 auto", padding: "0 24px",
-          display: "flex", alignItems: "center", justifyContent: "space-between", height: "64px",
-        }}>
-          <Link href="/" style={{
-            fontSize: "15.667px", fontWeight: 500, color: "#c0c0c0",
-            textDecoration: "none", letterSpacing: "-0.01em",
-          }}>
-            FlowCore
-          </Link>
-          <div style={{ display: "flex", gap: "24px", alignItems: "center" }}>
-            <Link href="/pricing" style={{ fontSize: "14px", color: "#888", textDecoration: "none" }}>Pricing</Link>
-            <Link href="/faq" style={{ fontSize: "14px", color: "#888", textDecoration: "none" }}>FAQ</Link>
-            <Link href="/login" style={{ fontSize: "14px", color: "#c65f39", textDecoration: "none", fontWeight: 500 }}>Get Started</Link>
-          </div>
-        </div>
-      </nav>
+      <Script id="features-howto-schema" type="application/ld+json" strategy="afterInteractive"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "HowTo",
+            "name": "How to Set Up AI Customer Service with Flowcore",
+            "description": "Step-by-step guide to automating your customer service with AI-powered WhatsApp and webchat assistants.",
+            "step": howItWorks.map((s) => ({
+              "@type": "HowToStep",
+              "name": s.title,
+              "text": s.description,
+            })),
+            "totalTime": "PT30M",
+          })
+        }} />
+      <PublicNav />
 
       <main>
         {/* Hero */}
@@ -301,13 +296,7 @@ export default function FeaturesPage() {
         </section>
       </main>
 
-      <footer style={{
-        borderTop: "1px solid rgba(255,255,255,0.06)",
-        padding: "32px 24px", textAlign: "center",
-        fontSize: "13px", color: "#595859",
-      }}>
-        <p>&copy; {new Date().getFullYear()} FlowCore. All rights reserved.</p>
-      </footer>
+      <PublicFooter />
     </div>
   )
 }

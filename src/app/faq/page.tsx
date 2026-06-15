@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import { getSiteUrl } from "@/lib/site"
-import Link from "next/link"
 import Script from "next/script"
+import { PublicNav, PublicFooter } from "@/components/public-nav"
 
 const siteUrl = getSiteUrl()
 
@@ -110,23 +110,7 @@ export default function FaqPage() {
             })),
           })
         }} />
-      <nav style={{
-        position: "sticky", top: 0, zIndex: 50,
-        background: "rgba(5,5,5,0.9)", backdropFilter: "blur(12px)",
-        borderBottom: "1px solid rgba(255,255,255,0.06)",
-      }}>
-        <div style={{
-          maxWidth: "820px", margin: "0 auto", padding: "0 24px",
-          display: "flex", alignItems: "center", gap: "32px", height: "64px",
-        }}>
-          <Link href="/" style={{
-            fontSize: "15.667px", fontWeight: 500, color: "#c0c0c0",
-            textDecoration: "none", letterSpacing: "-0.01em",
-          }}>
-            FlowCore
-          </Link>
-        </div>
-      </nav>
+      <PublicNav />
 
       <main style={{ maxWidth: "820px", margin: "0 auto", padding: "80px 24px 120px" }}>
         <header style={{ marginBottom: "64px" }}>
@@ -161,14 +145,7 @@ export default function FaqPage() {
         </div>
       </main>
 
-      <footer style={{
-        borderTop: "1px solid rgba(255,255,255,0.06)",
-        padding: "32px 24px", textAlign: "center",
-        fontSize: "13.7086px", color: "#595859",
-      }}>
-        <p>&copy; {new Date().getFullYear()} FlowCore. All rights reserved.</p>
-        <p style={{ marginTop: "4px" }}>Contact: zenosayz05@gmail.com</p>
-      </footer>
+      <PublicFooter />
     </div>
   )
 }

@@ -473,7 +473,7 @@ export function LandingPage() {
             <div className="space-y-4">
               <h4 className="text-xs font-semibold tracking-wider uppercase" style={{ color: "#a3a3a3" }}>Product</h4>
               <nav className="flex flex-col gap-3">
-                <Link href="/login" className="text-sm font-normal transition-colors" style={{ color: "#525252" }}>Features</Link>
+                <Link href="/features" className="text-sm font-normal transition-colors" style={{ color: "#525252" }}>Features</Link>
                 <Link href="/pricing" className="text-sm font-normal transition-colors" style={{ color: "#525252" }}>Pricing</Link>
                 <Link href="/changelog" className="text-sm font-normal transition-colors" style={{ color: "#525252" }}>Changelog</Link>
                 <Link href="/faq" className="text-sm font-normal transition-colors" style={{ color: "#525252" }}>FAQ</Link>

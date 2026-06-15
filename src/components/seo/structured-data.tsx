@@ -28,7 +28,6 @@ export function StructuredData() {
       "@type": "PostalAddress",
       "addressCountry": "IN",
     },
-    "sameAs": [],
   }
 
   const websiteSchema = {
@@ -70,25 +69,6 @@ export function StructuredData() {
       "offerCount": "3",
       "availability": "https://schema.org/InStock",
     },
-    "aggregateRating": {
-      "@type": "AggregateRating",
-      "ratingValue": "4.8",
-      "ratingCount": "150",
-      "bestRating": "5",
-    },
-    "review": {
-      "@type": "Review",
-      "reviewRating": {
-        "@type": "Rating",
-        "ratingValue": "5",
-        "bestRating": "5",
-      },
-      "author": {
-        "@type": "Organization",
-        "name": "Smol Launch",
-      },
-      "reviewBody": "Featured on Smol Launch as a top AI customer service platform.",
-    },
   }
 
   const productSchema = {
@@ -110,36 +90,6 @@ export function StructuredData() {
     },
   }
 
-  const howToSchema = {
-    "@context": "https://schema.org",
-    "@type": "HowTo",
-    "name": "How to Set Up AI Customer Service with Flowcore",
-    "description": "Step-by-step guide to automating your customer service with AI-powered WhatsApp and webchat assistants.",
-    "step": [
-      {
-        "@type": "HowToStep",
-        "name": "Create your account",
-        "text": "Sign up with your email address. No credit card required for the free tier.",
-      },
-      {
-        "@type": "HowToStep",
-        "name": "Connect your channels",
-        "text": "Connect WhatsApp via QR code scanning or embed the webchat widget on your website.",
-      },
-      {
-        "@type": "HowToStep",
-        "name": "Train your AI assistant",
-        "text": "Upload your knowledge base, FAQ documents, and business information to train the AI on your specific domain.",
-      },
-      {
-        "@type": "HowToStep",
-        "name": "Configure automation rules",
-        "text": "Set up business hours, escalation rules, and human takeover triggers for seamless customer service.",
-      },
-    ],
-    "totalTime": "PT30M",
-  }
-
   return (
     <>
       <Script id="organization-schema" type="application/ld+json" strategy="afterInteractive"
@@ -150,8 +100,6 @@ export function StructuredData() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareSchema) }} />
       <Script id="product-schema" type="application/ld+json" strategy="afterInteractive"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }} />
-      <Script id="howto-schema" type="application/ld+json" strategy="afterInteractive"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }} />
     </>
   )
 }
