@@ -7,7 +7,18 @@ const siteUrl = getSiteUrl()
 export const metadata: Metadata = {
   title: "Data Deletion & Export",
   description: "How to request data deletion or export from Flowcore AI in compliance with DPDP Act 2023 and GDPR.",
-  openGraph: { title: "Data Deletion - Flowcore AI", url: `${siteUrl}/legal/data-deletion` },
+  keywords: ["Flowcore AI data deletion", "data export", "DPDP Act", "right to be forgotten"],
+  openGraph: {
+    title: "Data Deletion & Export — Flowcore AI",
+    description: "Request data deletion or export from Flowcore AI.",
+    url: `${siteUrl}/legal/data-deletion`,
+    images: [{ url: `${siteUrl}/api/og?title=Data%20Deletion%20%26%20Export&subtitle=Your%20Data%2C%20Your%20Control`, width: 1200, height: 630, alt: "Data Deletion & Export" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Data Deletion & Export — Flowcore AI",
+    images: [`${siteUrl}/api/og?title=Data%20Deletion%20%26%20Export&subtitle=Your%20Data%2C%20Your%20Control`],
+  },
   alternates: { canonical: `${siteUrl}/legal/data-deletion` },
 }
 

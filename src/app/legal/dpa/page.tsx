@@ -7,7 +7,18 @@ const siteUrl = getSiteUrl()
 export const metadata: Metadata = {
   title: "Data Processing Agreement",
   description: "Flowcore AI's Data Processing Agreement (DPA) governing how we process customer data as a processor under DPDP Act 2023.",
-  openGraph: { title: "DPA - Flowcore AI", url: `${siteUrl}/legal/dpa` },
+  keywords: ["Flowcore AI DPA", "data processing agreement", "DPDP Act", "data processor"],
+  openGraph: {
+    title: "Data Processing Agreement — Flowcore AI",
+    description: "How Flowcore AI processes customer data under DPDP Act 2023.",
+    url: `${siteUrl}/legal/dpa`,
+    images: [{ url: `${siteUrl}/api/og?title=DPA&subtitle=Data%20Processing%20Agreement`, width: 1200, height: 630, alt: "Data Processing Agreement" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Data Processing Agreement — Flowcore AI",
+    images: [`${siteUrl}/api/og?title=DPA&subtitle=Data%20Processing%20Agreement`],
+  },
   alternates: { canonical: `${siteUrl}/legal/dpa` },
 }
 

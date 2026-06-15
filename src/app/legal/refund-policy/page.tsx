@@ -7,7 +7,18 @@ const siteUrl = getSiteUrl()
 export const metadata: Metadata = {
   title: "Refund Policy",
   description: "Flowcore AI's refund and cancellation policy for our AI customer service platform subscriptions.",
-  openGraph: { title: "Refund Policy - Flowcore AI", url: `${siteUrl}/legal/refund-policy` },
+  keywords: ["Flowcore AI refund", "refund policy", "cancellation policy", "subscription refund"],
+  openGraph: {
+    title: "Refund Policy — Flowcore AI",
+    description: "Refund and cancellation terms for Flowcore AI subscriptions.",
+    url: `${siteUrl}/legal/refund-policy`,
+    images: [{ url: `${siteUrl}/api/og?title=Refund%20Policy&subtitle=Subscription%20Cancellation%20%26%20Refunds`, width: 1200, height: 630, alt: "Refund Policy" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Refund Policy — Flowcore AI",
+    images: [`${siteUrl}/api/og?title=Refund%20Policy&subtitle=Subscription%20Cancellation%20%26%20Refunds`],
+  },
   alternates: { canonical: `${siteUrl}/legal/refund-policy` },
 }
 

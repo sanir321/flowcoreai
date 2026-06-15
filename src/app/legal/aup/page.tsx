@@ -7,7 +7,18 @@ const siteUrl = getSiteUrl()
 export const metadata: Metadata = {
   title: "Acceptable Use Policy",
   description: "Flowcore AI's Acceptable Use Policy (AUP) defining prohibited activities and proper use of our AI platform.",
-  openGraph: { title: "AUP - Flowcore AI", url: `${siteUrl}/legal/aup` },
+  keywords: ["Flowcore AI AUP", "acceptable use policy", "platform rules", "prohibited activities"],
+  openGraph: {
+    title: "Acceptable Use Policy — Flowcore AI",
+    description: "Rules and prohibited activities for Flowcore AI platform usage.",
+    url: `${siteUrl}/legal/aup`,
+    images: [{ url: `${siteUrl}/api/og?title=AUP&subtitle=Acceptable%20Use%20Policy`, width: 1200, height: 630, alt: "Acceptable Use Policy" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Acceptable Use Policy — Flowcore AI",
+    images: [`${siteUrl}/api/og?title=AUP&subtitle=Acceptable%20Use%20Policy`],
+  },
   alternates: { canonical: `${siteUrl}/legal/aup` },
 }
 

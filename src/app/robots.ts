@@ -12,15 +12,7 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ['/api/', '/settings/', '/inbox/', '/agent-hub/', '/knowledge/', '/contacts/', '/insights/', '/onboarding/', '/appointments/', '/orders/'],
       },
       {
-        userAgent: ['GPTBot', 'ChatGPT-User', 'CCBot', 'Google-Extended'],
-        disallow: '/',
-      },
-      {
-        userAgent: ['ClaudeBot', 'Claude-Web', 'anthropic-ai'],
-        disallow: '/',
-      },
-      {
-        userAgent: ['PerplexityBot', 'YouBot', 'Bytespider'],
+        userAgent: 'Bytespider',
         disallow: '/',
       },
     ],

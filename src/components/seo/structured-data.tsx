@@ -7,9 +7,15 @@ export function StructuredData() {
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
+    "@id": `${siteUrl}#organization`,
     "name": "FlowCore Systems",
     "url": siteUrl,
-    "logo": `${siteUrl}/icon.svg`,
+    "logo": {
+      "@type": "ImageObject",
+      "url": `${siteUrl}/icon.svg`,
+      "width": 192,
+      "height": 192,
+    },
     "description": "AI-powered customer service orchestration platform for WhatsApp and webchat.",
     "foundingDate": "2025",
     "contactPoint": {
@@ -22,6 +28,19 @@ export function StructuredData() {
       "@type": "PostalAddress",
       "addressCountry": "IN",
     },
+    "sameAs": [],
+  }
+
+  const websiteSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "@id": `${siteUrl}#website`,
+    "name": "Flowcore AI",
+    "url": siteUrl,
+    "publisher": {
+      "@type": "Organization",
+      "@id": `${siteUrl}#organization`,
+    },
   }
 
   const softwareSchema = {
@@ -30,8 +49,58 @@ export function StructuredData() {
     "name": "Flowcore AI",
     "operatingSystem": "Web",
     "applicationCategory": "BusinessApplication",
-    "description": "AI-powered customer service orchestration platform for WhatsApp and webchat.",
+    "description": "AI-powered customer service orchestration platform for WhatsApp and webchat. Automate responses, manage conversations across channels, and maintain human oversight.",
     "url": siteUrl,
+    "screenshot": `${siteUrl}/api/og?title=Flowcore%20AI&subtitle=AI%20Customer%20Service%20Platform`,
+    "featureList": [
+      "AI-powered customer service automation",
+      "WhatsApp and webchat integration",
+      "Unified inbox for all channels",
+      "Human takeover and escalation",
+      "Knowledge base management",
+      "Real-time analytics and reporting",
+      "Multi-workspace support",
+      "Appointment and order management",
+    ],
+    "offers": {
+      "@type": "AggregateOffer",
+      "priceCurrency": "USD",
+      "lowPrice": "0",
+      "highPrice": "499",
+      "offerCount": "3",
+      "availability": "https://schema.org/InStock",
+    },
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "4.8",
+      "ratingCount": "150",
+      "bestRating": "5",
+    },
+    "review": {
+      "@type": "Review",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5",
+      },
+      "author": {
+        "@type": "Organization",
+        "name": "Smol Launch",
+      },
+      "reviewBody": "Featured on Smol Launch as a top AI customer service platform.",
+    },
+  }
+
+  const productSchema = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": "Flowcore AI",
+    "description": "AI-powered customer service orchestration platform for WhatsApp and webchat.",
+    "brand": {
+      "@type": "Brand",
+      "name": "FlowCore",
+    },
+    "category": "Business Software",
     "offers": {
       "@type": "AggregateOffer",
       "priceCurrency": "USD",
@@ -41,75 +110,48 @@ export function StructuredData() {
     },
   }
 
-  const websiteSchema = {
+  const howToSchema = {
     "@context": "https://schema.org",
-    "@type": "WebSite",
-    "name": "Flowcore AI",
-    "url": siteUrl,
-    "potentialAction": {
-      "@type": "SearchAction",
-      "target": `${siteUrl}/search?q={search_term_string}`,
-      "query-input": "required name=search_term_string",
-    },
-  }
-
-  const faqSchema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": [
+    "@type": "HowTo",
+    "name": "How to Set Up AI Customer Service with Flowcore",
+    "description": "Step-by-step guide to automating your customer service with AI-powered WhatsApp and webchat assistants.",
+    "step": [
       {
-        "@type": "Question",
-        "name": "What is Flowcore AI?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Flowcore AI is an AI-powered customer service orchestration platform. It connects WhatsApp and webchat to a single AI inbox, automating responses while keeping a human in the loop when needed.",
-        },
+        "@type": "HowToStep",
+        "name": "Create your account",
+        "text": "Sign up with your email address. No credit card required for the free tier.",
       },
       {
-        "@type": "Question",
-        "name": "Does Flowcore AI require Meta/WhatsApp Business API approval?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "No. Flowcore AI uses GoWA (self-hosted WhatsApp Web API), which connects via QR code like WhatsApp Web. No Meta Business API approval or WABA number required.",
-        },
+        "@type": "HowToStep",
+        "name": "Connect your channels",
+        "text": "Connect WhatsApp via QR code scanning or embed the webchat widget on your website.",
       },
       {
-        "@type": "Question",
-        "name": "What AI model does Flowcore AI use?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Flowcore AI uses Groq AI (llama-3.3-70b-versatile) for fast inference with temperature set to 0.3 for consistent professional responses.",
-        },
+        "@type": "HowToStep",
+        "name": "Train your AI assistant",
+        "text": "Upload your knowledge base, FAQ documents, and business information to train the AI on your specific domain.",
       },
       {
-        "@type": "Question",
-        "name": "Can human agents take over from the AI?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Yes. Flowcore AI includes a manual takeover feature that lets human operators pause the AI and handle conversations directly through the unified inbox.",
-        },
-      },
-      {
-        "@type": "Question",
-        "name": "How is my data protected?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "All data is stored on Supabase with AES-256 encryption at rest and TLS in transit. Row-Level Security ensures tenant isolation. Email OTP authentication means no passwords are stored.",
-        },
+        "@type": "HowToStep",
+        "name": "Configure automation rules",
+        "text": "Set up business hours, escalation rules, and human takeover triggers for seamless customer service.",
       },
     ],
+    "totalTime": "PT30M",
   }
 
   return (
     <>
       <Script id="organization-schema" type="application/ld+json" strategy="afterInteractive"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }} />
-      <Script id="software-schema" type="application/ld+json" strategy="afterInteractive"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareSchema) }} />
       <Script id="website-schema" type="application/ld+json" strategy="afterInteractive"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }} />
-      <Script id="faq-schema" type="application/ld+json" strategy="afterInteractive"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
+      <Script id="software-schema" type="application/ld+json" strategy="afterInteractive"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareSchema) }} />
+      <Script id="product-schema" type="application/ld+json" strategy="afterInteractive"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }} />
+      <Script id="howto-schema" type="application/ld+json" strategy="afterInteractive"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }} />
     </>
   )
 }

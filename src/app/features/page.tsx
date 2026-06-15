@@ -1,0 +1,313 @@
+import type { Metadata } from "next"
+import { getSiteUrl } from "@/lib/site"
+import Link from "next/link"
+import Script from "next/script"
+
+const siteUrl = getSiteUrl()
+
+export const metadata: Metadata = {
+  title: "Features — AI Customer Service Automation",
+  description: "Explore Flowcore AI's features: AI-powered customer service agents, WhatsApp automation, unified inbox, knowledge base, analytics, and multi-channel orchestration.",
+  keywords: [
+    "AI customer service features",
+    "WhatsApp automation features",
+    "AI chatbot capabilities",
+    "customer service software features",
+    "unified inbox",
+    "knowledge base management",
+    "AI agent orchestration",
+  ],
+  openGraph: {
+    title: "Features — Flowcore AI",
+    description: "AI-powered customer service features: WhatsApp automation, unified inbox, knowledge base, analytics, and multi-channel orchestration.",
+    url: `${siteUrl}/features`,
+    siteName: "Flowcore AI",
+    images: [
+      {
+        url: `${siteUrl}/api/og?title=Features&subtitle=AI%20Customer%20Service%20Automation%20Capabilities`,
+        width: 1200,
+        height: 630,
+        alt: "Flowcore AI Features",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Features — Flowcore AI",
+    description: "AI-powered customer service features: WhatsApp automation, unified inbox, knowledge base, analytics.",
+    images: [`${siteUrl}/api/og?title=Features&subtitle=AI%20Customer%20Service%20Automation%20Capabilities`],
+  },
+  alternates: { canonical: `${siteUrl}/features` },
+}
+
+const features = [
+  {
+    category: "AI Agents",
+    items: [
+      {
+        name: "Support Agent",
+        description: "Handles customer queries using your knowledge base. Searches documents, answers FAQs, and escalates to humans when needed.",
+      },
+      {
+        name: "Sales Agent",
+        description: "Responds to product inquiries, searches your menu/catalog, generates quotes, and guides customers through purchase decisions.",
+      },
+      {
+        name: "Booking Agent",
+        description: "Manages appointment scheduling end-to-end. Checks availability, books slots, sends confirmations, and handles rescheduling.",
+      },
+    ],
+  },
+  {
+    category: "Channels",
+    items: [
+      {
+        name: "WhatsApp",
+        description: "Connect via GoWA (self-hosted WhatsApp Web API). No Meta Business API approval required. Scan a QR code and start messaging.",
+      },
+      {
+        name: "Webchat Widget",
+        description: "Embeddable widget for your website. Customizable colors, greeting messages, and branding. Works on any website or React app.",
+      },
+      {
+        name: "Gmail Integration",
+        description: "Connect your Gmail inbox. AI reads, categorizes, and drafts responses to customer emails. Human approval before sending.",
+      },
+    ],
+  },
+  {
+    category: "Platform",
+    items: [
+      {
+        name: "Unified Inbox",
+        description: "All conversations from WhatsApp, webchat, and email in one place. Real-time updates, internal notes, and team collaboration.",
+      },
+      {
+        name: "Knowledge Base",
+        description: "Upload documents, FAQs, and business information. AI searches your knowledge base to answer customer questions accurately.",
+      },
+      {
+        name: "Analytics Dashboard",
+        description: "Track response times, resolution rates, customer satisfaction, and AI performance. Export reports for business review.",
+      },
+      {
+        name: "Human Takeover",
+        description: "Seamlessly switch from AI to human agent mid-conversation. Set escalation rules based on keywords, sentiment, or topic.",
+      },
+    ],
+  },
+  {
+    category: "Enterprise",
+    items: [
+      {
+        name: "Multi-Workspace",
+        description: "Manage multiple businesses or departments from one account. Each workspace has its own AI agents, knowledge base, and settings.",
+      },
+      {
+        name: "SOC 2 Type II",
+        description: "Enterprise-grade security with SOC 2 Type II compliance. Role-based access control, audit logging, and data encryption.",
+      },
+      {
+        name: "API Access",
+        description: "RESTful API for custom integrations. Automate workflows, sync data, and build custom solutions on top of Flowcore.",
+      },
+    ],
+  },
+]
+
+const howItWorks = [
+  {
+    step: "1",
+    title: "Create your account",
+    description: "Sign up with your email. No credit card required for the free tier.",
+  },
+  {
+    step: "2",
+    title: "Connect your channels",
+    description: "Scan the WhatsApp QR code or embed the webchat widget on your website.",
+  },
+  {
+    step: "3",
+    title: "Train your AI",
+    description: "Upload your knowledge base, set your business hours, and configure agent behavior.",
+  },
+  {
+    step: "4",
+    title: "Go live",
+    description: "Your AI agents start handling customer conversations immediately.",
+  },
+]
+
+export default function FeaturesPage() {
+  return (
+    <div style={{
+      minHeight: "100vh",
+      background: "#050505",
+      color: "#fff",
+      fontFamily: "'Söhne', 'Inter', ui-sans-serif, system-ui, sans-serif",
+    }}>
+      <Script id="features-howto-schema" type="application/ld+json" strategy="afterInteractive"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "ItemList",
+            "name": "Flowcore AI Features",
+            "description": "AI-powered customer service automation features for WhatsApp and webchat.",
+            "itemListElement": features.flatMap((cat, ci) =>
+              cat.items.map((item, ii) => ({
+                "@type": "ListItem",
+                "position": ci * 10 + ii + 1,
+                "name": item.name,
+                "description": item.description,
+              }))
+            ),
+          })
+        }} />
+      <nav style={{
+        position: "sticky", top: 0, zIndex: 50,
+        background: "rgba(5,5,5,0.9)", backdropFilter: "blur(12px)",
+        borderBottom: "1px solid rgba(255,255,255,0.06)",
+      }}>
+        <div style={{
+          maxWidth: "1024px", margin: "0 auto", padding: "0 24px",
+          display: "flex", alignItems: "center", justifyContent: "space-between", height: "64px",
+        }}>
+          <Link href="/" style={{
+            fontSize: "15.667px", fontWeight: 500, color: "#c0c0c0",
+            textDecoration: "none", letterSpacing: "-0.01em",
+          }}>
+            FlowCore
+          </Link>
+          <div style={{ display: "flex", gap: "24px", alignItems: "center" }}>
+            <Link href="/pricing" style={{ fontSize: "14px", color: "#888", textDecoration: "none" }}>Pricing</Link>
+            <Link href="/faq" style={{ fontSize: "14px", color: "#888", textDecoration: "none" }}>FAQ</Link>
+            <Link href="/login" style={{ fontSize: "14px", color: "#c65f39", textDecoration: "none", fontWeight: 500 }}>Get Started</Link>
+          </div>
+        </div>
+      </nav>
+
+      <main>
+        {/* Hero */}
+        <section style={{ padding: "100px 24px 80px", textAlign: "center", maxWidth: "820px", margin: "0 auto" }}>
+          <h1 style={{
+            fontSize: "clamp(36px, 5vw, 54px)", fontWeight: 400,
+            lineHeight: 1.15, letterSpacing: "-0.02em",
+            color: "#fff", margin: "0 0 20px",
+          }}>
+            Features built for<br />real customer service
+          </h1>
+          <p style={{ fontSize: "18px", color: "#888", maxWidth: "600px", margin: "0 auto", lineHeight: 1.6 }}>
+            Everything you need to automate customer conversations across WhatsApp, webchat, and email — while keeping a human in the loop.
+          </p>
+        </section>
+
+        {/* How it works */}
+        <section style={{ padding: "60px 24px 80px", maxWidth: "1024px", margin: "0 auto" }}>
+          <h2 style={{
+            fontSize: "28px", fontWeight: 400, color: "#fff",
+            margin: "0 0 48px", letterSpacing: "-0.01em",
+          }}>
+            How it works
+          </h2>
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+            gap: "32px",
+          }}>
+            {howItWorks.map((step) => (
+              <div key={step.step}>
+                <div style={{
+                  width: "40px", height: "40px", borderRadius: "50%",
+                  background: "rgba(198,95,57,0.15)", color: "#c65f39",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: "16px", fontWeight: 600, marginBottom: "16px",
+                }}>
+                  {step.step}
+                </div>
+                <h3 style={{ fontSize: "16px", fontWeight: 500, color: "#fff", margin: "0 0 8px" }}>
+                  {step.title}
+                </h3>
+                <p style={{ fontSize: "14px", color: "#888", lineHeight: 1.6, margin: 0 }}>
+                  {step.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Feature categories */}
+        {features.map((cat) => (
+          <section key={cat.category} style={{ padding: "60px 24px", maxWidth: "1024px", margin: "0 auto" }}>
+            <h2 style={{
+              fontSize: "24px", fontWeight: 400, color: "#fff",
+              margin: "0 0 32px", letterSpacing: "-0.01em",
+              paddingBottom: "16px", borderBottom: "1px solid rgba(255,255,255,0.06)",
+            }}>
+              {cat.category}
+            </h2>
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+              gap: "24px",
+            }}>
+              {cat.items.map((item) => (
+                <div key={item.name} style={{
+                  padding: "24px",
+                  borderRadius: "12px",
+                  background: "rgba(255,255,255,0.03)",
+                  border: "1px solid rgba(255,255,255,0.06)",
+                }}>
+                  <h3 style={{ fontSize: "16px", fontWeight: 500, color: "#fff", margin: "0 0 8px" }}>
+                    {item.name}
+                  </h3>
+                  <p style={{ fontSize: "14px", color: "#888", lineHeight: 1.6, margin: 0 }}>
+                    {item.description}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
+        ))}
+
+        {/* CTA */}
+        <section style={{
+          padding: "80px 24px", textAlign: "center",
+          maxWidth: "620px", margin: "0 auto",
+        }}>
+          <h2 style={{
+            fontSize: "32px", fontWeight: 400, color: "#fff",
+            margin: "0 0 16px",
+          }}>
+            Ready to automate your customer service?
+          </h2>
+          <p style={{ fontSize: "16px", color: "#888", margin: "0 0 32px", lineHeight: 1.6 }}>
+            Start with the free tier. No credit card required.
+          </p>
+          <Link href="/login" style={{
+            display: "inline-block",
+            padding: "12px 32px",
+            background: "#c65f39",
+            color: "#fff",
+            borderRadius: "8px",
+            fontSize: "15px",
+            fontWeight: 500,
+            textDecoration: "none",
+            transition: "background 0.2s",
+          }}>
+            Get started free
+          </Link>
+        </section>
+      </main>
+
+      <footer style={{
+        borderTop: "1px solid rgba(255,255,255,0.06)",
+        padding: "32px 24px", textAlign: "center",
+        fontSize: "13px", color: "#595859",
+      }}>
+        <p>&copy; {new Date().getFullYear()} FlowCore. All rights reserved.</p>
+      </footer>
+    </div>
+  )
+}

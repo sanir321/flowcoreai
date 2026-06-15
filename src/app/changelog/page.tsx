@@ -7,10 +7,33 @@ const siteUrl = getSiteUrl()
 export const metadata: Metadata = {
   title: "Changelog",
   description: "Release history and product updates for Flowcore AI's AI customer service orchestration platform.",
+  keywords: [
+    "Flowcore AI updates",
+    "product changelog",
+    "AI customer service updates",
+    "platform release notes",
+  ],
   openGraph: {
-    title: "Changelog - Flowcore AI",
-    description: "Release history and product updates.",
+    title: "Changelog — Flowcore AI",
+    description: "Release history and product updates for Flowcore AI.",
     url: `${siteUrl}/changelog`,
+    siteName: "Flowcore AI",
+    images: [
+      {
+        url: `${siteUrl}/api/og?title=Changelog&subtitle=Product%20Updates%20%26%20Release%20Notes`,
+        width: 1200,
+        height: 630,
+        alt: "Flowcore AI Changelog",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Changelog — Flowcore AI",
+    description: "Release history and product updates for Flowcore AI.",
+    images: [`${siteUrl}/api/og?title=Changelog&subtitle=Product%20Updates%20%26%20Release%20Notes`],
   },
   alternates: { canonical: `${siteUrl}/changelog` },
 }

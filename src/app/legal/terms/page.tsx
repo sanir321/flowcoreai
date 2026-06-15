@@ -7,7 +7,18 @@ const siteUrl = getSiteUrl()
 export const metadata: Metadata = {
   title: "Terms & Conditions",
   description: "Flowcore AI's terms and conditions governing the use of our AI customer service platform and services.",
-  openGraph: { title: "Terms & Conditions - Flowcore AI", url: `${siteUrl}/legal/terms` },
+  keywords: ["Flowcore AI terms", "terms of service", "platform terms", "SaaS terms"],
+  openGraph: {
+    title: "Terms & Conditions — Flowcore AI",
+    description: "Terms and conditions for using Flowcore AI's customer service platform.",
+    url: `${siteUrl}/legal/terms`,
+    images: [{ url: `${siteUrl}/api/og?title=Terms%20%26%20Conditions&subtitle=Platform%20Terms%20of%20Service`, width: 1200, height: 630, alt: "Terms & Conditions" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Terms & Conditions — Flowcore AI",
+    images: [`${siteUrl}/api/og?title=Terms%20%26%20Conditions&subtitle=Platform%20Terms%20of%20Service`],
+  },
   alternates: { canonical: `${siteUrl}/legal/terms` },
 }
 

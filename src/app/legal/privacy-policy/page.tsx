@@ -7,7 +7,18 @@ const siteUrl = getSiteUrl()
 export const metadata: Metadata = {
   title: "Privacy Policy",
   description: "Flowcore AI's privacy policy explains how we collect, use, store, and protect your data in compliance with DPDP Act 2023 and IT Act 2000.",
-  openGraph: { title: "Privacy Policy - Flowcore AI", url: `${siteUrl}/legal/privacy-policy` },
+  keywords: ["Flowcore AI privacy policy", "data protection", "DPDP Act", "customer data privacy"],
+  openGraph: {
+    title: "Privacy Policy — Flowcore AI",
+    description: "How Flowcore AI collects, uses, stores, and protects your data.",
+    url: `${siteUrl}/legal/privacy-policy`,
+    images: [{ url: `${siteUrl}/api/og?title=Privacy%20Policy&subtitle=Data%20Protection%20%26%20Privacy`, width: 1200, height: 630, alt: "Privacy Policy" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Privacy Policy — Flowcore AI",
+    images: [`${siteUrl}/api/og?title=Privacy%20Policy&subtitle=Data%20Protection%20%26%20Privacy`],
+  },
   alternates: { canonical: `${siteUrl}/legal/privacy-policy` },
 }
 

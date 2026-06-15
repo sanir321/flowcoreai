@@ -7,7 +7,18 @@ const siteUrl = getSiteUrl()
 export const metadata: Metadata = {
   title: "Cookie Policy",
   description: "Flowcore AI's cookie policy explains how we use essential cookies for authentication and preferences.",
-  openGraph: { title: "Cookie Policy - Flowcore AI", url: `${siteUrl}/legal/cookie-policy` },
+  keywords: ["Flowcore AI cookies", "cookie policy", "essential cookies", "privacy cookies"],
+  openGraph: {
+    title: "Cookie Policy — Flowcore AI",
+    description: "How Flowcore AI uses essential cookies.",
+    url: `${siteUrl}/legal/cookie-policy`,
+    images: [{ url: `${siteUrl}/api/og?title=Cookie%20Policy&subtitle=Essential%20Cookies%20%26%20Tracking`, width: 1200, height: 630, alt: "Cookie Policy" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Cookie Policy — Flowcore AI",
+    images: [`${siteUrl}/api/og?title=Cookie%20Policy&subtitle=Essential%20Cookies%20%26%20Tracking`],
+  },
   alternates: { canonical: `${siteUrl}/legal/cookie-policy` },
 }
 
