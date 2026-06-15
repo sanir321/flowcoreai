@@ -545,7 +545,7 @@ export async function handleBooking(ctx: PipelineContext): Promise<TierResult | 
     "you're not", "you are not", "not helpful", "not what i",
     "help", "problem", "issue", "complaint", "not working",
     "talk to human", "talk to person", "talk to someone",
-    "speak to", "speak with", "contact", "samir", "call owner",
+    "speak to", "speak with", "contact", "call owner",
     "human", "real person", "real agent", "owner",
     "what", "who", "why", "where", "tell me about",
     "are you real", "are you a bot", "confused", "don't understand",
