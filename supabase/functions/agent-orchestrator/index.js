@@ -48,7 +48,7 @@ var init_contact = __esm({
 
 // supabase/functions/agent-orchestrator/index.ts
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.108.1";
 
 // supabase/functions/agent-orchestrator/guards/non-text.ts
 var NON_TEXT_TYPES = ["image", "audio", "document", "sticker", "reaction", "video"];

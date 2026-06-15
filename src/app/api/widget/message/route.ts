@@ -90,22 +90,26 @@ export async function POST(req: NextRequest) {
     // Domain allowlist check (Origin header vs configured domains)
     const origin = req.headers.get("origin") || req.headers.get("referer") || "";
     let allowedOrigin = "*";
-    if (widgetConfig.allowed_domains && Array.isArray(widgetConfig.allowed_domains) && widgetConfig.allowed_domains.length > 0) {
-      if (!origin) {
-        return new Response("Missing origin header", { status: 403 });
+    
+    // Require allowed_domains to be configured
+    if (!widgetConfig.allowed_domains || !Array.isArray(widgetConfig.allowed_domains) || widgetConfig.allowed_domains.length === 0) {
+      return new Response("Widget not configured — no allowed domains set", { status: 403 });
+    }
+    
+    if (!origin) {
+      return new Response("Missing origin header", { status: 403 });
+    }
+    try {
+      const originDomain = new URL(origin).hostname;
+      const allowed = (widgetConfig.allowed_domains as string[]).some(d =>
+        originDomain === d || originDomain.endsWith("." + d)
+      );
+      if (!allowed) {
+        return new Response("Domain not allowed", { status: 403 });
       }
-      try {
-        const originDomain = new URL(origin).hostname;
-        const allowed = (widgetConfig.allowed_domains as string[]).some(d =>
-          originDomain === d || originDomain.endsWith("." + d)
-        );
-        if (!allowed) {
-          return new Response("Domain not allowed", { status: 403 });
-        }
-        allowedOrigin = origin;
-      } catch {
-        return new Response("Invalid origin", { status: 403 });
-      }
+      allowedOrigin = origin;
+    } catch {
+      return new Response("Invalid origin", { status: 403 });
     }
 
     // 1. Resolve/Upsert Session

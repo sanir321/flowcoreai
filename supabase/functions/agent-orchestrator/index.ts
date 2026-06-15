@@ -1,5 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.108.1"
 import { runT0 } from "./pipeline/t0-instant.ts"
 import { runT1 } from "./pipeline/t1-cache.ts"
 import { runT2 } from "./pipeline/t2-router.ts"
