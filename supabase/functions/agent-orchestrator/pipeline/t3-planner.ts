@@ -13,7 +13,7 @@ const AGENT_SYSTEM_PROMPTS: Record<string, (ctx: PipelineContext) => string> = {
 };
 
 export async function runT3(ctx: PipelineContext): Promise<TierResult> {
-  const agentType = ctx.agentType || "customer_support";
+  let agentType = ctx.agentType || "customer_support";
 
   // 0a. Fetch agent configuration (including personality traits)
   const { data: agent } = await ctx.supabase
