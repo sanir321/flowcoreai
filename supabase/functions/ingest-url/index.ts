@@ -386,12 +386,25 @@ function fireAndForget(supabase: any, functionName: string, body: object) {
 }
 
 function triggerEmbedBatch(supabase: any, source_id: string, workspace_id?: string) {
-  const secret = Deno.env.get('INTERNAL_CRON_SECRET')
-  supabase.functions.invoke('embed-text', {
-    body: { source_id, workspace_id, embed_batch: true },
-    headers: { Authorization: `Bearer ${secret}` }
+  const anonKey = Deno.env.get('SUPABASE_ANON_KEY')
+  const baseUrl = Deno.env.get('SUPABASE_URL')
+  if (!anonKey || !baseUrl) {
+    console.error('[triggerEmbedBatch] missing SUPABASE_ANON_KEY or SUPABASE_URL')
+    return
+  }
+  fetch(`${baseUrl}/functions/v1/embed-text`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${anonKey}`,
+      'Content-Type': 'application/json',
+      'apikey': anonKey,
+    },
+    body: JSON.stringify({ source_id, workspace_id, embed_batch: true }),
   })
-    .then((r: any) => r?.error ? Promise.reject(r.error) : null)
+    .then((r) => {
+      if (!r.ok) throw new Error(`HTTP ${r.status}`)
+      return r.json()
+    })
     .then(() => console.log(`[triggerEmbedBatch] next batch kicked off for ${source_id}`))
     .catch((err: any) => {
       console.error('[triggerEmbedBatch] failed:', err?.message || err)
