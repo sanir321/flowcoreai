@@ -1,16 +1,37 @@
 import type { Metadata } from "next"
 import { getSiteUrl } from "@/lib/site"
 import Link from "next/link"
+import Script from "next/script"
 
 const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
   title: "Frequently Asked Questions",
   description: "Answers to common questions about Flowcore AI's AI customer service platform, WhatsApp integration, pricing, and features.",
+  keywords: [
+    "Flowcore AI FAQ",
+    "AI customer service questions",
+    "WhatsApp automation FAQ",
+    "AI chatbot questions",
+  ],
   openGraph: {
     title: "FAQ - Flowcore AI",
     description: "Answers to common questions about Flowcore AI's AI customer service platform.",
     url: `${siteUrl}/faq`,
+    images: [
+      {
+        url: `${siteUrl}/api/og?title=FAQ&subtitle=Questions%20about%20Flowcore%20AI`,
+        width: 1200,
+        height: 630,
+        alt: "Flowcore AI FAQ",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "FAQ - Flowcore AI",
+    description: "Answers to common questions about Flowcore AI's AI customer service platform.",
+    images: [`${siteUrl}/api/og?title=FAQ&subtitle=Questions%20about%20Flowcore%20AI`],
   },
   alternates: { canonical: `${siteUrl}/faq` },
 }
@@ -74,6 +95,21 @@ export default function FaqPage() {
       color: "#fff",
       fontFamily: "'Söhne', 'Inter', ui-sans-serif, system-ui, sans-serif",
     }}>
+      <Script id="faq-page-schema" type="application/ld+json" strategy="afterInteractive"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": faqs.map(faq => ({
+              "@type": "Question",
+              "name": faq.q,
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": faq.a,
+              },
+            })),
+          })
+        }} />
       <nav style={{
         position: "sticky", top: 0, zIndex: 50,
         background: "rgba(5,5,5,0.9)", backdropFilter: "blur(12px)",

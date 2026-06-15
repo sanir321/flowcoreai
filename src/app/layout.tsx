@@ -34,19 +34,26 @@ export const metadata: Metadata = {
   keywords: ["AI customer service", "WhatsApp automation", "business AI assistants", "FlowCore", "automated communication", "AI orchestration"],
   authors: [{ name: "FlowCore Systems" }],
   openGraph: {
-    title: "Flowcore AI — AI Assistants for WhatsApp & Webchat",
+    title: "Flowcore AI — Automated Customer Service & AI Assistants",
     description: siteDescription,
     url: siteUrl,
     siteName: "Flowcore AI",
-      images: [],
+    images: [
+      {
+        url: `${siteUrl}/api/og?title=Flowcore%20AI&subtitle=Automated%20Customer%20Service%20%26%20AI%20Assistants`,
+        width: 1200,
+        height: 630,
+        alt: "Flowcore AI — AI Customer Service Platform",
+      },
+    ],
     locale: "en_US",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Flowcore AI — Automate Customer Service with AI",
+    title: "Flowcore AI — Automated Customer Service & AI Assistants",
     description: siteDescription,
-    images: [],
+    images: [`${siteUrl}/api/og?title=Flowcore%20AI&subtitle=Automated%20Customer%20Service%20%26%20AI%20Assistants`],
   },
   alternates: {
     canonical: siteUrl,
