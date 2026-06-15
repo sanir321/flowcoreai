@@ -349,12 +349,20 @@ export default function OnboardingPage() {
                           <SelectValue placeholder="Select industry" />
                         </SelectTrigger>
                         <SelectContent className="bg-[#1F1A1A] border-white/10 text-white">
-                          <SelectItem value="tech">Technology</SelectItem>
-                          <SelectItem value="finance">Finance</SelectItem>
-                          <SelectItem value="healthcare">Healthcare</SelectItem>
-                          <SelectItem value="retail">Retail</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
-                        </SelectContent>
+                           <SelectItem value="construction">Construction & Engineering</SelectItem>
+                           <SelectItem value="hotel">Hotel & Hospitality</SelectItem>
+                           <SelectItem value="restaurant">Restaurant & Food Service</SelectItem>
+                           <SelectItem value="retail">E-commerce & Retail</SelectItem>
+                           <SelectItem value="healthcare">Healthcare & Medical</SelectItem>
+                           <SelectItem value="finance">Banking & Finance</SelectItem>
+                           <SelectItem value="education">Education & Training</SelectItem>
+                           <SelectItem value="legal">Legal Services</SelectItem>
+                           <SelectItem value="beauty">Salon & Beauty</SelectItem>
+                           <SelectItem value="fitness">Fitness & Wellness</SelectItem>
+                           <SelectItem value="automotive">Automotive</SelectItem>
+                           <SelectItem value="logistics">Logistics & Transport</SelectItem>
+                           <SelectItem value="other">Other</SelectItem>
+                         </SelectContent>
                       </Select>
                       {form.formState.errors.business_type && (
                        <p className="text-red-500 text-[10px] font-bold ml-1 mt-1">Required</p>
