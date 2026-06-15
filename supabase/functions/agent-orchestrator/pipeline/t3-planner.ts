@@ -156,10 +156,21 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
       if (ctx.kbHadResults) {
         const context = chunks
           .map((c: any, i: number) => {
-            const text = (c.content || c.text || "").trim().slice(0, 600);
+            const raw = (c.content || c.text || "").trim();
+            // Strip navigation noise: markdown links, HTML tags, blog lists
+            const text = raw
+              .replace(/\[read more\]\([^)]*\)/gi, '')
+              .replace(/!\[.*?\]\([^)]*\)/gi, '')
+              .replace(/<[^>]+>/g, '')
+              .replace(/###\s*\n/g, '')
+              .replace(/#####\s*/g, '')
+              .replace(/######\s*/g, '')
+              .replace(/\n{3,}/g, '\n\n')
+              .trim()
+              .slice(0, 1200);
             return `[${i + 1}] ${text}`;
           })
-          .filter((t: string) => t.length > 4)
+          .filter((t: string) => t.length > 10)
           .join("\n\n");
         systemPrompt += `\n\n## Knowledge Base Context\nThe following excerpts were retrieved from the business knowledge base for this question. Answer using ONLY these excerpts and the business profile above. Do not invent details not present here.\n\n${context}`;
       } else {
