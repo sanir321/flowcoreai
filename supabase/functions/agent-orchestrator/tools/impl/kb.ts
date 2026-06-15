@@ -2,7 +2,7 @@ import { generateEmbedding } from "../../lib/hf-embeddings.ts";
 import { PipelineContext } from "../../lib/types.ts";
 
 const MATCH_THRESHOLD = 0.35;
-const MATCH_COUNT = 5;
+const MATCH_COUNT = 3;
 
 export async function matchChunks(params: { query: string }, ctx: PipelineContext) {
   // Reuse the speculative search started in T2 when the query is the raw message.

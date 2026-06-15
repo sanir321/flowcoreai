@@ -167,7 +167,7 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
               .replace(/######\s*/g, '')
               .replace(/\n{3,}/g, '\n\n')
               .trim()
-              .slice(0, 1200);
+              .slice(0, 800);
             return `[${i + 1}] ${text}`;
           })
           .filter((t: string) => t.length > 10)
