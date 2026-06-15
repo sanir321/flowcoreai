@@ -30,6 +30,32 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
+    // Require re-authentication: check for confirmation_token in body
+    const body = await req.json().catch(() => ({}));
+    const confirmationToken = body?.confirmation_token;
+    
+    if (!confirmationToken) {
+      // Step 1: Send confirmation OTP
+      const { error } = await supabase.auth.signInWithOtp({
+        email: user.email!,
+        options: { shouldCreateUser: false },
+      });
+      if (error) {
+        return NextResponse.json({ error: "Failed to send confirmation code" }, { status: 500 });
+      }
+      return NextResponse.json({ requires_confirmation: true, message: "Confirmation code sent to your email" });
+    }
+
+    // Step 2: Verify the confirmation OTP
+    const { error: verifyError } = await supabase.auth.verifyOtp({
+      email: user.email!,
+      token: confirmationToken,
+      type: 'email',
+    });
+    if (verifyError) {
+      return NextResponse.json({ error: "Invalid or expired confirmation code" }, { status: 401 });
+    }
+
     const workspaceId = user.app_metadata?.workspace_id
 
     // Verify workspace exists (stale JWT guard)

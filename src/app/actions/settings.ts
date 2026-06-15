@@ -82,7 +82,7 @@ export async function updateWidgetConfig(input: unknown): Promise<ActionResponse
   }
 }
 
-export async function getGoogleAuthUrl(workspace_id: string): Promise<ActionResponse<{ url: string }>> {
+export async function getGoogleAuthUrl(workspace_id: string): Promise<ActionResponse<{ url: string; nonce: string }>> {
   const result = z.string().uuid().safeParse(workspace_id)
   if (!result.success) return { data: null, error: "Invalid workspace ID" }
 
@@ -102,18 +102,21 @@ export async function getGoogleAuthUrl(workspace_id: string): Promise<ActionResp
   );
 
   // Sign the state parameter to prevent IDOR during OAuth callback
-  const { createHmac } = await import('node:crypto');
+  const { createHmac, randomBytes } = await import('node:crypto');
   if (!process.env.INTERNAL_CRON_SECRET) {
     return { data: null, error: "Server configuration error: missing secret" };
   }
+  
+  // Generate session nonce for CSRF binding
+  const nonce = randomBytes(16).toString('hex');
   const hmac = createHmac('sha256', process.env.INTERNAL_CRON_SECRET);
-  hmac.update(result.data);
+  hmac.update(result.data + ':' + nonce);
   const stateSig = hmac.digest('hex');
-  const state = `${result.data}.${stateSig}`;
+  const state = `${result.data}.${nonce}.${stateSig}`;
 
   const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${client_id}&redirect_uri=${redirect_uri}&response_type=code&scope=${scope}&access_type=offline&prompt=consent&state=${state}`;
 
-  return { data: { url }, error: null };
+  return { data: { url, nonce }, error: null };
 }
 
 export interface GoogleConfigInput {

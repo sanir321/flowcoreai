@@ -4,7 +4,9 @@ import { useState } from "react"
 import { motion } from "framer-motion"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Loader2, Download, Trash2, ShieldCheck, ExternalLink, FileSpreadsheet } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Loader2, Download, Trash2, ShieldCheck, ExternalLink, FileSpreadsheet, Mail } from "lucide-react"
 import { toast } from "sonner"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -13,6 +15,9 @@ export default function DataPrivacyPage() {
   const [isExporting, setIsExporting] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
+  const [deleteStep, setDeleteStep] = useState<"confirm" | "otp">("confirm")
+  const [deleteOtp, setDeleteOtp] = useState("")
+  const [otpSent, setOtpSent] = useState(false)
   const router = useRouter()
 
   async function handleExport() {
@@ -36,10 +41,35 @@ export default function DataPrivacyPage() {
     setIsExporting(false)
   }
 
-  async function handleDelete() {
+  async function handleDeleteRequestOtp() {
     setIsDeleting(true)
     try {
       const res = await fetch("/api/user/delete-account", { method: "POST" })
+      const json = await res.json()
+      if (json.error) throw new Error(json.error)
+      if (json.requires_confirmation) {
+        setOtpSent(true)
+        setDeleteStep("otp")
+        toast.success("Confirmation code sent to your email")
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to send confirmation code")
+    }
+    setIsDeleting(false)
+  }
+
+  async function handleDeleteConfirm() {
+    if (!deleteOtp.trim()) {
+      toast.error("Please enter the confirmation code")
+      return
+    }
+    setIsDeleting(true)
+    try {
+      const res = await fetch("/api/user/delete-account", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirmation_token: deleteOtp }),
+      })
       const json = await res.json()
       if (!json.success) throw new Error(json.error)
 
@@ -124,28 +154,65 @@ export default function DataPrivacyPage() {
                 <Trash2 className="h-4 w-4 mr-2" />
                 Delete Account
               </Button>
-            ) : (
+            ) : deleteStep === "confirm" ? (
               <div className="mt-4 p-4 bg-red-50 rounded-lg space-y-3">
                 <p className="text-sm font-medium text-red-700">
                   Are you sure? This will permanently delete all your data.
                 </p>
                 <div className="flex gap-3">
                   <Button
-                    onClick={handleDelete}
+                    onClick={handleDeleteRequestOtp}
                     disabled={isDeleting}
                     className="bg-red-600 hover:bg-red-700 text-white"
                   >
-                    {isDeleting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                    Yes, Delete Everything
+                    {isDeleting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Mail className="h-4 w-4 mr-2" />}
+                    Send Confirmation Code
                   </Button>
                   <Button
-                    onClick={() => setShowConfirm(false)}
+                    onClick={() => { setShowConfirm(false); setDeleteStep("confirm") }}
                     variant="outline"
                     disabled={isDeleting}
                   >
                     Cancel
                   </Button>
                 </div>
+              </div>
+            ) : (
+              <div className="mt-4 p-4 bg-red-50 rounded-lg space-y-3">
+                <p className="text-sm font-medium text-red-700">
+                  Enter the confirmation code sent to your email to permanently delete your account.
+                </p>
+                <div className="flex gap-3 items-end">
+                  <div className="flex-1">
+                    <Label htmlFor="delete-otp" className="text-xs text-red-600">Confirmation Code</Label>
+                    <Input
+                      id="delete-otp"
+                      type="text"
+                      placeholder="Enter 6-digit code"
+                      value={deleteOtp}
+                      onChange={(e) => setDeleteOtp(e.target.value)}
+                      className="mt-1 border-red-200"
+                      maxLength={6}
+                    />
+                  </div>
+                  <Button
+                    onClick={handleDeleteConfirm}
+                    disabled={isDeleting || !deleteOtp.trim()}
+                    className="bg-red-600 hover:bg-red-700 text-white"
+                  >
+                    {isDeleting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                    Delete Everything
+                  </Button>
+                </div>
+                <Button
+                  onClick={() => { setDeleteStep("confirm"); setOtpSent(false); setDeleteOtp("") }}
+                  variant="ghost"
+                  size="sm"
+                  disabled={isDeleting}
+                  className="text-red-600"
+                >
+                  Back
+                </Button>
               </div>
             )}
           </div>

@@ -12,30 +12,38 @@ const supabaseAdmin = createClient(
 export async function GET(req: NextRequest) {
   const { searchParams, origin } = new URL(req.url);
   const code = searchParams.get("code");
-  const state = searchParams.get("state"); // Contains signed workspace_id
+  const state = searchParams.get("state"); // Contains signed workspace_id.nonce.signature
 
   if (!code || !state) {
     return NextResponse.redirect(`${origin}/settings/integrations?error=No code provided`);
   }
 
   // Verify signed state parameter (prevents IDOR where attacker swaps workspace_id)
-  const dotIndex = state.lastIndexOf(".");
-  if (dotIndex === -1) {
+  const parts = state.split(".");
+  if (parts.length !== 3) {
     return NextResponse.redirect(`${origin}/settings/integrations?error=Invalid state parameter`);
   }
-  const workspaceId = state.substring(0, dotIndex);
-  const signature = state.substring(dotIndex + 1);
+  const [workspaceId, nonce, signature] = parts;
+  
   if (!process.env.INTERNAL_CRON_SECRET) {
     return NextResponse.redirect(`${origin}/settings/integrations?error=Server configuration error`);
   }
+  
+  // Verify HMAC signature (includes nonce for CSRF binding)
   const hmac = createHmac("sha256", process.env.INTERNAL_CRON_SECRET);
-  hmac.update(workspaceId);
+  hmac.update(workspaceId + ':' + nonce);
   const expectedSig = hmac.digest("hex");
   // Constant-time comparison to prevent timing attack
   const sigBuf = Buffer.from(signature, 'hex');
   const expectedBuf = Buffer.from(expectedSig, 'hex');
   if (sigBuf.length !== expectedBuf.length || !require('node:crypto').timingSafeEqual(sigBuf, expectedBuf)) {
     return NextResponse.redirect(`${origin}/settings/integrations?error=Invalid state signature`);
+  }
+
+  // Verify nonce matches cookie (CSRF binding — ensures same browser initiated the flow)
+  const cookieNonce = req.cookies.get("google_oauth_nonce")?.value;
+  if (!cookieNonce || cookieNonce !== nonce) {
+    return NextResponse.redirect(`${origin}/settings/integrations?error=Session mismatch — please try again`);
   }
 
   try {
@@ -87,5 +95,9 @@ export async function GET(req: NextRequest) {
   } catch (error: any) {
     console.error("Google Callback Error:", error);
     return NextResponse.redirect(`${origin}/settings/integrations?error=Failed to connect Google. Please try again.`);
+  } finally {
+    // Clear the nonce cookie
+    const response = NextResponse.redirect(`${origin}/settings/integrations`);
+    response.cookies.set("google_oauth_nonce", "", { maxAge: 0, path: "/api/auth/google/callback" });
   }
 }

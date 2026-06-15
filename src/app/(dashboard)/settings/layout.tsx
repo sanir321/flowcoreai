@@ -24,6 +24,7 @@ const SETTINGS_NAV = [
   { name: "Notifications", href: "/settings/notifications", icon: Bell },
   { name: "Integrations", href: "/settings/integrations", icon: Puzzle },
   { name: "Web Widget", href: "/settings/widget", icon: Globe },
+  { name: "Security", href: "/settings/security", icon: ShieldCheck },
   { name: "Data & Privacy", href: "/settings/data", icon: ShieldCheck },
   { name: "Billing & Credits", href: "/settings/billing", icon: Zap },
   { name: "Menu", href: "/settings/menu", icon: ShoppingBag },

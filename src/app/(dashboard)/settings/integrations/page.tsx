@@ -142,6 +142,8 @@ export default function IntegrationsPage() {
       setErrorIds(prev => ({ ...prev, [id]: result.error || "Failed to generate auth URL" }))
       setIsActionLoading(null)
     } else {
+      // Store nonce in cookie for CSRF binding verification in callback
+      document.cookie = `google_oauth_nonce=${result.data.nonce}; path=/api/auth/google/callback; maxAge=600; SameSite=Lax; Secure`
       window.location.assign(result.data.url)
     }
   }
