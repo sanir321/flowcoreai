@@ -64,7 +64,7 @@ export default function LoginPage() {
     try {
       const ipRes = await fetch("https://api.ipify.org?format=json")
       const { ip } = await ipRes.json()
-      const { data: lockout } = await supabase.rpc("check_login_lockout", {
+      const { data: lockout } = await (supabase as any).rpc("check_login_lockout", {
         p_email: email,
         p_ip: ip,
       })
@@ -106,7 +106,7 @@ export default function LoginPage() {
       try {
         const ipRes = await fetch("https://api.ipify.org?format=json")
         const { ip } = await ipRes.json()
-        await supabase.rpc("record_login_attempt", { p_email: email, p_ip: ip, p_success: false })
+        await (supabase as any).rpc("record_login_attempt", { p_email: email, p_ip: ip, p_success: false })
       } catch { /* non-critical */ }
       toast.error(error.message)
     } else {
@@ -131,7 +131,7 @@ export default function LoginPage() {
       try {
         const ipRes = await fetch("https://api.ipify.org?format=json")
         const { ip } = await ipRes.json()
-        await supabase.rpc("record_login_attempt", { p_email: email, p_ip: ip, p_success: false })
+        await (supabase as any).rpc("record_login_attempt", { p_email: email, p_ip: ip, p_success: false })
       } catch { /* non-critical */ }
       toast.error(error.message)
     } else {
@@ -139,7 +139,7 @@ export default function LoginPage() {
       try {
         const ipRes = await fetch("https://api.ipify.org?format=json")
         const { ip } = await ipRes.json()
-        await supabase.rpc("record_login_attempt", { p_email: email, p_ip: ip, p_success: true })
+        await (supabase as any).rpc("record_login_attempt", { p_email: email, p_ip: ip, p_success: true })
       } catch { /* non-critical */ }
       const { data: { user } } = await supabase.auth.getUser()
       
