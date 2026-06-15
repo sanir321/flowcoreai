@@ -39,11 +39,11 @@ export const metadata: Metadata = {
 const faqs = [
   {
     q: "What is FlowCore?",
-    a: "FlowCore is an AI-powered customer service orchestration platform. It connects WhatsApp, webchat, and email to a single AI inbox, automating responses while keeping a human in the loop when needed.",
+    a: "FlowCore is an AI-powered customer service orchestration platform. It connects WhatsApp and webchat to a single AI inbox, automating responses while keeping a human in the loop when needed.",
   },
   {
     q: "Which channels does FlowCore support?",
-    a: "WhatsApp (via GoWA), Gmail, and a native webchat widget. Each channel connects through its own integration — you bring the credentials, we handle the rest.",
+    a: "WhatsApp (via GoWA) and a native webchat widget. Each channel connects through its own integration — you bring the credentials, we handle the rest.",
   },
   {
     q: "Do I need a Meta/WhatsApp Business API approval?",

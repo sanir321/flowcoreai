@@ -72,10 +72,7 @@ const features = [
         name: "Webchat Widget",
         description: "Embeddable widget for your website. Customizable colors, greeting messages, and branding. Works on any website or React app.",
       },
-      {
-        name: "Gmail Integration",
-        description: "Connect your Gmail inbox. AI reads, categorizes, and drafts responses to customer emails. Human approval before sending.",
-      },
+
     ],
   },
   {
