@@ -34,61 +34,58 @@ Deno.serve(async (req) => {
       serviceRoleKey ?? ''
     )
 
-    const { workspace_id, source_id, content } = await req.json()
+    const { workspace_id, source_id, content, embed_batch } = await req.json()
+
+    // ── Mode 2: embed a batch of pending (null-embedding) chunks ──
+    // Each batch runs in its own worker invocation so the gte-small CPU budget
+    // resets; embedding the whole document in one invocation hits WORKER_RESOURCE_LIMIT.
+    if (embed_batch) {
+      if (!source_id) {
+        return new Response(JSON.stringify({ error: 'source_id required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      }
+      const result = await embedPendingBatch(supabase, source_id)
+      return new Response(JSON.stringify({ success: true, ...result }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }
+
+    // ── Mode 1: chunk content + store rows (no embedding yet), then kick off batches ──
     if (!workspace_id || !source_id || !content) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
     await supabase.from('kb_sources').update({
       status: 'processing',
-      error_message: 'Generating embeddings...'
+      error_message: 'Chunking content...'
     }).eq('id', source_id)
 
-    const chunks = splitIntoChunks(content, 1000)
-
-    const chunksToInsert = []
-    for (let i = 0; i < chunks.length; i++) {
-      await supabase.from('kb_sources').update({
-        error_message: `Embedding chunk ${i + 1}/${chunks.length}...`
-      }).eq('id', source_id)
-
-      const embedding = await model.run(chunks[i], {
-        mean_pool: true,
-        normalize: true,
-      })
-
-      chunksToInsert.push({
-        workspace_id,
-        source_id,
-        content: chunks[i],
-        embedding: Array.from(embedding),
-        chunk_index: i,
-        token_count: Math.ceil(chunks[i].length / 4)
-      })
-    }
+    const chunks = splitIntoChunks(content, 1500)
 
     const { error: deleteError } = await supabase
       .from('kb_chunks')
       .delete()
       .eq('source_id', source_id)
-
     if (deleteError) throw new Error("Failed to clear old chunks")
 
-    if (chunksToInsert.length > 0) {
-      const { error: insertError } = await supabase.from('kb_chunks').insert(chunksToInsert)
+    const rows = chunks.map((c, i) => ({
+      workspace_id,
+      source_id,
+      content: c,
+      embedding: null,
+      chunk_index: i,
+      token_count: Math.ceil(c.length / 4)
+    }))
+
+    if (rows.length > 0) {
+      const { error: insertError } = await supabase.from('kb_chunks').insert(rows)
       if (insertError) throw new Error("Failed to save chunks")
     }
 
     await supabase.from('kb_sources').update({
-      status: 'active',
-      chunk_count: chunks.length,
-      error_message: null,
-      updated_at: new Date().toISOString()
+      error_message: `Embedding 0/${rows.length}...`
     }).eq('id', source_id)
 
-    await supabase.from('ingestion_jobs').update({ status: 'completed' }).eq('source_id', source_id)
+    triggerEmbedBatch(supabase, source_id, workspace_id)
 
-    return new Response(JSON.stringify({ success: true, chunks: chunks.length }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    return new Response(JSON.stringify({ success: true, chunks: rows.length, embedding: 'started' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 
   } catch (error: any) {
     console.error(error)
@@ -111,17 +108,108 @@ Deno.serve(async (req) => {
 })
 
 function splitIntoChunks(text: string, maxSize: number): string[] {
-  const sentences = text.match(/[^.!?]+[.!?]+/g) || [text]
+  const OVERLAP = 150
+  const HARD_CAP = Math.round(maxSize * 1.25)
+
+  const sentences = text.match(/[^.!?\n]+[.!?\n]+/g) || [text]
   const chunks: string[] = []
   let current = ""
   for (const sentence of sentences) {
     if ((current + sentence).length > maxSize && current.length > 0) {
       chunks.push(current.trim())
-      current = sentence
+      current = current.slice(-OVERLAP) + sentence
     } else {
       current += sentence
     }
+    while (current.length > HARD_CAP) {
+      chunks.push(current.slice(0, HARD_CAP).trim())
+      current = current.slice(HARD_CAP - OVERLAP)
+    }
   }
   if (current.trim()) chunks.push(current.trim())
-  return chunks.length > 0 ? chunks : [text.slice(0, maxSize)]
+
+  const filtered = chunks.filter(isMeaningfulChunk)
+  return filtered.length > 0 ? filtered : [text.slice(0, HARD_CAP)]
+}
+
+function isMeaningfulChunk(chunk: string): boolean {
+  const informative = chunk.replace(/[-|#*`>\s\d.]/g, "")
+  if (informative.length < 40) return false
+  const alnum = (chunk.match(/[a-zA-Z0-9]/g) || []).length
+  if (alnum / chunk.length < 0.4) return false
+  return true
+}
+
+// Embed up to BATCH null-embedding chunks for a source. Each call runs in its own
+// worker invocation so the gte-small CPU budget resets between batches.
+const BATCH = 3
+async function embedPendingBatch(supabase: any, source_id: string) {
+  const { data: pending, error: selErr } = await supabase
+    .from('kb_chunks')
+    .select('id, content')
+    .eq('source_id', source_id)
+    .is('embedding', null)
+    .order('chunk_index', { ascending: true })
+    .limit(BATCH)
+  if (selErr) throw new Error("Failed to load pending chunks")
+
+  for (const row of pending || []) {
+    try {
+      const embedding = await model.run(row.content, { mean_pool: true, normalize: true })
+      await supabase.from('kb_chunks').update({ embedding: Array.from(embedding) }).eq('id', row.id)
+    } catch (e) {
+      // Drop the offending chunk so it can't stall the batch loop forever.
+      console.error('[embedPendingBatch] embed failed for chunk', row.id, e)
+      await supabase.from('kb_chunks').delete().eq('id', row.id)
+    }
+  }
+
+  const { count: remaining } = await supabase
+    .from('kb_chunks')
+    .select('id', { count: 'exact', head: true })
+    .eq('source_id', source_id)
+    .is('embedding', null)
+
+  const { count: total } = await supabase
+    .from('kb_chunks')
+    .select('id', { count: 'exact', head: true })
+    .eq('source_id', source_id)
+
+  if ((remaining || 0) > 0) {
+    const done = (total || 0) - (remaining || 0)
+    await supabase.from('kb_sources').update({
+      error_message: `Embedding ${done}/${total || 0}...`
+    }).eq('id', source_id)
+    triggerEmbedBatch(supabase, source_id)
+    return { done, total: total || 0, remaining }
+  }
+
+  // All chunks embedded — finalize.
+  await supabase.from('kb_sources').update({
+    status: 'active',
+    chunk_count: total || 0,
+    error_message: null,
+    updated_at: new Date().toISOString()
+  }).eq('id', source_id)
+  await supabase.from('ingestion_jobs').update({ status: 'completed' }).eq('source_id', source_id)
+
+  return { done: total || 0, total: total || 0, remaining: 0, completed: true }
+}
+
+// Fire-and-forget self-invocation to embed the next batch in a fresh worker.
+function triggerEmbedBatch(supabase: any, source_id: string, workspace_id?: string) {
+  const secret = Deno.env.get('INTERNAL_CRON_SECRET')
+  supabase.functions.invoke('embed-text', {
+    body: { source_id, workspace_id, embed_batch: true },
+    headers: { Authorization: `Bearer ${secret}` }
+  })
+    .then((r: any) => r?.error ? Promise.reject(r.error) : null)
+    .then(() => console.log(`[triggerEmbedBatch] next batch kicked off for ${source_id}`))
+    .catch((err: any) => {
+      console.error('[triggerEmbedBatch] failed:', err?.message || err)
+      supabase.from('kb_sources').update({
+        status: 'failed',
+        error_message: 'Embedding batch failed to continue'
+      }).eq('id', source_id).then(() => {}, () => {})
+    })
 }

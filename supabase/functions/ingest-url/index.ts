@@ -56,22 +56,32 @@ function isPrivateIP(hostname: string): boolean {
 
 // Resolve hostname and check all IP addresses
 async function resolveAndCheckPrivate(hostname: string): Promise<boolean> {
+  // A and AAAA are resolved independently: most domains are IPv4-only, so a
+  // missing AAAA record must NOT be treated as a hard block.
+  let resolvedAny = false
+
   try {
-    // Use Deno's DNS resolution
     const addresses = await Deno.resolveDns(hostname, 'A')
+    if (addresses.length > 0) resolvedAny = true
     for (const addr of addresses) {
       if (isPrivateIP(addr)) return true
     }
-    // Also check AAAA records
+  } catch {
+    // No A records (or lookup failed) — fall through to AAAA.
+  }
+
+  try {
     const aaaaAddresses = await Deno.resolveDns(hostname, 'AAAA')
+    if (aaaaAddresses.length > 0) resolvedAny = true
     for (const addr of aaaaAddresses) {
       if (isPrivateIP(addr)) return true
     }
-    return false
   } catch {
-    // If DNS resolution fails, block the request
-    return true
+    // No AAAA records — normal for IPv4-only hosts.
   }
+
+  // Only block if the hostname resolved to nothing at all.
+  return !resolvedAny
 }
 
 function validateUrl(raw: string): URL {
@@ -81,8 +91,6 @@ function validateUrl(raw: string): URL {
   if (isPrivateIP(url.hostname)) throw new Error(`Access to ${url.hostname} is not allowed`)
   return url
 }
-
-const model = new Supabase.ai.Session('gte-small')
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
@@ -143,35 +151,33 @@ Deno.serve(async (req) => {
 
     await supabase.from('kb_sources').update({ error_message: 'Chunking content...' }).eq('id', source_id)
 
-    const chunks = splitIntoChunks(text, 5000)
+    const chunks = splitIntoChunks(text, 1500)
 
-    const chunksToInsert = []
-    for (let i = 0; i < chunks.length; i++) {
-      await supabase.from('kb_sources').update({ error_message: `Embedding chunk ${i + 1}/${chunks.length}...` }).eq('id', source_id)
-
-      const embedding = await model.run(chunks[i], { mean_pool: true, normalize: true })
-      chunksToInsert.push({
-        workspace_id, source_id,
-        content: chunks[i],
-        embedding: Array.from(embedding),
-        chunk_index: i,
-        token_count: Math.ceil(chunks[i].length / 4)
-      })
-    }
-
+    // Clear old chunks, then store new chunks with null embeddings. Embedding is
+    // delegated to embed-text in CPU-budget-sized batches so a single worker
+    // invocation never hits WORKER_RESOURCE_LIMIT on large pages.
     const { error: deleteError } = await supabase.from('kb_chunks').delete().eq('source_id', source_id)
     if (deleteError) throw new Error(`Failed to clear old chunks: ${deleteError.message}`)
 
-    if (chunksToInsert.length > 0) {
-      const { error: insertError } = await supabase.from('kb_chunks').insert(chunksToInsert)
+    const rows = chunks.map((c, i) => ({
+      workspace_id, source_id,
+      content: c,
+      embedding: null,
+      chunk_index: i,
+      token_count: Math.ceil(c.length / 4)
+    }))
+
+    if (rows.length > 0) {
+      const { error: insertError } = await supabase.from('kb_chunks').insert(rows)
       if (insertError) throw new Error(`Failed to save chunks: ${insertError.message}`)
     }
 
     await supabase.from('kb_sources').update({
-      status: 'active', chunk_count: chunks.length, error_message: null, updated_at: new Date().toISOString()
+      error_message: `Embedding 0/${rows.length}...`, updated_at: new Date().toISOString()
     }).eq('id', source_id)
 
-    await supabase.from('ingestion_jobs').update({ status: 'completed' }).eq('source_id', source_id)
+    // Kick off batched embedding; embed-text finalizes status='active' when done.
+    triggerEmbedBatch(supabase, source_id, workspace_id)
 
     if (opencodeKey && chunks.length > 0) {
       fireAndForget(supabase, "extract-business-profile", { workspace_id, source_id })
@@ -202,7 +208,7 @@ async function extractContentWithOpenCode(html: string, rawHtml: string, apiKey:
 
   let extracted = stripped
   const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 30000)
+  const timeout = setTimeout(() => controller.abort(), 12000)
   try {
     const response = await fetch(`${baseUrl}/chat/completions`, {
       method: "POST",
@@ -221,7 +227,7 @@ async function extractContentWithOpenCode(html: string, rawHtml: string, apiKey:
           }
         ],
         temperature: 0.1,
-        max_tokens: 16000,
+        max_tokens: 6000,
       }),
     })
 
@@ -273,7 +279,7 @@ function extractSocialUrls(html: string): string[] {
 function convertHtmlToText(html: string): string {
   html = html.replace(/<!--[\s\S]*?-->/g, '')
   html = html.replace(/\r\n/g, '\n')
-  html = html.replace(/<(script|style|svg|noscript|nav|header|aside|form)[^>]*>[\s\S]*?<\/\1>/gi, '')
+  html = html.replace(/<(script|style|svg|noscript|nav|header|aside|form|footer)[^>]*>[\s\S]*?<\/\1>/gi, '')
   html = html.replace(/<br\s*\/?>/gi, '\n')
   html = html.replace(/<\/p>/gi, '\n\n')
   html = html.replace(/<\/h([1-6])>/gi, '\n\n')
@@ -304,17 +310,25 @@ function convertHtmlToText(html: string): string {
   html = html.replace(/\n{4,}/g, '\n\n\n')
   html = html.replace(/[ \t]+/g, ' ')
   html = html.replace(/^\s*[\r\n]+/gm, '')
+  // Collapse runs of empty list bullets (e.g. "- \n- \n- ") left over from nav menus.
+  html = html.replace(/(?:^[ \t]*[-*][ \t]*$\n?){2,}/gm, '')
+  html = html.replace(/\n{3,}/g, '\n\n')
   return html.trim()
 }
 
 function splitIntoChunks(text: string, maxSize: number): string[] {
+  const OVERLAP = 150;
+  const HARD_CAP = Math.round(maxSize * 1.25);
+
   const urls: string[] = []
   const cleaned = text.replace(/https?:\/\/[^\s<>"]+/g, (url) => {
     urls.push(url)
     return `\x00URL_${urls.length - 1}\x00`
   })
 
-  const sentenceRegex = /[^.!?]+[.!?]+/g
+  const restore = (s: string) => s.replace(/\x00URL_(\d+)\x00/g, (_, i) => urls[Number(i)] || "")
+
+  const sentenceRegex = /[^.!?\n]+[.!?\n]+/g
   const sentences: string[] = []
   let lastIndex = 0
   let m: RegExpExecArray | null
@@ -325,21 +339,38 @@ function splitIntoChunks(text: string, maxSize: number): string[] {
   const tail = cleaned.slice(lastIndex).trim()
   if (tail) sentences.push(tail)
 
-  if (sentences.length === 0) return [text.slice(0, maxSize)]
+  if (sentences.length === 0) return [restore(cleaned).slice(0, HARD_CAP)]
 
   const chunks: string[] = []
   let current = ""
   for (const sentence of sentences) {
-    const restored = sentence.replace(/\x00URL_(\d+)\x00/g, (_, i) => urls[Number(i)] || "")
+    const restored = restore(sentence)
     if ((current.length + restored.length) > maxSize && current.length > 0) {
       chunks.push(current.trim())
-      current = restored
+      // Carry an overlap tail from the previous chunk for context continuity.
+      const overlapTail = current.slice(-OVERLAP)
+      current = overlapTail + restored
     } else {
       current += restored
     }
+    // Safety: never let a single run exceed the hard cap.
+    while (current.length > HARD_CAP) {
+      chunks.push(current.slice(0, HARD_CAP).trim())
+      current = current.slice(HARD_CAP - OVERLAP)
+    }
   }
   if (current.trim()) chunks.push(current.trim())
-  return chunks
+
+  return chunks.filter(isMeaningfulChunk)
+}
+
+// Drop boilerplate/noise chunks (nav bars, dash menus, link lists) that hurt retrieval.
+function isMeaningfulChunk(chunk: string): boolean {
+  const informative = chunk.replace(/[-|#*`>\s\d.]/g, "")
+  if (informative.length < 40) return false
+  const alnum = (chunk.match(/[a-zA-Z0-9]/g) || []).length
+  if (alnum / chunk.length < 0.4) return false
+  return true
 }
 
 function fireAndForget(supabase: any, functionName: string, body: object) {
@@ -351,6 +382,23 @@ function fireAndForget(supabase: any, functionName: string, body: object) {
     .catch((err) => {
       console.error(`[FireAndForget] ${functionName} failed:`, err.message)
       supabase.from('kb_sources').update({ error_message: `BP extraction failed: ${err.message}` }).eq('id', (body as any).source_id).catch(() => {})
+    })
+}
+
+function triggerEmbedBatch(supabase: any, source_id: string, workspace_id?: string) {
+  const secret = Deno.env.get('INTERNAL_CRON_SECRET')
+  supabase.functions.invoke('embed-text', {
+    body: { source_id, workspace_id, embed_batch: true },
+    headers: { Authorization: `Bearer ${secret}` }
+  })
+    .then((r: any) => r?.error ? Promise.reject(r.error) : null)
+    .then(() => console.log(`[triggerEmbedBatch] next batch kicked off for ${source_id}`))
+    .catch((err: any) => {
+      console.error('[triggerEmbedBatch] failed:', err?.message || err)
+      supabase.from('kb_sources').update({
+        status: 'failed',
+        error_message: 'Embedding batch failed to continue'
+      }).eq('id', source_id).then(() => {}, () => {})
     })
 }
 

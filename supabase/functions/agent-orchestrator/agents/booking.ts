@@ -424,7 +424,7 @@ RULES:
 
 Missing fields: ${remaining.join(", ")}
 
-Available services: ${servicesList}
+Available services: ${servicesOffered || "our services"}
 
 OUTPUT SCHEMA:
 {"extracted":{"field_name":{"value":"string or null","confidence":"high|low"}}}`,

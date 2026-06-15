@@ -5,6 +5,7 @@ import { SUBMIT_PLAN_TOOL, getAgentToolDefinitions } from "../tools/registry.ts"
 import { handleBooking, loadOrCreateBookingSession, buildBookingSystemPrompt } from "../agents/booking.ts";
 import { buildSupportSystemPrompt } from "../agents/support.ts";
 import { buildSalesSystemPrompt } from "../agents/sales.ts";
+import { matchChunks } from "../tools/impl/kb.ts";
 
 const AGENT_SYSTEM_PROMPTS: Record<string, (ctx: PipelineContext) => string> = {
   customer_support: buildSupportSystemPrompt,
@@ -141,6 +142,33 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
 
   const buildPrompt = AGENT_SYSTEM_PROMPTS[agentType] || AGENT_SYSTEM_PROMPTS.customer_support;
   let systemPrompt = buildPrompt(ctx);
+
+  // RAG-first: for customer support, retrieve KB chunks up-front and inject them
+  // so the agent answers grounded in a single pass (no forced tool round-trip).
+  if (agentType === "customer_support") {
+    try {
+      const kbResult = ctx.kbSearchPromise
+        ? await ctx.kbSearchPromise
+        : await matchChunks({ query: ctx.payload.message }, ctx);
+      const chunks = kbResult?.chunks || kbResult?.kb_chunks || [];
+      ctx.kbHadResults = Array.isArray(chunks) && chunks.length > 0;
+
+      if (ctx.kbHadResults) {
+        const context = chunks
+          .map((c: any, i: number) => {
+            const text = (c.content || c.text || "").trim().slice(0, 600);
+            return `[${i + 1}] ${text}`;
+          })
+          .filter((t: string) => t.length > 4)
+          .join("\n\n");
+        systemPrompt += `\n\n## Knowledge Base Context\nThe following excerpts were retrieved from the business knowledge base for this question. Answer using ONLY these excerpts and the business profile above. Do not invent details not present here.\n\n${context}`;
+      } else {
+        systemPrompt += `\n\n## Knowledge Base Context\nNo relevant knowledge base entries were found for this question. Do NOT guess or invent an answer. Tell the customer you don't have that information on hand, and offer to create a support ticket or connect them with a human.`;
+      }
+    } catch (e: any) {
+      console.error("[T3] KB injection failed:", e.message);
+    }
+  }
 
   // Smart Context Injection for management tasks
   if (ctx.routingReason === "management_priority") {
@@ -382,7 +410,7 @@ function enrichResponseWithToolResults(
         break;
       }
       case "match_kb_chunks": {
-        const chunks = data.chunks || data.results || [];
+        const chunks = data.chunks || data.kb_chunks || data.results || [];
         if (Array.isArray(chunks) && chunks.length > 0) {
           const text = chunks.map((c: any) => c.content || c.text || "").filter(Boolean).join("\n").slice(0, 500);
           if (text) appended.push(`\n\n${text}`);

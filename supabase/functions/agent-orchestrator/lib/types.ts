@@ -65,6 +65,7 @@ export interface PipelineContext {
   _msgCount?: number;
   embedding?: number[];
   kbSearchPromise?: Promise<any>;
+  kbHadResults?: boolean;
   pricingBlocked?: boolean;
   salesBlocked?: boolean;
   handoffDepth?: number;

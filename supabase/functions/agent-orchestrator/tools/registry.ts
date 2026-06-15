@@ -249,12 +249,24 @@ export const ALL_TOOLS: Record<string, ToolDefinition> = {
       },
       additionalProperties: false
     }
+  },
+  get_ticket_status: {
+    name: "get_ticket_status",
+    description: "Check the status and updates of an existing support ticket by ticket number.",
+    parameters: {
+      type: "object",
+      properties: {
+        ticket_number: { type: "string", description: "The ticket number (e.g. 'TKT-ABC123')." },
+        ticket_id: { type: "string", description: "The internal ticket id (alternative to ticket_number)." }
+      },
+      additionalProperties: false
+    }
   }
 };
 
 export const AGENT_TOOLS: Record<string, string[]> = {
   customer_support: [
-    "match_kb_chunks", "get_contact_history", "update_contact", "request_handoff", "create_ticket", "get_business_profile"
+    "match_kb_chunks", "get_contact_history", "update_contact", "request_handoff", "create_ticket", "get_ticket_status", "get_business_profile"
   ],
   appointment_booking: [
     "check_availability", "create_appointment", "update_appointment",
