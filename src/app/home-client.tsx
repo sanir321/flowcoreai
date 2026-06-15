@@ -90,6 +90,7 @@ export function LandingPage() {
         </div>
 
         <nav className="hidden md:flex items-center gap-1 relative z-10">
+          <Link href="/features" className="px-4 py-2 text-sm font-normal transition-colors" style={{ color: "#a3a3a3" }} onMouseEnter={(e) => e.currentTarget.style.color = "#e5e5e5"} onMouseLeave={(e) => e.currentTarget.style.color = "#a3a3a3"}>Features</Link>
           <Link href="/pricing" className="px-4 py-2 text-sm font-normal transition-colors" style={{ color: "#a3a3a3" }} onMouseEnter={(e) => e.currentTarget.style.color = "#e5e5e5"} onMouseLeave={(e) => e.currentTarget.style.color = "#a3a3a3"}>Pricing</Link>
           <Link href="/faq" className="px-4 py-2 text-sm font-normal transition-colors" style={{ color: "#a3a3a3" }} onMouseEnter={(e) => e.currentTarget.style.color = "#e5e5e5"} onMouseLeave={(e) => e.currentTarget.style.color = "#a3a3a3"}>FAQ</Link>
           <Link href="/changelog" className="px-4 py-2 text-sm font-normal transition-colors" style={{ color: "#a3a3a3" }} onMouseEnter={(e) => e.currentTarget.style.color = "#e5e5e5"} onMouseLeave={(e) => e.currentTarget.style.color = "#a3a3a3"}>Changelog</Link>
@@ -372,6 +373,62 @@ export function LandingPage() {
                   </div>
                 </motion.div>
               ))}
+            </div>
+          </div>
+        </motion.section>
+
+        <motion.section {...sectionAnim} className="py-24 px-6 lg:px-12" style={{ background: "#ffffff", borderTop: "1px solid #e5e5e5" }}>
+          <div className="max-w-[1060px] mx-auto">
+            <div className="text-center mb-16">
+              <p className="text-sm font-normal mb-4" style={{ color: "#c65f39" }}>Features</p>
+              <h2 className="font-normal tracking-tight" style={{ fontSize: "35.2508px", lineHeight: "44.0635px", letterSpacing: "-0.15667px", color: "#171717" }}>
+                Everything you need to automate support
+              </h2>
+              <p className="max-w-lg mx-auto mt-4 leading-relaxed font-normal" style={{ fontSize: "15.667px", color: "#737373" }}>
+                Three specialized AI agents, multiple channels, one unified platform.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[
+                {
+                  title: "Support Agent",
+                  description: "Answers customer queries using your knowledge base. Searches documents, handles FAQs, and escalates when needed.",
+                  icon: <Inbox className="h-5 w-5" style={{ color: "#c65f39" }} />,
+                },
+                {
+                  title: "Sales Agent",
+                  description: "Responds to product inquiries, searches your catalog, generates quotes, and guides purchase decisions.",
+                  icon: <BarChart2 className="h-5 w-5" style={{ color: "#c65f39" }} />,
+                },
+                {
+                  title: "Booking Agent",
+                  description: "Manages appointments end-to-end. Checks availability, books slots, sends confirmations, handles rescheduling.",
+                  icon: <Globe className="h-5 w-5" style={{ color: "#c65f39" }} />,
+                },
+              ].map((feature, i) => (
+                <motion.div
+                  key={feature.title}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.8, delay: i * 0.15, ease: [0.16, 1, 0.3, 1] as const }}
+                  className="p-6 rounded-2xl group transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
+                  style={{ background: "#fafafa", border: "1px solid #e5e5e5" }}
+                >
+                  <div className="h-10 w-10 rounded-xl flex items-center justify-center mb-4" style={{ background: "rgba(198, 95, 57, 0.08)" }}>
+                    {feature.icon}
+                  </div>
+                  <h3 className="text-base font-normal mb-2" style={{ color: "#171717" }}>{feature.title}</h3>
+                  <p className="text-sm leading-relaxed font-normal" style={{ color: "#737373" }}>{feature.description}</p>
+                </motion.div>
+              ))}
+            </div>
+
+            <div className="text-center mt-12">
+              <Button asChild className="h-11 px-5 rounded-[100px] text-sm font-normal flex items-center gap-1 mx-auto" style={{ background: "#c65f39", color: "#fff" }}>
+                <Link href="/features">See All Features <ArrowUpRight className="h-4 w-4" /></Link>
+              </Button>
             </div>
           </div>
         </motion.section>
