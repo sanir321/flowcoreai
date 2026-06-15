@@ -1,7 +1,7 @@
 {
 
 
-  
+  
 
 
 
@@ -10,212 +10,164 @@
 
 
 
-
-
-
-"name": "flowter",
-
-
-  
+"name": "flowter",
 
 
-
+  
 
 
 
 
 
 
-
-
-"version": "0.1.0",
 
 
-  
+"version": "0.1.0",
 
 
-
+  
 
 
 
 
 
 
-
-
-"private": true,
 
 
-  
+"private": true,
 
 
-
+  
 
 
 
 
 
 
-
-
-"scripts": {
 
 
-  
+"scripts": {
 
 
-
+  
 
 
 
 
 
 
-
-
-  
 
 
-
+  
 
 
 
 
 
 
-
-
-"dev": "cross-env NODE_OPTIONS='--max-http-header-size=16384' next dev",
 
 
-  
+"dev": "cross-env NODE_OPTIONS='--max-http-header-size=16384' next dev",
 
 
-
+  
 
 
 
 
 
 
-
-
-  
 
 
-
+  
 
 
 
 
 
 
-
 
-"build": "next build",
 
+"build": "next build",
 
-  
 
+  
 
-
 
-
 
 
 
 
-
 
-  
 
+  
 
-
 
-
 
 
 
 
-
 
-"start": "cross-env NODE_OPTIONS=--max-http-header-size=16384 next start",
 
+"start": "cross-env NODE_OPTIONS=--max-http-header-size=16384 next start",
 
-  
 
+  
 
-
 
-
 
 
 
 
-
 
-  
 
+  
 
-
 
-
 
 
 
 
-
 
-"lint": "eslint",
 
+"lint": "eslint",
 
-  
 
+  
 
-
 
-
 
 
 
 
-
 
-  
 
+  
 
-
 
-
 
 
 
 
-
 
-"type-check": "tsc --noEmit"
 
+"type-check": "tsc --noEmit"
 
-  
 
+  
 
-
 
-
 
 
 
 
-
 
-},
 
+},
 
-  
 
+  
 
-
-
 
 
 
@@ -223,13 +175,10 @@
 
 
 
-"dependencies": {
+"dependencies": {
 
 
-  
-
-
-
+  
 
 
 
@@ -238,7 +187,7 @@
 
 
 
-  
+  
 
 
 
@@ -247,16 +196,10 @@
 
 
 
-
-
-
-"@base-ui/react": "^1.4.1",
+"@base-ui/react": "^1.4.1",
 
 
-  
-
-
-
+  
 
 
 
@@ -265,7 +208,7 @@
 
 
 
-  
+  
 
 
 
@@ -274,16 +217,10 @@
 
 
 
-
-
-
-"@dnd-kit/core": "^6.3.1",
+"@dnd-kit/core": "^6.3.1",
 
 
-  
-
-
-
+  
 
 
 
@@ -292,7 +229,7 @@
 
 
 
-  
+  
 
 
 
@@ -301,16 +238,10 @@
 
 
 
-
-
-
-"@dnd-kit/sortable": "^10.0.0",
+"@dnd-kit/sortable": "^10.0.0",
 
 
-  
-
-
-
+  
 
 
 
@@ -319,7 +250,7 @@
 
 
 
-  
+  
 
 
 
@@ -328,16 +259,10 @@
 
 
 
-
-
-
-"@dnd-kit/utilities": "^3.2.2",
+"@dnd-kit/utilities": "^3.2.2",
 
 
-  
-
-
-
+  
 
 
 
@@ -346,7 +271,7 @@
 
 
 
-  
+  
 
 
 
@@ -355,16 +280,10 @@
 
 
 
-
-
-
-"@fontsource/inter": "^5.2.8",
+"@fontsource/inter": "^5.2.8",
 
 
-  
-
-
-
+  
 
 
 
@@ -373,7 +292,7 @@
 
 
 
-  
+  
 
 
 
@@ -382,16 +301,10 @@
 
 
 
-
-
-
-"@hookform/resolvers": "^5.2.2",
+"@hookform/resolvers": "^5.2.2",
 
 
-  
-
-
-
+  
 
 
 
@@ -400,7 +313,7 @@
 
 
 
-  
+  
 
 
 
@@ -409,16 +322,10 @@
 
 
 
-
-
-
-"@radix-ui/react-checkbox": "^1.3.3",
+"@radix-ui/react-checkbox": "^1.3.3",
 
 
-  
-
-
-
+  
 
 
 
@@ -427,7 +334,7 @@
 
 
 
-  
+  
 
 
 
@@ -436,206 +343,158 @@
 
 
 
-
-
-
-"@radix-ui/react-dropdown-menu": "^2.1.16",
-
-
-  
+"@radix-ui/react-dropdown-menu": "^2.1.16",
 
 
-
+  
 
 
 
 
 
 
-
-
-  
 
 
-
+  
 
 
 
 
 
 
-
-
-"@radix-ui/react-progress": "^1.1.8",
 
 
-  
+"@radix-ui/react-progress": "^1.1.8",
 
 
-
+  
 
 
 
 
 
 
-
-
-  
 
 
-
+  
 
 
 
 
 
 
-
-
-"@radix-ui/react-select": "^2.2.6",
 
 
-  
+"@radix-ui/react-select": "^2.2.6",
 
 
-
+  
 
 
 
 
 
 
-
-
-  
 
 
-
+  
 
 
 
 
 
 
-
-
-"@radix-ui/react-slot": "^1.2.4",
 
 
-  
+"@radix-ui/react-slot": "^1.2.4",
 
 
-
+  
 
 
 
 
 
 
-
 
-  
 
+  
 
-
 
-
 
 
 
 
-
 
-"@react-email/components": "^1.0.12",
 
+"@react-email/components": "^1.0.12",
 
-  
 
+  
 
-
 
-
 
 
 
 
-
 
-  
 
+  
 
-
 
-
 
 
 
 
-
 
-"@supabase/ssr": "^0.10.2",
 
+"@supabase/ssr": "^0.10.2",
 
-  
 
+  
 
-
 
-
 
 
 
 
-
 
-  
 
+  
 
-
 
-
 
 
 
 
-
 
-"@supabase/supabase-js": "^2.104.0",
 
+"@supabase/supabase-js": "^2.104.0",
 
-  
 
+  
 
-
 
-
 
 
 
 
-
 
-  
 
+  
 
-
 
-
 
 
 
 
-
 
-"@tanstack/react-query": "^5.101.0",
 
+"@tanstack/react-query": "^5.101.0",
 
-  
 
+  
 
-
-
 
 
 
@@ -643,10 +502,7 @@
 
 
 
-  
-
-
-
+  
 
 
 
@@ -655,10 +511,10 @@
 
 
 
-"@types/nodemailer": "^8.0.0",
+"@types/nodemailer": "^8.0.0",
 
 
-  
+  
 
 
 
@@ -667,13 +523,7 @@
 
 
 
-
-
-
-  
-
-
-
+  
 
 
 
@@ -682,10 +532,10 @@
 
 
 
-"agentation": "^3.0.2",
+"agentation": "^3.0.2",
 
 
-  
+  
 
 
 
@@ -694,13 +544,7 @@
 
 
 
-
-
-
-  
-
-
-
+  
 
 
 
@@ -709,10 +553,10 @@
 
 
 
-"class-variance-authority": "^0.7.1",
+"class-variance-authority": "^0.7.1",
 
 
-  
+  
 
 
 
@@ -721,13 +565,7 @@
 
 
 
-
-
-
-  
-
-
-
+  
 
 
 
@@ -736,10 +574,10 @@
 
 
 
-"clsx": "^2.1.1",
+"clsx": "^2.1.1",
 
 
-  
+  
 
 
 
@@ -748,13 +586,7 @@
 
 
 
-
-
-
-  
-
-
-
+  
 
 
 
@@ -763,10 +595,10 @@
 
 
 
-"cmdk": "^1.1.1",
+"cmdk": "^1.1.1",
 
 
-  
+  
 
 
 
@@ -775,13 +607,7 @@
 
 
 
-
-
-
-  
-
-
-
+  
 
 
 
@@ -790,10 +616,10 @@
 
 
 
-"date-fns": "^4.1.0",
+"date-fns": "^4.1.0",
 
 
-  
+  
 
 
 
@@ -802,13 +628,7 @@
 
 
 
-
-
-
-  
-
-
-
+  
 
 
 
@@ -817,10 +637,10 @@
 
 
 
-"docx": "^9.6.1",
+"docx": "^9.6.1",
 
 
-  
+  
 
 
 
@@ -829,13 +649,7 @@
 
 
 
-
-
-
-  
-
-
-
+  
 
 
 
@@ -844,10 +658,10 @@
 
 
 
-"framer-motion": "^12.38.0",
+"framer-motion": "^12.38.0",
 
 
-  
+  
 
 
 
@@ -856,203 +670,155 @@
 
 
 
-
-
-
-  
-
-
-
+  
 
 
 
 
 
 
-
-
-"groq-sdk": "^1.2.0",
 
 
-  
+"groq-sdk": "^1.2.0",
 
 
-
+  
 
 
 
 
 
 
-
-
-  
 
 
-
+  
 
 
 
 
 
 
-
-
-"input-otp": "^1.4.2",
 
 
-  
+"input-otp": "^1.4.2",
 
 
-
+  
 
 
 
 
 
 
-
-
-  
 
 
-
+  
 
 
 
 
 
 
-
-
-"lucide-react": "^1.8.0",
 
 
-  
+"lucide-react": "^1.8.0",
 
 
-
+  
 
 
 
 
 
 
-
-
-  
 
 
-
+  
 
 
 
 
 
 
-
 
-"next": "^15.5.15",
 
+"next": "^15.5.15",
 
-  
 
+  
 
-
 
-
 
 
 
 
-
 
-  
 
+  
 
-
 
-
 
 
 
 
-
 
-"next-themes": "^0.4.6",
 
+"next-themes": "^0.4.6",
 
-  
 
+  
 
-
 
-
 
 
 
 
-
 
-  
 
+  
 
-
 
-
 
 
 
 
-
 
-"nodemailer": "^8.0.7",
 
+"nodemailer": "^8.0.7",
 
-  
 
+  
 
-
 
-
 
 
 
 
-
 
-  
 
+  
 
-
 
-
 
 
 
 
-
 
-"posthog-js": "^1.373.4",
 
+"nonce": "^1.0.4",
 
-  
 
+  
 
-
 
-
 
 
 
 
-
 
-  
 
+  
 
-
-
 
 
 
@@ -1060,13 +826,10 @@
 
 
 
-"posthog-node": "^5.21.2",
+"posthog-js": "^1.373.4",
 
 
-  
-
-
-
+  
 
 
 
@@ -1075,7 +838,7 @@
 
 
 
-  
+  
 
 
 
@@ -1084,16 +847,10 @@
 
 
 
-
-
-
-"react": "19.2.4",
+"posthog-node": "^5.21.2",
 
 
-  
-
-
-
+  
 
 
 
@@ -1102,7 +859,7 @@
 
 
 
-  
+  
 
 
 
@@ -1111,16 +868,10 @@
 
 
 
-
-
-
-"react-day-picker": "^9.14.0",
+"react": "19.2.4",
 
 
-  
-
-
-
+  
 
 
 
@@ -1129,7 +880,7 @@
 
 
 
-  
+  
 
 
 
@@ -1138,16 +889,10 @@
 
 
 
-
-
-
-"react-dom": "19.2.4",
+"react-day-picker": "^9.14.0",
 
 
-  
-
-
-
+  
 
 
 
@@ -1156,7 +901,7 @@
 
 
 
-  
+  
 
 
 
@@ -1165,16 +910,10 @@
 
 
 
-
-
-
-"react-hook-form": "^7.73.1",
+"react-dom": "19.2.4",
 
 
-  
-
-
-
+  
 
 
 
@@ -1183,7 +922,7 @@
 
 
 
-  
+  
 
 
 
@@ -1192,16 +931,10 @@
 
 
 
-
-
-
-"recharts": "^3.8.1",
+"react-hook-form": "^7.73.1",
 
 
-  
-
-
-
+  
 
 
 
@@ -1210,7 +943,7 @@
 
 
 
-  
+  
 
 
 
@@ -1219,16 +952,10 @@
 
 
 
-
-
-
-"resend": "^6.12.3",
+"recharts": "^3.8.1",
 
 
-  
-
-
-
+  
 
 
 
@@ -1237,7 +964,7 @@
 
 
 
-  
+  
 
 
 
@@ -1246,16 +973,10 @@
 
 
 
-
-
-
-"sonner": "^2.0.7",
+"resend": "^6.12.3",
 
 
-  
-
-
-
+  
 
 
 
@@ -1264,7 +985,7 @@
 
 
 
-  
+  
 
 
 
@@ -1273,85 +994,61 @@
 
 
 
-
-
-
-"tailwind-merge": "^3.5.0",
-
-
-  
+"sonner": "^2.0.7",
 
 
-
+  
 
 
 
 
 
 
-
-
-  
 
 
-
+  
 
 
 
 
 
 
-
-
-"tw-animate-css": "^1.4.0",
 
 
-  
+"tailwind-merge": "^3.5.0",
 
 
-
+  
 
 
 
 
 
 
-
-
-  
 
 
-
+  
 
 
 
 
 
 
-
-
-"zod": "^4.3.6"
 
 
-  
+"tw-animate-css": "^1.4.0",
 
 
-
+  
 
 
 
 
 
 
-
-
-},
 
 
-  
-
-
-
+  
 
 
 
@@ -1360,10 +1057,10 @@
 
 
 
-"overrides": {
+"zod": "^4.3.6"
 
 
-  
+  
 
 
 
@@ -1372,10 +1069,10 @@
 
 
 
-
+},
 
 
-  
+  
 
 
 
@@ -1384,31 +1081,31 @@
 
 
 
-
+"overrides": {
 
 
-"postcss": "^8.5.10"
+  
 
 
-  
+
 
 
 
 
 
-
+  
 
 
 
 
 
-},
+
 
 
-  
+"postcss": "^8.5.10"
 
 
-
+  
 
 
 
@@ -1417,10 +1114,10 @@
 
 
 
-"devDependencies": {
+},
 
 
-  
+  
 
 
 
@@ -1429,25 +1126,19 @@
 
 
 
-
-
-
-  
+"devDependencies": {
 
 
-
+  
 
 
 
 
 
 
-
-
-"@tailwindcss/postcss": "^4",
 
 
-  
+  
 
 
 
@@ -1456,25 +1147,19 @@
 
 
 
-
-
-
-  
+"@tailwindcss/postcss": "^4",
 
 
-
+  
 
 
 
 
 
 
-
-
-"@types/node": "^20",
 
 
-  
+  
 
 
 
@@ -1483,25 +1168,19 @@
 
 
 
-
-
-
-  
+"@types/node": "^20",
 
 
-
+  
 
 
 
 
 
 
-
-
-"@types/react": "^19",
 
 
-  
+  
 
 
 
@@ -1510,217 +1189,178 @@
 
 
 
-
-
+"@types/react": "^19",
 
-  
 
+  
 
-
 
-
 
 
 
 
-
 
-"@types/react-dom": "^19",
 
+  
 
-  
 
-
-
-
-
 
 
 
 
 
 
-  
+"@types/react-dom": "^19",
 
 
-
+  
 
 
 
 
 
 
-
 
-"cross-env": "^10.1.0",
 
+  
 
-  
 
-
-
-
-
 
 
 
 
 
 
-  
+"cross-env": "^10.1.0",
 
 
-
+  
 
 
 
 
 
 
-
 
-"eslint": "^9",
 
+  
 
-  
 
-
-
-
-
 
 
 
 
 
 
-  
+"eslint": "^9",
 
 
-
+  
 
 
 
 
 
 
-
 
-"eslint-config-next": "16.2.4",
 
+  
 
-  
 
-
-
-
-
 
 
 
 
 
 
-  
+"eslint-config-next": "16.2.4",
 
 
-
+  
 
 
 
 
 
 
-
 
-"shadcn": "^4.4.0",
 
+  
 
-  
 
-
-
-
-
 
 
 
 
 
 
-  
+"shadcn": "^4.4.0",
 
 
-
+  
 
 
 
 
 
 
-
 
-"tailwindcss": "^4",
 
+  
 
-  
 
-
-
-
-
 
 
 
 
 
 
-  
+"tailwindcss": "^4",
 
 
-
+  
 
 
 
 
 
 
-
 
-"typescript": "^5",
 
+  
 
-  
 
-
 
 
 
 
 
 
-
+"typescript": "^5",
 
 
-  
+  
 
 
 
 
 
 
+
 
+  
 
+
 
 
 
-"vitest": "^4.1.5"
+
 
 
-  
+"vitest": "^4.1.5"
 
 
-
+  
 
 
 
@@ -1729,7 +1369,7 @@
 
 
 
-}
+}
 
 
 }

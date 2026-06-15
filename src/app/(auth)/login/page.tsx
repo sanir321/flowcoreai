@@ -60,6 +60,22 @@ export default function LoginPage() {
     setTermsError("")
     setIsLoading(true)
 
+    // Check login lockout
+    try {
+      const ipRes = await fetch("https://api.ipify.org?format=json")
+      const { ip } = await ipRes.json()
+      const { data: lockout } = await supabase.rpc("check_login_lockout", {
+        p_email: email,
+        p_ip: ip,
+      })
+      if (lockout?.[0]?.locked) {
+        const secs = lockout[0].lockout_seconds || 900
+        toast.error(`Too many attempts. Try again in ${Math.ceil(secs / 60)} minutes.`)
+        setIsLoading(false)
+        return
+      }
+    } catch { /* proceed if check fails */ }
+
     // Check if this is a new or existing user
     const result = await checkUserExists(email)
     if (result.error) {
@@ -86,6 +102,12 @@ export default function LoginPage() {
     })
 
     if (error) {
+      // Record failed attempt
+      try {
+        const ipRes = await fetch("https://api.ipify.org?format=json")
+        const { ip } = await ipRes.json()
+        await supabase.rpc("record_login_attempt", { p_email: email, p_ip: ip, p_success: false })
+      } catch { /* non-critical */ }
       toast.error(error.message)
     } else {
       setIsOtpSent(true)
@@ -105,8 +127,20 @@ export default function LoginPage() {
     })
 
     if (error) {
+      // Record failed attempt for lockout tracking
+      try {
+        const ipRes = await fetch("https://api.ipify.org?format=json")
+        const { ip } = await ipRes.json()
+        await supabase.rpc("record_login_attempt", { p_email: email, p_ip: ip, p_success: false })
+      } catch { /* non-critical */ }
       toast.error(error.message)
     } else {
+      // Record successful login
+      try {
+        const ipRes = await fetch("https://api.ipify.org?format=json")
+        const { ip } = await ipRes.json()
+        await supabase.rpc("record_login_attempt", { p_email: email, p_ip: ip, p_success: true })
+      } catch { /* non-critical */ }
       const { data: { user } } = await supabase.auth.getUser()
       
       if (user) {

@@ -1,7 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@supabase/ssr"
+import { randomBytes } from "crypto"
 
 export async function middleware(request: NextRequest) {
+  // Generate CSP nonce (base64-encoded random bytes)
+  const nonce = randomBytes(16).toString("base64")
+
   // EMERGENCY 431 GUARD: Clear bloated cookies by setting Max-Age=0
   const requestHeaders = new Headers(request.headers)
   const headerSize = JSON.stringify([...requestHeaders.entries()]).length
@@ -39,7 +43,7 @@ export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
   if (isPublicRoute && !isDashboardRoute && !isOnboardingRoute && !isInternalApiRoute) {
-    return applySecurityHeaders(supabaseResponse)
+    return applySecurityHeaders(supabaseResponse, nonce)
   }
 
   const supabase = createServerClient(
@@ -90,21 +94,23 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  return applySecurityHeaders(supabaseResponse)
+  return applySecurityHeaders(supabaseResponse, nonce)
 }
 
-function applySecurityHeaders(response: NextResponse): NextResponse {
+function applySecurityHeaders(response: NextResponse, nonce: string): NextResponse {
   const headers = {
     "X-Frame-Options": "DENY",
     "X-Content-Type-Options": "nosniff",
     "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
     "Referrer-Policy": "strict-origin-when-cross-origin",
-    "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co https://api.bluesminds.com https://go-whatsapp-web-multidevice-production-8644.up.railway.app; frame-ancestors 'none'",
+    "Content-Security-Policy": `default-src 'self'; script-src 'self' 'nonce-${nonce}'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co https://api.bluesminds.com https://go-whatsapp-web-multidevice-production-8644.up.railway.app; frame-ancestors 'none'`,
     "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
   };
   Object.entries(headers).forEach(([key, value]) => {
     response.headers.set(key, value);
   });
+  // Pass nonce to rendering layer via header
+  response.headers.set("x-nonce", nonce);
   return response
 }
 

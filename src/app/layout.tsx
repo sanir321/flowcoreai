@@ -8,6 +8,7 @@ import { CookieConsent } from "@/components/cookie-consent";
 import { PostHogProvider } from "@/components/posthog-provider";
 import { QueryProvider } from "@/components/query-provider";
 import { getSiteUrl, siteName, siteDescription } from "@/lib/site";
+import { headers } from "next/headers";
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -66,14 +67,17 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const headerStore = await headers();
+  const nonce = headerStore.get("x-nonce") || "";
+
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} ${lora.variable} font-sans antialiased`}>
+      <body className={`${inter.variable} ${lora.variable} font-sans antialiased`} nonce={nonce}>
         <PostHogProvider>
           <QueryProvider>
             <AuthGuard>
