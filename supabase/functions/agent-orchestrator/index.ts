@@ -83,7 +83,7 @@ async function processMessage(payload: WebhookPayload): Promise<[TierResult, Pip
       workspace_id: payload.workspace_id,
       customer_jid: payload.customer_jid,
       channel: payload.source,
-      agent_type: "customer_support"
+      agent_type: payload.agent_type || "customer_support"
     })
 
     const ctx: PipelineContext = { supabase, session, payload }
@@ -174,7 +174,8 @@ async function parseWebhook(req: Request): Promise<WebhookPayload | null> {
     gowa_message_id: body.gowa_message_id || null,
     timestamp: body.timestamp || Date.now(),
     source: body.channel || body.source || "whatsapp",
-    is_test: body.is_test || false
+    is_test: body.is_test || false,
+    agent_type: body.agent_type || undefined,
   }
 }
 

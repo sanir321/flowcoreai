@@ -36,6 +36,7 @@ export interface WebhookPayload {
   timestamp: number;
   source: "whatsapp" | "widget";
   is_test?: boolean;
+  agent_type?: string;
 }
 
 export interface PipelineContext {

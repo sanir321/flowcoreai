@@ -19,30 +19,32 @@ const TestMessageSchema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user }, error: authErr } = await supabase.auth.getUser();
 
-    if (!user) {
-      return new Response("Unauthorized", { status: 401 });
+    if (authErr || !user) {
+      console.error("[TEST_MSG] Auth failed:", authErr?.message);
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await req.json();
     const result = TestMessageSchema.safeParse(body);
 
     if (!result.success) {
-      return new Response("Invalid request", { status: 400 });
+      return NextResponse.json({ error: "Invalid request", details: result.error.flatten() }, { status: 400 });
     }
 
     const { workspace_id, message, agent_type } = result.data;
 
     // IDOR Check: Ensure user owns the workspace
-    if (user.app_metadata.workspace_id !== workspace_id) {
-      return new Response("Forbidden: You do not own this workspace", { status: 403 });
+    if (user.app_metadata?.workspace_id !== workspace_id) {
+      console.error("[TEST_MSG] IDOR mismatch:", { uid: user.id, meta_ws: user.app_metadata?.workspace_id, req_ws: workspace_id });
+      return NextResponse.json({ error: "Forbidden: You do not own this workspace" }, { status: 403 });
     }
 
     const ip = req.headers.get("x-forwarded-for") || "127.0.0.1";
     const { success: isAllowed } = await rateLimit(ip, 10, 60, workspace_id);
     if (!isAllowed) {
-      return new Response("Too many requests for this workspace. Please wait a minute.", { status: 429 });
+      return NextResponse.json({ error: "Too many requests. Please wait a minute." }, { status: 429 });
     }
 
     // 1. Create or Find a "Test Session" for this workspace/agent
@@ -57,7 +59,7 @@ export async function POST(req: NextRequest) {
       .maybeSingle();
 
     if (!session) {
-      const { data: newSession } = await supabaseAdmin
+      const { data: newSession, error: sessErr } = await supabaseAdmin
         .from("conversation_sessions")
         .insert({
           workspace_id,
@@ -70,13 +72,17 @@ export async function POST(req: NextRequest) {
         })
         .select()
         .single();
+      if (sessErr) {
+        console.error("[TEST_MSG] Session create failed:", sessErr.message);
+        throw new Error("Could not create test session");
+      }
       session = newSession;
     }
 
     if (!session) throw new Error("Could not initialize test session");
 
     // 2. Store Inbound Message
-    await supabaseAdmin.from("messages").insert({
+    const { error: msgErr } = await supabaseAdmin.from("messages").insert({
       workspace_id,
       session_id: session.id,
       content: message,
@@ -84,36 +90,61 @@ export async function POST(req: NextRequest) {
       role: "customer",
       is_test: true
     });
+    if (msgErr) console.warn("[TEST_MSG] Inbound message store failed:", msgErr.message);
 
-    // 3. Invoke AI Orchestrator
-    const { data: aiResponse, error: aiError } = await supabaseAdmin.functions.invoke("agent-orchestrator", {
-      body: {
-        workspace_id,
-        customer_jid: session.customer_jid,
-        message,
-        channel: "widget",
-        customer_name: "Test User",
-        agent_type,
-        is_test: true
-      },
-    });
+    // 3. Invoke AI Orchestrator with timeout
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
 
-    if (aiError || !aiResponse) {
-      throw new Error(aiError?.message || "AI Agent failed to respond");
+    let aiResponse: any;
+    let aiError: any;
+    try {
+      const result = await supabaseAdmin.functions.invoke("agent-orchestrator", {
+        body: {
+          workspace_id,
+          customer_jid: session.customer_jid,
+          message,
+          channel: "widget",
+          customer_name: "Test User",
+          agent_type,
+          is_test: true
+        },
+      });
+      aiResponse = result.data;
+      aiError = result.error;
+    } finally {
+      clearTimeout(timeout);
+    }
+
+    // The edge function catches all errors internally and returns 200 with { error: "..." }
+    // supabase-js maps that to aiError. We should still try to use the response.
+    if (aiError && !aiResponse) {
+      console.error("[TEST_MSG] Edge function error:", aiError);
+      return NextResponse.json({
+        reply: "The AI agent encountered an internal error. Please try again.",
+        metadata: { reason: "edge_error", agent_type, tool_calls: [] }
+      });
+    }
+
+    if (!aiResponse) {
+      return NextResponse.json({
+        reply: "No response from agent.",
+        metadata: { reason: "empty_response", agent_type, tool_calls: [] }
+      });
     }
 
     // Return response with metadata for the test UI
-    return NextResponse.json({ 
-      reply: aiResponse.response || "No response",
-      metadata: { 
-        reason: aiResponse.reason, 
-        agent_type: aiResponse.agent_type,
+    return NextResponse.json({
+      reply: aiResponse.response || aiResponse.error || "No response",
+      metadata: {
+        reason: aiResponse.reason || "unknown",
+        agent_type: aiResponse.agent_type || agent_type,
         tool_calls: aiResponse.tool_calls || [],
       }
     });
 
   } catch (error: any) {
-    console.error("Test Message Error:", error);
-    return new Response("Failed to process test message", { status: 500 });
+    console.error("[TEST_MSG] Unhandled error:", error?.message, error?.stack);
+    return NextResponse.json({ error: "Failed to process test message" }, { status: 500 });
   }
 }

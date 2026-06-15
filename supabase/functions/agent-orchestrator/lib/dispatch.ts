@@ -106,7 +106,8 @@ async function storeOutboundMessage(ctx: PipelineContext, response: string) {
     content: response,
     direction: "outbound",
     role: "agent",
-    agent_type: ctx.agentType || "customer_support"
+    agent_type: ctx.agentType || "customer_support",
+    is_test: ctx.payload.is_test || false
   });
 }
 

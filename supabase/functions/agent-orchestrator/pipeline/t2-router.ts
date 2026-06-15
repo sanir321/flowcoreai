@@ -44,9 +44,12 @@ export async function runT2(ctx: PipelineContext): Promise<TierResult> {
     ctx.agentType = "appointment_booking";
     ctx.routingReason = "mid_booking";
   } else {
-    // Widget channel: always customer_support (no booking/sales routing)
+    // Widget channel: respect explicit agent_type from test chat or session
     if (channel === "widget") {
-      if (ctx.session.agent_type && activeAgents.has(ctx.session.agent_type)) {
+      if (ctx.payload.agent_type && activeAgents.has(ctx.payload.agent_type)) {
+        ctx.agentType = ctx.payload.agent_type;
+        ctx.routingReason = "test_explicit";
+      } else if (ctx.session.agent_type && activeAgents.has(ctx.session.agent_type)) {
         ctx.agentType = ctx.session.agent_type;
         ctx.routingReason = "session_continuity";
       } else if (activeAgents.has("customer_support")) {
