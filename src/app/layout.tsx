@@ -7,7 +7,7 @@ import { AuthGuard } from "@/components/auth/auth-guard";
 import { CookieConsent } from "@/components/cookie-consent";
 import { PostHogProvider } from "@/components/posthog-provider";
 import { QueryProvider } from "@/components/query-provider";
-import { getSiteUrl, siteName, siteDescription } from "@/lib/site";
+import { getSiteUrl, siteDescription } from "@/lib/site";
 import { headers } from "next/headers";
 
 const inter = Inter({ 
