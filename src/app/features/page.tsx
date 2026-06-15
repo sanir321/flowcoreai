@@ -80,7 +80,7 @@ const features = [
     items: [
       {
         name: "Unified Inbox",
-        description: "All conversations from WhatsApp, webchat, and email in one place. Real-time updates, internal notes, and team collaboration.",
+        description: "All conversations from WhatsApp and webchat in one place. Real-time updates, internal notes, and team collaboration.",
       },
       {
         name: "Knowledge Base",
@@ -191,7 +191,7 @@ export default function FeaturesPage() {
             Features built for<br />real customer service
           </h1>
           <p style={{ fontSize: "18px", color: "#888", maxWidth: "600px", margin: "0 auto", lineHeight: 1.6 }}>
-            Everything you need to automate customer conversations across WhatsApp, webchat, and email — while keeping a human in the loop.
+            Everything you need to automate customer conversations across WhatsApp and webchat — while keeping a human in the loop.
           </p>
         </section>
 
