@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
-import { createHmac } from "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
 
 export const runtime = "nodejs";
 
@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
   // Constant-time comparison to prevent timing attack
   const sigBuf = Buffer.from(signature, 'hex');
   const expectedBuf = Buffer.from(expectedSig, 'hex');
-  if (sigBuf.length !== expectedBuf.length || !require('node:crypto').timingSafeEqual(sigBuf, expectedBuf)) {
+  if (sigBuf.length !== expectedBuf.length || !timingSafeEqual(sigBuf, expectedBuf)) {
     return NextResponse.redirect(`${origin}/settings/integrations?error=Invalid state signature`);
   }
 
