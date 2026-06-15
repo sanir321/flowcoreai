@@ -14,6 +14,7 @@ import {
   ShoppingBag,
   ClipboardList,
   Building2,
+  MessageCircle,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { motion } from "framer-motion"
@@ -23,6 +24,7 @@ const SETTINGS_NAV = [
   { name: "Business Profile", href: "/settings/business-profile", icon: Building2 },
   { name: "Notifications", href: "/settings/notifications", icon: Bell },
   { name: "Integrations", href: "/settings/integrations", icon: Puzzle },
+  { name: "WhatsApp", href: "/settings/whatsapp", icon: MessageCircle },
   { name: "Web Widget", href: "/settings/widget", icon: Globe },
   { name: "Security", href: "/settings/security", icon: ShieldCheck },
   { name: "Data & Privacy", href: "/settings/data", icon: ShieldCheck },
