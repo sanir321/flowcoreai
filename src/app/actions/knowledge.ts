@@ -124,7 +124,7 @@ export async function deleteSource(id: string): Promise<ActionResponse<{ success
 
     if (error) throw error
 
-    const extractedFields = (source.bp_extracted_fields as string[]) || []
+    const extractedFields = ((source as any).bp_extracted_fields as string[]) || []
     if (extractedFields.length > 0) {
       const { data: otherSources } = await getSupabaseAdmin()
         .from("kb_sources")
@@ -134,7 +134,7 @@ export async function deleteSource(id: string): Promise<ActionResponse<{ success
         .neq("id", res.data)
 
       const fieldsStillProvided = new Set<string>()
-      for (const s of otherSources || []) {
+      for (const s of (otherSources as any) || []) {
         const fields = (s.bp_extracted_fields as string[]) || []
         for (const f of fields) fieldsStillProvided.add(f)
       }
@@ -148,12 +148,12 @@ export async function deleteSource(id: string): Promise<ActionResponse<{ success
           .eq("id", source.workspace_id)
           .single()
 
-        if (workspace?.business_profile) {
-          const bp = { ...(workspace.business_profile as Record<string, unknown>) }
+        if ((workspace as any)?.business_profile) {
+          const bp = { ...((workspace as any).business_profile as Record<string, unknown>) }
           for (const field of fieldsToClear) {
             delete bp[field]
           }
-          await getSupabaseAdmin()
+          await (getSupabaseAdmin() as any)
             .from("workspaces")
             .update({ business_profile: bp, updated_at: new Date().toISOString() })
             .eq("id", source.workspace_id)

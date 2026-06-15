@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
   if (parts.length !== 3) {
     return NextResponse.redirect(`${origin}/settings/integrations?error=Invalid state parameter`);
   }
-  const [workspaceId, nonce, signature] = parts;
+  const [workspaceId, nonce, signature] = parts as [string, string, string];
   
   if (!process.env.INTERNAL_CRON_SECRET) {
     return NextResponse.redirect(`${origin}/settings/integrations?error=Server configuration error`);
