@@ -228,6 +228,37 @@ export function LandingPage() {
           </motion.div>
         </section>
 
+        <motion.section {...sectionAnim} className="py-20 px-6 lg:px-12 flex flex-col items-center" style={{ background: "#ffffff", borderTop: "1px solid #e5e5e5" }}>
+          <div className="max-w-[820px] mx-auto text-center mb-12">
+            <p className="text-sm font-normal mb-4" style={{ color: "#c65f39" }}>See it in action</p>
+            <h2 className="font-normal tracking-tight" style={{ fontSize: "35.2508px", lineHeight: "44.0635px", letterSpacing: "-0.15667px", color: "#171717" }}>
+              A real dashboard, not a demo
+            </h2>
+            <p className="max-w-lg mx-auto mt-4 leading-relaxed font-normal" style={{ fontSize: "15.667px", color: "#737373" }}>
+              Track messages, contacts, automation rate, and escalations across every channel — live.
+            </p>
+          </div>
+          <motion.div {...scaleIn} className="w-full max-w-[1000px] rounded-2xl overflow-hidden shadow-xl" style={{ border: "1px solid #e5e5e5", background: "#ffffff" }}>
+            <div className="flex items-center gap-2 h-10 px-5" style={{ borderBottom: "1px solid #e5e5e5", background: "#fafafa" }}>
+              <div className="h-2 w-2 rounded-full" style={{ background: "#d4d4d4" }} />
+              <div className="h-2 w-2 rounded-full" style={{ background: "#d4d4d4" }} />
+              <div className="h-2 w-2 rounded-full" style={{ background: "#d4d4d4" }} />
+              <div className="flex items-center gap-2 px-3 py-1 rounded-md mx-auto" style={{ background: "#ffffff", border: "1px solid #e5e5e5" }}>
+                <div className="h-1 w-1 rounded-full" style={{ background: "#c65f39" }} />
+                <span className="text-[10px] font-normal" style={{ color: "#737373" }}>app.flowcore.ai/analytics</span>
+              </div>
+            </div>
+            <img
+              src="/producthunt/analytics-clean.png"
+              alt="FlowCore analytics dashboard showing messages, contacts, automation rate, and integration status"
+              width={1270}
+              height={588}
+              loading="lazy"
+              className="w-full h-auto block"
+            />
+          </motion.div>
+        </motion.section>
+
         <motion.section {...sectionAnim} className="py-16 px-6 flex flex-col items-center" style={{ background: "#ffffff", borderTop: "1px solid #e5e5e5" }}>
           <div className="text-sm font-normal" style={{ color: "#a3a3a3", letterSpacing: "0.05em" }}>
             Used by teams worldwide

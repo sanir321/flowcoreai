@@ -138,7 +138,7 @@ export default function AboutPage() {
               gap: "24px",
             }}>
               {[
-                { value: "8+", label: "Businesses using Flowcore" },
+                { value: "24/7", label: "Always-on AI coverage" },
                 { value: "<10min", label: "Setup time" },
                 { value: "99.5%", label: "Uptime target" },
                 { value: "3", label: "AI agent types" },

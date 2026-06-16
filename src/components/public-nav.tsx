@@ -116,8 +116,8 @@ export function PublicFooter() {
           &copy; {new Date().getFullYear()} FlowCore. All rights reserved.
         </p>
         <div style={{ display: "flex", gap: "16px" }}>
-          <span style={{ fontSize: "12px", color: "#595859" }}>SOC 2 Type II</span>
-          <span style={{ fontSize: "12px", color: "#595859" }}>HIPAA Compliant</span>
+          <span style={{ fontSize: "12px", color: "#595859" }}>SOC 2 — in progress</span>
+          <span style={{ fontSize: "12px", color: "#595859" }}>GDPR-ready</span>
         </div>
       </div>
     </footer>

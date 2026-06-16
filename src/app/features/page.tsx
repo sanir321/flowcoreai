@@ -104,8 +104,8 @@ const features = [
         description: "Manage multiple businesses or departments from one account. Each workspace has its own AI agents, knowledge base, and settings.",
       },
       {
-        name: "SOC 2 Type II",
-        description: "Enterprise-grade security with SOC 2 Type II compliance. Role-based access control, audit logging, and data encryption.",
+        name: "Enterprise Security",
+        description: "Role-based access control, audit logging, tenant isolation, and data encryption. SOC 2 Type II certification in progress.",
       },
       {
         name: "API Access",
