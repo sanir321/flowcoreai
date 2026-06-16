@@ -226,7 +226,7 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
   for (let attempt = 0; attempt <= 2; attempt++) {
     try {
       llmResponse = await callLLM({
-        model: "gpt-5-mini",
+        agentType,
         max_tokens: 1000,
         temperature: 0.3,
         system: systemPrompt,
@@ -310,7 +310,7 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
       const toolContext = buildToolContext(parsedPlan.actions, toolResults);
       
       const secondPassResponse = await callLLM({
-        model: "gpt-5-mini",
+        agentType,
         max_tokens: 800,
         temperature: 0.3,
         system: pass2System,

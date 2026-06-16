@@ -5,9 +5,10 @@ const BLUESMINDS_BASE_URL = "https://api.bluesminds.com/v1";
 
 export const DEFAULT_FALLBACK_MESSAGE = "I'm not sure about that. Please contact us directly for more information.";
 
-export async function callLLM(payload: AgentPayload) {
+export async function callLLM(payload: AgentPayload & { agentType?: string }) {
   const FALLBACK_1 = "gpt-4o";
-  const DEFAULT_PRIMARY = "gpt-5-mini";
+  // Use gpt-4o as primary for support agent (has KB context, faster)
+  const DEFAULT_PRIMARY = payload.agentType === "customer_support" ? "gpt-4o" : "gpt-5-mini";
   const modelChain = payload.model
     ? [payload.model, FALLBACK_1]
     : [DEFAULT_PRIMARY, FALLBACK_1];
@@ -47,7 +48,7 @@ async function callBluesMinds(payload: AgentPayload & { model: string }) {
   if (payload.tool_choice) body.tool_choice = payload.tool_choice;
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 30000);
+  const timeout = setTimeout(() => controller.abort(), 60000);
 
   try {
     const res = await fetch(`${BLUESMINDS_BASE_URL}/chat/completions`, {
