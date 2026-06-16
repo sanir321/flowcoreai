@@ -39,6 +39,16 @@ export interface WebhookPayload {
   agent_type?: string;
 }
 
+export interface WorkingContext {
+  intent: "booking" | "support" | "sales" | null;
+  collected_data: Record<string, string>;
+  customer_name: string | null;
+  pending_action: string | null;
+  agent_type: string;
+  handoff_count: number;
+  sentiment: "positive" | "neutral" | "negative" | "frustrated" | null;
+}
+
 export interface PipelineContext {
   supabase: any;
   session: any;
@@ -61,7 +71,6 @@ export interface PipelineContext {
   contact?: any;
   agentType?: string;
   routingReason?: string;
-  bookingSession?: any;
   _msgCount?: number;
   embedding?: number[];
   kbSearchPromise?: Promise<any>;
@@ -70,6 +79,10 @@ export interface PipelineContext {
   salesBlocked?: boolean;
   handoffDepth?: number;
   _toolCalls?: { tool: string; params: any; success: boolean; result: any; duration_ms: number }[];
+  _businessProfileCached?: any;
+  _toolCallBuffer?: any[];
+  _toolFailCounts?: Record<string, number>;
+  _sentiment?: string;
 }
 
 export interface AgentPlan {

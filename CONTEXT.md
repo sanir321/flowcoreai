@@ -1,6 +1,6 @@
 # FlowCore — Full Project Context
 
-> Generated: 2026-06-15
+> Generated: 2026-06-16
 
 ---
 
@@ -150,6 +150,23 @@ Dispatch: Store in DB + send via GoWA/Widget
 - **API route** (`route.ts`): Graceful handling of edge function errors (returns friendly JSON instead of 500); 30s AbortController timeout on `functions.invoke`; detailed `[TEST_MSG]` logging
 - **Types** (`types.ts`): Added `agent_type?: string` to `WebhookPayload`
 
+### Phase 9: Knowledge Base & Multi-Tenant Fixes (Commits: `fab5a34` → `aeb44dd`)
+- **Support agent RAG-first**: KB chunk retrieval moved to T3 planner, injected directly into system prompt with STRICT GROUNDING rules — no forced tool round-trip
+- **KB threshold lowered**: 0.75 → 0.35 with hybrid search (vector + keyword fallback)
+- **Batch embedding pipeline**: embed-text processes 3 chunks/invocation, self-triggers next batch via `triggerEmbedBatch` using direct `fetch()` with `SUPABASE_ANON_KEY`
+- **All 9/9 chunks embedded**: Webuild source fully active
+- **KB context truncation**: 600→800 chars + noise stripping (configurable per workspace)
+- **Multi-tenant KB config** (`fix1.md`): Added `kb_config` JSONB column to `workspaces` — `match_count`, `match_threshold`, `chunk_truncation`, `noise_stripping` all configurable per workspace
+- **All hardcoded fallbacks removed**: `STATIC_FALLBACK_MESSAGE` replaced with workspace `guardrail_config.fallback_message` or generic default
+- **RLS audit passed**: All tables have workspace-scoped policies; `match_kb_chunks` RPC enforces isolation via `p_workspace_id`
+- **Second workspace (Tasty Bistro) tested**: Full multi-tenant isolation confirmed — no cross-workspace leakage
+- **Google Calendar working**: Booking → `create_appointment` → Google Calendar event created with proactive token refresh cron (pg_cron every 30 min)
+- **LLM timeout**: 30s→60s in `lib/llm.ts`; support agent uses `gpt-4o` (faster for KB context)
+- **KB file upload API**: Created `/api/kb/upload` route
+- **Appointments UI**: Google Calendar sync status column added
+- **extract-business-profile**: Fixed model name (`nemotron-3-ultra-free`), 90s AbortController timeout, scoping issues; deployed and verified (batch mode returns correct results)
+- **Landing page polish**: Product screenshot, unified CTAs, removed Smol section, Talk to Sales → Pricing page
+
 ---
 
 ## Verified Working
@@ -167,6 +184,8 @@ Dispatch: Store in DB + send via GoWA/Widget
 - ESLint: ✅ 0 errors, 1 pre-existing warning
 - Vercel deployment: ✅ Build succeeds
 - npm audit: ✅ 0 CVEs
+- **extract-business-profile**: ✅ Deployed and verified (batch mode works)
+- **Google OAuth**: ✅ Re-authorized, working with proactive token refresh
 
 ---
 
@@ -255,6 +274,11 @@ Dispatch: Store in DB + send via GoWA/Widget
 - `NEXT_PUBLIC_SITE_URL` — Site URL for metadata/OG
 - `RESEND_API_KEY` — Email delivery
 
+### Supabase Edge Function Secrets
+- `OPENCODE_ZEN_API_KEY` / `OPENCODE_ZEN_BASE_URL` — Free AI models (OpenCode Zen)
+- `BLUESMINDS_API_KEY` — BluesMinds AI gateway
+- `INTERNAL_CRON_SECRET` — Internal cron job auth
+
 ### Key URLs
 - GoWA: `https://go-whatsapp-web-multidevice-production-8644.up.railway.app/`
 - Supabase: `https://bnpdrelienfnlkceluip.supabase.co`
@@ -268,15 +292,14 @@ Dispatch: Store in DB + send via GoWA/Widget
 - **Workspace ID**: `53ae24d7-33ea-4af8-a414-5b6635cd2e1c`
 - **Services**: `services_offered` is a **comma-separated string** (not JSON array)
 - **User**: `zenosayz05@gmail.com`
-- **Google OAuth**: Tokens expired — needs re-authorization
+- **Google OAuth**: Tokens refreshed proactively via pg_cron every 30 min
 
 ---
 
 ## Known Issues
 
-1. **Google OAuth tokens expired** — `zenosayz05@gmail.com` refresh returns 400; needs re-authorization
-2. **Docker unavailable** — Supabase types cannot be regenerated; new RPC calls use `(supabase as any)` cast
-3. **Pre-existing TS errors fixed** via `as any` casts — may need proper typing later
+1. **Docker unavailable** — Supabase types cannot be regenerated; new RPC calls use `(supabase as any)` cast
+2. **Pre-existing TS errors fixed** via `as any` casts — may need proper typing later
 4. **ESLint**: 1 pre-existing warning (unused variable) — not an error
 
 ---
@@ -284,9 +307,19 @@ Dispatch: Store in DB + send via GoWA/Widget
 ## Git Log (Last 30 Commits)
 
 ```
+f20fa04 chore: add CONTEXT.md and google-token-refresh function to tracking
+aeb44dd fix: extract-business-profile deploy, KB embed-text param, Google Sync column, landing audit notes
+5ea57fc fix: point Talk to Sales button to pricing page
+c91bbd9 fix: real screenshot in hero, unify CTAs to Get Started, drop Smol section
+04f4823 fix: add product screenshot + finish sitewide credibility cleanup
+c2a5bb3 fix: landing page positioning + credibility fixes
+c5f783e fix: LLM timeout + gpt-4o for support agent + KB upload API
+818bea8 fix: multi-tenant KB config + generic fallbacks (fix1.md)
+aee672c fix: optimize KB context truncation to 800 chars
+ae405bc fix: KB context truncation + noise stripping for clean context
+a91405a fix: batch embed chain — direct fetch() for triggerEmbedBatch
+fab5a34 fix: support agent RAG-first, booking servicesList bug, batch embed pipeline
 4cbf40c fix: test chat - edge function error handling and agent routing
-cbb0fff fix: remove hardcoded 'samir' from nonBookingSignals in booking FSM
-0908a97 fix: greeting guard only triggers on actual greetings, fix const reassignment crash
 8e1ef18 fix: match onboarding industry options to settings (12 + other)
 05d34f6 fix: remove unused UPI ID field from workspace settings
 3dabd30 fix: add WhatsApp to settings sidebar nav

@@ -1,22 +1,57 @@
 import { PipelineContext, TierResult } from "../lib/types.ts";
 import { matchChunks } from "../tools/impl/kb.ts";
 
-const BOOKING_KEYWORDS = [
-  "book", "appointment", "schedule", "reserve", "slot",
-  "booking", "appoint", "fix appointment", "set appointment",
-  "consultation", "checkup", "check up"
-];
-const SALES_KEYWORDS = [
-  "order", "buy", "purchase", "price", "pricing", "cost", "menu",
-  "how much", "rate", "quote", "payment", "pay", "offer",
-  "discount", "deal", "product", "service list", "what do you sell",
-  "b2b", "tiers", "subscription", "enterprise", "integration"
-];
+function diceCoefficient(a: string, b: string): number {
+  if (a === b) return 1;
+  if (a.length < 2 || b.length < 2) return 0;
+  const aBg = new Map<string, number>();
+  const bBg = new Map<string, number>();
+  for (let i = 0; i < a.length - 1; i++) {
+    const bg = a.substring(i, i + 2);
+    aBg.set(bg, (aBg.get(bg) || 0) + 1);
+  }
+  for (let i = 0; i < b.length - 1; i++) {
+    const bg = b.substring(i, i + 2);
+    bBg.set(bg, (bBg.get(bg) || 0) + 1);
+  }
+  let intersection = 0;
+  for (const [bg, count] of aBg) {
+    intersection += Math.min(count, bBg.get(bg) || 0);
+  }
+  return (2 * intersection) / (a.length - 1 + b.length - 1);
+}
+
+const AGENT_KEYWORDS: Record<string, { keywords: string[]; weights: number[] }> = {
+  appointment_booking: {
+    keywords: ["book", "appointment", "schedule", "reserve", "slot", "booking", "consultation", "checkup"],
+    weights: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.8, 0.7]
+  },
+  sales: {
+    keywords: ["order", "buy", "purchase", "price", "pricing", "cost", "menu", "how much", "rate", "quote", "payment", "pay", "offer", "discount", "deal", "product", "subscription"],
+    weights: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.9, 0.9, 0.9, 1.0, 1.0, 1.0, 0.8, 0.8, 0.7, 0.8, 0.9]
+  }
+};
+
+function scoreAgentType(msgLower: string, agentKeywords: typeof AGENT_KEYWORDS.appointment_booking): number {
+  let maxScore = 0;
+  for (let i = 0; i < agentKeywords.keywords.length; i++) {
+    const kw = agentKeywords.keywords[i];
+    const weight = agentKeywords.weights[i] || 1.0;
+    if (msgLower.includes(kw)) {
+      maxScore = Math.max(maxScore, 1.0 * weight);
+    } else {
+      const dice = diceCoefficient(msgLower, kw);
+      if (dice >= 0.4) {
+        maxScore = Math.max(maxScore, dice * weight * 0.8);
+      }
+    }
+  }
+  return maxScore;
+}
 
 export async function runT2(ctx: PipelineContext): Promise<TierResult> {
   const msgLower = ctx.payload.message.toLowerCase();
 
-  // 0. Resolve which agent types are active in this workspace
   const { data: activeAgentRows } = await ctx.supabase
     .from("workspace_agents")
     .select("agent_type")
@@ -25,74 +60,63 @@ export async function runT2(ctx: PipelineContext): Promise<TierResult> {
     .is("deleted_at", null);
   const activeAgents = new Set(activeAgentRows?.map(a => a.agent_type) || []);
 
-  // 1. Mid-conversation FSM lock
-  const { data: bookingState } = await ctx.supabase
-    .from("booking_sessions")
-    .select("state")
-    .eq("session_id", ctx.session.id)
-    .is("deleted_at", null)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  const midBooking = bookingState && !["idle", "booked", "cancelled"].includes(bookingState.state);
-  const managementKeywords = ["reschedule", "move", "cancel", "change", "rebook", "re-schedule", "modify"];
-  const hasManagementIntent = managementKeywords.some(kw => msgLower.includes(kw));
   const channel = ctx.payload.source || ctx.payload.channel;
 
-  if (midBooking && channel !== "widget") {
-    ctx.agentType = "appointment_booking";
-    ctx.routingReason = "mid_booking";
-  } else {
-    // Widget channel: respect explicit agent_type from test chat or session
-    if (channel === "widget") {
-      if (ctx.payload.agent_type && activeAgents.has(ctx.payload.agent_type)) {
-        ctx.agentType = ctx.payload.agent_type;
-        ctx.routingReason = "test_explicit";
-      } else if (ctx.session.agent_type && activeAgents.has(ctx.session.agent_type)) {
-        ctx.agentType = ctx.session.agent_type;
-        ctx.routingReason = "session_continuity";
-      } else if (activeAgents.has("customer_support")) {
-        ctx.agentType = "customer_support";
-        ctx.routingReason = "default_fallback";
-      } else {
-        return {
-          handled: true,
-          response: "I'm sorry, I'm not equipped to handle that type of request. Please contact the business directly for assistance.",
-          reason: "no_matching_agent"
-        };
-      }
+  if (channel === "widget") {
+    if (ctx.payload.agent_type && activeAgents.has(ctx.payload.agent_type)) {
+      ctx.agentType = ctx.payload.agent_type;
+      ctx.routingReason = "test_explicit";
+    } else if (ctx.session.agent_type && activeAgents.has(ctx.session.agent_type)) {
+      ctx.agentType = ctx.session.agent_type;
+      ctx.routingReason = "session_continuity";
+    } else if (activeAgents.has("customer_support")) {
+      ctx.agentType = "customer_support";
+      ctx.routingReason = "default_fallback";
     } else {
-      // Non-widget: full keyword routing
-      if (activeAgents.has("appointment_booking") && BOOKING_KEYWORDS.some(k => msgLower.includes(k))) {
-        ctx.agentType = "appointment_booking";
-        ctx.routingReason = "keyword_booking";
-        if (hasManagementIntent) ctx.routingReason = "management_intent";
-      } else if (activeAgents.has("sales") && SALES_KEYWORDS.some(k => msgLower.includes(k))) {
-        ctx.agentType = "sales";
-        ctx.routingReason = "keyword_sales";
-      } else if (ctx.session.agent_type && activeAgents.has(ctx.session.agent_type) && ctx.session.message_count >= 1) {
-        ctx.agentType = ctx.session.agent_type;
-        ctx.routingReason = "session_continuity";
-      } else if (activeAgents.has("customer_support")) {
-        ctx.agentType = "customer_support";
-        ctx.routingReason = "default_fallback";
-      } else {
-        return {
-          handled: true,
-          response: "I'm sorry, I'm not equipped to handle that type of request. Please contact the business directly for assistance.",
-          reason: "no_matching_agent"
-        };
+      return {
+        handled: true,
+        response: "I'm sorry, I'm not equipped to handle that type of request. Please contact the business directly for assistance.",
+        reason: "no_matching_agent"
+      };
+    }
+  } else {
+    const scores: { agent: string; score: number }[] = [];
+    if (activeAgents.has("appointment_booking")) {
+      scores.push({ agent: "appointment_booking", score: scoreAgentType(msgLower, AGENT_KEYWORDS.appointment_booking) });
+    }
+    if (activeAgents.has("sales")) {
+      scores.push({ agent: "sales", score: scoreAgentType(msgLower, AGENT_KEYWORDS.sales) });
+    }
+
+    scores.sort((a, b) => b.score - a.score);
+    const top = scores[0];
+
+    if (top && top.score >= 0.3) {
+      ctx.agentType = top.agent;
+      ctx.routingReason = `keyword_match_${top.score.toFixed(2)}`;
+    } else if (ctx.session.agent_type && activeAgents.has(ctx.session.agent_type) && ctx.session.message_count >= 1) {
+      ctx.agentType = ctx.session.agent_type;
+      ctx.routingReason = "session_continuity";
+    } else if (activeAgents.has("customer_support")) {
+      ctx.agentType = "customer_support";
+      ctx.routingReason = "default_fallback";
+    } else {
+      return {
+        handled: true,
+        response: "I'm sorry, I'm not equipped to handle that type of request. Please contact the business directly for assistance.",
+        reason: "no_matching_agent"
+      };
+    }
+
+    if (top && top.score < 0.3 && ctx.session.message_count >= 3) {
+      const managementKeywords = ["reschedule", "cancel", "change", "modify", "update my"];
+      const hasManagement = managementKeywords.some(kw => msgLower.includes(kw));
+      if (hasManagement && ctx.session.agent_type === "appointment_booking") {
+        ctx.routingReason = "management_priority";
       }
     }
   }
 
-  // If management intent, ensure we tell the Planner it's a priority
-  if (hasManagementIntent && ctx.agentType === "appointment_booking") {
-    ctx.routingReason = "management_priority";
-  }
-
-  // Speculative KB search: start fetching chunks while LLM is planning
   if (ctx.agentType === "customer_support") {
     ctx.kbSearchPromise = matchChunks({ query: ctx.payload.message }, ctx);
   }

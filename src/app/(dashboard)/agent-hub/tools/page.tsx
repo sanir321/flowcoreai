@@ -7,9 +7,8 @@ import { Badge } from "@/components/ui/badge"
 import { AssistantsSidebar } from "@/components/nav/assistants-sidebar"
 import { 
   Calendar, ShoppingCart, Users, BookOpen, LifeBuoy, 
-  Search, CheckCircle2, Clock, MapPin, 
-  MessageSquare, History, UserCog, Send, FileText,
-  ShieldCheck, ArrowRightLeft, Sparkles
+  Search, CheckCircle2, UserCog, FileText,
+  Sparkles, MessageSquare, ArrowRightLeft, History, XCircle
 } from "lucide-react"
 
 const TOOL_CATEGORIES = [
@@ -20,10 +19,7 @@ const TOOL_CATEGORIES = [
     bgColor: "bg-blue-50",
     agent: "appointment_booking",
     tools: [
-      { name: "check_availability", desc: "Scans Google Calendar for free/busy slots on a specific date.", icon: Search },
-      { name: "create_appointment", desc: "Books an appointment, creates Google Meet link, and sends WhatsApp/Email alerts.", icon: CheckCircle2 },
-      { name: "update_appointment", desc: "Reschedules existing bookings and syncs changes with Google Calendar.", icon: Clock },
-      { name: "cancel_appointment", desc: "Deletes bookings from the database and removes Google Calendar events.", icon: ShieldCheck },
+      { name: "manage_appointment", desc: "Consolidated booking tool — check availability, create, reschedule, or cancel appointments with Google Calendar sync. Uses action: 'check' | 'create' | 'update' | 'cancel'.", icon: Calendar },
     ]
   },
   {
@@ -33,11 +29,9 @@ const TOOL_CATEGORIES = [
     bgColor: "bg-emerald-50",
     agent: "sales",
     tools: [
-      { name: "search_menu", desc: "Fuzzy-search the product database for prices, availability, and categories.", icon: Search },
-      { name: "check_stock", desc: "Checks if a specific product is available or in stock by name.", icon: CheckCircle2 },
-      { name: "send_catalog", desc: "Sends the full product catalog as a formatted text message via WhatsApp.", icon: Send },
-      { name: "send_menu_media", desc: "Sends the business menu (Image or PDF) as a native WhatsApp attachment.", icon: Send },
+      { name: "manage_catalog", desc: "Fuzzy-search products, check stock, send catalog or menu media via WhatsApp. Uses action: 'search' | 'check_stock' | 'send_catalog' | 'send_media'.", icon: Search },
       { name: "generate_quote", desc: "Generates a formal, time-limited price quote for bulk or custom requests.", icon: FileText },
+      { name: "transfer_agent", desc: "Re-routes the conversation to a different agent type (sales, support, booking).", icon: ArrowRightLeft },
     ]
   },
   {
@@ -47,8 +41,7 @@ const TOOL_CATEGORIES = [
     bgColor: "bg-orange-50",
     agent: "sales",
     tools: [
-      { name: "capture_lead", desc: "Automatically saves new customer details for marketing and sales follow-ups.", icon: UserCog },
-      { name: "schedule_follow_up", desc: "Schedules automated WhatsApp re-engagement messages after X hours.", icon: MessageSquare },
+      { name: "manage_contact", desc: "Creates, updates, or retrieves customer contact details. Uses action: 'create' | 'update' | 'lookup' | 'history'.", icon: UserCog },
     ]
   },
   {
@@ -58,10 +51,8 @@ const TOOL_CATEGORIES = [
     bgColor: "bg-purple-50",
     agent: "support",
     tools: [
-      { name: "match_kb_chunks", desc: "Semantic search across documentation to answer complex customer questions.", icon: Sparkles },
-      { name: "get_business_profile", desc: "Retrieves core info: address, hours, amenities, and service list.", icon: MapPin },
-      { name: "get_contact_history", desc: "Retrieves past interactions, appointments, and orders for a specific user.", icon: History },
-      { name: "update_contact", desc: "Updates customer names, emails, or phone numbers in the CRM database.", icon: UserCog },
+      { name: "search_kb", desc: "Semantic RAG search across uploaded knowledge base documents to answer complex customer questions.", icon: Sparkles },
+      { name: "get_business_info", desc: "Retrieves core business info: address, hours, services, amenities, and profile details.", icon: History },
     ]
   },
   {
@@ -71,9 +62,9 @@ const TOOL_CATEGORIES = [
     bgColor: "bg-sky-50",
     agent: "support",
     tools: [
-      { name: "create_ticket", desc: "Opens a support ticket for issues requiring manual human intervention.", icon: MessageSquare },
-      { name: "get_ticket_status", desc: "Provides live updates on the resolution progress of an active ticket.", icon: History },
-      { name: "request_handoff", desc: "Instantly transfers a session to a different agent or a human manager.", icon: ArrowRightLeft },
+      { name: "create_support_ticket", desc: "Opens a support ticket for issues requiring manual human intervention.", icon: MessageSquare },
+      { name: "escalate", desc: "Instantly escalates a session to human operators with full conversation context.", icon: XCircle },
+      { name: "end_conversation", desc: "Gracefully ends the conversation after resolving the customer's request.", icon: CheckCircle2 },
     ]
   }
 ]
@@ -93,7 +84,7 @@ export default function AgentToolsPage() {
               </div>
               <h1 className="text-3xl font-bold tracking-tight text-gray-900">Agent Tool Registry</h1>
               <p className="text-gray-500 text-sm max-w-2xl">
-                A comprehensive overview of the 19 specialized tools integrated into the FlowCore engine. 
+                A comprehensive overview of the 10 specialized tools integrated into the FlowCore engine. 
                 Each tool is scoped to specific agent types — support, booking, or sales — and can interact with your database, calendar, and external services in real-time.
               </p>
             </div>

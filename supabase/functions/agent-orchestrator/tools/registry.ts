@@ -1,8 +1,63 @@
 import { ToolDefinition } from "../lib/types.ts";
 
 export const ALL_TOOLS: Record<string, ToolDefinition> = {
-  match_kb_chunks: {
-    name: "match_kb_chunks",
+  manage_appointment: {
+    name: "manage_appointment",
+    description: "Book, check availability, update, or cancel an appointment. Use 'check' action to find free slots, 'create' to book, 'update' to reschedule, 'cancel' to cancel.",
+    parameters: {
+      type: "object",
+      properties: {
+        action: { type: "string", enum: ["check", "create", "update", "cancel"], description: "What to do." },
+        appointment_id: { type: "string", description: "Required for update/cancel. Use get_contact_history to find it." },
+        service: { type: "string", description: "For create: the service being booked." },
+        date: { type: "string", description: "For check/create/update: date (e.g. '2026-06-20' or 'tomorrow')." },
+        time: { type: "string", description: "For create/update: time (e.g. '10:00' or '2pm')." },
+        name: { type: "string", description: "For create: customer name." },
+        email: { type: "string", description: "For create: customer email." },
+        phone: { type: "string", description: "For create: customer phone (optional)." },
+        duration: { type: "number", description: "For create: duration in minutes (default 30)." },
+        reason: { type: "string", description: "For cancel: reason." }
+      },
+      required: ["action"],
+      additionalProperties: false
+    }
+  },
+  manage_contact: {
+    name: "manage_contact",
+    description: "Get contact history, update details, capture lead, update pipeline stage, or schedule follow-up.",
+    parameters: {
+      type: "object",
+      properties: {
+        action: { type: "string", enum: ["get", "update", "capture-lead", "update-stage", "get-pipeline", "schedule-follow-up"], description: "What to do." },
+        name: { type: "string", description: "Customer name (required for capture-lead)." },
+        email: { type: "string", description: "Customer email." },
+        phone: { type: "string", description: "Customer phone." },
+        notes: { type: "string", description: "Context notes or lead details." },
+        stage: { type: "string", enum: ["new", "contacted", "qualified", "proposal", "negotiation", "won", "lost"], description: "For update-stage: pipeline stage." },
+        hours: { type: "number", description: "For schedule-follow-up: hours from now." },
+        message: { type: "string", description: "For schedule-follow-up: follow-up message content." }
+      },
+      required: ["action"],
+      additionalProperties: false
+    }
+  },
+  manage_catalog: {
+    name: "manage_catalog",
+    description: "Search products/services, check stock, send catalog, or send menu image.",
+    parameters: {
+      type: "object",
+      properties: {
+        action: { type: "string", enum: ["search", "check-stock", "send-catalog", "send-media"], description: "What to do." },
+        query: { type: "string", description: "For search/check-stock: search term or product name." },
+        category: { type: "string", description: "For search/send-catalog: optional category filter." },
+        caption: { type: "string", description: "For send-media: optional caption." }
+      },
+      required: ["action"],
+      additionalProperties: false
+    }
+  },
+  search_kb: {
+    name: "search_kb",
     description: "Search the business knowledge base for answers about services, policies, and general info.",
     parameters: {
       type: "object",
@@ -13,152 +68,20 @@ export const ALL_TOOLS: Record<string, ToolDefinition> = {
       additionalProperties: false
     }
   },
-  check_availability: {
-    name: "check_availability",
-    description: "Check Google Calendar for free/busy on a specific date or time range.",
+  get_business_info: {
+    name: "get_business_info",
+    description: "Retrieve the business profile (contact info, hours, policies, pricing, amenities, services) for this workspace.",
     parameters: {
       type: "object",
       properties: {
-        date: { type: "string", description: "The date to check (e.g. '2026-05-12' or 'tomorrow')." },
-        time: { type: "string", description: "Optional specific time to check." }
+        sections: { type: "array", items: { type: "string" }, description: "Optional: specific sections to retrieve (e.g. ['contact', 'hours', 'policies']). Omit for full profile." }
       },
-      required: ["date"],
-      additionalProperties: false
-    }
-  },
-  create_appointment: {
-    name: "create_appointment",
-    description: "Book a new appointment. Only call AFTER collecting ALL required details and getting explicit confirmation.",
-    parameters: {
-      type: "object",
-      properties: {
-        name: { type: "string", description: "Customer's actual name from conversation." },
-        phone: { type: "string", description: "Customer's phone (optional, known on WhatsApp)." },
-        email: { type: "string", description: "Customer's actual email from conversation." },
-        service: { type: "string", description: "The service being booked." },
-        date: { type: "string", description: "Date of appointment (e.g. '2026-05-20')." },
-        time: { type: "string", description: "Time of appointment (e.g. '10am' or '14:00')." }
-      },
-      required: ["name", "service", "date", "time"],
-      additionalProperties: false
-    }
-  },
-  update_appointment: {
-    name: "update_appointment",
-    description: "Reschedule or modify an existing appointment.",
-    parameters: {
-      type: "object",
-      properties: {
-        appointment_id: { type: "string" },
-        name: { type: "string" },
-        service: { type: "string" },
-        date: { type: "string" },
-        time: { type: "string" },
-        duration: { type: "number", description: "Duration in minutes (default 30)." }
-      },
-      required: ["appointment_id"],
-      additionalProperties: false
-    }
-  },
-  cancel_appointment: {
-    name: "cancel_appointment",
-    description: "Cancel an existing appointment.",
-    parameters: {
-      type: "object",
-      properties: {
-        appointment_id: { type: "string" },
-        reason: { type: "string" }
-      },
-      required: ["appointment_id"],
-      additionalProperties: false
-    }
-  },
-  capture_lead: {
-    name: "capture_lead",
-    description: "Save customer contact information for sales follow-up.",
-    parameters: {
-      type: "object",
-      properties: {
-        name: { type: "string" },
-        email: { type: "string" },
-        phone: { type: "string" },
-        notes: { type: "string", description: "Context about the lead's interest." }
-      },
-      required: ["name"],
-      additionalProperties: false
-    }
-  },
-  request_handoff: {
-    name: "request_handoff",
-    description: "Transfer the conversation to a different specialist teammate.",
-    parameters: {
-      type: "object",
-      properties: {
-        target_agent: { type: "string", enum: ["customer_support", "sales", "appointment_booking"] },
-        reason: { type: "string" },
-        context: { type: "string", description: "Summary of relevant details for the receiving agent." }
-      },
-      required: ["target_agent", "reason"],
-      additionalProperties: false
-    }
-  },
-  get_contact_history: {
-    name: "get_contact_history",
-    description: "Retrieve full contact details and past appointment history.",
-    parameters: {
-      type: "object",
-      properties: {},
-      additionalProperties: false
-    }
-  },
-  update_contact: {
-    name: "update_contact",
-    description: "Update customer contact information during conversation.",
-    parameters: {
-      type: "object",
-      properties: {
-        name: { type: "string" },
-        email: { type: "string" },
-        phone: { type: "string" },
-        notes: { type: "string" }
-      },
-      additionalProperties: false
-    }
-  },
-  update_lead_stage: {
-    name: "update_lead_stage",
-    description: "Move the current contact through the sales pipeline. Stages: new → contacted → qualified → proposal → negotiation → won/lost.",
-    parameters: {
-      type: "object",
-      properties: {
-        stage: { type: "string", enum: ["new", "contacted", "qualified", "proposal", "negotiation", "won", "lost"] },
-        notes: { type: "string" }
-      },
-      required: ["stage"],
-      additionalProperties: false
-    }
-  },
-  get_pipeline: {
-    name: "get_pipeline",
-    description: "Get an overview of all leads in the sales pipeline broken down by stage.",
-    parameters: { type: "object", properties: {}, additionalProperties: false }
-  },
-  schedule_follow_up: {
-    name: "schedule_follow_up",
-    description: "Schedule an automated WhatsApp follow-up message.",
-    parameters: {
-      type: "object",
-      properties: {
-        hours: { type: "number", description: "Hours from now." },
-        message: { type: "string", description: "Content of the follow-up message." }
-      },
-      required: ["hours", "message"],
       additionalProperties: false
     }
   },
   generate_quote: {
     name: "generate_quote",
-    description: "Generate a price quote for the current contact via WhatsApp.",
+    description: "Generate a formal price quote with items, quantities, prices, tax, and 30-day validity.",
     parameters: {
       type: "object",
       properties: {
@@ -179,55 +102,53 @@ export const ALL_TOOLS: Record<string, ToolDefinition> = {
       additionalProperties: false
     }
   },
-  search_menu: {
-    name: "search_menu",
-    description: "Browse or search available menu items/services. Omit query to see everything.",
+  transfer_agent: {
+    name: "transfer_agent",
+    description: "Transfer the conversation to a different specialist. Use when the user's request doesn't match your expertise.",
     parameters: {
       type: "object",
       properties: {
-        query: { type: "string", description: "Optional search term." },
-        category: { type: "string", description: "Optional category filter." }
+        target_agent: { type: "string", enum: ["customer_support", "sales", "appointment_booking"] },
+        reason: { type: "string" },
+        context: { type: "string", description: "Summary of relevant details for the receiving agent." }
       },
+      required: ["target_agent", "reason"],
       additionalProperties: false
     }
   },
-  check_stock: {
-    name: "check_stock",
-    description: "Check if a specific product is available or in stock. Search by product name.",
+  escalate: {
+    name: "escalate",
+    description: "Create a support ticket for issues needing tracking and follow-up, or check an existing ticket status.",
     parameters: {
       type: "object",
       properties: {
-        product_name: { type: "string", description: "Name of the product to check availability for." }
+        action: { type: "string", enum: ["create", "status"], description: "Create a new ticket or check status." },
+        subject: { type: "string", description: "For create: brief summary of the issue." },
+        description: { type: "string", description: "For create: detailed description of the issue." },
+        priority: { type: "string", enum: ["low", "normal", "high", "urgent"], description: "For create: priority level (default: normal)." },
+        ticket_number: { type: "string", description: "For status: the ticket number (e.g. 'TKT-ABC123')." },
+        ticket_id: { type: "string", description: "For status: internal ticket id (alternative to ticket_number)." }
       },
-      required: ["product_name"],
+      required: ["action"],
       additionalProperties: false
     }
   },
-  send_catalog: {
-    name: "send_catalog",
-    description: "Send the full product catalog as a formatted text message via WhatsApp.",
+  end_conversation: {
+    name: "end_conversation",
+    description: "Gracefully end the conversation when the user indicates they're done. Marks the session complete and sends a closing message.",
     parameters: {
       type: "object",
       properties: {
-        category: { type: "string", description: "Optional: only send items from this category." }
+        reason: { type: "string", description: "Why the conversation is ending." },
+        summary: { type: "string", description: "Brief summary of what was accomplished." }
       },
+      required: ["reason"],
       additionalProperties: false
     }
   },
-  send_menu_media: {
-    name: "send_menu_media",
-    description: "Send the uploaded menu image/PDF via WhatsApp. Auto-fallbacks to text menu if no image uploaded.",
-    parameters: {
-      type: "object",
-      properties: {
-        caption: { type: "string", description: "Optional caption." }
-      },
-      additionalProperties: false
-    }
-  },
-  create_ticket: {
-    name: "create_ticket",
-    description: "Create a support ticket for issues that need tracking and follow-up.",
+  create_support_ticket: {
+    name: "create_support_ticket",
+    description: "Proactively create a support ticket for issues that need tracking and follow-up by human agents.",
     parameters: {
       type: "object",
       properties: {
@@ -238,44 +159,19 @@ export const ALL_TOOLS: Record<string, ToolDefinition> = {
       required: ["subject"],
       additionalProperties: false
     }
-  },
-  get_business_profile: {
-    name: "get_business_profile",
-    description: "Retrieve the business profile (contact info, hours, policies, pricing, amenities) for this workspace.",
-    parameters: {
-      type: "object",
-      properties: {
-        sections: { type: "array", items: { type: "string" }, description: "Optional: specific sections to retrieve (e.g. ['contact', 'hours', 'policies']). Omit for full profile." }
-      },
-      additionalProperties: false
-    }
-  },
-  get_ticket_status: {
-    name: "get_ticket_status",
-    description: "Check the status and updates of an existing support ticket by ticket number.",
-    parameters: {
-      type: "object",
-      properties: {
-        ticket_number: { type: "string", description: "The ticket number (e.g. 'TKT-ABC123')." },
-        ticket_id: { type: "string", description: "The internal ticket id (alternative to ticket_number)." }
-      },
-      additionalProperties: false
-    }
   }
 };
 
 export const AGENT_TOOLS: Record<string, string[]> = {
   customer_support: [
-    "match_kb_chunks", "get_contact_history", "update_contact", "request_handoff", "create_ticket", "get_ticket_status", "get_business_profile"
+    "search_kb", "manage_contact", "get_business_info", "transfer_agent", "escalate", "create_support_ticket"
   ],
   appointment_booking: [
-    "check_availability", "create_appointment", "update_appointment",
-    "cancel_appointment", "get_contact_history", "update_contact", "request_handoff", "get_business_profile"
+    "manage_appointment", "manage_contact", "get_business_info", "transfer_agent"
   ],
   sales: [
-    "match_kb_chunks", "capture_lead", "schedule_follow_up",
-    "generate_quote", "search_menu", "check_stock", "send_catalog", "send_menu_media",
-    "request_handoff", "get_business_profile"
+    "manage_catalog", "manage_contact", "get_business_info",
+    "generate_quote", "search_kb", "transfer_agent"
   ]
 };
 
@@ -283,14 +179,14 @@ export const SUBMIT_PLAN_TOOL = {
   type: "function",
   function: {
     name: "submit_plan",
-    description: "Submit your final plan. CRITICAL: Every action you claim to perform (capturing leads, scheduling follow-ups) MUST have a corresponding tool in the 'actions' array. Writing about it in 'response' does NOT execute it.",
+    description: "Submit your final plan with response text and any tool actions needed.",
     parameters: {
       type: "object",
       properties: {
         response: { type: "string", description: "Natural language response to the user." },
         actions: {
           type: "array",
-          description: "List of tools to execute.",
+          description: "List of tools to execute. Each action you claim to perform must have a corresponding tool call here.",
           items: {
             type: "object",
             properties: {
@@ -306,7 +202,7 @@ export const SUBMIT_PLAN_TOOL = {
         fallback: { type: "string", description: "Fallback message if tools fail." },
         needs_second_pass: {
           type: "boolean",
-          description: "True if tool results are needed to write the natural response."
+          description: "Set to true ONLY if a tool returned a non-final result or error that changes the response. Default false — most responses don't need a second LLM call."
         }
       },
       required: ["response", "actions"],

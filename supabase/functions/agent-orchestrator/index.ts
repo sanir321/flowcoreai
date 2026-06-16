@@ -9,15 +9,22 @@ import { getOrCreateSession, touchSession } from "./lib/session.ts"
 import { WebhookPayload, PipelineContext } from "./lib/types.ts"
 import { sanitizeUserInput, sanitizeLlmOutput } from "./lib/sanitize.ts"
 
-// Restricted CORS — internal function, not browser-facing
 const responseHeaders = {
   "Content-Type": "application/json",
   "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
   "X-Content-Type-Options": "nosniff",
 }
 
-// Generic default fallback message (no business name)
 const DEFAULT_FALLBACK_MESSAGE = "I'm not sure about that. Please contact us directly for more information.";
+
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { status: 204 })
@@ -27,12 +34,10 @@ Deno.serve(async (req) => {
     const token = authHeader.replace("Bearer ", "")
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
     const internalSecret = Deno.env.get("INTERNAL_CRON_SECRET") || ""
-    
-    const legacyKey = Deno.env.get("LEGACY_SERVICE_ROLE_KEY") || ""
+
     const authorized = token && (
-      token === serviceRoleKey ||
-      token === internalSecret ||
-      (legacyKey && token === legacyKey)
+      timingSafeEqual(token, serviceRoleKey) ||
+      timingSafeEqual(token, internalSecret)
     )
     
     if (!authorized) {
@@ -48,7 +53,6 @@ Deno.serve(async (req) => {
     const [aiResult, ctx] = await processMessage(payload)
     
     if (payload.is_test) {
-      // Enrich test response with tool call trace
       const toolCalls = (ctx._toolCalls || []).map((tc: any) => ({
         tool: tc.tool,
         params: tc.params,
@@ -89,8 +93,6 @@ async function processMessage(payload: WebhookPayload): Promise<[TierResult, Pip
 
     const ctx: PipelineContext = { supabase, session, payload }
     ctx.workspace = session.workspaces
-
-    // Sanitize user input to prevent prompt injection
     ctx.payload.message = sanitizeUserInput(ctx.payload.message || "")
 
     console.log(`[ORCHESTRATOR] Context ready. Workspace: ${ctx.workspace?.name}`)
@@ -132,7 +134,6 @@ async function processMessage(payload: WebhookPayload): Promise<[TierResult, Pip
     console.error("[ORCHESTRATOR] CRASH in processMessage:", e.message)
     console.error("[ORCHESTRATOR] Stack:", e.stack)
     
-    // Log crash to database for diagnosis
     try {
       await supabase.from("debug_logs").insert({
         level: "error",
@@ -166,9 +167,18 @@ async function parseWebhook(req: Request): Promise<WebhookPayload | null> {
   body.message = body.message ?? ""
   body.message_type = body.message_type ?? "text"
 
+  const isWhatsApp = body.channel === "whatsapp" || body.source === "whatsapp";
+  const stableJid = isWhatsApp
+    ? (body.customer_jid || `${body.customer_phone || ""}@s.whatsapp.net`)
+    : body.customer_jid || (() => {
+        const ws = body.workspace_id?.substring(0, 8) || "unknown";
+        const sid = body.client_session_id || crypto.randomUUID();
+        return `widget_${ws}_${sid}`;
+      })();
+
   return {
     workspace_id: body.workspace_id,
-    customer_jid: body.customer_jid || crypto.randomUUID(),
+    customer_jid: stableJid,
     customer_phone: body.customer_jid?.split("@")[0] || "",
     message: body.message,
     message_type: body.message_type || "text",
@@ -200,5 +210,3 @@ async function dispatchFallback(supabase: any, payload: WebhookPayload) {
     body: JSON.stringify({ phone, message: fallbackMsg })
   }).catch(() => {})
 }
-
-declare var EdgeRuntime: { waitUntil: (promise: Promise<any>) => void }

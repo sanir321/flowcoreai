@@ -8,26 +8,45 @@ import { requestHandoff } from "./impl/handoff.ts";
 import { createTicket, getTicketStatus } from "./impl/support-ticket.ts";
 import { getBusinessProfile } from "./impl/business-profile.ts";
 
+const PER_TOOL_TIMEOUTS: Record<string, number> = {
+  search_kb: 3000,
+  manage_contact: 5000,
+  get_business_info: 5000,
+  manage_appointment: 10000,
+  manage_catalog: 8000,
+  generate_quote: 10000,
+  transfer_agent: 5000,
+  escalate: 10000,
+  end_conversation: 5000,
+  create_support_ticket: 10000,
+};
+
 const TOOL_RATE_LIMITS: Record<string, number> = {
-  check_availability: 5,
-  create_appointment: 2,
-  match_kb_chunks: 10,
-  send_menu_media: 3,
-  check_stock: 10,
-  send_catalog: 3,
-  capture_lead: 2,
-  request_handoff: 1,
-  create_ticket: 3,
-  get_business_profile: 10,
-  get_ticket_status: 5,
+  manage_appointment: 5,
+  search_kb: 10,
+  manage_catalog: 10,
+  manage_contact: 10,
+  get_business_info: 10,
+  generate_quote: 3,
+  escalate: 3,
+  create_support_ticket: 3,
+  transfer_agent: 1,
+  end_conversation: 1,
 };
 
 const countCache = new WeakMap<PipelineContext, Record<string, number>>();
 
+function stripPII(args: Record<string, unknown>): Record<string, unknown> {
+  const str = JSON.stringify(args);
+  const cleaned = str
+    .replace(/[\w.-]+@[\w.-]+\.\w+/g, "[REDACTED]")
+    .replace(/\b\d{10,}\b/g, "[REDACTED]");
+  try { return JSON.parse(cleaned); } catch { return args; }
+}
+
 export const toolExecutor = {
   async run(toolName: string, params: Record<string, unknown>, ctx: PipelineContext): Promise<any> {
     const startTime = Date.now();
-    let result: any;
 
     const limit = TOOL_RATE_LIMITS[toolName] ?? 20;
     if (limit > 0) {
@@ -38,7 +57,6 @@ export const toolExecutor = {
           .select("tool_name")
           .eq("session_id", ctx.session.id)
           .gte("created_at", new Date(Date.now() - 3600000).toISOString());
-        
         counts = {};
         data?.forEach((row: any) => {
           counts![row.tool_name] = (counts![row.tool_name] || 0) + 1;
@@ -52,16 +70,31 @@ export const toolExecutor = {
       }
     }
 
+    const timeout = PER_TOOL_TIMEOUTS[toolName] ?? 10000;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeout);
+
+    let result: any;
     try {
-      result = await routeToImpl(toolName, params, ctx);
+      result = await Promise.race([
+        routeToImpl(toolName, params, ctx),
+        new Promise<never>((_, reject) => {
+          const t = setTimeout(() => reject(new Error(`Timeout after ${timeout}ms`)), timeout);
+          controller.signal.addEventListener("abort", () => {
+            clearTimeout(t);
+            reject(new Error(`Timeout after ${timeout}ms`));
+          });
+        })
+      ]);
     } catch (error: any) {
       console.error(`[ToolExecutor] ${toolName} error:`, error.message);
-      result = { success: false, error: "Tool execution failed" };
+      result = { success: false, error: error.message || "Tool execution failed" };
+    } finally {
+      clearTimeout(timer);
     }
 
     const durationMs = Date.now() - startTime;
 
-    // Track tool calls for test mode
     if (ctx.payload.is_test) {
       if (!ctx._toolCalls) ctx._toolCalls = [];
       ctx._toolCalls.push({
@@ -73,43 +106,99 @@ export const toolExecutor = {
       });
     }
 
-    await ctx.supabase.from("tool_call_logs").insert({
+    if (!ctx._toolCallBuffer) ctx._toolCallBuffer = [];
+    ctx._toolCallBuffer.push({
       session_id: ctx.session.id,
       workspace_id: ctx.payload.workspace_id,
       tool_name: toolName,
-      args: params,
-      result: result.data || result,
-      error: result.error,
-      success: !result.error,
+      args: stripPII(params as Record<string, unknown>),
+      result: result?.data || result,
+      error: result?.error,
+      success: !result?.error,
       duration_ms: durationMs
     });
 
+    if (!ctx._toolFailCounts) ctx._toolFailCounts = {};
+    ctx._toolFailCounts[toolName] = (ctx._toolFailCounts[toolName] || 0) + (result?.error ? 1 : 0);
+
     return result;
+  },
+
+  async flushToolCalls(ctx: PipelineContext) {
+    if (!ctx._toolCallBuffer || ctx._toolCallBuffer.length === 0) return;
+    const buffer = ctx._toolCallBuffer;
+    ctx._toolCallBuffer = [];
+    try {
+      await ctx.supabase.from("tool_call_logs").insert(buffer);
+    } catch (e: any) {
+      console.error("[ToolExecutor] Flush failed:", e.message);
+    }
   }
 };
 
 async function routeToImpl(toolName: string, params: any, ctx: PipelineContext): Promise<any> {
+  const action = params.action || "";
+
   switch (toolName) {
-    case "match_kb_chunks": return matchChunks(params, ctx);
-    case "check_availability": return checkAvailability(params, ctx);
-    case "create_appointment": return createAppointment(params, ctx);
-    case "update_appointment": return updateAppointment(params, ctx);
-    case "cancel_appointment": return cancelAppointment(params, ctx);
-    case "capture_lead": return captureLead(params, ctx);
-    case "get_contact_history": return getHistory(params, ctx);
-    case "update_contact": return update(params, ctx);
-    case "search_menu": return searchMenu(params, ctx);
-    case "check_stock": return checkStock(params, ctx);
-    case "send_catalog": return sendCatalog(params, ctx);
-    case "send_menu_media": return sendMenuMedia(params, ctx);
-    case "request_handoff": return requestHandoff(params, ctx);
-    case "update_lead_stage": return updateLeadStage(params, ctx);
-    case "get_pipeline": return getPipeline(params, ctx);
-    case "schedule_follow_up": return scheduleFollowUp(params, ctx);
-    case "generate_quote": return generateQuote(params, ctx);
-    case "create_ticket": return createTicket(params, ctx);
-    case "get_ticket_status": return getTicketStatus(params, ctx);
-    case "get_business_profile": return getBusinessProfile(params, ctx);
-    default: return { success: false, error: `Unknown tool: ${toolName}` };
+    case "search_kb":
+      return matchChunks({ query: params.query }, ctx);
+
+    case "manage_appointment": {
+      switch (action) {
+        case "check": return checkAvailability({ date: params.date, time: params.time }, ctx);
+        case "create": return createAppointment(params, ctx);
+        case "update": return updateAppointment(params, ctx);
+        case "cancel": return cancelAppointment(params, ctx);
+        default: return { success: false, error: `Unknown manage_appointment action: ${action}` };
+      }
+    }
+
+    case "manage_contact": {
+      switch (action) {
+        case "get": return getHistory(params, ctx);
+        case "update": return update(params, ctx);
+        case "capture-lead": return captureLead(params, ctx);
+        case "update-stage": return updateLeadStage(params, ctx);
+        case "get-pipeline": return getPipeline(params, ctx);
+        case "schedule-follow-up": return scheduleFollowUp(params, ctx);
+        default: return { success: false, error: `Unknown manage_contact action: ${action}` };
+      }
+    }
+
+    case "manage_catalog": {
+      switch (action) {
+        case "search": return searchMenu(params, ctx);
+        case "check-stock": return checkStock(params, ctx);
+        case "send-catalog": return sendCatalog(params, ctx);
+        case "send-media": return sendMenuMedia(params, ctx);
+        default: return { success: false, error: `Unknown manage_catalog action: ${action}` };
+      }
+    }
+
+    case "get_business_info":
+      return getBusinessProfile({ sections: params.sections }, ctx);
+
+    case "generate_quote":
+      return generateQuote(params, ctx);
+
+    case "transfer_agent":
+      return requestHandoff(params, ctx);
+
+    case "escalate": {
+      switch (action) {
+        case "create": return createTicket(params, ctx);
+        case "status": return getTicketStatus(params, ctx);
+        default: return { success: false, error: `Unknown escalate action: ${action}` };
+      }
+    }
+
+    case "end_conversation":
+      return { success: true, data: { summary: params.summary, ended: true } };
+
+    case "create_support_ticket":
+      return createTicket(params, ctx);
+
+    default:
+      return { success: false, error: `Unknown tool: ${toolName}` };
   }
 }

@@ -1,4 +1,4 @@
-import { PipelineContext } from "./types.ts";
+import { PipelineContext, WorkingContext } from "./types.ts";
 
 export async function getOrCreateSession(supabase: any, { 
   workspace_id, 
@@ -11,10 +11,8 @@ export async function getOrCreateSession(supabase: any, {
   channel: string;
   agent_type: string;
 }) {
-  // Normalize channel to DB-valid values
   const dbChannel = channel === 'webchat' ? 'widget' : channel;
 
-  // 1. Try to find existing active session (latest first)
   let { data: session } = await supabase
     .from('conversation_sessions')
     .select('*, workspaces(name, is_ai_enabled, credits_balance, owner_personal_phone, owner_id, welcome_template, guardrail_config, services_offered, description, business_profile, website_url, business_type)')
@@ -26,9 +24,6 @@ export async function getOrCreateSession(supabase: any, {
     .limit(1)
     .maybeSingle();
 
-  // 1b. If no active session, reuse the most recent escalated session (keep it escalated)
-  //     This prevents the escalation loop: next message hits the already_escalated check in T0
-  //     and gets reminded that their request is being handled by a human.
   if (!session) {
     const { data: escalatedSession } = await supabase
       .from('conversation_sessions')
@@ -41,13 +36,11 @@ export async function getOrCreateSession(supabase: any, {
       .limit(1)
       .maybeSingle();
     if (escalatedSession) {
-      // Keep session escalated — T0's already_escalated check will handle subsequent messages
       session = escalatedSession;
     }
   }
 
   if (!session) {
-    // 2. Resolve Contact ID
     const { data: contact } = await supabase
       .from('contacts')
       .select('id')
@@ -71,7 +64,6 @@ export async function getOrCreateSession(supabase: any, {
        contact_id = newContact.id;
     }
 
-    // 3. Create new session
     const { data: newSession, error: createError } = await supabase
       .from('conversation_sessions')
       .insert({
@@ -82,7 +74,16 @@ export async function getOrCreateSession(supabase: any, {
         agent_type,
         status: 'active',
         failed_attempts: 0,
-        message_count: 0
+        message_count: 0,
+        working_context: {
+          intent: null,
+          collected_data: {},
+          customer_name: null,
+          pending_action: null,
+          agent_type: agent_type || "customer_support",
+          handoff_count: 0,
+          sentiment: null
+        }
       })
       .select('*, workspaces(name, is_ai_enabled, credits_balance, owner_personal_phone, owner_id, welcome_template, guardrail_config, services_offered, description, business_profile, website_url, business_type)')
       .single();
@@ -91,19 +92,38 @@ export async function getOrCreateSession(supabase: any, {
     session = newSession;
   }
 
+  if (!session.working_context) {
+    session.working_context = {
+      intent: null,
+      collected_data: {},
+      customer_name: null,
+      pending_action: null,
+      agent_type: session.agent_type || "customer_support",
+      handoff_count: 0,
+      sentiment: null
+    };
+  }
+
   return session;
 }
 
 export async function touchSession(ctx: PipelineContext, agentType: string, finalResponse: string, tokensUsed = 0) {
+  const wc = ctx.session.working_context;
+  const updateData: any = {
+    agent_type: agentType,
+    last_message_at: new Date().toISOString(),
+    last_message_preview: finalResponse.substring(0, 100),
+    message_count: (ctx.session.message_count || 0) + 1,
+    total_tokens_used: (ctx.session.total_tokens_used || 0) + tokensUsed,
+    updated_at: new Date().toISOString()
+  };
+
+  if (ctx._sentiment && ctx._sentiment !== (wc?.sentiment || null)) {
+    updateData.working_context = { ...(wc || {}), sentiment: ctx._sentiment };
+  }
+
   await ctx.supabase.from("conversation_sessions")
-    .update({
-      agent_type: agentType,
-      last_message_at: new Date().toISOString(),
-      last_message_preview: finalResponse.substring(0, 100),
-      message_count: (ctx.session.message_count || 0) + 1,
-      total_tokens_used: (ctx.session.total_tokens_used || 0) + tokensUsed,
-      updated_at: new Date().toISOString()
-    })
+    .update(updateData)
     .eq("id", ctx.session.id);
 }
 

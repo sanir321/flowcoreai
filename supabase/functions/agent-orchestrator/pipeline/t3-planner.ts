@@ -2,7 +2,7 @@ import { PipelineContext, TierResult, AgentPlan } from "../lib/types.ts";
 import { callLLM } from "../lib/llm.ts";
 import { toolExecutor } from "../tools/executor.ts";
 import { SUBMIT_PLAN_TOOL, getAgentToolDefinitions } from "../tools/registry.ts";
-import { handleBooking, loadOrCreateBookingSession, buildBookingSystemPrompt } from "../agents/booking.ts";
+import { buildBookingSystemPrompt } from "../agents/booking.ts";
 import { buildSupportSystemPrompt } from "../agents/support.ts";
 import { buildSalesSystemPrompt } from "../agents/sales.ts";
 import { matchChunks } from "../tools/impl/kb.ts";
@@ -13,10 +13,12 @@ const AGENT_SYSTEM_PROMPTS: Record<string, (ctx: PipelineContext) => string> = {
   sales: buildSalesSystemPrompt,
 };
 
+const MAX_T3_ITERATIONS = 5;
+const MAX_CONSECUTIVE_TOOL_FAILURES = 3;
+
 export async function runT3(ctx: PipelineContext): Promise<TierResult> {
   let agentType = ctx.agentType || "customer_support";
 
-  // 0a. Fetch agent configuration (including personality traits)
   const { data: agent } = await ctx.supabase
     .from("workspace_agents")
     .select("*")
@@ -28,15 +30,13 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
     ctx.session.workspace_agents = agent;
   }
 
-  // 0. Escalation check: if session was escalated by T0, bypass LLM and hand off directly
   const { data: sessionStatus } = await ctx.supabase
     .from("conversation_sessions")
     .select("status")
     .eq("id", ctx.session.id)
     .single();
   if (sessionStatus?.status === "escalated") {
-    // Use request_handoff tool directly — DO NOT use handleHandoff() which does LLM call
-    const handoffResult = await toolExecutor.run("request_handoff", {
+    const handoffResult = await toolExecutor.run("transfer_agent", {
       target_agent: "customer_support",
       reason: "escalation"
     }, ctx);
@@ -50,7 +50,6 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
     return { handled: true, response, reason: "t3_escalation_handoff" };
   }
 
-  // 1. Initial message count for staleness detection
   if (ctx._msgCount === undefined) {
     const { count } = await ctx.supabase
       .from("messages")
@@ -60,74 +59,6 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
     ctx._msgCount = count || 0;
   }
 
-  // 2. Always check for active booking session (even if agentType is customer_support)
-  //    This handles the case where the session started with a greeting but user now wants to book
-  const BOOKING_KEYWORDS = ["book", "appointment", "schedule", "reserve", "slot", "booking", "consultation"];
-  const msgLower = ctx.payload.message.toLowerCase();
-  const wantsBooking = BOOKING_KEYWORDS.some(k => msgLower.includes(k));
-
-  const { data: activeBooking } = await ctx.supabase
-    .from("booking_sessions")
-    .select("state")
-    .eq("session_id", ctx.session.id)
-    .is("deleted_at", null)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  const hasActiveBooking = activeBooking && !["idle", "booked", "cancelled"].includes(activeBooking.state);
-
-  if (agentType === "appointment_booking" || hasActiveBooking || wantsBooking) {
-    if ((hasActiveBooking || wantsBooking) && agentType !== "appointment_booking") {
-      ctx.agentType = "appointment_booking";
-      agentType = "appointment_booking";
-    }
-    await loadOrCreateBookingSession(ctx);
-
-    // 3. Run booking FSM for collecting stages
-    const bookingResult = await handleBooking(ctx);
-    if (bookingResult) {
-      await postProcess(ctx, null, null, bookingResult.response || "", agentType);
-      return bookingResult;
-    } else {
-      // handleBooking returned null — check if we're in booked state
-      if (ctx.bookingSession?.state === "booked") {
-        const bs = ctx.bookingSession;
-        const collected = bs.collected || {};
-        try {
-          const { toolExecutor } = await import("../tools/executor.ts");
-          const toolResult = await toolExecutor.run("create_appointment", {
-            service: collected.service,
-            date: collected.date,
-            time: collected.time,
-            name: collected.name,
-            email: collected.email,
-            customer_jid: ctx.payload.customer_jid,
-          }, ctx);
-          const confirmationMsg = `✅ Your *${collected.service}* appointment is confirmed!\n📅 ${collected.date} at ${collected.time}\n👤 ${collected.name}\n📧 ${collected.email}\n\nThank you for booking with us!`;
-          await postProcess(ctx, null, null, confirmationMsg, agentType);
-          return { handled: true, response: confirmationMsg, reason: "booking_confirmed", tool_calls: [toolResult] };
-        } catch (e: any) {
-          const errorMsg = `Your booking for *${collected.service}* on ${collected.date} at ${collected.time} has been recorded. Our team will confirm shortly. Thank you, ${collected.name}!`;
-          await postProcess(ctx, null, null, errorMsg, agentType);
-          return { handled: true, response: errorMsg, reason: "booking_recorded" };
-        }
-      }
-
-      if (ctx.payload.is_test) {
-        const debugInfo = {
-          handled: false,
-          reason: "handleBooking_null",
-          debug_after: { state: ctx.bookingSession?.state, collected: ctx.bookingSession?.collected },
-          message: ctx.payload.message,
-        };
-        await postProcess(ctx, null, null, "", agentType);
-        return debugInfo as any;
-      }
-    }
-  }
-
-  // Staleness guard: skip LLM if another inbound message arrived while we were processing
   const { count: currentCount } = await ctx.supabase
     .from("messages")
     .select("*", { count: "exact", head: true })
@@ -143,8 +74,6 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
   const buildPrompt = AGENT_SYSTEM_PROMPTS[agentType] || AGENT_SYSTEM_PROMPTS.customer_support;
   let systemPrompt = buildPrompt(ctx);
 
-  // RAG-first: for customer support, retrieve KB chunks up-front and inject them
-  // so the agent answers grounded in a single pass (no forced tool round-trip).
   if (agentType === "customer_support") {
     try {
       const kbResult = ctx.kbSearchPromise
@@ -154,7 +83,6 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
       ctx.kbHadResults = Array.isArray(chunks) && chunks.length > 0;
 
       if (ctx.kbHadResults) {
-        // Fetch workspace KB config for truncation and noise stripping settings
         const { data: ws } = await ctx.supabase
           .from("workspaces")
           .select("kb_config")
@@ -169,7 +97,6 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
             const raw = (c.content || c.text || "").trim();
             let text = raw;
             if (noiseStripping) {
-              // Strip decorative markdown/HTML only - preserve URLs and useful links
               text = text
                 .replace(/###\s*\n/g, '')
                 .replace(/#####\s*/g, '')
@@ -177,9 +104,7 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
                 .replace(/<[^>]+>/g, '')
                 .replace(/\n{3,}/g, '\n\n')
                 .trim();
-              // Remove markdown image links only (keep text links)
               text = text.replace(/!\[.*?\]\([^)]*\)/gi, '');
-              // Only remove [read more](url) if it's clearly decorative
               text = text.replace(/\[read more\]\([^)]*\)/gi, '');
             }
             return `[${i + 1}] ${text.slice(0, truncation)}`;
@@ -195,30 +120,20 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
     }
   }
 
-  // Smart Context Injection for management tasks
   if (ctx.routingReason === "management_priority") {
     try {
       const { getHistory } = await import("../tools/impl/contact.ts");
       const history = await getHistory({}, ctx);
       if (history && !history.error) {
-        systemPrompt += `\n\n[SMART CONTEXT] Existing Appointments for this user:\n${JSON.stringify(history.appointments || [])}\nUse these IDs for update_appointment or cancel_appointment.`;
+        systemPrompt += `\n\n[SMART CONTEXT] Existing Appointments for this user:\n${JSON.stringify(history.appointments || [])}\nUse these IDs for manage_appointment update/cancel actions.`;
       }
     } catch (e: any) {
       console.error("[T3] Smart Context failed:", e.message);
     }
   }
-  
-  if (ctx.pricingBlocked) {
-    systemPrompt += `\n\nCRITICAL: The user is asking about pricing, but your policy FORBIDS disclosing specific prices. Acknowledge their interest in the service, but politely explain that you cannot provide price details over chat and they should contact the business directly for a quote.`;
-  }
-  
-  if (ctx.salesBlocked) {
-    systemPrompt += `\n\nCRITICAL: The user is interested in buying or ordering, but your policy FORBIDS processing sales directly over chat. Acknowledge their interest and provide information about the product/service, but explain that you cannot take orders here and they should contact the business directly to purchase.`;
-  }
 
   const messages = await buildMessages(ctx);
 
-  // PASS 1: Plan generation (with retry for rate limits)
   let parsedPlan: AgentPlan;
   let llmResponse: any;
   let lastError: any;
@@ -259,10 +174,8 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
     };
   }
 
-  // Validate plan: inject missing tool calls when response claims actions were taken
   await validatePlanActions(ctx, parsedPlan);
 
-  // Log trace for observability
   try {
     await ctx.supabase.from("agent_traces").insert({
       session_id: ctx.session.id,
@@ -279,16 +192,30 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
     console.error("[T3] Failed to insert agent_trace:", e.message);
   }
 
-  // Execute actions in parallel
   let finalResponse = parsedPlan.response;
   let toolResults: PromiseSettledResult<any>[] = [];
+  let needsPass2 = parsedPlan.needs_second_pass;
 
   if (parsedPlan.actions.length > 0) {
+    ctx._toolFailCounts = {};
     toolResults = await Promise.allSettled(
       parsedPlan.actions.map(action =>
         toolExecutor.run(action.tool, action.params, ctx)
       )
     );
+
+    for (let i = 0; i < toolResults.length; i++) {
+      const r = toolResults[i];
+      if (r.status === "rejected") {
+        needsPass2 = true;
+      } else if (r.value?.error) {
+        needsPass2 = true;
+      }
+    }
+
+    const forcePass2Tools = ["manage_appointment", "escalate"];
+    const hasForcePass2 = parsedPlan.actions.some(a => forcePass2Tools.includes(a.tool));
+    if (hasForcePass2) needsPass2 = true;
 
     const requiredFailed = parsedPlan.actions.some((action, i) =>
       action.required && toolResults[i].status === "rejected"
@@ -296,15 +223,25 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
 
     if (requiredFailed) {
       finalResponse = (parsedPlan.fallback || "").replace(/\{[^}]+\}/g, "");
-      await postProcess(ctx, llmResponse, parsedPlan, finalResponse, agentType, true);
-      return { handled: true, response: finalResponse, reason: "t3_fallback_required_failed" };
+      needsPass2 = false;
+    }
+
+    if (ctx._toolFailCounts) {
+      for (const [, failCount] of Object.entries(ctx._toolFailCounts)) {
+        if (failCount >= MAX_CONSECUTIVE_TOOL_FAILURES) {
+          console.warn(`[T3] Tool failed ${failCount} consecutive times — circuit open`);
+          needsPass2 = true;
+          break;
+        }
+      }
     }
   }
 
-  // Incorporate tool results into response
-  if (toolResults.length > 0) {
-    // Always use second pass when tools were executed - prevents LLM from writing
-    // hallucinated responses (e.g. "payment confirmed") without actually calling the tool.
+  if (parsedPlan.actions.length > 0) {
+    await toolExecutor.flushToolCalls(ctx);
+  }
+
+  if (needsPass2 && toolResults.length > 0) {
     try {
       const pass2System = buildPass2System(ctx, agentType);
       const toolContext = buildToolContext(parsedPlan.actions, toolResults);
@@ -339,7 +276,6 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
     if (enriched) finalResponse = enriched;
   }
 
-  // Handoff check
   for (let i = 0; i < parsedPlan.actions.length; i++) {
     const action = parsedPlan.actions[i];
     const result = toolResults[i];
@@ -348,8 +284,13 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
     }
   }
 
-  // Strip any remaining unfilled placeholders
   finalResponse = finalResponse.replace(/\{[^}]+\}/g, "");
+
+  const sentimentMatch = finalResponse.match(/^\[SENTIMENT:\s*(\w+)\]\s*/i);
+  if (sentimentMatch) {
+    ctx._sentiment = sentimentMatch[1].toLowerCase();
+    finalResponse = finalResponse.slice(sentimentMatch[0].length).trim();
+  }
 
   await postProcess(ctx, llmResponse, parsedPlan, finalResponse, agentType);
 
@@ -405,7 +346,7 @@ function enrichResponseWithToolResults(
     if (!data?.success) continue;
 
     switch (action.tool) {
-      case "search_menu": {
+      case "manage_catalog": {
         const items = data.items || data.data || [];
         if (Array.isArray(items) && items.length > 0) {
           const formatted = items.map((item: any) => {
@@ -417,7 +358,7 @@ function enrichResponseWithToolResults(
         }
         break;
       }
-      case "check_availability": {
+      case "manage_appointment": {
         const slots = data.slots || data.available_slots || [];
         if (Array.isArray(slots) && slots.length > 0) {
           const formatted = slots.slice(0, 5).map((s: any) => {
@@ -428,13 +369,7 @@ function enrichResponseWithToolResults(
         }
         break;
       }
-      case "capture_lead": {
-        if (data.id || data.lead_id || data.contact_id) {
-          appended.push(`\n\nI have saved your information. Our team will follow up with you.`);
-        }
-        break;
-      }
-      case "match_kb_chunks": {
+      case "search_kb": {
         const chunks = data.chunks || data.kb_chunks || data.results || [];
         if (Array.isArray(chunks) && chunks.length > 0) {
           const text = chunks.map((c: any) => c.content || c.text || "").filter(Boolean).join("\n").slice(0, 500);
@@ -448,13 +383,10 @@ function enrichResponseWithToolResults(
         }
         break;
       }
-      case "update_lead_stage": {
+      case "manage_contact": {
         if (data.stage) {
           appended.push(`\n\n✅ Lead moved to "${data.stage}" stage.`);
         }
-        break;
-      }
-      case "get_pipeline": {
         if (data.summary) {
           appended.push(`\n\n${data.summary}`);
         } else if (data.pipeline) {
@@ -464,9 +396,9 @@ function enrichResponseWithToolResults(
             .join("\n");
           if (lines) appended.push(`\n\nPipeline overview:\n${lines}`);
         }
-        break;
-      }
-      case "schedule_follow_up": {
+        if (data.id || data.lead_id || data.contact_id) {
+          appended.push(`\n\nI have saved your information. Our team will follow up with you.`);
+        }
         if (data.follow_up_id) {
           appended.push(`\n\n✅ Follow-up scheduled for ${new Date(data.scheduled_at).toLocaleString()}.`);
         }
@@ -477,7 +409,6 @@ function enrichResponseWithToolResults(
 
   if (appended.length === 0) return null;
 
-  // Check if appended content already appears in response
   for (const a of appended) {
     const short = a.replace(/\n/g, " ").slice(0, 40);
     if (!enriched.includes(short)) {
@@ -487,8 +418,6 @@ function enrichResponseWithToolResults(
 
   return enriched !== response ? enriched : null;
 }
-
-
 
 function buildToolContext(actions: any[], results: PromiseSettledResult<any>[]): string {
   return actions.map((a, i) => {
@@ -504,7 +433,6 @@ function fillTemplate(
   actions: { tool: string; result_key?: string }[],
   results: PromiseSettledResult<any>[]
 ): string {
-  // Strip correction text before filling template
   let filled = template.replace(/\s*\[Correction:[^\]]*\]/g, "");
   actions.forEach((action, i) => {
     if (results[i].status === "fulfilled") {
@@ -548,7 +476,6 @@ async function handleHandoff(ctx: PipelineContext, targetAgent: string, context:
   if (depth > 2) {
     console.log(`[T3] Handoff depth limit reached (${depth}). Returning fallback.`);
     const fallbackResponse = "I've reached the limit for transferring between specialists. A human agent will follow up with you shortly.";
-    // Update session metadata even on depth limit
     await ctx.supabase.from("conversation_sessions")
       .update({
         last_message_at: new Date().toISOString(),
@@ -561,7 +488,6 @@ async function handleHandoff(ctx: PipelineContext, targetAgent: string, context:
 
   console.log(`[T3] Executing handoff to: ${targetAgent}. Depth: ${depth}. Context: ${context.substring(0, 50)}...`);
   
-  // 1. Update the session state in the database immediately
   await ctx.supabase.from("conversation_sessions")
     .update({ 
       agent_type: targetAgent, 
@@ -569,12 +495,10 @@ async function handleHandoff(ctx: PipelineContext, targetAgent: string, context:
     })
     .eq("id", ctx.session.id);
 
-  // 2. Update the context for the current execution
   ctx.agentType = targetAgent;
   ctx.routingReason = "handoff_execution";
   ctx.handoffDepth = depth;
   
-  // 3. RE-RUN T3 with the new agent persona and tools
   return await runT3(ctx);
 }
 
@@ -586,7 +510,6 @@ async function postProcess(
   agentType: string,
   skipCredits = false
 ) {
-  // Deduct credits (skip if tools failed)
   if (!ctx.payload.is_test && !skipCredits) {
     try {
       await ctx.supabase.rpc("decrement_credits", {
@@ -597,24 +520,34 @@ async function postProcess(
     } catch (_) {}
   }
 
-  // Update session
+  await toolExecutor.flushToolCalls(ctx);
+
   const usage = llmResponse?.usage?.total_tokens || 0;
+  const updateData: any = {
+    agent_type: agentType,
+    last_message_at: new Date().toISOString(),
+    last_message_preview: finalResponse.substring(0, 100),
+    message_count: (ctx.session.message_count || 0) + 1,
+    total_tokens_used: (ctx.session.total_tokens_used || 0) + usage,
+    updated_at: new Date().toISOString()
+  };
+
+  if (ctx._sentiment && ctx._sentiment !== (ctx.session.working_context?.sentiment || null)) {
+    updateData.working_context = {
+      ...(ctx.session.working_context || {}),
+      sentiment: ctx._sentiment,
+      agent_type: agentType
+    };
+  }
+
   await ctx.supabase.from("conversation_sessions")
-    .update({
-      agent_type: agentType,
-      last_message_at: new Date().toISOString(),
-      last_message_preview: finalResponse.substring(0, 100),
-      message_count: (ctx.session.message_count || 0) + 1,
-      total_tokens_used: (ctx.session.total_tokens_used || 0) + usage,
-      updated_at: new Date().toISOString()
-    })
+    .update(updateData)
     .eq("id", ctx.session.id);
 }
 
 async function validatePlanActions(ctx: PipelineContext, plan: AgentPlan) {
   const actionTools = plan.actions.map(a => a.tool);
 
-  // Get the customer's last message for intent detection
   const { data: lastCustomerMsg } = await ctx.supabase
     .from("messages")
     .select("content")
@@ -625,42 +558,35 @@ async function validatePlanActions(ctx: PipelineContext, plan: AgentPlan) {
     .maybeSingle();
   const customerMsg = (lastCustomerMsg?.content || "").toLowerCase();
 
-  // --- NEW: Lead capture hallucination detection ---
   const capturePhrases = /(captured|saved your (details|info)|added you as a lead|i have saved your)/i;
-  if (capturePhrases.test(plan.response) && !actionTools.includes("capture_lead")) {
-    // Strip the offending claim from response
+  if (capturePhrases.test(plan.response) && !actionTools.includes("manage_contact")) {
     plan.response = plan.response.replace(/I have saved your (information|details|info)[^.]*\./gi, "");
-    plan.response += " [Correction: You claimed to save contact info without calling capture_lead. Apologize and ask again.]";
+    plan.response += " [Correction: You claimed to save contact info without calling manage_contact. Apologize and ask again.]";
+    plan.needs_second_pass = true;
   }
 
-  // --- NEW: Pipeline stage hallucination detection ---
   const stagePhrases = /(moved (you|to|the (lead|contact)) to |promoted to|advanced to|stage (change|update)|qualified|proposal|negotiation)/i;
-  if (stagePhrases.test(plan.response) && !actionTools.includes("update_lead_stage")) {
+  if (stagePhrases.test(plan.response) && !actionTools.includes("manage_contact")) {
     plan.response = plan.response.replace(/(I['"]?ve|I have) (moved|promoted|advanced)( you| the)?[^.]*\./gi, "");
-    plan.response += " [Correction: You claimed to update the pipeline stage without calling update_lead_stage. Apologize.]";
+    plan.response += " [Correction: You claimed to update the pipeline stage without calling manage_contact. Apologize.]";
+    plan.needs_second_pass = true;
   }
 
-  // --- NEW: Booking hallucination detection ---
   const bookingPhrases = /(booked|confirmed|appointment is (set|created|booked|scheduled|confirmed)|i have (booked|created|scheduled|confirmed) (your|the) appointment)/i;
-  if (bookingPhrases.test(plan.response) && !actionTools.includes("create_appointment")) {
-    const bs = (ctx as any).bookingSession;
-    const collected = bs?.collected || {};
+  if (bookingPhrases.test(plan.response) && !actionTools.includes("manage_appointment")) {
+    const wc = ctx.session.working_context || {};
+    const collected = wc.collected_data || {};
     const hasRealDetails = collected.name || collected.service || collected.date || collected.time;
-    const availabilityAction = plan.actions.find(a => a.tool === "check_availability");
+    const availabilityAction = plan.actions.find(a => a.tool === "manage_appointment" && a.params?.action === "check");
     if (availabilityAction && hasRealDetails) {
       plan.actions.push({
-        tool: "create_appointment",
-        params: {
-          name: collected.name || "",
-          service: collected.service || "",
-          date: availabilityAction.params?.date || collected.date || "",
-          time: availabilityAction.params?.time || collected.time || ""
-        },
+        tool: "manage_appointment",
+        params: { action: "create", name: collected.name || "", service: collected.service || "", date: availabilityAction.params?.date || collected.date || "", time: availabilityAction.params?.time || collected.time || "" },
         required: true,
         result_key: "appointment"
       });
       plan.needs_second_pass = true;
-      plan.response += " [Correction: create_appointment was missing — auto-injected.]";
+      plan.response += " [Correction: manage_appointment was missing — auto-injected.]";
     } else {
       plan.response = plan.response
         .replace(/Your[^.]+(booked|confirmed|scheduled)[^.]*\./gi, "")
@@ -671,32 +597,28 @@ async function validatePlanActions(ctx: PipelineContext, plan: AgentPlan) {
       if (!plan.response) {
         plan.response = "I'd be happy to help you book! Could you tell me which service you're looking for?";
       } else {
-        plan.response += " [Correction: You claimed the appointment was booked without required details. Ask for their name, service, date and time, then call check_availability AND create_appointment.]";
+        plan.response += " [Correction: You claimed the appointment was booked without required details. Ask for their name, service, date and time, then call manage_appointment.]";
       }
     }
   }
 
-  // --- NEW: Pricing/KB hallucination detection ---
   const pricingPhrases = /(₹|rs\.?\s*\d+|price|cost|subscription|tier|plan|worth|value)/i;
   const hasPricingClaim = pricingPhrases.test(plan.response);
-  const kbUsed = actionTools.includes("match_kb_chunks");
-  // Check agent_traces to see if KB was called recently in this session
+  const kbUsed = actionTools.includes("search_kb");
   let kbCalledThisSession = false;
   if (hasPricingClaim && !kbUsed) {
     const { data: recentTraces } = await ctx.supabase
       .from("agent_traces")
       .select("tool_name")
       .eq("session_id", ctx.session.id)
-      .eq("tool_name", "match_kb_chunks")
-      .gte("created_at", new Date(Date.now() - 5 * 60000).toISOString()) // last 5 min
+      .eq("tool_name", "search_kb")
+      .gte("created_at", new Date(Date.now() - 5 * 60000).toISOString())
       .limit(1)
       .maybeSingle();
     kbCalledThisSession = !!recentTraces;
   }
   if (hasPricingClaim && !kbUsed && !kbCalledThisSession) {
-    // Log the hallucination for developer review but don't ruin the customer experience
     console.warn(`[T3] Hallucination detected: Pricing info provided without KB search.`);
-    
     try {
       await ctx.supabase.from("debug_logs").insert({
         level: "warning",
@@ -705,8 +627,6 @@ async function validatePlanActions(ctx: PipelineContext, plan: AgentPlan) {
         metadata: { session_id: ctx.session.id, response: plan.response }
       });
     } catch (_) {}
-    
-    // Auto-inject KB search for the next pass
-    plan.actions.push({ tool: "match_kb_chunks", params: { query: "pricing and plans" }, required: false });
+    plan.actions.push({ tool: "search_kb", params: { query: "pricing and plans" }, required: false });
   }
 }

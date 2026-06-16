@@ -10,7 +10,6 @@ export async function dispatch(ctx: PipelineContext, response: string | null): P
   const gowaBase = Deno.env.get("GOWA_BASE_URL")?.replace(/\/$/, "");
   const gowaKey = Deno.env.get("GOWA_API_KEY");
   
-  // 1. Get Device/Session info if needed for WhatsApp
   let deviceId = "";
   if (source === "whatsapp" && gowaBase && gowaKey) {
     const { data: gowaSession } = await ctx.supabase
@@ -23,36 +22,32 @@ export async function dispatch(ctx: PipelineContext, response: string | null): P
 
   const auth = gowaKey ? btoa(gowaKey) : "";
 
-  // 2. Presence/Typing Simulation
-  if (source === "whatsapp" && deviceId && phone) {
-    try {
-      await fetch(`${gowaBase}/send/presence`, {
-        method: "POST",
-        headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json", "X-Device-Id": deviceId },
-        body: JSON.stringify({ phone, type: "available" })
-      });
-    } catch (_) {}
-    
-    const delayMs = Math.min(response.length * 12, 1500);
-    await new Promise(resolve => setTimeout(resolve, delayMs));
-
-    try {
-      await fetch(`${gowaBase}/send/presence`, {
-        method: "POST",
-        headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json", "X-Device-Id": deviceId },
-        body: JSON.stringify({ phone, type: "unavailable" })
-      });
-    } catch (_) {}
-  }
-
-  // 3. Split and Deliver
   const parts = response.length > 1000 ? splitAtSentence(response, 1000) : [response];
 
   for (const part of parts) {
-    // PERSIST TO DB FIRST
     await storeOutboundMessage(ctx, part);
     
-    // DELIVER TO WHATSAPP
+    if (source === "whatsapp" && deviceId && phone) {
+      try {
+        await fetch(`${gowaBase}/send/presence`, {
+          method: "POST",
+          headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json", "X-Device-Id": deviceId },
+          body: JSON.stringify({ phone, type: "available" })
+        });
+      } catch (_) {}
+      
+      const delayMs = Math.min(part.length * 12, 1500);
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+
+      try {
+        await fetch(`${gowaBase}/send/presence`, {
+          method: "POST",
+          headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json", "X-Device-Id": deviceId },
+          body: JSON.stringify({ phone, type: "unavailable" })
+        });
+      } catch (_) {}
+    }
+
     if (source === "whatsapp" && deviceId && phone) {
       await sendWithRetry(ctx, gowaBase!, phone, part, auth, deviceId);
       if (parts.length > 1) await new Promise(res => setTimeout(res, 500));
