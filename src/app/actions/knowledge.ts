@@ -273,7 +273,7 @@ export async function pasteKbText(input: { workspace_id: string; content: string
     // Fire-and-forget: generate real embeddings + extract business profile
     try {
       getSupabaseAdmin().functions.invoke("embed-text", {
-        body: { workspace_id, source_id: source.id, content }
+        body: { workspace_id, source_id: source.id, text_content: content }
       }).catch(e => console.error("[KB_ACTION] Embed text failed:", e))
     } catch {}
 

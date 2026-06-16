@@ -458,6 +458,7 @@ export function AppointmentsClient({ initialAppointments, workspaceId, isModuleA
                           <TableHead className="text-[10px] font-bold text-gray-400 uppercase tracking-wider py-4 px-6">Service</TableHead>
                           <TableHead className="text-[10px] font-bold text-gray-400 uppercase tracking-wider py-4 px-6">Date & Time</TableHead>
                           <TableHead className="text-[10px] font-bold text-gray-400 uppercase tracking-wider py-4 px-6">Status</TableHead>
+                          <TableHead className="text-[10px] font-bold text-gray-400 uppercase tracking-wider py-4 px-6">Google Sync</TableHead>
                           <TableHead className="text-[10px] font-bold text-gray-400 uppercase tracking-wider py-4 px-6 text-right">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -485,6 +486,16 @@ export function AppointmentsClient({ initialAppointments, workspaceId, isModuleA
                                 <Badge className={cn("px-2.5 py-1 rounded-full text-[10px] font-bold border-none", status.bg, status.text)}>
                                   {status.label}
                                 </Badge>
+                              </TableCell>
+                              <TableCell className="py-4 px-6">
+                                {appt.google_event_id ? (
+                                  <div className="flex items-center gap-1 text-[10px] text-emerald-600 font-medium">
+                                    <CheckCircle2 className="h-3 w-3" />
+                                    Synced
+                                  </div>
+                                ) : (
+                                  <span className="text-[10px] text-gray-400">Not synced</span>
+                                )}
                               </TableCell>
                               <TableCell className="py-4 px-6 text-right">
                                 <Button 

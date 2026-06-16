@@ -44,8 +44,8 @@ Deno.serve(async (req) => {
 
     return await processSingle(supabase, workspace_id, source_id)
   } catch (error: any) {
-    console.error("[ExtractBP]", error.message)
-    return new Response(JSON.stringify({ error: "Failed to extract business profile" }), {
+    console.error("[ExtractBP] Top-level error:", error.message, error.stack)
+    return new Response(JSON.stringify({ error: "Failed to extract business profile: " + error.message }), {
       status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" }
     })
   }
@@ -135,6 +135,7 @@ async function processBatch(supabase: any): Promise<Response> {
 }
 
 async function processSingle(supabase: any, workspace_id: string, source_id: string): Promise<Response> {
+  console.log("[ExtractBP] processSingle called:", { workspace_id, source_id })
   const { data: chunks, error: chunkError } = await supabase
     .from("kb_chunks")
     .select("content")
@@ -144,10 +145,12 @@ async function processSingle(supabase: any, workspace_id: string, source_id: str
 
   if (chunkError) throw new Error(`Failed to read chunks: ${chunkError.message}`)
   if (!chunks || chunks.length === 0) {
-    console.log(`[ExtractBP] No chunks found for source ${source_id}, skipping`)
+    console.log("[ExtractBP] No chunks found for source", source_id)
     return new Response(JSON.stringify({ skipped: true, reason: "no_chunks" }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } })
   }
+
+  console.log("[ExtractBP] Found chunks:", chunks.length)
 
   const { data: workspace, error: wsError } = await supabase
     .from("workspaces")
@@ -171,10 +174,12 @@ async function processSingle(supabase: any, workspace_id: string, source_id: str
       { headers: { ...corsHeaders, "Content-Type": "application/json" } })
   }
 
+  console.log("[ExtractBP] Calling OpenCode API...")
   const extracted = await extractBusinessProfile(fullText, businessType, opencodeKey)
+  console.log("[ExtractBP] LLM returned:", JSON.stringify(extracted))
 
   if (parsedSocial && Object.keys(parsedSocial).length > 0) {
-    extracted.social = { ...extracted.social as Record<string, string> || {}, ...parsedSocial }
+    extracted.social = { ...(extracted.social as Record<string, string> || {}), ...parsedSocial }
   }
 
   if (!extracted || Object.keys(extracted).length === 0) {
@@ -235,6 +240,7 @@ function parseSocialUrls(text: string): Record<string, string> {
 }
 
 async function extractBusinessProfile(text: string, businessType: string, apiKey: string): Promise<Record<string, unknown>> {
+  const baseUrl = Deno.env.get("OPENCODE_ZEN_BASE_URL") || "https://opencode.ai/zen/v1"
   const prompt = `Extract structured business information from the website text below. Return ONLY valid JSON.
 
 Business type: "${businessType}"
@@ -280,30 +286,40 @@ Rules:
 Website text:
 ${text.slice(0, 19000)}`
 
-  const baseUrl = Deno.env.get("OPENCODE_ZEN_BASE_URL") || "https://opencode.ai/zen/v1"
-  const response = await fetch(`${baseUrl}/chat/completions`, {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "nemotron-3-ultra-free",
-      messages: [
-        { role: "system", content: "You extract structured business data from website content. Return only valid JSON. Omit fields that are not found — do not include empty strings or arrays." },
-        { role: "user", content: prompt }
-      ],
-      temperature: 0.1,
-      response_format: { type: "json_object" },
-    }),
-  })
+  let response: Response
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 90000)
+
+  try {
+    response = await fetch(`${baseUrl}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "nemotron-3-ultra-free",
+        messages: [
+          { role: "system", content: "You extract structured business data from website content. Return only valid JSON. Omit fields that are not found — do not include empty strings or arrays." },
+          { role: "user", content: prompt }
+        ],
+        temperature: 0.1,
+        response_format: { type: "json_object" },
+      }),
+      signal: controller.signal
+    })
+  } finally {
+    clearTimeout(timeout)
+  }
 
   if (!response.ok) {
     const errText = await response.text()
-      throw new Error(`OpenCode API error: ${response.status} ${errText}`)
+    console.error(`[ExtractBP] OpenCode API error: ${response.status} ${errText}`)
+    throw new Error(`OpenCode API error: ${response.status} ${errText}`)
   }
 
   const result = await response.json()
+  console.log("[ExtractBP] OpenCode full response:", JSON.stringify(result))
   const content = result.choices?.[0]?.message?.content
 
   if (!content) {
@@ -311,10 +327,12 @@ ${text.slice(0, 19000)}`
     return {}
   }
 
+  console.log("[ExtractBP] Raw LLM content:", content.slice(0, 1000))
+
   try {
     return JSON.parse(content)
-  } catch {
-    console.error("[ExtractBP] Failed to parse OpenCode response as JSON")
+  } catch (e) {
+    console.error("[ExtractBP] Failed to parse OpenCode response as JSON:", e, "Content:", content.slice(0, 500))
     return {}
   }
 }
