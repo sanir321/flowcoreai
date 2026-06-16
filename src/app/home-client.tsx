@@ -447,7 +447,7 @@ export function LandingPage() {
               </h2>
               <div className="flex flex-wrap gap-4">
                 <Button asChild className="h-11 px-5 rounded-[100px] text-sm font-normal flex items-center gap-1" style={{ background: "#c65f39", color: "#fff" }}>
-                  <Link href="/login">Talk to Sales <ArrowUpRight className="h-4 w-4" /></Link>
+                  <Link href="/pricing">Talk to Sales <ArrowUpRight className="h-4 w-4" /></Link>
                 </Button>
               </div>
             </motion.div>
