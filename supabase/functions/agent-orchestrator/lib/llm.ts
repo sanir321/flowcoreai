@@ -3,7 +3,7 @@ import { AgentPayload } from "./types.ts";
 const BLUESMINDS_API_KEY = Deno.env.get("BLUESMINDS_API_KEY");
 const BLUESMINDS_BASE_URL = "https://api.bluesminds.com/v1";
 
-export const STATIC_FALLBACK_MESSAGE = "I'm having a small technical hiccup right now! Our team has been notified and will get back to you very shortly. Sorry for the inconvenience!";
+export const DEFAULT_FALLBACK_MESSAGE = "I'm not sure about that. Please contact us directly for more information.";
 
 export async function callLLM(payload: AgentPayload) {
   const FALLBACK_1 = "gpt-4o";

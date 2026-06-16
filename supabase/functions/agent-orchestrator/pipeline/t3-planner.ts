@@ -136,7 +136,7 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
     
   if (currentCount !== null && currentCount > (ctx._msgCount || 0)) {
     const fallback = ctx.workspace?.guardrail_config?.fallback_message
-      ?? "Thank you for reaching out! Our team will get back to you shortly.";
+      ?? "I'm not sure about that. Please contact us directly for more information.";
     return { handled: true, response: fallback, reason: "t3_stale_message" };
   }
 
@@ -154,21 +154,35 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
       ctx.kbHadResults = Array.isArray(chunks) && chunks.length > 0;
 
       if (ctx.kbHadResults) {
+        // Fetch workspace KB config for truncation and noise stripping settings
+        const { data: ws } = await ctx.supabase
+          .from("workspaces")
+          .select("kb_config")
+          .eq("id", ctx.payload.workspace_id)
+          .maybeSingle();
+        const kbConfig = ws?.kb_config || { match_count: 3, match_threshold: 0.35, chunk_truncation: 800, noise_stripping: true };
+        const truncation = kbConfig.chunk_truncation ?? 800;
+        const noiseStripping = kbConfig.noise_stripping ?? true;
+
         const context = chunks
           .map((c: any, i: number) => {
             const raw = (c.content || c.text || "").trim();
-            // Strip navigation noise: markdown links, HTML tags, blog lists
-            const text = raw
-              .replace(/\[read more\]\([^)]*\)/gi, '')
-              .replace(/!\[.*?\]\([^)]*\)/gi, '')
-              .replace(/<[^>]+>/g, '')
-              .replace(/###\s*\n/g, '')
-              .replace(/#####\s*/g, '')
-              .replace(/######\s*/g, '')
-              .replace(/\n{3,}/g, '\n\n')
-              .trim()
-              .slice(0, 800);
-            return `[${i + 1}] ${text}`;
+            let text = raw;
+            if (noiseStripping) {
+              // Strip decorative markdown/HTML only - preserve URLs and useful links
+              text = text
+                .replace(/###\s*\n/g, '')
+                .replace(/#####\s*/g, '')
+                .replace(/######\s*/g, '')
+                .replace(/<[^>]+>/g, '')
+                .replace(/\n{3,}/g, '\n\n')
+                .trim();
+              // Remove markdown image links only (keep text links)
+              text = text.replace(/!\[.*?\]\([^)]*\)/gi, '');
+              // Only remove [read more](url) if it's clearly decorative
+              text = text.replace(/\[read more\]\([^)]*\)/gi, '');
+            }
+            return `[${i + 1}] ${text.slice(0, truncation)}`;
           })
           .filter((t: string) => t.length > 10)
           .join("\n\n");
@@ -240,7 +254,7 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
   if (lastError) {
     return {
       handled: true,
-      response: ctx.workspace?.guardrail_config?.fallback_message ?? "I'm having trouble understanding that. Could you rephrase?",
+      response: ctx.workspace?.guardrail_config?.fallback_message ?? "I'm not sure about that. Please contact us directly for more information.",
       reason: "t3_plan_error"
     };
   }

@@ -16,7 +16,8 @@ const responseHeaders = {
   "X-Content-Type-Options": "nosniff",
 }
 
-const STATIC_FALLBACK_MESSAGE = "I'm having a small technical hiccup right now! Our team has been notified and will get back to you very shortly. Sorry for the inconvenience!";
+// Generic default fallback message (no business name)
+const DEFAULT_FALLBACK_MESSAGE = "I'm not sure about that. Please contact us directly for more information.";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { status: 204 })
@@ -149,7 +150,7 @@ async function processMessage(payload: WebhookPayload): Promise<[TierResult, Pip
     }
 
     await dispatchFallback(supabase, payload)
-    return [{ handled: true, response: STATIC_FALLBACK_MESSAGE, reason: "crash" }, { supabase, session: {}, payload } as PipelineContext]
+    return [{ handled: true, response: DEFAULT_FALLBACK_MESSAGE, reason: "crash" }, { supabase, session: {}, payload } as PipelineContext]
   }
 }
 
@@ -190,11 +191,13 @@ async function dispatchFallback(supabase: any, payload: WebhookPayload) {
   const { data: gs } = await supabase.from("gowa_sessions").select("gowa_session_id").eq("workspace_id", payload.workspace_id).maybeSingle()
   if (!gs?.gowa_session_id) return
 
-  const msg = STATIC_FALLBACK_MESSAGE
+  const { data: ws } = await supabase.from("workspaces").select("guardrail_config").eq("id", payload.workspace_id).maybeSingle()
+  const fallbackMsg = ws?.guardrail_config?.fallback_message || DEFAULT_FALLBACK_MESSAGE
+
   await fetch(`${gowaBase}/send/message`, {
     method: "POST",
     headers: { Authorization: `Basic ${btoa(gowaKey)}`, "Content-Type": "application/json", "X-Device-Id": gs.gowa_session_id },
-    body: JSON.stringify({ phone, message: msg })
+    body: JSON.stringify({ phone, message: fallbackMsg })
   }).catch(() => {})
 }
 
