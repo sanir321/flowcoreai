@@ -6,7 +6,7 @@ const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
   title: "Flowcore AI — Automated Customer Service & AI Assistants",
-  description: "AI-powered customer service orchestration platform for WhatsApp and webchat. Connect specialized AI agents to manage and resolve customer conversations with business precision.",
+  description: "AI-powered customer service for WhatsApp and webchat. Your customers get instant answers 24/7 while AI handles repetitive questions and bookings — and hands off to you when it matters.",
   keywords: [
     "AI customer service",
     "WhatsApp automation",

@@ -98,7 +98,7 @@ export function LandingPage() {
 
         <div className="flex items-center gap-3 relative z-10">
           <Link href="/login" className="hidden sm:inline text-sm font-normal transition-colors" style={{ color: "#a3a3a3" }} onMouseEnter={(e) => e.currentTarget.style.color = "#e5e5e5"} onMouseLeave={(e) => e.currentTarget.style.color = "#a3a3a3"}>Sign In</Link>
-          <Button asChild className="h-8 px-4 rounded-[100px] text-sm font-normal flex items-center gap-1" style={{ background: "#c65f39", color: "#fff" }}>
+          <Button asChild variant="outline" className="h-8 px-4 rounded-[100px] text-sm font-normal flex items-center gap-1 bg-transparent hover:bg-white/5" style={{ borderColor: "rgba(255,255,255,0.18)", color: "#e5e5e5" }}>
             <Link href="/login">Book Demo <ArrowUpRight className="h-3 w-3" /></Link>
           </Button>
         </div>
@@ -116,20 +116,19 @@ export function LandingPage() {
               transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] as const }}
               className="space-y-5"
             >
+              <div className="flex justify-center">
+                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-normal" style={{ background: "rgba(198,95,57,0.1)", border: "1px solid rgba(198,95,57,0.25)", color: "#c65f39" }}>
+                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: "#c65f39" }} />
+                  v0.7 — actively shipping
+                </span>
+              </div>
               <h1 className="font-normal leading-[1.05] tracking-tighter text-white" style={{ fontSize: "84px", lineHeight: "88px", letterSpacing: "-0.03em" }}>
-                Automated customer<br/>
-                service <span style={{ color: "#c65f39" }}>assistants</span>
+                Stop answering the<br/>
+                same question <span style={{ color: "#c65f39" }}>30 times a day</span>
               </h1>
               <p className="max-w-2xl mx-auto leading-relaxed font-normal" style={{ fontSize: "18px", color: "#888" }}>
-                Connect specialized AI to manage and resolve your customer conversations with business precision.
+                Your customers get instant answers on WhatsApp, 24/7. AI handles the repetitive questions and bookings, and hands off to you only when it matters.
               </p>
-
-              {/* Smol Launch Badge */}
-              <div className="flex justify-center pt-4">
-                <a href="https://smollaunch.com" target="_blank" rel="noopener">
-                  <img src="https://smollaunch.com/badges/featured-dark.svg" alt="Flowcore AI — Featured on Smol Launch" loading="lazy" width="250" height="60" />
-                </a>
-              </div>
             </motion.div>
 
             <motion.div
@@ -143,7 +142,7 @@ export function LandingPage() {
                   e.preventDefault()
                   router.push(`/login?email=${encodeURIComponent(email)}`)
                 }}
-                className="flex p-1 rounded-xl" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                className="flex p-1 rounded-xl" style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.18)", boxShadow: "0 0 0 1px rgba(198,95,57,0.08), 0 8px 24px rgba(0,0,0,0.35)" }}
               >
                 <Input
                   type="email"
@@ -157,6 +156,9 @@ export function LandingPage() {
                   Get Started <ArrowUpRight className="h-4 w-4" />
                 </Button>
               </form>
+              <p className="text-center mt-3 text-xs font-normal" style={{ color: "#737373" }}>
+                Free to start — no credit card required.
+              </p>
             </motion.div>
           </motion.div>
 
@@ -353,7 +355,7 @@ export function LandingPage() {
                 Integrate with every aspect of your tech stack
               </h2>
               <p className="max-w-lg mx-auto leading-relaxed font-normal" style={{ fontSize: "15.667px", color: "#737373" }}>
-                Give agents the tools to succeed, backed by enterprise-grade security and SOC 2 Type II compliance.
+                Connect WhatsApp by scanning a QR code — the same method as WhatsApp Web. No Meta approval, WABA number, or developer setup required.
               </p>
             </div>
 
@@ -433,6 +435,42 @@ export function LandingPage() {
           </div>
         </motion.section>
 
+        <motion.section {...sectionAnim} className="py-24 px-6 lg:px-12" style={{ background: "#ffffff", borderTop: "1px solid #e5e5e5" }}>
+          <div className="max-w-[1060px] mx-auto">
+            <div className="text-center mb-16">
+              <p className="text-sm font-normal mb-4" style={{ color: "#c65f39" }}>What We Believe</p>
+              <h2 className="font-normal tracking-tight" style={{ fontSize: "35.2508px", lineHeight: "44.0635px", letterSpacing: "-0.15667px", color: "#171717" }}>
+                AI should assist, not replace
+              </h2>
+              <p className="max-w-lg mx-auto mt-4 leading-relaxed font-normal" style={{ fontSize: "15.667px", color: "#737373" }}>
+                The principles behind how we build — and how we treat your data.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {[
+                { title: "AI should assist, not replace", text: "The best customer service combines AI speed with human empathy. Our platform is built for collaboration, not replacement." },
+                { title: "Simplicity wins", text: "No complex setups, no API approvals, no developer required. Connect WhatsApp with a QR code. Deploy AI in minutes." },
+                { title: "Your data, your control", text: "We don't train on your data. We don't sell your data. You own everything, and you can export or delete it anytime." },
+                { title: "Transparency matters", text: "Clear pricing. No hidden fees. Open about what our AI can and can't do. Honest about limitations." },
+              ].map((belief, i) => (
+                <motion.div
+                  key={belief.title}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.8, delay: i * 0.12, ease: [0.16, 1, 0.3, 1] as const }}
+                  className="p-6 rounded-2xl"
+                  style={{ background: "#fafafa", border: "1px solid #e5e5e5" }}
+                >
+                  <h3 className="text-base font-normal mb-2" style={{ color: "#171717" }}>{belief.title}</h3>
+                  <p className="text-sm leading-relaxed font-normal" style={{ color: "#737373" }}>{belief.text}</p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </motion.section>
+
         <motion.section {...sectionAnim} className="py-24 px-6 lg:px-12 relative overflow-hidden" style={{ background: "#050505" }}>
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
@@ -464,9 +502,9 @@ export function LandingPage() {
                 className="p-5 rounded-2xl space-y-3"
                 style={{ background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.06)" }}
               >
-                <h3 className="text-base font-normal" style={{ color: "#fff" }}>SOC Type II</h3>
+                <h3 className="text-base font-normal" style={{ color: "#fff" }}>SOC 2 — in progress</h3>
                 <p className="text-sm leading-relaxed font-normal" style={{ color: "#595859" }}>
-                  FlowCore meets SOC 2 Type II standards for secure handling of customer data across all AI-powered operations.
+                  We&apos;re working toward SOC 2 Type II certification. Customer data is handled with secure, audited practices across all AI-powered operations.
                 </p>
               </motion.div>
               <motion.div
@@ -477,9 +515,9 @@ export function LandingPage() {
                 className="p-5 rounded-2xl space-y-3"
                 style={{ background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.06)" }}
               >
-                <h3 className="text-base font-normal" style={{ color: "#fff" }}>HIPAA & Enterprise Security</h3>
+                <h3 className="text-base font-normal" style={{ color: "#fff" }}>Enterprise-grade security</h3>
                 <p className="text-sm leading-relaxed font-normal" style={{ color: "#595859" }}>
-                  End-to-end encryption, role-based access, audit logs, and secure model orchestration across all AI agents.
+                  End-to-end encryption, role-based access, audit logs, tenant isolation, and secure model orchestration across all AI agents.
                 </p>
               </motion.div>
             </motion.div>
@@ -550,8 +588,8 @@ export function LandingPage() {
             <div className="space-y-4">
               <h4 className="text-xs font-semibold tracking-wider uppercase" style={{ color: "#a3a3a3" }}>Compliance</h4>
               <nav className="flex flex-col gap-3">
-                <span className="text-sm font-normal" style={{ color: "#525252" }}>SOC 2 Type II</span>
-                <span className="text-sm font-normal" style={{ color: "#525252" }}>HIPAA Compliant</span>
+                <span className="text-sm font-normal" style={{ color: "#525252" }}>SOC 2 — in progress</span>
+                <span className="text-sm font-normal" style={{ color: "#525252" }}>GDPR-ready</span>
               </nav>
             </div>
           </div>
