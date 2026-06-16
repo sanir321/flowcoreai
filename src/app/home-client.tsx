@@ -5,9 +5,8 @@ import { useRouter } from "next/navigation"
 import { motion, useScroll, useTransform } from "framer-motion"
 import { useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
-import { 
+import {
   ArrowUpRight,
-  Send,
   Inbox,
   BarChart2,
   Globe
@@ -98,8 +97,8 @@ export function LandingPage() {
 
         <div className="flex items-center gap-3 relative z-10">
           <Link href="/login" className="hidden sm:inline text-sm font-normal transition-colors" style={{ color: "#a3a3a3" }} onMouseEnter={(e) => e.currentTarget.style.color = "#e5e5e5"} onMouseLeave={(e) => e.currentTarget.style.color = "#a3a3a3"}>Sign In</Link>
-          <Button asChild variant="outline" className="h-8 px-4 rounded-[100px] text-sm font-normal flex items-center gap-1 bg-transparent hover:bg-white/5" style={{ borderColor: "rgba(255,255,255,0.18)", color: "#e5e5e5" }}>
-            <Link href="/login">Book Demo <ArrowUpRight className="h-3 w-3" /></Link>
+          <Button asChild className="h-8 px-4 rounded-[100px] text-sm font-normal flex items-center gap-1" style={{ background: "#c65f39", color: "#fff" }}>
+            <Link href="/login">Get Started <ArrowUpRight className="h-3 w-3" /></Link>
           </Button>
         </div>
       </header>
@@ -162,102 +161,31 @@ export function LandingPage() {
             </motion.div>
           </motion.div>
 
-          <motion.div className="w-full max-w-[980px] px-6 relative z-30 mt-32" style={{ y: dashboardY }}>
+          <motion.div className="w-full max-w-[1000px] px-6 relative z-30 mt-32" style={{ y: dashboardY }}>
             <motion.div
               initial={{ opacity: 0, y: 60 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 1.2, delay: 0.6, ease: [0.16, 1, 0.3, 1] as const }}
-              className="rounded-2xl overflow-hidden shadow-xl" style={{ background: "#ffffff", border: "1px solid #e5e5e5" }}>
-              <div className="flex items-center justify-between h-10 px-5" style={{ borderBottom: "1px solid #e5e5e5", background: "#fafafa" }}>
-                <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full" style={{ background: "#d4d4d4" }} />
-                  <div className="h-2 w-2 rounded-full" style={{ background: "#d4d4d4" }} />
-                  <div className="h-2 w-2 rounded-full" style={{ background: "#d4d4d4" }} />
-                </div>
-                <div className="flex items-center gap-2 px-3 py-1 rounded-md" style={{ background: "#ffffff", border: "1px solid #e5e5e5" }}>
+              className="rounded-2xl overflow-hidden shadow-2xl" style={{ background: "#ffffff", border: "1px solid #e5e5e5" }}>
+              <div className="flex items-center gap-2 h-10 px-5" style={{ borderBottom: "1px solid #e5e5e5", background: "#fafafa" }}>
+                <div className="h-2 w-2 rounded-full" style={{ background: "#d4d4d4" }} />
+                <div className="h-2 w-2 rounded-full" style={{ background: "#d4d4d4" }} />
+                <div className="h-2 w-2 rounded-full" style={{ background: "#d4d4d4" }} />
+                <div className="flex items-center gap-2 px-3 py-1 rounded-md mx-auto" style={{ background: "#ffffff", border: "1px solid #e5e5e5" }}>
                   <div className="h-1 w-1 rounded-full" style={{ background: "#c65f39" }} />
-                  <span className="text-[9px] font-normal" style={{ color: "#737373" }}>app.flowcore.ai</span>
-                </div>
-                <div className="h-4 w-4 rounded flex items-center justify-center text-[7px] font-semibold" style={{ background: "#f5f5f5", color: "#a3a3a3", border: "1px solid #e5e5e5" }}>F</div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-4 h-[350px]">
-                <div className="p-4 space-y-4 hidden md:block" style={{ borderRight: "1px solid #e5e5e5", background: "#fcfcfc" }}>
-                  <div className="font-normal flex items-center gap-2" style={{ color: "#171717", fontSize: "13.7086px" }}><Inbox className="h-4 w-4" style={{ color: "#c65f39" }} /> Inbox</div>
-                  <div className="space-y-1">
-                    <div className="p-2 rounded-lg" style={{ background: "#ffffff", border: "1px solid #e5e5e5" }}>
-                      <div className="flex justify-between" style={{ color: "#171717", fontSize: "11px" }}>Will Garman <span style={{ color: "#c65f39", fontSize: "9px" }}>Active</span></div>
-                      <div style={{ fontSize: "10px", color: "#737373" }}>I was wondering if I can extend...</div>
-                    </div>
-                    <div className="p-2 rounded-lg opacity-40">
-                      <div style={{ color: "#171717", fontSize: "11px" }}>Jane Doe</div>
-                      <div style={{ fontSize: "10px", color: "#a3a3a3" }}>Book a double room for next Friday</div>
-                    </div>
-                  </div>
-                </div>
-                <div className="md:col-span-2 p-4 flex flex-col justify-between h-full" style={{ background: "#ffffff" }}>
-                  <div className="space-y-4">
-                    <div className="flex gap-2">
-                      <div className="h-6 w-6 rounded-full flex items-center justify-center text-[9px] font-bold" style={{ background: "rgba(198, 95, 57, 0.15)", color: "#c65f39" }}>WG</div>
-                      <div className="p-2.5 rounded-2xl max-w-[80%]" style={{ background: "#fafafa", border: "1px solid #e5e5e5", color: "#525252", fontSize: "13px" }}>
-                        I was wondering if I can extend my upcoming stay to checkout one day later??
-                      </div>
-                    </div>
-                    <div className="flex gap-2 justify-end">
-                      <div className="p-2.5 rounded-2xl max-w-[80%]" style={{ background: "rgba(198, 95, 57, 0.06)", border: "1px solid rgba(198, 95, 57, 0.15)", color: "#525252", fontSize: "13px" }}>
-                        <span className="block mb-0.5" style={{ color: "#c65f39", fontSize: "9px" }}>Support Agent</span>
-                        Let me query availability for property 230CALST. One moment.
-                      </div>
-                    </div>
-                  </div>
-                  <div className="p-1.5 rounded-xl flex gap-2 items-center" style={{ background: "#fafafa", border: "1px solid #e5e5e5" }}>
-                    <input type="text" placeholder="Type a message..." className="bg-transparent flex-1 border-none focus:outline-none px-2" style={{ color: "#a3a3a3", fontSize: "11px" }} disabled />
-                    <button className="p-1 rounded-lg" style={{ background: "#c65f39", color: "#fff" }}><Send className="h-3 w-3" /></button>
-                  </div>
-                </div>
-                <div className="p-4 space-y-4 hidden md:block" style={{ background: "#fcfcfc" }}>
-                  <div className="font-normal flex items-center gap-2" style={{ color: "#171717", fontSize: "13.7086px" }}><BarChart2 className="h-4 w-4" style={{ color: "#c65f39" }} /> Analytics</div>
-                  <div className="space-y-3">
-                    <div className="p-3 rounded-xl" style={{ background: "#ffffff", border: "1px solid #e5e5e5" }}>
-                      <div style={{ color: "#737373", fontSize: "10px" }}>AI Automation Rate</div>
-                      <div className="mt-0.5" style={{ color: "#171717", fontSize: "24px", fontWeight: 300, letterSpacing: "-0.01em" }}>70.6%</div>
-                    </div>
-                  </div>
+                  <span className="text-[10px] font-normal" style={{ color: "#737373" }}>app.flowcore.ai/analytics</span>
                 </div>
               </div>
+              <img
+                src="/producthunt/analytics-clean.png"
+                alt="FlowCore analytics dashboard showing messages, contacts, automation rate, and integration status"
+                width={1270}
+                height={588}
+                className="w-full h-auto block"
+              />
             </motion.div>
           </motion.div>
         </section>
-
-        <motion.section {...sectionAnim} className="py-20 px-6 lg:px-12 flex flex-col items-center" style={{ background: "#ffffff", borderTop: "1px solid #e5e5e5" }}>
-          <div className="max-w-[820px] mx-auto text-center mb-12">
-            <p className="text-sm font-normal mb-4" style={{ color: "#c65f39" }}>See it in action</p>
-            <h2 className="font-normal tracking-tight" style={{ fontSize: "35.2508px", lineHeight: "44.0635px", letterSpacing: "-0.15667px", color: "#171717" }}>
-              A real dashboard, not a demo
-            </h2>
-            <p className="max-w-lg mx-auto mt-4 leading-relaxed font-normal" style={{ fontSize: "15.667px", color: "#737373" }}>
-              Track messages, contacts, automation rate, and escalations across every channel — live.
-            </p>
-          </div>
-          <motion.div {...scaleIn} className="w-full max-w-[1000px] rounded-2xl overflow-hidden shadow-xl" style={{ border: "1px solid #e5e5e5", background: "#ffffff" }}>
-            <div className="flex items-center gap-2 h-10 px-5" style={{ borderBottom: "1px solid #e5e5e5", background: "#fafafa" }}>
-              <div className="h-2 w-2 rounded-full" style={{ background: "#d4d4d4" }} />
-              <div className="h-2 w-2 rounded-full" style={{ background: "#d4d4d4" }} />
-              <div className="h-2 w-2 rounded-full" style={{ background: "#d4d4d4" }} />
-              <div className="flex items-center gap-2 px-3 py-1 rounded-md mx-auto" style={{ background: "#ffffff", border: "1px solid #e5e5e5" }}>
-                <div className="h-1 w-1 rounded-full" style={{ background: "#c65f39" }} />
-                <span className="text-[10px] font-normal" style={{ color: "#737373" }}>app.flowcore.ai/analytics</span>
-              </div>
-            </div>
-            <img
-              src="/producthunt/analytics-clean.png"
-              alt="FlowCore analytics dashboard showing messages, contacts, automation rate, and integration status"
-              width={1270}
-              height={588}
-              loading="lazy"
-              className="w-full h-auto block"
-            />
-          </motion.div>
-        </motion.section>
 
         <motion.section {...sectionAnim} className="py-16 px-6 flex flex-col items-center" style={{ background: "#ffffff", borderTop: "1px solid #e5e5e5" }}>
           <div className="text-sm font-normal" style={{ color: "#a3a3a3", letterSpacing: "0.05em" }}>
@@ -295,7 +223,7 @@ export function LandingPage() {
                 AI insights to help monitor, evaluate, and continuously optimize your conversations.
               </p>
               <Button asChild className="h-11 px-5 rounded-[100px] text-sm font-normal flex items-center gap-1" style={{ background: "#c65f39", color: "#fff" }}>
-                <Link href="/login">Book Demo <ArrowUpRight className="h-4 w-4" /></Link>
+                <Link href="/login">Get Started <ArrowUpRight className="h-4 w-4" /></Link>
               </Button>
             </motion.div>
 
@@ -373,7 +301,7 @@ export function LandingPage() {
               When automation ends, your control begins — streamline every conversation your AI can't handle in one place.
             </p>
             <Button asChild className="h-11 px-5 rounded-[100px] text-sm font-normal flex items-center gap-1 mt-6" style={{ background: "#c65f39", color: "#fff" }}>
-              <Link href="/login">Book Demo <ArrowUpRight className="h-4 w-4" /></Link>
+              <Link href="/login">Get Started <ArrowUpRight className="h-4 w-4" /></Link>
             </Button>
           </div>
         </motion.section>
@@ -552,30 +480,6 @@ export function LandingPage() {
                 </p>
               </motion.div>
             </motion.div>
-          </div>
-        </motion.section>
-        <motion.section {...sectionAnim} className="py-24 px-6 lg:px-12" style={{ background: "#ffffff", borderTop: "1px solid #e5e5e5" }}>
-          <div className="max-w-[820px] mx-auto text-center flex flex-col items-center">
-            <p className="text-sm font-normal mb-4" style={{ color: "#c65f39" }}>Community</p>
-            <h2 className="font-normal tracking-tight mb-8" style={{ fontSize: "35.2508px", lineHeight: "44.0635px", letterSpacing: "-0.15667px", color: "#171717" }}>
-              Featured on Smol Launch
-            </h2>
-            <a
-              href="https://smollaunch.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group relative flex flex-col sm:flex-row items-center gap-6 p-6 rounded-2xl transition-all duration-300 hover:shadow-xl hover:-translate-y-1 w-full max-w-[500px] text-left"
-              style={{ background: "#fafafa", border: "1px solid #e5e5e5" }}
-            >
-              <img
-                src="https://smollaunch.com/badges/featured-dark.svg"
-                alt="Flowcore AI — Featured on Smol Launch"
-                loading="lazy"
-                width="250"
-                height="60"
-                className="shrink-0"
-              />
-            </a>
           </div>
         </motion.section>
 

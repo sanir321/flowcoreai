@@ -54,7 +54,7 @@ export function PricingPageClient() {
             onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 0 24px rgba(198,95,57,0.35)" }}
             onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "none" }}
           >
-            Book Demo <ArrowUpRight className="h-3 w-3" />
+            Get Started <ArrowUpRight className="h-3 w-3" />
           </Link>
         </div>
       </header>
