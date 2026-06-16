@@ -53,7 +53,7 @@ export const ReEngagementEmail = ({
               Hi {username},
             </Text>
             <Text className="text-black text-[14px] leading-[24px]">
-              It's been a while since you last logged in. Your AI agents keep running, but we wanted to check in.
+              It&apos;s been a while since you last logged in. Your AI agents keep running, but we wanted to check in.
             </Text>
             <Section className="text-center mt-[32px] mb-[32px]">
               <Button

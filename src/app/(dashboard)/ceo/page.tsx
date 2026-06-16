@@ -1,10 +1,9 @@
 "use client"
 
-import React, { useState, useRef, useEffect, useCallback } from "react"
-import { Send, TrendingUp, Zap, Loader2, BarChart3, Target, ChevronDown, ChevronUp, Brain, MessageSquare, Users, AlertCircle, Code, Quote, Sparkles, Lightbulb, Clipboard, Check, Plus, X, FileText } from "lucide-react"
+import React, { useState, useRef, useEffect } from "react"
+import { Send, TrendingUp, Zap, Loader2, BarChart3, Target, ChevronDown, ChevronUp, Brain, Users, AlertCircle, Quote, Lightbulb, Clipboard, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { useWorkspace } from "@/hooks/use-workspace"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { motion, AnimatePresence } from "framer-motion"
@@ -82,6 +81,7 @@ const ThinkingIndicator = () => {
   useEffect(() => {
     const interval = setInterval(() => setStep(prev => (prev + 1) % steps.length), 2000)
     return () => clearInterval(interval)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return (
@@ -265,7 +265,6 @@ const renderInline = (text: string) => {
 }
 
 export default function CEOAnalystPage() {
-  const { workspaceId } = useWorkspace()
   const [prompt, setPrompt] = useState("")
   const [isSending, setIsSending] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
@@ -322,6 +321,7 @@ export default function CEOAnalystPage() {
         id: (Date.now() + 1).toString(),
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       }])
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       toast.error(error.message)
       setMessages(prev => [...prev, {

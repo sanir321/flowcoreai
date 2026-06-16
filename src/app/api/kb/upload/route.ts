@@ -29,7 +29,7 @@ export async function POST(req: Request) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
     return NextResponse.json({ storage_path: data.path })
-  } catch (err: any) {
+  } catch (err: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
     console.error("[KB_UPLOAD] Error:", err)
     return NextResponse.json({ error: "Upload failed" }, { status: 500 })
   }

@@ -76,12 +76,13 @@ interface InboxClientProps {
 
 export function InboxClient({ 
   initialSessions, 
-  initialContacts, 
+  initialContacts,
   initialWelcomeTemplate,
   workspaceId 
 }: InboxClientProps) {
   const supabase = createClient()
   const [sessions, setSessions] = useState<Session[]>(initialSessions)
+  const [contacts] = useState<Contact[]>(initialContacts)
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [inputText, setInputText] = useState("")
@@ -91,7 +92,6 @@ export function InboxClient({
   const [search, setSearch] = useState("")
   const [isComposeOpen, setIsComposeOpen] = useState(false)
   const [isSettingsOpen, setIsComposeSettingsOpen] = useState(false)
-  const [contacts, setContacts] = useState<Contact[]>(initialContacts)
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
   const [composeMessage, setManualComposeMessage] = useState("")
   const [welcomeTemplate, setWelcomeTemplate] = useState(initialWelcomeTemplate)
@@ -124,11 +124,13 @@ export function InboxClient({
   useEffect(() => {
     const sessionChannel = supabase
       .channel("inbox-sessions")
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .on("postgres_changes" as any, { 
         event: "*", 
         schema: "public", 
         table: "conversation_sessions",
         filter: `workspace_id=eq.${workspaceId}`
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       }, (payload: any) => {
         if (payload.eventType === 'UPDATE') {
           setSessions(prev => {
@@ -202,6 +204,7 @@ export function InboxClient({
       session_id: selectedSessionId,
       metadata: { manual_reply: true }
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     setMessages(prev => [...prev, optimisticMsg as any])
 
     const result = await sendManualReply({ session_id: selectedSessionId, content: text })
@@ -508,6 +511,7 @@ export function InboxClient({
                               {m.metadata?.media_path ? (
                                 <div className="flex flex-col gap-1.5">
                                   {(m.metadata.media_mime as string)?.startsWith('image') ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
                                     <img src={m.metadata.media_path as string} alt="Image" className="max-w-full rounded-lg" />
                                   ) : (m.metadata.media_mime as string)?.startsWith('video') ? (
                                     <video src={m.metadata.media_path as string} controls className="max-w-full rounded-lg" />

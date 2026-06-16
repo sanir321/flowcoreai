@@ -1,7 +1,9 @@
 "use server"
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { createClient } from "@/lib/supabase/server"
-import { createAdminClient } from "@/lib/supabase/admin"
+
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import { logAudit } from "@/lib/audit"
@@ -167,6 +169,7 @@ export async function getRequiredInfo(workspaceId: string): Promise<{ data: Requ
     const { data: templates, error } = await (supabase as any)
       .from("required_info_templates")
       .select("*")
+      .in("business_type", ["*", wsResult.data.business_type || ""])
       .order("priority", { ascending: true })
 
     if (error) return { data: null, error: error.message }

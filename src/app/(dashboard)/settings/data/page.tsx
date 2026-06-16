@@ -17,7 +17,6 @@ export default function DataPrivacyPage() {
   const [showConfirm, setShowConfirm] = useState(false)
   const [deleteStep, setDeleteStep] = useState<"confirm" | "otp">("confirm")
   const [deleteOtp, setDeleteOtp] = useState("")
-  const [otpSent, setOtpSent] = useState(false)
   const router = useRouter()
 
   async function handleExport() {
@@ -35,6 +34,7 @@ export default function DataPrivacyPage() {
       a.click()
       URL.revokeObjectURL(url)
       toast.success("Data exported successfully")
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error(err.message || "Failed to export data")
     }
@@ -48,10 +48,10 @@ export default function DataPrivacyPage() {
       const json = await res.json()
       if (json.error) throw new Error(json.error)
       if (json.requires_confirmation) {
-        setOtpSent(true)
         setDeleteStep("otp")
         toast.success("Confirmation code sent to your email")
       }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error(err.message || "Failed to send confirmation code")
     }
@@ -75,6 +75,7 @@ export default function DataPrivacyPage() {
 
       toast.success("Account deleted. Redirecting...")
       setTimeout(() => router.push("/"), 2000)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error(err.message || "Failed to delete account")
     }
@@ -205,7 +206,7 @@ export default function DataPrivacyPage() {
                   </Button>
                 </div>
                 <Button
-                  onClick={() => { setDeleteStep("confirm"); setOtpSent(false); setDeleteOtp("") }}
+                  onClick={() => { setDeleteStep("confirm"); setDeleteOtp("") }}
                   variant="ghost"
                   size="sm"
                   disabled={isDeleting}

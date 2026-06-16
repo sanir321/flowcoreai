@@ -96,7 +96,9 @@ export async function POST(req: NextRequest) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 30000);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let aiResponse: any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let aiError: any;
     try {
       const result = await supabaseAdmin.functions.invoke("agent-orchestrator", {
@@ -143,7 +145,7 @@ export async function POST(req: NextRequest) {
       }
     });
 
-  } catch (error: any) {
+  } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
     console.error("[TEST_MSG] Unhandled error:", error?.message, error?.stack);
     return NextResponse.json({ error: "Failed to process test message" }, { status: 500 });
   }

@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
-import { Plus, Pencil, Trash2, Loader2, Search, Upload, Image, FileText, X } from "lucide-react"
+import { Plus, Pencil, Trash2, Loader2, Search, Upload, FileText } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 
@@ -258,6 +258,7 @@ export function MenuClient({ initialItems }: MenuClientProps) {
             {media.map(m => (
               <div key={m.id} className="relative group rounded-xl overflow-hidden border border-gray-100 bg-white">
                 {m.file_type.startsWith("image/") ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
                   <img src={m.public_url} alt={m.file_name} className="w-full h-32 object-cover" />
                 ) : (
                   <div className="w-full h-32 flex items-center justify-center bg-gray-50">

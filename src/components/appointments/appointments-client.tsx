@@ -25,8 +25,6 @@ import { format, startOfWeek, addHours, startOfDay, isSameDay, subDays, startOfM
 import { 
   Sheet, 
   SheetContent, 
-  SheetHeader, 
-  SheetTitle
 } from "@/components/ui/sheet"
 import { 
   Dialog, 
@@ -41,7 +39,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu"
 import {
   Select,
@@ -67,6 +64,8 @@ import { cancelAppointment, createAppointment, rescheduleAppointment } from "@/a
 import { toast } from "sonner"
 
 import { createClient } from "@/lib/supabase/client"
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 interface AppointmentsClientProps {
   initialAppointments: any[]

@@ -9,7 +9,7 @@ type ConsentLevel = "accepted" | "rejected" | null
 const STORAGE_KEY = "flowcore_cookie_consent"
 
 export function CookieConsent() {
-  const [consent, setConsent] = useState<ConsentLevel>(null)
+  const [, setConsent] = useState<ConsentLevel>(null)
   const [showBanner, setShowBanner] = useState(false)
 
   useEffect(() => {

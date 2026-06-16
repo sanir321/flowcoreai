@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/select"
 import { toast } from "sonner"
 import { updateWorkspace, deleteWorkspace } from "@/app/actions/workspace"
+import { INDUSTRY_OPTIONS } from "@/lib/constants"
 import { useRouter } from "next/navigation"
 
 interface Workspace {
@@ -112,22 +113,10 @@ export function SettingsClient({ initialWorkspace }: SettingsClientProps) {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-white border-gray-100 text-gray-900">
-                      <SelectItem value="construction">Construction & Engineering</SelectItem>
-                      <SelectItem value="hotel">Hotel & Hospitality</SelectItem>
-                      <SelectItem value="dental">Dental Clinic</SelectItem>
-                      <SelectItem value="restaurant">Restaurant & Food Service</SelectItem>
-                      <SelectItem value="retail">E-commerce & Retail</SelectItem>
-                      <SelectItem value="healthcare">Healthcare & Medical</SelectItem>
-                      <SelectItem value="tech">Technology & Software</SelectItem>
-                      <SelectItem value="finance">Banking & Finance</SelectItem>
-                      <SelectItem value="realestate">Real Estate</SelectItem>
-                      <SelectItem value="education">Education & Training</SelectItem>
-                      <SelectItem value="legal">Legal Services</SelectItem>
-                      <SelectItem value="beauty">Salon & Beauty</SelectItem>
-                      <SelectItem value="fitness">Fitness & Wellness</SelectItem>
-                      <SelectItem value="automotive">Automotive</SelectItem>
-                      <SelectItem value="logistics">Logistics & Transport</SelectItem>
-                    </SelectContent>
+                      {INDUSTRY_OPTIONS.map(io => (
+                        <SelectItem key={io.value} value={io.value}>{io.label}</SelectItem>
+                      ))}
+                     </SelectContent>
                   </Select>
                </div>
 

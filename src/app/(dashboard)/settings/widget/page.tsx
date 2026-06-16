@@ -1,6 +1,7 @@
 "use client"
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { 
   Palette, Code, Check, Copy, Eye, Loader2, Save, 
   ShieldCheck, Settings

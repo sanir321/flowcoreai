@@ -2,14 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { 
-  AlertCircle, 
   ShieldAlert, 
-  CheckCircle2, 
-  Clock, 
   User, 
-  ArrowUpRight,
   MoreHorizontal,
-  ChevronRight,
   Filter,
   Search
 } from "lucide-react"
@@ -29,6 +24,7 @@ import { createClient } from "@/lib/supabase/client"
 import { cn } from "@/lib/utils"
 
 export default function EscalationsPage() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [logs, setLogs] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [search, setSearch] = useState("")
@@ -56,7 +52,7 @@ export default function EscalationsPage() {
       setIsLoading(false)
     }
     fetchLogs()
-  }, [])
+  }, [supabase])
 
   const filteredLogs = logs.filter(log => 
     log.trigger_type.toLowerCase().includes(search.toLowerCase()) ||

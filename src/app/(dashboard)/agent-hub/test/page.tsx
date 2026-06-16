@@ -14,7 +14,6 @@ import {
   Bot,
   AlertTriangle,
   CheckCircle2,
-  Clock,
   Wrench,
   RotateCcw,
   Sparkles,
@@ -30,8 +29,10 @@ import { AssistantsSidebar } from "@/components/nav/assistants-sidebar"
 
 interface ToolCall {
   tool: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   params: Record<string, any>
   success: boolean
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   result: any
   duration_ms: number
 }
@@ -171,8 +172,6 @@ export default function TestChatPage() {
 
   const agentData = AGENT_TYPES.find(a => a.id === selectedAgent)!
   const agentMessages = messages.filter(m => m.role === 'agent')
-  const selectedDebugMessage = messages.find(m => m.id === selectedDebugMsg)
-
   return (
     <div className="flex min-h-0 flex-1 bg-gray-50/50 font-sans">
       <AssistantsSidebar />

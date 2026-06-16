@@ -32,14 +32,18 @@ Deno.serve(async (req) => {
     )
 
     const body = await req.json()
-    const { workspace_id, source_id, mode } = body
+    const { workspace_id, source_id, website_url, mode } = body
+
+    if (website_url && workspace_id) {
+      return await processUrl(supabase, workspace_id, website_url)
+    }
 
     if (mode === "batch" || (!workspace_id && !source_id)) {
       return await processBatch(supabase)
     }
 
     if (!workspace_id || !source_id) {
-      throw new Error("Provide workspace_id + source_id, or mode: 'batch'")
+      throw new Error("Provide workspace_id + source_id, website_url + workspace_id, or mode: 'batch'")
     }
 
     return await processSingle(supabase, workspace_id, source_id)
@@ -210,6 +214,85 @@ async function processSingle(supabase: any, workspace_id: string, source_id: str
   console.log(`[ExtractBP] Updated business profile for workspace ${workspace_id} from source ${source_id}: ${extractedFields.join(", ")}`)
 
   return new Response(JSON.stringify({ success: true, extracted: extractedFields }), {
+    headers: { ...corsHeaders, "Content-Type": "application/json" }
+  })
+}
+
+async function processUrl(supabase: any, workspace_id: string, website_url: string): Promise<Response> {
+  console.log("[ExtractBP] processUrl called:", { workspace_id, website_url })
+
+  const { data: workspace, error: wsError } = await supabase
+    .from("workspaces")
+    .select("business_type, business_profile")
+    .eq("id", workspace_id)
+    .single()
+
+  if (wsError) throw new Error(`Failed to read workspace: ${wsError.message}`)
+
+  const businessType = workspace?.business_type || "construction_company"
+  const existingProfile = (workspace?.business_profile || {}) as Record<string, unknown>
+
+  const pageResp = await fetch(website_url, {
+    headers: { "User-Agent": "FlowCore/1.0 (Business Profile Extractor)" },
+    signal: AbortSignal.timeout(15000),
+  })
+
+  if (!pageResp.ok) {
+    console.log("[ExtractBP] Failed to fetch URL:", pageResp.status)
+    return new Response(JSON.stringify({ skipped: true, reason: "fetch_failed", status: pageResp.status }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } })
+  }
+
+  const html = await pageResp.text()
+  const text = html
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&[a-z]+;/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 4000)
+
+  if (text.length < 50) {
+    return new Response(JSON.stringify({ skipped: true, reason: "text_too_short" }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } })
+  }
+
+  const opencodeKey = Deno.env.get("OPENCODE_ZEN_API_KEY")
+  if (!opencodeKey) {
+    return new Response(JSON.stringify({ skipped: true, reason: "no_opencode_key" }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } })
+  }
+
+  const extracted = await extractBusinessProfile(text, businessType, opencodeKey)
+  if (!extracted || Object.keys(extracted).length === 0) {
+    return new Response(JSON.stringify({ skipped: true, reason: "no_data_extracted" }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } })
+  }
+
+  // Store in suggestion sub-object — never overwrite manual edits
+  const existingSuggestions = (existingProfile.suggestion || {}) as Record<string, unknown>
+  const merged = {
+    ...existingProfile,
+    suggestion: {
+      ...existingSuggestions,
+      scraped_at: new Date().toISOString(),
+      source: website_url,
+      ...extracted,
+    },
+  }
+
+  const { error: updateError } = await supabase
+    .from("workspaces")
+    .update({ business_profile: merged, updated_at: new Date().toISOString() })
+    .eq("id", workspace_id)
+
+  if (updateError) throw new Error(`Failed to update workspace: ${updateError.message}`)
+
+  const extractedFields = Object.keys(extracted)
+  console.log(`[ExtractBP] URL-scraped business profile for workspace ${workspace_id}: ${extractedFields.join(", ")}`)
+
+  return new Response(JSON.stringify({ success: true, extracted: extractedFields, source: "url" }), {
     headers: { ...corsHeaders, "Content-Type": "application/json" }
   })
 }

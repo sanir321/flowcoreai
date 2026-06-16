@@ -71,6 +71,7 @@ export async function GET(req: NextRequest) {
       .single();
 
     const responseData = {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       agent_name: (agent?.config as any)?.name || "Support AI",
       accent_color: config?.accent_color || "#f9510b",
       greeting: config?.greeting || "Hi! How can I help you today?",
@@ -87,7 +88,7 @@ export async function GET(req: NextRequest) {
       },
     });
 
-  } catch (error: any) {
+  } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
     console.error("Widget Config Error:", error);
     return new Response("Failed to load widget configuration", { status: 500 });
   }

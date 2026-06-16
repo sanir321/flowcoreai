@@ -39,7 +39,7 @@ export default function WaitlistPage() {
       setStatus("success")
       setEmail("")
       setBusinessType("")
-    } catch (err: any) {
+    } catch (err: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
       setStatus("error")
       setErrorMessage(err.message)
     }

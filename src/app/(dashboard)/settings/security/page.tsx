@@ -1,11 +1,11 @@
 "use client"
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Loader2, ShieldCheck, ShieldOff, Copy, Check } from "lucide-react"
 import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
@@ -21,10 +21,6 @@ export default function SecurityPage() {
   const [unenrolling, setUnenrolling] = useState(false)
   const supabase = createClient()
 
-  useEffect(() => {
-    checkMfaStatus()
-  }, [])
-
   async function checkMfaStatus() {
     try {
       const { data: { user } } = await supabase.auth.getUser()
@@ -39,6 +35,11 @@ export default function SecurityPage() {
     }
     setLoading(false)
   }
+
+  useEffect(() => {
+    checkMfaStatus()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   async function handleEnroll() {
     setEnrolling(true)

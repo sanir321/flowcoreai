@@ -45,6 +45,7 @@ export async function POST(req: NextRequest) {
 
     const { data: publicUrl } = admin.storage.from("menu-media").getPublicUrl(fileName);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: media, error: insertError } = await (admin as any)
       .from("menu_media")
       .insert({
@@ -62,7 +63,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ media: { ...media, public_url: publicUrl.publicUrl } });
-  } catch (e: any) {
+  } catch (e: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
     console.error("Menu upload error:", e);
     return NextResponse.json({ error: "Failed to process menu upload" }, { status: 500 });
   }

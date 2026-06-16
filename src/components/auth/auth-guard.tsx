@@ -42,6 +42,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       hasCheckedAuth.current = true
       checkAuth()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isProtectedRoute])
 
   if (isLoading && (pathname === "/" || pathname === "/login" || isProtectedRoute)) {

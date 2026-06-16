@@ -176,6 +176,7 @@ export function LandingPage() {
                   <span className="text-[10px] font-normal" style={{ color: "#737373" }}>app.flowcore.ai/analytics</span>
                 </div>
               </div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/producthunt/analytics-clean.png"
                 alt="FlowCore analytics dashboard showing messages, contacts, automation rate, and integration status"
@@ -298,7 +299,7 @@ export function LandingPage() {
               Everything in one place
             </h2>
             <p className="max-w-lg mx-auto mt-4 leading-relaxed font-normal" style={{ fontSize: "15.667px", color: "#737373" }}>
-              When automation ends, your control begins — streamline every conversation your AI can't handle in one place.
+              When automation ends, your control begins — streamline every conversation your AI can&apos;t handle in one place.
             </p>
             <Button asChild className="h-11 px-5 rounded-[100px] text-sm font-normal flex items-center gap-1 mt-6" style={{ background: "#c65f39", color: "#fff" }}>
               <Link href="/login">Get Started <ArrowUpRight className="h-4 w-4" /></Link>

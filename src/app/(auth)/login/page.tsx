@@ -1,18 +1,19 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Loader2, ArrowRight, ArrowLeft, Globe, Zap, Cpu, ShieldCheck } from "lucide-react"
+import { Loader2, ArrowLeft } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Checkbox } from "@/components/ui/checkbox"
 import { checkUserExists } from "@/app/actions/workspace"
 import { motion, AnimatePresence } from "framer-motion"
-import { cn } from "@/lib/utils"
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")

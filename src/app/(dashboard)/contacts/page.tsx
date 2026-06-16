@@ -31,7 +31,8 @@ export default async function ContactsPage() {
 
   return (
     <ContactsClient 
-      initialContacts={(contacts as any[]) || []} 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      initialContacts={(contacts as any[]) || []}
       workspaceId={workspaceId} 
     />
   )

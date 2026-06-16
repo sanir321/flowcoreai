@@ -41,6 +41,7 @@ export async function createWorkspace(input: unknown): Promise<ActionResponse<{ 
       name: z.string().min(1),
       business_type: z.string().optional(),
       website_url: z.string().url().optional().or(z.literal("")),
+      contact_phone: z.string().optional(),
       employee_count: z.string().optional(),
     }).safeParse(input)
 
@@ -52,12 +53,14 @@ export async function createWorkspace(input: unknown): Promise<ActionResponse<{ 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
 
-    const { error, data } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error, data } = await (supabase as any)
       .from("workspaces")
       .insert({
         name: result.data.name,
         business_type: result.data.business_type,
         website_url: result.data.website_url,
+        contact_phone: result.data.contact_phone || null,
         employee_count: result.data.employee_count,
         owner_id: user.id,
         status: 'active'
@@ -73,6 +76,25 @@ export async function createWorkspace(input: unknown): Promise<ActionResponse<{ 
     await admin.auth.admin.updateUserById(user.id, {
       app_metadata: { workspace_id: data.id }
     }).catch(e => console.error("[WORKSPACE_METADATA_UPDATE_FAILED]", e))
+
+    // Fire website scrape on signup for auto-enrichment
+    if (result.data.website_url) {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+      if (supabaseUrl && serviceRoleKey) {
+        fetch(`${supabaseUrl}/functions/v1/extract-business-profile`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${serviceRoleKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            workspace_id: data.id,
+            website_url: result.data.website_url,
+          }),
+        }).catch(e => console.error("[WORKSPACE_SCRAPE_FAILED]", e))
+      }
+    }
 
     return { data: { workspace_id: data.id }, error: null }
   } catch (err) {
@@ -183,6 +205,7 @@ export async function checkUserExists(email: string): Promise<ActionResponse<{ e
         email: emailResult.data
       },
       perPage: 1
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any)
 
     if (error) throw error
@@ -227,6 +250,7 @@ export async function deleteWorkspace(): Promise<ActionResponse<{ success: true 
     // Soft-delete gowa_sessions
     await supabase
       .from("gowa_sessions")
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .update({ deleted_at: new Date().toISOString() } as any)
       .eq("workspace_id", workspaceId)
 
@@ -234,6 +258,7 @@ export async function deleteWorkspace(): Promise<ActionResponse<{ success: true 
     const admin = createAdminClient()
     const { error } = await admin
       .from("workspaces")
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .update({ deleted_at: new Date().toISOString() } as any)
       .eq("id", workspaceId)
       .eq("owner_id", user.id)

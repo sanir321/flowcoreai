@@ -3,6 +3,8 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { NextRequest, NextResponse } from "next/server"
 import { rateLimit } from "@/lib/rate-limit"
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 const GOWA_BASE_URL = process.env.GOWA_BASE_URL?.replace(/\/$/, "") || ""
 const GOWA_API_KEY = process.env.GOWA_API_KEY || ""
 const GOWA_AUTH = GOWA_API_KEY ? Buffer.from(GOWA_API_KEY).toString("base64") : ""

@@ -52,6 +52,7 @@ export function NavigationRail() {
       }
     }
     getUser()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const prefetchTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)

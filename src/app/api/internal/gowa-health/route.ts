@@ -101,7 +101,7 @@ export async function GET(req: NextRequest) {
                     .from("escalation_logs")
                     .update({ notification_sent: true })
                     .eq("id", esc.id);
-            } catch (e: any) {
+            } catch (e: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
                 console.error(`[GOWA_HEALTH] Failed to process escalation ${esc.id}: ${e.message}`);
             }
         }
@@ -109,7 +109,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ success: true, devices_checked: devices.length });
 
-  } catch (error: any) {
+  } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
     console.error("Cron Health Error:", error);
     return new Response("Health check failed", { status: 500 });
   }

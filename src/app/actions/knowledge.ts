@@ -1,5 +1,7 @@
 "use server"
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { createClient } from "@/lib/supabase/server"
 import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 import { revalidatePath } from "next/cache"
@@ -290,21 +292,6 @@ export async function pasteKbText(input: { workspace_id: string; content: string
   }
 }
 
-function splitIntoChunks(text: string, maxSize: number): string[] {
-  const sentences = text.match(/[^.!?]+[.!?]+/g) || [text]
-  const chunks: string[] = []
-  let current = ""
-  for (const sentence of sentences) {
-    if ((current + sentence).length > maxSize && current.length > 0) {
-      chunks.push(current.trim())
-      current = sentence
-    } else {
-      current += sentence
-    }
-  }
-  if (current.trim()) chunks.push(current.trim())
-  return chunks.length > 0 ? chunks : [text.slice(0, maxSize)]
-}
 
 export async function uploadDocumentSource(input: unknown): Promise<ActionResponse<{ id: string }>> {
   try {

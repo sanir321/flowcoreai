@@ -37,7 +37,7 @@ export async function PUT(req: NextRequest) {
 
     if (error) throw error;
     return NextResponse.json({ order: data });
-  } catch (e: any) {
+  } catch (e: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
     console.error("Orders PUT error:", e);
     return NextResponse.json({ error: "Failed to update order" }, { status: 500 });
   }

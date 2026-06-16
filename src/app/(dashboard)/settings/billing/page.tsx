@@ -9,7 +9,6 @@ import {
   CreditCard, 
   Plus, 
   History, 
-  Loader2,
   ExternalLink,
   ShieldCheck,
   Zap,

@@ -116,8 +116,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Failed to send email" }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, id: (result as any)?.messageId });
-  } catch (err: any) {
+    return NextResponse.json({ success: true, id: (result as any)?.messageId }); // eslint-disable-line @typescript-eslint/no-explicit-any
+  } catch (err: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
     console.error("[EMAIL_API] Global Error:", err.message);
     return NextResponse.json({ error: "Failed to send email" }, { status: 500 });
   }

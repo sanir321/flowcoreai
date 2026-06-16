@@ -69,6 +69,7 @@ export async function updateWidgetConfig(input: unknown): Promise<ActionResponse
 
     const { error } = await supabase
       .from("widget_config")
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .upsert({ workspace_id, ...config, updated_at: new Date().toISOString() } as any, { onConflict: "workspace_id" })
 
     if (error) throw error
@@ -190,6 +191,7 @@ export async function disconnectGoogleIntegration(workspace_id: string): Promise
 
     revalidatePath("/settings/integrations")
     return { data: { success: true }, error: null }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (err: any) {
     console.error(err)
     return { data: null, error: "Failed to disconnect" }
@@ -216,6 +218,7 @@ export async function exportToSheets(workspace_id: string): Promise<ActionRespon
 
       if (error) throw new Error(error.message || "Export failed")
       return { data: { exported: data.exported || 0 }, error: null }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       console.error(err)
       return { data: null, error: "Failed to export to Sheets" }

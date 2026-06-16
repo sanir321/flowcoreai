@@ -10,6 +10,7 @@ import {
   ResponsiveContainer
 } from 'recharts'
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function InsightsChart({ data }: { data: any[] }) {
   if (!data || data.length === 0) {
     return (

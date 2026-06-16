@@ -4,6 +4,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { z } from "zod";
 import { rateLimit } from "@/lib/rate-limit";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 const CreateSchema = z.object({
   name: z.string().min(1).max(200),
   description: z.string().optional(),

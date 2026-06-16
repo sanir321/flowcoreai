@@ -1,5 +1,7 @@
 "use client"
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -7,8 +9,8 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import {
-  Loader2, MapPin, Phone, Mail, Globe, Clock, Plus, Trash2,
-  Sparkles, Building2, AtSign, Link2,
+  Loader2, MapPin, Phone, Mail, Globe, Clock, Plus,
+  Sparkles, Building2, AtSign, Link2, Lightbulb, Check,
 } from "lucide-react"
 import { toast } from "sonner"
 import { updateBusinessProfile } from "@/app/actions/business-profile"
@@ -26,7 +28,7 @@ const DAY_LABELS: Record<string, string> = {
 const AMENITIES_BY_TYPE: Record<string, string[]> = {
   restaurant: ["Dine-in", "Takeaway", "Delivery", "Reservations", "Outdoor Seating", "Private Dining", "Catering", "Full Bar", "Wifi", "Parking"],
   hotel: ["Wifi", "Parking", "Pool", "Spa", "Gym", "Room Service", "Restaurant", "Bar", "Conference Room", "Airport Shuttle", "Laundry", "Pet Friendly"],
-  clinic: ["Parking", "Wheelchair Access", "Telehealth", "Lab On-Site", "Pharmacy", "Waiting Area", "Wifi", "Insurance Accepted"],
+  healthcare: ["Parking", "Wheelchair Access", "Telehealth", "Lab On-Site", "Pharmacy", "Waiting Area", "Wifi", "Insurance Accepted"],
   dental: ["Parking", "Wheelchair Access", "Telehealth", "Emergency Services", "X-Ray On-Site", "Wifi", "Insurance Accepted"],
   salon: ["Walk-ins Welcome", "Online Booking", "Wifi", "Parking", "Private Rooms", "Gift Cards"],
   fitness: ["Group Classes", "Personal Training", "Wifi", "Parking", "Lockers", "Showers", "Sauna", "Childcare"],
@@ -36,33 +38,24 @@ const AMENITIES_BY_TYPE: Record<string, string[]> = {
   education: ["Online Classes", "In-Person Classes", "Group Sessions", "Private Tutoring", "Study Materials", "Wifi"],
   other: ["Wifi", "Parking", "Online Booking", "Delivery"],
 }
-
-const POLICY_PRESETS = [
-  { key: "privacy", label: "Privacy Policy" },
-  { key: "payment", label: "Payment Policy" },
-  { key: "cancellation", label: "Cancellation Policy" },
-  { key: "return", label: "Return / Refund Policy" },
-  { key: "warranty", label: "Warranty Policy" },
-  { key: "appointment", label: "Appointment / Booking Policy" },
-  { key: "hygiene", label: "Hygiene & Safety Policy" },
-  { key: "pets", label: "Pet Policy" },
-  { key: "smoking", label: "Smoking Policy" },
-  { key: "membership", label: "Membership Terms" },
-]
-
 interface Props {
   workspaceId: string
   initialProfile: BusinessProfile
   businessType: string
   initialServicesOffered?: string
+  initialSuggestions?: Record<string, unknown> | null
 }
 
-export function BusinessProfileClient({ workspaceId, initialProfile, businessType, initialServicesOffered = "" }: Props) {
+export function BusinessProfileClient({ workspaceId, initialProfile, businessType, initialServicesOffered = "", initialSuggestions = null }: Props) {
   const router = useRouter()
   const [mounted, setMounted] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
-  const [servicesOffered, setServicesOffered] = useState(initialServicesOffered)
+  const [servicesTags, setServicesTags] = useState<string[]>(
+    initialServicesOffered ? initialServicesOffered.split(",").map(s => s.trim()).filter(Boolean) : []
+  )
   const [customAmenity, setCustomAmenity] = useState("")
+  const [suggestionsOpen, setSuggestionsOpen] = useState(true)
+  const [appliedSuggestions, setAppliedSuggestions] = useState<Set<string>>(new Set())
   
   const [profile, setProfile] = useState<BusinessProfile>(() => ({
     workspace_id: workspaceId,
@@ -81,7 +74,7 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
 
   useEffect(() => {
     if (initialServicesOffered) {
-      setServicesOffered(initialServicesOffered)
+      setServicesTags(initialServicesOffered.split(",").map(s => s.trim()).filter(Boolean))
     }
   }, [initialServicesOffered])
 
@@ -106,14 +99,17 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
   const handleSave = async () => {
     setIsSaving(true)
     try {
+      // Strip suggestion sub-object before saving — it's read-only scraped data
+      const cleanProfile = { ...profile } as Record<string, unknown>
+      delete cleanProfile.suggestion
       const supabase = createClient()
       await supabase.from("workspaces")
-        .update({ services_offered: servicesOffered } as any)
+        .update({ services_offered: servicesTags.join(", ") } as any)
         .eq("id", workspaceId)
 
       const result = await updateBusinessProfile({
         workspace_id: workspaceId,
-        profile,
+        profile: cleanProfile as BusinessProfile,
       })
       
       if (result.error) {
@@ -136,11 +132,34 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
   )
 
   const safeAmenities = (Array.isArray(profile.amenities) ? profile.amenities : []) as string[]
-  const safePolicies = (profile.policies && typeof profile.policies === "object" ? profile.policies : {}) as Record<string, string>
   const safeSocial = (profile.social && typeof profile.social === "object" ? profile.social : {}) as any
   const safeHours = (profile.hours && typeof profile.hours === "object" ? profile.hours : { daily: {} }) as any
   const safeDaily = (safeHours.daily && typeof safeHours.daily === "object" ? safeHours.daily : {}) as Record<string, any>
   const safeContact = (profile.contact && typeof profile.contact === "object" ? profile.contact : {}) as any
+
+  const handleApplySuggestion = () => {
+    if (!initialSuggestions) return
+    const sug = initialSuggestions as Record<string, unknown>
+    const newProfile = { ...profile }
+    const applied = new Set(appliedSuggestions)
+
+    for (const [key, val] of Object.entries(sug)) {
+      if (key === "scraped_at" || key === "source") continue
+      if (val && typeof val === "object" && !Array.isArray(val)) {
+        const existing = (newProfile as any)[key] || {}
+        ;(newProfile as any)[key] = { ...existing, ...val }
+      } else {
+        ;(newProfile as any)[key] = val
+      }
+      applied.add(key)
+    }
+
+    setProfile(newProfile as BusinessProfile)
+    setAppliedSuggestions(applied)
+    toast.success("Suggestions applied — save to persist")
+  }
+
+  const hasSuggestions = initialSuggestions && Object.keys(initialSuggestions).some(k => k !== "scraped_at" && k !== "source")
 
   const suggestedAmenities = AMENITIES_BY_TYPE[businessType] || AMENITIES_BY_TYPE.other || []
 
@@ -297,13 +316,34 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">Main Services (Comma Separated)</Label>
-                  <Textarea 
-                    value={servicesOffered} 
-                    onChange={e => setServicesOffered(e.target.value)}
-                    placeholder="Consultation, Site Visit, Design, etc."
-                    className="min-h-[80px] rounded-xl bg-gray-50/50 border-gray-100 focus:bg-white focus:border-[#c65f39] focus:ring-1 focus:ring-[#c65f39]/10 transition-all text-sm resize-none"
-                  />
+                  <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">Main Services</Label>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {servicesTags.map((s, i) => (
+                      <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#c65f39]/10 border border-[#c65f39]/20 text-xs font-medium text-[#c65f39]">
+                        {s}
+                        <button type="button" onClick={() => setServicesTags(prev => prev.filter((_, j) => j !== i))} className="hover:text-[#b55533]">
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Type a service and press Enter..."
+                      className="h-10 text-sm rounded-xl bg-gray-50/50 border-gray-100 focus:bg-white focus:border-[#c65f39] focus:ring-1 focus:ring-[#c65f39]/10 transition-all"
+                      onKeyDown={e => {
+                        const input = e.currentTarget
+                        if (e.key === "Enter") {
+                          e.preventDefault()
+                          const val = input.value.trim()
+                          if (val && !servicesTags.includes(val)) {
+                            setServicesTags(prev => [...prev, val])
+                          }
+                          input.value = ""
+                        }
+                      }}
+                    />
+                  </div>
                   <p className="text-xs text-gray-400 mt-1 ml-1">This list will be directly read by the AI Booking Agent to offer options to the customer.</p>
                 </div>
 
@@ -402,6 +442,62 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
               ))}
             </div>
           </Card>
+
+          {/* Suggestions from Website Scrape */}
+          {hasSuggestions && (
+            <Card className="p-8 border-amber-100 rounded-[2rem] shadow-sm space-y-6 bg-amber-50/30">
+              <button
+                type="button"
+                onClick={() => setSuggestionsOpen(!suggestionsOpen)}
+                className="flex items-center justify-between w-full text-left"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600">
+                    <Lightbulb className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900 tracking-tight">Suggestions from your website</h2>
+                    <p className="text-xs text-gray-500">Auto-detected — review and apply, or ignore</p>
+                  </div>
+                </div>
+                <span className="text-xs text-gray-400">{suggestionsOpen ? "▲" : "▼"}</span>
+              </button>
+
+              {suggestionsOpen && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 gap-3">
+                    {Object.entries(initialSuggestions as Record<string, unknown>)
+                      .filter(([k]) => k !== "scraped_at" && k !== "source")
+                      .map(([key, val]) => {
+                        const label = key.charAt(0).toUpperCase() + key.slice(1)
+                        const display = typeof val === "object" ? JSON.stringify(val, null, 1).slice(0, 200) : String(val)
+                        return (
+                          <div key={key} className="flex items-start justify-between p-3 rounded-xl bg-white border border-amber-100">
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">{label}</p>
+                              <p className="text-sm text-gray-700 mt-0.5 break-words">{display}</p>
+                            </div>
+                            {appliedSuggestions.has(key) ? (
+                              <span className="shrink-0 flex items-center gap-1 text-xs font-medium text-emerald-600 px-3 py-1.5 rounded-lg bg-emerald-50">
+                                <Check className="h-3 w-3" /> Applied
+                              </span>
+                            ) : null}
+                          </div>
+                        )
+                      })}
+                  </div>
+                  <Button
+                    type="button"
+                    onClick={handleApplySuggestion}
+                    className="w-full h-11 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-semibold text-sm transition-all active:scale-95"
+                  >
+                    <Lightbulb className="h-4 w-4 mr-2" />
+                    Apply All Suggestions
+                  </Button>
+                </div>
+              )}
+            </Card>
+          )}
 
           {/* Policies — link to Knowledge Base */}
           <Card className="p-6 border-gray-100 rounded-[2rem] shadow-sm">

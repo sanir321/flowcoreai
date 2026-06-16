@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Metadata } from "next"
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
@@ -54,7 +55,6 @@ export default async function KnowledgePage() {
     <KnowledgeClient
       initialSources={(sources || []) as any}
       workspaceId={workspaceId}
-      businessType={businessType}
       initialBusinessProfile={businessProfile}
       initialTemplates={templates || []}
     />

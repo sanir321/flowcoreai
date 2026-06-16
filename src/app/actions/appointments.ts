@@ -7,6 +7,7 @@ import { CreateAppointmentSchema, RescheduleAppointmentSchema } from "@/lib/sche
 import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent } from "@/lib/google"
 import { ActionResponse } from "./workspace"
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function createAppointment(input: unknown): Promise<ActionResponse<any>> {
   try {
     const result = CreateAppointmentSchema.safeParse(input)
@@ -70,6 +71,7 @@ export async function createAppointment(input: unknown): Promise<ActionResponse<
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function rescheduleAppointment(input: unknown): Promise<ActionResponse<any>> {
   try {
     const result = RescheduleAppointmentSchema.safeParse(input)
@@ -134,6 +136,7 @@ export async function rescheduleAppointment(input: unknown): Promise<ActionRespo
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function cancelAppointment(input: unknown): Promise<ActionResponse<any>> {
   try {
     const result = z.string().uuid().safeParse(input)

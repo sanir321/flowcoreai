@@ -132,6 +132,46 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
     }
   }
 
+  // Gap-filler: prompt agent to collect missing business profile info
+  try {
+    const { data: templates } = await ctx.supabase
+      .from("required_info_templates")
+      .select("label, field_key, priority, is_required")
+      .in("business_type", ["*", ctx.workspace?.business_type || ""])
+      .order("priority", { ascending: true })
+      .limit(10);
+
+    if (templates && templates.length > 0) {
+      const bp = (ctx.workspace?.business_profile || {}) as Record<string, unknown>;
+      const extras = (bp.extras || {}) as Record<string, unknown>;
+      const contact = (bp.contact || {}) as Record<string, unknown>;
+      const pricing = (bp.pricing || {}) as Record<string, unknown>;
+
+      const missing = templates
+        .filter((t: any) => {
+          const fk = t.field_key;
+          let val: unknown = null;
+          if (fk.startsWith("extras.")) val = extras[fk.replace("extras.", "")];
+          else if (fk.startsWith("contact.")) val = contact[fk.replace("contact.", "")];
+          else if (fk.startsWith("pricing.")) val = pricing[fk.replace("pricing.", "")];
+          else if (fk === "hours") val = bp.hours;
+          else if (fk === "amenities") val = bp.amenities;
+          else val = bp[fk];
+          if (val == null) return true;
+          if (typeof val === "string") return val.trim() === "";
+          if (Array.isArray(val)) return val.length === 0;
+          return false;
+        })
+        .slice(0, 2);
+
+      if (missing.length > 0) {
+        systemPrompt += `\n\n[PROFILE GAP] The business profile is missing: ${missing.map((t: any) => t.label).join(", ")}. Ask naturally for this information if relevant to the conversation. Do NOT ask if the customer's question is unrelated.`;
+      }
+    }
+  } catch (e: any) {
+    console.error("[T3] Gap-filler failed:", e.message);
+  }
+
   const messages = await buildMessages(ctx);
 
   let parsedPlan: AgentPlan;

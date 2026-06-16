@@ -23,12 +23,12 @@ export async function GET(req: NextRequest) {
     if (!workspaceId) return new NextResponse("No workspace found for user", { status: 404 })
 
     // Check DB session
-    const { data: session, error: sessionErr } = await (supabase
+    const { data: session } = await (supabase
         .from("gowa_sessions")
         .select("status, phone_jid, display_name, error_message, gowa_session_id")
         .eq("workspace_id", workspaceId)
         .is("deleted_at", null)
-        .maybeSingle() as any)
+        .maybeSingle() as any) // eslint-disable-line @typescript-eslint/no-explicit-any
 
     // Check GoWA devices — match by device name or stored session ID only
     // Never fallback to any logged-in device (prevents cross-workspace contamination)
@@ -44,6 +44,7 @@ export async function GET(req: NextRequest) {
       })
       if (resp.ok) {
         const data = await resp.json()
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const devices: any[] = data.results || []
 
         // Match by device name (GoWA may or may not return 'name' field)
@@ -78,7 +79,7 @@ export async function GET(req: NextRequest) {
     if (gowaConnected && gowaJid && session?.status !== "connected") {
       // Device is connected on GoWA but DB is stale — update to connected
       const admin = createAdminClient()
-      const { data: updated, error: upsertErr } = await admin
+      await admin
         .from("gowa_sessions")
         .update({
           gowa_session_id: gowaDeviceId,
@@ -89,7 +90,6 @@ export async function GET(req: NextRequest) {
         })
         .eq("workspace_id", workspaceId)
         .is("deleted_at", null)
-        .select()
       return NextResponse.json({
         status: "connected",
         phone: gowaJid,
@@ -128,7 +128,7 @@ export async function GET(req: NextRequest) {
       message: session?.error_message || null,
     })
 
-  } catch (error: any) {
+  } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
     console.error("[API_STATUS_ERROR]", error)
     return new NextResponse("Internal Error", { status: 500 })
   }

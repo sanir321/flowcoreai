@@ -12,13 +12,14 @@ import { Textarea } from "@/components/ui/textarea"
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { createClient } from "@/lib/supabase/client"
 import { addUrlSource, deleteSource, pasteKbText } from "@/app/actions/knowledge"
 import { updateBusinessProfile } from "@/app/actions/business-profile"
 import { useRouter } from "next/navigation"
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 const supabase = createClient()
 const DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
@@ -39,9 +40,9 @@ interface RequiredItem {
 }
 
 export function KnowledgeClient({
-  initialSources, workspaceId, businessType, initialBusinessProfile, initialTemplates
+  initialSources, workspaceId, initialBusinessProfile, initialTemplates
 }: {
-  initialSources: Source[]; workspaceId: string; businessType: string
+  initialSources: Source[]; workspaceId: string
   initialBusinessProfile: any; initialTemplates: Template[]
 }) {
   const [sources, setSources] = useState<Source[]>(initialSources)
@@ -113,6 +114,7 @@ export function KnowledgeClient({
   const hasInProgress = sources.some(s => s.status === 'pending' || s.status === 'processing')
   useEffect(() => {
     if (hasInProgress) { const i = setInterval(refreshSources, 5000); return () => clearInterval(i) }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasInProgress])
 
   const handleAddUrl = async (e: React.FormEvent) => {
@@ -526,7 +528,7 @@ export function KnowledgeClient({
                     </button>
                     {selectedItem === item.id && (
                       <div className="mx-3 mb-2 p-4 rounded-xl bg-gray-50 border border-gray-100">
-                        <p className="text-xs text-gray-500 mb-2">Paste content about "{item.label}" to create tagged knowledge base entries.</p>
+                        <p className="text-xs text-gray-500 mb-2">Paste content about &quot;{item.label}&quot; to create tagged knowledge base entries.</p>
                         <Textarea placeholder={`Paste ${item.label.toLowerCase()} content here...`} value={pasteContent} onChange={e => setPasteContent(e.target.value)} rows={4} className="rounded-xl bg-gray-50 border-gray-100 focus:bg-white text-sm resize-none mb-2" />
                         <Button size="sm" className="h-8 text-xs bg-black hover:bg-gray-800 text-white rounded-xl" disabled={!pasteContent.trim()} onClick={async () => {
                           if (!pasteContent.trim()) return

@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ qr_code: qrData.qr_code })
 
-  } catch (error: any) {
+  } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
     console.error("[API_INIT_ERROR]", error)
     return new NextResponse("Failed to initialize connection", { status: 500 })
   }

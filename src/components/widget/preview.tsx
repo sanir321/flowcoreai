@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect, useCallback } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Send, X, MessageSquare } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -27,14 +27,8 @@ interface PreviewProps {
 
 export default function WidgetPreview({ workspaceId, view = "chat", isOpen = true, config: localConfig }: PreviewProps) {
   const [msgs, setMsgs] = useState<{ text: string; role: string }[]>([])
-  const [input, setInput] = useState("")
-  const [sending, setSending] = useState(false)
+  const [sending] = useState(false)
   const [dbConfig, setDbConfig] = useState<WidgetConfig | null>(null)
-  const [sessionToken] = useState(() =>
-    typeof crypto !== "undefined" && crypto.randomUUID
-      ? crypto.randomUUID()
-      : Math.random().toString(36).slice(2) + Date.now().toString(36)
-  )
   const bodyRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -44,6 +38,7 @@ export default function WidgetPreview({ workspaceId, view = "chat", isOpen = tru
       .catch(() => {})
   }, [workspaceId])
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const config = { ...dbConfig, ...localConfig } as any
   const accent = config.accent_color || "#050505"
 
@@ -58,27 +53,6 @@ export default function WidgetPreview({ workspaceId, view = "chat", isOpen = tru
        bodyRef.current.scrollTop = bodyRef.current.scrollHeight
     }
   }, [msgs])
-
-  const send = useCallback(async () => {
-    const text = input.trim()
-    if (!text || sending) return
-    setInput("")
-    setSending(true)
-    setMsgs((prev) => [...prev, { text, role: "user" }])
-
-    try {
-      const res = await fetch("/api/widget/message", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ workspace_id: workspaceId, session_token: sessionToken, message: text }),
-      })
-      const data = await res.json()
-      if (data.reply) setMsgs((prev) => [...prev, { text: data.reply, role: "bot" }])
-    } catch {
-      setMsgs((prev) => [...prev, { text: "Error. Try again.", role: "bot" }])
-    }
-    setSending(false)
-  }, [input, sending, workspaceId, sessionToken])
 
   const name = config.agent_name || "Assistant"
 

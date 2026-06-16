@@ -9,7 +9,6 @@ import {
   Puzzle,
   Globe,
   Zap,
-  ChevronRight,
   ShieldCheck,
   ShoppingBag,
   ClipboardList,
@@ -17,7 +16,6 @@ import {
   MessageCircle,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { motion } from "framer-motion"
 
 const SETTINGS_NAV = [
   { name: "Workspace", href: "/settings", icon: SettingsIcon },

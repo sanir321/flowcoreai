@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import type { Metadata } from "next"
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
@@ -27,6 +29,7 @@ export default async function BusinessProfilePage() {
       initialProfile={(workspace?.business_profile as any) || {}}
       businessType={workspace?.business_type || "hotel"}
       initialServicesOffered={workspace?.services_offered || ""}
+      initialSuggestions={((workspace?.business_profile as any)?.suggestion) || null}
     />
   )
 }

@@ -1,4 +1,5 @@
 "use client"
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useState } from "react"
 import { Plus, CheckCircle2, MessageSquare, X, Target, Zap, Loader2 } from "lucide-react"

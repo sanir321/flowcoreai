@@ -8,7 +8,7 @@ export async function GET() {
       status: "ok",
       timestamp: new Date().toISOString(),
     });
-  } catch (error: any) {
+  } catch {
     return NextResponse.json(
       { status: "error", message: "Health check failed" },
       { status: 500 },

@@ -44,6 +44,7 @@ export async function takeOverSession(input: unknown): Promise<ActionResponse<{ 
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function sendManualReply(input: unknown): Promise<ActionResponse<any>> {
   try {
     const result = SendManualReplySchema.safeParse(input)
@@ -92,6 +93,7 @@ export async function sendManualReply(input: unknown): Promise<ActionResponse<an
       .eq("id", session_id)
 
     // If WhatsApp, dispatch via GoWA
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (session.channel === 'whatsapp' && (session.contacts as any)?.phone) {
        try {
           // Fetch the workspace-specific device ID
@@ -102,6 +104,7 @@ export async function sendManualReply(input: unknown): Promise<ActionResponse<an
             .maybeSingle()
           
           if (gSession?.gowa_session_id) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             await sendTextMessage(gSession.gowa_session_id, (session.contacts as any).phone, content)
           } else {
             console.error("No GoWA session found for workspace", workspaceId)

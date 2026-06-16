@@ -27,14 +27,11 @@ import {
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+
 import { 
   Sheet, 
   SheetContent, 
-  SheetHeader, 
   SheetTitle, 
-  SheetDescription,
-  SheetFooter
 } from "@/components/ui/sheet"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -44,6 +41,7 @@ import { cn } from "@/lib/utils"
 
 
 interface ContactsTableProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   initialContacts: any[]
   workspaceId: string
 }
@@ -51,6 +49,7 @@ interface ContactsTableProps {
 export function ContactsTable({ initialContacts = [], workspaceId }: ContactsTableProps) {
   const [contacts, setContacts] = useState(initialContacts || [])
   const [search, setSearch] = useState("")
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [selectedContact, setSelectedContact] = useState<any>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [manualMessage, setManualMessage] = useState("")
@@ -173,7 +172,7 @@ export function ContactsTable({ initialContacts = [], workspaceId }: ContactsTab
                 </TableCell>
               </TableRow>
             ) : (
-              filteredContacts.map((contact, i) => (
+              filteredContacts.map((contact) => (
                 <TableRow 
                   key={contact.id}
                   className="border-gray-50 hover:bg-gray-50/50 cursor-pointer transition-all duration-300 group h-24 text-gray-900"

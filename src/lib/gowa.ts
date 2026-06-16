@@ -1,5 +1,5 @@
 // /lib/gowa.ts
-import { SendTextPayload, SendImagePayload, SendLinkPayload } from "@/types/gowa";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const deviceIdCache = new Map<string, { id: string, expires: number }>();

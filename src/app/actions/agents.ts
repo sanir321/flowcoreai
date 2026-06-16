@@ -167,6 +167,7 @@ export async function deleteAgent(input: unknown): Promise<ActionResponse<{ succ
 
     const { error } = await supabase
       .from("workspace_agents")
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .update({ deleted_at: new Date().toISOString() } as any)
       .eq("id", agent_id)
 
@@ -211,6 +212,7 @@ export async function updateAgentConfig(input: unknown): Promise<ActionResponse<
     if (!agent) return { data: null, error: "Agent not found" }
     if (agent.workspace_id !== workspaceId) return { data: null, error: "Unauthorized" }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const mergedConfig = { ...(agent?.config as any || {}), ...config }
 
     const { error } = await supabase

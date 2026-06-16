@@ -40,8 +40,10 @@ export default async function InboxPage() {
 
   return (
     <InboxClient 
-      initialSessions={(sessions as any[]) || []} 
-      initialContacts={(contacts as any[]) || []} 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      initialSessions={(sessions as any[]) || []}
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      initialContacts={(contacts as any[]) || []}
       initialWelcomeTemplate={workspace?.welcome_template || ""}
       workspaceId={workspaceId} 
     />

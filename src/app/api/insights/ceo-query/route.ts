@@ -83,13 +83,15 @@ export async function POST(req: Request) {
       knowledge_base_size: kbCount.count || 0
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const contactData = specificContact ? (specificContact as any).data : null;
     const systemPrompt = `You are the FlowCore CEO Analyst, a high-level business intelligence agent.
 Your goal is to provide deep, actionable insights based on the real-time performance data of this workspace.
 
 WORKSPACE CONTEXT:
 - Mode: ${agent_type}
 - Reasoning Level: ${reasoning}
-${specificContact && (specificContact as any).data ? `- Targeted Contact Analysis: ${JSON.stringify((specificContact as any).data)}` : ''}
+${contactData ? `- Targeted Contact Analysis: ${JSON.stringify(contactData)}` : ''}
 
 PERFORMANCE DATA (Last 7 Days vs Previous 7 Days):
 - Messages: ${stats.messages.current} (${stats.messages.current >= stats.messages.previous ? '+' : ''}${stats.messages.current - stats.messages.previous})
@@ -163,7 +165,7 @@ GUIDELINES:
 
     return NextResponse.json({ reply, thought });
 
-  } catch (error: any) {
+  } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
     console.error("CEO Analyst Error:", error)
     return NextResponse.json({ reply: "I'm having trouble accessing your workspace data right now. Please check your integrations and try again." }, { status: 500 })
   }

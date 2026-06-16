@@ -5,6 +5,7 @@ interface AuditLogInput {
   action: string
   entity_type: string
   entity_id?: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   payload?: Record<string, any>
 }
 

@@ -226,7 +226,7 @@ export async function POST(req: NextRequest) {
       headers: getCorsHeaders(allowedOrigin),
     });
 
-  } catch (error: any) {
+  } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
     console.error("Widget Message Error:", error);
     return new Response("Failed to process message", { status: 500 });
   }
@@ -285,7 +285,7 @@ export async function GET(req: NextRequest) {
       headers: { ...getCorsHeaders("*"), "Cache-Control": "no-cache" },
     });
 
-  } catch (error: any) {
+  } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
     console.error("Widget Poll Error:", error);
     return NextResponse.json({ messages: [] }, { status: 500, headers: getCorsHeaders("*") });
   }

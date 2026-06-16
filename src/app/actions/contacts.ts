@@ -183,6 +183,7 @@ export async function getContactsPaginated(
   workspace_id: string,
   offset: number = 0,
   limit: number = 10
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<ActionResponse<{ contacts: any[], total: number | null }>> {
   try {
     const supabase = await createClient()

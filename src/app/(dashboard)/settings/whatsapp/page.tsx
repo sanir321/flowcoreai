@@ -3,10 +3,8 @@
 import { useState, useEffect, useCallback } from "react"
 import { motion } from "framer-motion"
 import { 
-  MessageCircle, 
   HelpCircle, 
   Loader2, 
-  CheckCircle2, 
   ShieldCheck, 
   RefreshCw,
   Smartphone,
@@ -74,6 +72,7 @@ export default function WhatsAppPage() {
           setErrorMessage(data.message || "A connection error occurred.")
         } else {
           // This covers 'disconnected', 'qr_pending' etc.
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           setStatus(data.status as any || 'disconnected')
         }
       }
@@ -100,6 +99,7 @@ export default function WhatsAppPage() {
           filter: `workspace_id=eq.${workspaceId}`,
         },
         (payload) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const newRecord = payload.new as any;
           if (payload.eventType === 'DELETE' || !newRecord) {
             setStatus('disconnected');
@@ -351,6 +351,7 @@ export default function WhatsAppPage() {
                 <div className="p-12 bg-white flex flex-col items-center justify-center space-y-8 relative">
                     <div className="relative p-4 bg-white border border-gray-100 rounded-3xl shadow-xl overflow-hidden aspect-square flex items-center justify-center">
                         {qrCode ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
                             <img src={qrCode} alt="WhatsApp QR" className="w-full h-full object-contain" />
                         ) : (
                             <div className="h-64 w-64 flex flex-col items-center justify-center space-y-4 bg-gray-50 rounded-2xl">

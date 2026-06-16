@@ -92,7 +92,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.redirect(`${origin}/settings/integrations?connected=google`);
 
-  } catch (error: any) {
+  } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
     console.error("Google Callback Error:", error);
     return NextResponse.redirect(`${origin}/settings/integrations?error=Failed to connect Google. Please try again.`);
   } finally {

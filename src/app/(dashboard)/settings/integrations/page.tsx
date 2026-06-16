@@ -9,8 +9,7 @@ import {
   Settings2,
   Save,
   Lock,
-  Bot,
-  HelpCircle
+  Bot
 } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -87,13 +86,14 @@ export default function IntegrationsPage() {
 
       // Fetch active agents
       const { data: agents } = await (supabase
-        .from("workspace_agents") as any)
+        .from("workspace_agents") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
         .select("agent_type")
         .eq("workspace_id", workspaceId)
         .eq("status", "active")
         .is("deleted_at", null)
       
       if (agents) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         setActiveAgentTypes((agents as any[]).map(a => a.agent_type))
       }
 
@@ -143,6 +143,7 @@ export default function IntegrationsPage() {
       setIsActionLoading(null)
     } else {
       // Store nonce in cookie for CSRF binding verification in callback
+      // eslint-disable-next-line react-hooks/immutability
       document.cookie = `google_oauth_nonce=${result.data.nonce}; path=/api/auth/google/callback; maxAge=600; SameSite=Lax; Secure`
       window.location.assign(result.data.url)
     }

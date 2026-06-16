@@ -22,6 +22,7 @@ export default async function OrdersPage() {
 
   return (
     <OrdersClient
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       initialOrders={(orders as any[]) || []}
     />
   )

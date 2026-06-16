@@ -87,7 +87,7 @@ export async function GET(req: NextRequest) {
         "Content-Disposition": `attachment; filename="spreadsheet-${new Date().toISOString().split("T")[0]}.csv"`,
       },
     })
-  } catch (err: any) {
+  } catch (err: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
     console.error("[SHEETS_DOWNLOAD] Error:", err.message)
     return NextResponse.json({ error: "Failed to download sheet" }, { status: 500 })
   }

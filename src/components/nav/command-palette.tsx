@@ -112,7 +112,7 @@ export function CommandPalette() {
       toast.success("Knowledge Ingested", { id: toastId })
       setOpen(false)
       router.push("/knowledge")
-    } catch (err: any) {
+    } catch (err: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
       console.error(err)
       toast.error(err.message || "Failed to ingest file", { id: toastId })
     } finally {

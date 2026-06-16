@@ -76,7 +76,7 @@ export function ContactsClient({ initialContacts, workspaceId }: ContactsClientP
         document.body.removeChild(a)
         toast.success("Export successful")
       }
-    } catch (err) {
+    } catch {
       toast.error("Failed to export contacts")
     } finally {
       setIsExporting(false)

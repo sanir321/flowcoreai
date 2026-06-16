@@ -81,6 +81,7 @@ async function performTokenRefresh(workspace_id: string, refreshToken: string): 
   return newTokens.access_token;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function createCalendarEvent(workspace_id: string, event: any) {
   const accessToken = await getValidAccessToken(workspace_id);
   const { data: tokens } = await supabaseAdmin.from("google_oauth_tokens").select("calendar_id").eq("workspace_id", workspace_id).single();
@@ -98,6 +99,7 @@ export async function createCalendarEvent(workspace_id: string, event: any) {
   return response.json();
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function updateCalendarEvent(workspace_id: string, event_id: string, event: any) {
   const accessToken = await getValidAccessToken(workspace_id);
   const { data: tokens } = await supabaseAdmin.from("google_oauth_tokens").select("calendar_id").eq("workspace_id", workspace_id).single();

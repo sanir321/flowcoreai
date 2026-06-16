@@ -14,6 +14,10 @@
     {
       "path": "/api/internal/gowa-health",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/internal/refresh-business-profiles",
+      "schedule": "0 6 1 * *"
     }
   ]
 }

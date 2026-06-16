@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ success: true, data: exportData })
-  } catch (err: any) {
+  } catch (err: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
     console.error("[DATA_EXPORT] Error:", err.message)
     return NextResponse.json({ error: "Failed to export data" }, { status: 500 })
   }

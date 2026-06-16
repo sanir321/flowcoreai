@@ -33,6 +33,7 @@ const MODES = [
 export default function NotificationsPage() {
   const { workspaceId, isLoading: wsLoading } = useWorkspace()
   const [isLoading, setIsLoading] = useState(true)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [config, setConfig] = useState<any>(null)
   const [whatsappNumber, setWhatsappNumber] = useState("")
   const [savingWhatsapp, setSavingWhatsapp] = useState(false)
@@ -43,14 +44,14 @@ export default function NotificationsPage() {
     
     async function fetchConfig() {
       const { data } = await (supabase
-        .from("workspace_notifications") as any)
+        .from("workspace_notifications") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
         .select("*")
         .eq("workspace_id", workspaceId)
         .maybeSingle()
       
       if (!data) {
         const { data: newData } = await (supabase
-          .from("workspace_notifications") as any)
+          .from("workspace_notifications") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
           .upsert({ workspace_id: workspaceId }, { onConflict: "workspace_id" })
           .select()
           .single()
@@ -64,7 +65,7 @@ export default function NotificationsPage() {
     }
     
     fetchConfig()
-  }, [workspaceId])
+  }, [workspaceId, supabase])
 
   const handleToggle = async (key: string, value: string | boolean) => {
     if (!workspaceId) return

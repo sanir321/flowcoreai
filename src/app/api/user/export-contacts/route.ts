@@ -27,6 +27,7 @@ export async function GET(req: NextRequest) {
     if (error) throw error
 
     const headers = ["Name", "Email", "Phone", "Channel", "Tags", "Last Contacted", "Created At"]
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const rows = (contacts || []).map((c: Record<string, any>) => [
       escapeCsv(c.name ?? ""),
       escapeCsv(c.email ?? ""),
@@ -45,7 +46,7 @@ export async function GET(req: NextRequest) {
         "Content-Disposition": `attachment; filename="contacts-${new Date().toISOString().split("T")[0]}.csv"`,
       },
     })
-  } catch (err: any) {
+  } catch (err: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
     console.error("[EXPORT_CONTACTS] Error:", err.message)
     return NextResponse.json({ error: "Failed to export contacts" }, { status: 500 })
   }

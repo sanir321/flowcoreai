@@ -13,18 +13,11 @@ import {
   Globe, 
   Trash2, 
   Shield,
-  MessageSquare,
   BookOpen,
-  Zap,
-  ExternalLink,
-  ChevronRight,
-  Puzzle,
   Calendar,
   Table,
   Database,
   CheckCircle2,
-  Lock,
-  Target,
   Wand2,
   User as UserIcon
 } from "lucide-react"
@@ -50,6 +43,8 @@ import { motion, AnimatePresence } from "framer-motion"
 import { useCallback, useState, useEffect } from "react"
 import { z } from "zod"
 import { AssistantsSidebar } from "@/components/nav/assistants-sidebar"
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable react-hooks/incompatible-library */
 
 const TRAIT_OPTIONS = {
   tone: ['professional', 'friendly', 'enthusiastic'],

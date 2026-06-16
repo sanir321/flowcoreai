@@ -1,5 +1,7 @@
 "use client"
 
+/* eslint-disable react-hooks/incompatible-library */
+
 import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
@@ -30,6 +32,7 @@ import { createWorkspace } from "@/app/actions/workspace"
 import { finalizeOnboarding } from "@/app/actions/agents"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import { INDUSTRY_OPTIONS } from "@/lib/constants"
 import { CreateWorkspaceSchema } from "@/lib/schemas/workspace"
 import { z } from "zod"
 
@@ -233,6 +236,7 @@ export default function OnboardingPage() {
       business_type: "",
       employee_count: "",
       website_url: "",
+      contact_phone: "",
       accept_terms: false
     }
   })
@@ -319,7 +323,17 @@ export default function OnboardingPage() {
                       placeholder="https://acme.com"
                       className="h-14 bg-white/5 border-white/10 rounded-xl focus:border-[#D95E46] text-white placeholder:text-neutral-600 transition-all"
                     />
-                    <p className="text-[10px] text-neutral-500 ml-1">We'll auto-populate your business profile from your website</p>
+                    <p className="text-[10px] text-neutral-500 ml-1">We&apos;ll auto-populate your business profile from your website</p>
+                  </div>
+
+                  <div className="space-y-2.5 text-left">
+                    <Label className="text-[11px] font-bold text-neutral-400 ml-1">Contact Phone</Label>
+                    <Input
+                      {...form.register("contact_phone")}
+                      placeholder="+91 98765 43210"
+                      className="h-14 bg-white/5 border-white/10 rounded-xl focus:border-[#D95E46] text-white placeholder:text-neutral-600 transition-all"
+                    />
+                    <p className="text-[10px] text-neutral-500 ml-1">Used by your AI agent for appointment confirmations</p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-6 text-left text-gray-900">
@@ -348,21 +362,11 @@ export default function OnboardingPage() {
                         <SelectTrigger className="h-14 bg-white/5 border-white/10 rounded-xl focus:ring-0 text-white">
                           <SelectValue placeholder="Select industry" />
                         </SelectTrigger>
-                        <SelectContent className="bg-[#1F1A1A] border-white/10 text-white">
-                           <SelectItem value="construction">Construction & Engineering</SelectItem>
-                           <SelectItem value="hotel">Hotel & Hospitality</SelectItem>
-                           <SelectItem value="restaurant">Restaurant & Food Service</SelectItem>
-                           <SelectItem value="retail">E-commerce & Retail</SelectItem>
-                           <SelectItem value="healthcare">Healthcare & Medical</SelectItem>
-                           <SelectItem value="finance">Banking & Finance</SelectItem>
-                           <SelectItem value="education">Education & Training</SelectItem>
-                           <SelectItem value="legal">Legal Services</SelectItem>
-                           <SelectItem value="beauty">Salon & Beauty</SelectItem>
-                           <SelectItem value="fitness">Fitness & Wellness</SelectItem>
-                           <SelectItem value="automotive">Automotive</SelectItem>
-                           <SelectItem value="logistics">Logistics & Transport</SelectItem>
-                           <SelectItem value="other">Other</SelectItem>
-                         </SelectContent>
+                         <SelectContent className="bg-[#1F1A1A] border-white/10 text-white">
+                            {INDUSTRY_OPTIONS.map(io => (
+                              <SelectItem key={io.value} value={io.value}>{io.label}</SelectItem>
+                            ))}
+                          </SelectContent>
                       </Select>
                       {form.formState.errors.business_type && (
                        <p className="text-red-500 text-[10px] font-bold ml-1 mt-1">Required</p>
@@ -475,7 +479,7 @@ export default function OnboardingPage() {
                   <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
                     <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
                     <p className="text-[11px] text-amber-300/80 leading-relaxed">
-                      Without a <span className="font-semibold text-amber-200">Support Hero</span> agent, messages that don't match this specialist will not be handled. You can add more agents later in settings.
+                      Without a <span className="font-semibold text-amber-200">Support Hero</span> agent, messages that don&apos;t match this specialist will not be handled. You can add more agents later in settings.
                     </p>
                   </div>
                 )}
