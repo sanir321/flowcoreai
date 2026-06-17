@@ -100,51 +100,53 @@ export function OverviewTab({ businessProfile, sources, templates, usedTags, onN
         </div>
       </div>
 
-      <div className="bg-white rounded-[2rem] border border-gray-100 p-8 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-semibold text-gray-900">Setup Progress</h2>
-          <span className="text-xs font-bold text-gray-500">{progress}%</span>
-        </div>
-        <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden mb-6">
-          <div className="h-full rounded-full bg-gradient-to-r from-[#c65f39] to-emerald-500 transition-all duration-700" style={{ width: `${progress}%` }} />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
-          {items.map(item => (
-            <div key={item.id} className="flex items-center gap-3 py-1.5">
-              <div className={cn("h-5 w-5 rounded-full border-2 flex items-center justify-center shrink-0",
-                item.status === "complete" ? "border-emerald-500 bg-emerald-500" : "border-gray-300")}>
-                {item.status === "complete" && <CheckCircle2 className="h-3 w-3 text-white" />}
-              </div>
-              <div>
-                <p className={cn("text-xs font-medium", item.status === "complete" ? "text-gray-500" : "text-gray-900")}>{item.label}</p>
-                <p className="text-[10px] text-gray-400 capitalize">{item.section === "business_profile" ? "Profile" : "Knowledge Base"}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="bg-gradient-to-r from-[#c65f39]/5 to-emerald-50 rounded-[2rem] border border-[#c65f39]/10 p-8">
-        <div className="flex items-start gap-4">
-          <div className="h-10 w-10 rounded-xl bg-[#c65f39]/10 flex items-center justify-center shrink-0">
-            <Building2 className="h-5 w-5 text-[#c65f39]" />
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        <div className="bg-white rounded-[2rem] border border-gray-100 p-8 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold text-gray-900">Setup Progress</h2>
+            <span className="text-xs font-bold text-gray-500">{progress}%</span>
           </div>
-          <div>
-            <h3 className="text-sm font-semibold text-gray-900">Agents use this information</h3>
-            <p className="text-xs text-gray-500 mt-1 max-w-lg">
-              Your business profile and knowledge base feed directly into your AI agents.
-              The more complete your setup, the better your agents can answer customer questions,
-              book appointments, and handle support tickets.
-            </p>
-            <div className="flex gap-3 mt-4">
-              <button onClick={() => onNavigate("profile")}
-                className="text-xs font-semibold px-4 py-2 rounded-xl bg-[#c65f39] text-white hover:bg-[#b55533] transition-all">
-                Edit Profile
-              </button>
-              <button onClick={() => onNavigate("sources")}
-                className="text-xs font-semibold px-4 py-2 rounded-xl border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition-all">
-                Manage Sources
-              </button>
+          <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden mb-6">
+            <div className="h-full rounded-full bg-gradient-to-r from-[#c65f39] to-emerald-500 transition-all duration-700" style={{ width: `${progress}%` }} />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
+            {items.map(item => (
+              <div key={item.id} className="flex items-center gap-3 py-1.5">
+                <div className={cn("h-5 w-5 rounded-full border-2 flex items-center justify-center shrink-0",
+                  item.status === "complete" ? "border-emerald-500 bg-emerald-500" : "border-gray-300")}>
+                  {item.status === "complete" && <CheckCircle2 className="h-3 w-3 text-white" />}
+                </div>
+                <div>
+                  <p className={cn("text-xs font-medium", item.status === "complete" ? "text-gray-500" : "text-gray-900")}>{item.label}</p>
+                  <p className="text-[10px] text-gray-400 capitalize">{item.section === "business_profile" ? "Profile" : "Knowledge Base"}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-r from-[#c65f39]/5 to-emerald-50 rounded-[2rem] border border-[#c65f39]/10 p-8">
+          <div className="flex items-start gap-4">
+            <div className="h-10 w-10 rounded-xl bg-[#c65f39]/10 flex items-center justify-center shrink-0">
+              <Building2 className="h-5 w-5 text-[#c65f39]" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900">Agents use this information</h3>
+              <p className="text-xs text-gray-500 mt-1 max-w-lg">
+                Your business profile and knowledge base feed directly into your AI agents.
+                The more complete your setup, the better your agents can answer customer questions,
+                book appointments, and handle support tickets.
+              </p>
+              <div className="flex gap-3 mt-4">
+                <button onClick={() => onNavigate("profile")}
+                  className="text-xs font-semibold px-4 py-2 rounded-xl bg-[#c65f39] text-white hover:bg-[#b55533] transition-all">
+                  Edit Profile
+                </button>
+                <button onClick={() => onNavigate("sources")}
+                  className="text-xs font-semibold px-4 py-2 rounded-xl border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition-all">
+                  Manage Sources
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -196,7 +196,7 @@ export function SourcesTab({ initialSources, workspaceId }: SourcesTabProps) {
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
           {sources.map(source => (
               <div key={source.id} className="p-8 rounded-[2rem] bg-white border border-gray-100 hover:border-gray-200 hover:shadow-sm transition-all group">
               <div className="flex items-start justify-between mb-5">
