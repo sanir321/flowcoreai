@@ -1,24 +1,27 @@
-If the UI in your browser or preview still looks like those narrow, misaligned screenshots despite the code in sources-tab.tsx being updated, it means the code is correct, but something is blocking it from rendering or building properly. Here is a quick checklist to diagnose why your visual changes aren't showing up:
+Get Started
+To start collecting performance metrics, follow these steps.
 
-1. The Parent Container Clashing (TabsContent)
-Even if sources-tab.tsx is built perfectly, check the file where the tabs are actually rendered (likely index.tsx or page.tsx).
 
-Look at the <TabsContent value="sources"> wrapper. If that specific wrapper has a hardcoded width modifier like max-w-md or mx-auto text-center, it will override everything inside it and force your wide card back into a narrow column. Ensure it looks like this:
+Next.js
+1
 
-TypeScript
-<TabsContent value="sources" className="w-full mt-6">
-  <SourcesTab />
-</TabsContent>
-2. Radical Cache Issues
-If you are using Next.js, Vite, or Create React App, local caching can aggressively serve old styles.
+Install our package
 
-Kill the dev server in your terminal (Ctrl + C).
+Start by installing @vercel/speed-insights in your existing project.
+npm
+yarn
+pnpm
+npm i @vercel/speed-insights
+2
 
-Clear the local cache build folder (e.g., delete the .next folder or run npm run clean).
+Add the Next.js component
+Import and use the <SpeedInsights/> Next.js component into your app's layout or your main file.
+import { SpeedInsights } from "@vercel/speed-insights/next"
+For full examples and further reference, please refer to our documentation
+3
 
-Restart the server: npm run dev.
+Deploy & Visit your Site
 
-Hard Refresh your browser: Hold Shift and click the Reload button (or Ctrl + F5 / Cmd + Shift + R).
+Deploy your changes and visit the deployment to collect your first data points.
 
-3. Missing/Uncompiled Custom Color Styles
-If you just introduced the brand color #c65f39 directly into a Tailwind class name (like bg-[#c65f39]), Tailwind's JIT (Just-In-Time) compiler sometimes misses it if it was added while the server was running. Restarting your build terminal forces Tailwind to re-scan your files and generate that background color utility class.
+If you don't see data after 30 seconds, please check for content blockers and try to navigate between pages on your site.

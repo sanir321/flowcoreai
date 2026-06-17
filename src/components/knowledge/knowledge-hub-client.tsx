@@ -1,12 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Loader2, RefreshCw, Globe, Building2, LayoutDashboard } from "lucide-react"
 import { BusinessProfileClient } from "@/app/(dashboard)/settings/business-profile/business-profile-client"
 import { SourcesTab } from "@/components/knowledge/sources-tab"
 import { OverviewTab } from "@/components/knowledge/overview-tab"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
 
 interface KnowledgeHubClientProps {
   workspaceId: string
@@ -18,6 +18,12 @@ interface KnowledgeHubClientProps {
   initialTemplates: any[]
   initialUsedTags: string[]
 }
+
+const sidebarItems = [
+  { key: "overview", label: "Overview", icon: LayoutDashboard },
+  { key: "profile", label: "Business Profile", icon: Building2 },
+  { key: "sources", label: "Sources", icon: Globe },
+] as const
 
 export function KnowledgeHubClient({
   workspaceId,
@@ -62,36 +68,42 @@ export function KnowledgeHubClient({
   }
 
   return (
-    <div className="p-4 md:p-6 max-w-7xl mx-auto pb-16">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-semibold text-gray-900">Knowledge Hub</h1>
-        <button
-          onClick={handleRegenerateKB}
-          disabled={regenerating}
-          className="inline-flex items-center gap-2 h-9 px-4 rounded-xl border border-gray-200 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-all disabled:opacity-50"
-        >
-          {regenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-          Regenerate
-        </button>
-      </div>
+    <div className="flex gap-0 max-w-7xl mx-auto pb-16">
+      <aside className="w-56 shrink-0 border-r border-gray-100 min-h-[calc(100vh-12rem)]">
+        <div className="p-5 border-b border-gray-100">
+          <h1 className="text-sm font-semibold text-gray-900">Knowledge Hub</h1>
+        </div>
+        <nav className="p-3 space-y-1">
+          {sidebarItems.map(({ key, label, icon: Icon }) => (
+            <button
+              key={key}
+              onClick={() => setActiveTab(key)}
+              className={cn(
+                "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
+                activeTab === key
+                  ? "bg-[#c65f39]/10 text-[#c65f39]"
+                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+              )}
+            >
+              <Icon className="h-4 w-4" />
+              {label}
+            </button>
+          ))}
+        </nav>
+        <div className="p-3 mt-auto">
+          <button
+            onClick={handleRegenerateKB}
+            disabled={regenerating}
+            className="w-full inline-flex items-center justify-center gap-2 h-9 px-3 rounded-xl border border-gray-200 bg-white text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-all disabled:opacity-50"
+          >
+            {regenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+            Regenerate
+          </button>
+        </div>
+      </aside>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="inline-flex h-10 items-center justify-start gap-1 rounded-xl bg-gray-100 p-1">
-          <TabsTrigger value="overview" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all data-[state=active]:bg-[#c65f39] data-[state=active]:text-white data-[state=inactive]:text-gray-500 data-[state=inactive]:hover:text-gray-700">
-            <LayoutDashboard className="h-4 w-4" />
-            Overview
-          </TabsTrigger>
-          <TabsTrigger value="profile" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all data-[state=active]:bg-[#c65f39] data-[state=active]:text-white data-[state=inactive]:text-gray-500 data-[state=inactive]:hover:text-gray-700">
-            <Building2 className="h-4 w-4" />
-            Business Profile
-          </TabsTrigger>
-          <TabsTrigger value="sources" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all data-[state=active]:bg-[#c65f39] data-[state=active]:text-white data-[state=inactive]:text-gray-500 data-[state=inactive]:hover:text-gray-700">
-            <Globe className="h-4 w-4" />
-            Sources
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="mt-6">
+      <main className="flex-1 min-w-0 p-6">
+        {activeTab === "overview" && (
           <OverviewTab
             workspaceId={workspaceId}
             businessProfile={initialBusinessProfile}
@@ -100,9 +112,8 @@ export function KnowledgeHubClient({
             usedTags={initialUsedTags}
             onNavigate={setActiveTab}
           />
-        </TabsContent>
-
-        <TabsContent value="profile" className="mt-6">
+        )}
+        {activeTab === "profile" && (
           <BusinessProfileClient
             workspaceId={workspaceId}
             initialProfile={initialBusinessProfile}
@@ -110,15 +121,14 @@ export function KnowledgeHubClient({
             initialServicesOffered={initialServicesOffered}
             initialSuggestions={initialSuggestions}
           />
-        </TabsContent>
-
-        <TabsContent value="sources" className="mt-6">
+        )}
+        {activeTab === "sources" && (
           <SourcesTab
             initialSources={initialSources}
             workspaceId={workspaceId}
           />
-        </TabsContent>
-      </Tabs>
+        )}
+      </main>
     </div>
   )
 }
