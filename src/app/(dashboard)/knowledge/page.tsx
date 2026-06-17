@@ -31,7 +31,7 @@ export default async function KnowledgePage() {
   const [{ data: sources }, { data: ws }] = await Promise.all([
     supabase
       .from("kb_sources")
-      .select("*")
+      .select("id, label, source_type, status, chunk_count, created_at, error_message")
       .eq("workspace_id", workspaceId)
       .is("deleted_at", null)
       .order("created_at", { ascending: false }),
@@ -47,17 +47,13 @@ export default async function KnowledgePage() {
   const servicesOffered = ws?.services_offered || ""
   const suggestion = (businessProfile as any)?.suggestion || null
 
-  const [{ data: wildcardTemplates }, { data: typeTemplates }] = await Promise.all([
+  const [{ data: wildcardTemplates }, { data: typeTemplates }, { data: tags }] = await Promise.all([
     (supabase as any).from("required_info_templates").select("*").eq("business_type", "*").order("priority", { ascending: true }),
     (supabase as any).from("required_info_templates").select("*").eq("business_type", businessType).order("priority", { ascending: true }),
+    (supabase as any).rpc("get_distinct_kb_tags", { p_workspace_id: workspaceId }),
   ])
   const templates = [...(wildcardTemplates || []), ...(typeTemplates || [])]
-
-  const usedTags = [...new Set(
-    (sources || [])
-      .filter(s => s.source_type === 'txt' && s.label !== "Pasted text")
-      .map(s => s.label)
-  )]
+  const usedTags = (tags as string[]) || []
 
   return (
     <KnowledgeHubClient

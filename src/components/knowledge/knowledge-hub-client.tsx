@@ -2,11 +2,10 @@
 
 import { useState, useEffect } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Loader2, RefreshCw, Globe, Zap, Bot } from "lucide-react"
+import { Loader2, RefreshCw, Globe, Zap, Bot, Sparkles } from "lucide-react"
 import { BusinessProfileClient } from "@/app/(dashboard)/settings/business-profile/business-profile-client"
-import { KnowledgeClient } from "@/components/knowledge/knowledge-client"
+import { SourcesTab } from "@/components/knowledge/sources-tab"
 import { OverviewTab } from "@/components/knowledge/overview-tab"
-import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 
 interface KnowledgeHubClientProps {
@@ -63,36 +62,39 @@ export function KnowledgeHubClient({
   }
 
   return (
-    <div className="p-4 md:p-6 max-w-7xl mx-auto font-sans pb-16">
+    <div className="p-4 md:p-6 max-w-7xl mx-auto pb-16">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">Knowledge Hub</h1>
           <p className="text-sm text-gray-500 mt-1">Manage your business profile and knowledge base in one place.</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleRegenerateKB} disabled={regenerating} className="h-9 px-3">
-            {regenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <> <RefreshCw className="h-4 w-4 mr-1" /> Regenerate KB </>}
-          </Button>
-        </div>
+        <button
+          onClick={handleRegenerateKB}
+          disabled={regenerating}
+          className="inline-flex items-center gap-2 h-9 px-4 rounded-xl border border-gray-200 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-all disabled:opacity-50"
+        >
+          {regenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+          Regenerate KB
+        </button>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="overview" className="data-[state=active]:bg-[#c65f39] data-[state=active]:text-white">
-            <Bot className="h-4 w-4 mr-2" />
+        <TabsList className="inline-flex h-10 items-center justify-start gap-1 rounded-xl bg-gray-100 p-1">
+          <TabsTrigger value="overview" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all data-[state=active]:bg-[#c65f39] data-[state=active]:text-white data-[state=inactive]:text-gray-500 data-[state=inactive]:hover:text-gray-700">
+            <Bot className="h-4 w-4" />
             Overview
           </TabsTrigger>
-          <TabsTrigger value="profile" className="data-[state=active]:bg-[#c65f39] data-[state=active]:text-white">
-            <Zap className="h-4 w-4 mr-2" />
+          <TabsTrigger value="profile" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all data-[state=active]:bg-[#c65f39] data-[state=active]:text-white data-[state=inactive]:text-gray-500 data-[state=inactive]:hover:text-gray-700">
+            <Zap className="h-4 w-4" />
             Business Profile
           </TabsTrigger>
-          <TabsTrigger value="sources" className="data-[state=active]:bg-[#c65f39] data-[state=active]:text-white">
-            <Globe className="h-4 w-4 mr-2" />
+          <TabsTrigger value="sources" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all data-[state=active]:bg-[#c65f39] data-[state=active]:text-white data-[state=inactive]:text-gray-500 data-[state=inactive]:hover:text-gray-700">
+            <Globe className="h-4 w-4" />
             Sources
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="mt-6 animate-in fade-in-0">
+        <TabsContent value="overview" className="mt-6">
           <OverviewTab
             workspaceId={workspaceId}
             businessProfile={initialBusinessProfile}
@@ -103,7 +105,7 @@ export function KnowledgeHubClient({
           />
         </TabsContent>
 
-        <TabsContent value="profile" className="mt-6 animate-in fade-in-0">
+        <TabsContent value="profile" className="mt-6">
           <BusinessProfileClient
             workspaceId={workspaceId}
             initialProfile={initialBusinessProfile}
@@ -113,42 +115,13 @@ export function KnowledgeHubClient({
           />
         </TabsContent>
 
-        <TabsContent value="sources" className="mt-6 animate-in fade-in-0">
-          <KnowledgeClient
+        <TabsContent value="sources" className="mt-6">
+          <SourcesTab
             initialSources={initialSources}
             workspaceId={workspaceId}
-            initialBusinessProfile={initialBusinessProfile}
-            initialTemplates={initialTemplates}
-            initialUsedTags={initialUsedTags}
           />
         </TabsContent>
       </Tabs>
     </div>
-  )
-}
-
-const btnVariants = {
-  default: "bg-[#c65f39] text-white hover:bg-[#b55533] shadow-lg shadow-[#c65f39]/20",
-  outline: "border border-gray-200 bg-white hover:bg-gray-50 text-gray-700",
-  ghost: "bg-transparent hover:bg-gray-100 text-gray-700",
-}
-const btnSizes = {
-  default: "h-11 px-6 text-sm",
-  sm: "h-9 px-4 text-xs",
-  lg: "h-12 px-8 text-base",
-  icon: "h-11 w-11",
-}
-
-function Button({ children, variant = "default", size = "default", className, disabled, onClick, ...props }: { children: React.ReactNode; variant?: keyof typeof btnVariants; size?: keyof typeof btnSizes; className?: string; disabled?: boolean; onClick?: () => void; [key: string]: any }) {
-  const baseStyles = "inline-flex items-center justify-center rounded-xl font-semibold transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-[#c65f39]/20"
-  return (
-    <button
-      className={cn(baseStyles, btnVariants[variant], btnSizes[size], className)}
-      disabled={disabled}
-      onClick={onClick}
-      {...props}
-    >
-      {children}
-    </button>
   )
 }
