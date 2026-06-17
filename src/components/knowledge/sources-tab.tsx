@@ -108,7 +108,7 @@ export function SourcesTab({ initialSources, workspaceId }: SourcesTabProps) {
   const processingCount = sources.filter(s => s.status === 'pending' || s.status === 'processing').length
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <h2 className="text-sm font-semibold text-gray-700">Sources ({sources.length})</h2>

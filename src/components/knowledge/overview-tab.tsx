@@ -66,7 +66,7 @@ export function OverviewTab({ businessProfile, sources, templates, usedTags, onN
   const kbComplete = kbItems.filter(i => i.status === "complete").length
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="p-8 rounded-[2rem] bg-white border border-gray-100 hover:border-gray-200 transition-all shadow-sm">
           <div className="h-10 w-10 rounded-xl bg-[#c65f39]/10 flex items-center justify-center mb-4">
