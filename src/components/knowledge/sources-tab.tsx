@@ -110,21 +110,21 @@ export function SourcesTab({ initialSources, workspaceId }: SourcesTabProps) {
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h2 className="text-sm font-semibold text-gray-700">Sources ({sources.length})</h2>
-          <div className="flex items-center gap-3 text-xs text-gray-400">
-            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500" /> {activeCount} active</span>
-            {processingCount > 0 && <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" /> {processingCount} processing</span>}
-            {failedCount > 0 && <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-red-500" /> {failedCount} failed</span>}
-          </div>
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">Sources</h1>
+          <p className="text-sm text-gray-500 mt-1">
+            {activeCount} active
+            {processingCount > 0 ? `, ${processingCount} processing` : ""}
+            {failedCount > 0 ? `, ${failedCount} failed` : ""}
+          </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={refreshSources} disabled={isRefreshing} className="h-9 w-9 rounded-xl border-gray-200 text-gray-400 hover:text-gray-900">
+          <Button variant="outline" size="icon" onClick={refreshSources} disabled={isRefreshing} className="h-11 w-11 rounded-xl border-gray-200 text-gray-400 hover:text-gray-900">
             <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
           </Button>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger>
-              <Button className="h-9 px-4 bg-black text-white rounded-xl hover:bg-gray-800 transition-all text-xs font-semibold gap-2">
+              <Button className="h-11 px-8 bg-[#c65f39] hover:bg-[#b55533] text-white rounded-xl font-semibold shadow-lg shadow-[#c65f39]/20 transition-all gap-2">
                 <Plus className="h-4 w-4" /> Add Source
               </Button>
             </DialogTrigger>
