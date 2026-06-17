@@ -120,34 +120,32 @@ export function KnowledgeHubClient({
             )}
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
-            {activeTab === "overview" && (
-              <OverviewTab
-                businessProfile={initialBusinessProfile}
-                sources={initialSources}
-                templates={initialTemplates}
-                usedTags={initialUsedTags}
-                onNavigate={setActiveTab}
-              />
-            )}
-            {activeTab === "profile" && (
-              <BusinessProfileClient
-                workspaceId={workspaceId}
-                initialProfile={initialBusinessProfile}
-                businessType={businessType}
-                initialServicesOffered={initialServicesOffered}
-                initialSuggestions={initialSuggestions}
-              />
-            )}
-            {activeTab === "sources" && (
-              <SourcesTab
-                initialSources={initialSources}
-                workspaceId={workspaceId}
-                dialogOpen={dialogOpen}
-                onDialogOpenChange={setDialogOpen}
-              />
-            )}
-          </div>
+          {activeTab === "overview" && (
+            <OverviewTab
+              businessProfile={initialBusinessProfile}
+              sources={initialSources}
+              templates={initialTemplates}
+              usedTags={initialUsedTags}
+              onNavigate={setActiveTab}
+            />
+          )}
+          {activeTab === "profile" && (
+            <BusinessProfileClient
+              workspaceId={workspaceId}
+              initialProfile={initialBusinessProfile}
+              businessType={businessType}
+              initialServicesOffered={initialServicesOffered}
+              initialSuggestions={initialSuggestions}
+            />
+          )}
+          {activeTab === "sources" && (
+            <SourcesTab
+              initialSources={initialSources}
+              workspaceId={workspaceId}
+              dialogOpen={dialogOpen}
+              onDialogOpenChange={setDialogOpen}
+            />
+          )}
         </div>
       </main>
     </div>

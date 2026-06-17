@@ -5,7 +5,6 @@ import { Building2, Database, CheckCircle2, FileText, ArrowRight } from "lucide-
 import { cn } from "@/lib/utils"
 
 interface OverviewTabProps {
-  workspaceId?: string
   businessProfile: any
   sources: any[]
   templates: any[]
