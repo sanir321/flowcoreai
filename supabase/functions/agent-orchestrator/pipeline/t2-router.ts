@@ -27,8 +27,8 @@ const AGENT_KEYWORDS: Record<string, { keywords: string[]; weights: number[] }> 
     weights: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.8, 0.7]
   },
   sales: {
-    keywords: ["order", "buy", "purchase", "price", "pricing", "cost", "menu", "how much", "rate", "quote", "payment", "pay", "offer", "discount", "deal", "product", "subscription"],
-    weights: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.9, 0.9, 0.9, 1.0, 1.0, 1.0, 0.8, 0.8, 0.7, 0.8, 0.9]
+    keywords: ["order", "buy", "purchase", "price", "pricing", "cost", "menu", "how much", "rate", "quote", "payment", "pay", "offer", "discount", "deal", "product", "subscription", "tell me about", "what do you offer", "what can you", "do you provide", "features", "capabilities", "solutions", "about your", "how does", "can you help", "what do you do", "do you offer", "what is", "explain", "how it works", "demo", "show me", "packages", "plans", "services", "offerings", "what are your", "what kind of", "can you tell"],
+    weights: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.9, 0.9, 0.9, 1.0, 1.0, 1.0, 0.8, 0.8, 0.7, 0.8, 0.9, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.6, 0.6]
   }
 };
 
@@ -51,6 +51,9 @@ function scoreAgentType(msgLower: string, agentKeywords: typeof AGENT_KEYWORDS.a
 
 export async function runT2(ctx: PipelineContext): Promise<TierResult> {
   const msgLower = ctx.payload.message.toLowerCase();
+
+  const businessInfoKeywords = ["business hours", "working hours", "office hours", "open hours", "what are your hours", "what is your address", "your location", "where are you located", "your phone number", "your email address", "how to contact", "contact number", "phone number", "email address"];
+  const isBusinessInfo = businessInfoKeywords.some(kw => msgLower.includes(kw));
 
   const { data: activeAgentRows } = await ctx.supabase
     .from("workspace_agents")
@@ -80,6 +83,12 @@ export async function runT2(ctx: PipelineContext): Promise<TierResult> {
       };
     }
   } else {
+    if (isBusinessInfo && activeAgents.has("customer_support")) {
+      ctx.agentType = "customer_support";
+      ctx.routingReason = "business_info_query";
+      ctx.kbSearchPromise = matchChunks({ query: ctx.payload.message }, ctx);
+      return { handled: false };
+    }
     const scores: { agent: string; score: number }[] = [];
     if (activeAgents.has("appointment_booking")) {
       scores.push({ agent: "appointment_booking", score: scoreAgentType(msgLower, AGENT_KEYWORDS.appointment_booking) });

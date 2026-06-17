@@ -8,7 +8,7 @@ export const DEFAULT_FALLBACK_MESSAGE = "I'm not sure about that. Please contact
 export async function callLLM(payload: AgentPayload & { agentType?: string }) {
   const FALLBACK_1 = "gpt-4o";
   // Use gpt-4o as primary for support agent (has KB context, faster)
-  const DEFAULT_PRIMARY = payload.agentType === "customer_support" ? "gpt-4o" : "gpt-5-mini";
+  const DEFAULT_PRIMARY = "gpt-4o";
   const modelChain = payload.model
     ? [payload.model, FALLBACK_1]
     : [DEFAULT_PRIMARY, FALLBACK_1];

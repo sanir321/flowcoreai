@@ -167,7 +167,7 @@ export const AGENT_TOOLS: Record<string, string[]> = {
     "search_kb", "manage_contact", "get_business_info", "transfer_agent", "escalate", "create_support_ticket"
   ],
   appointment_booking: [
-    "manage_appointment", "manage_contact", "get_business_info", "transfer_agent"
+    "manage_appointment", "manage_contact", "transfer_agent"
   ],
   sales: [
     "manage_catalog", "manage_contact", "get_business_info",

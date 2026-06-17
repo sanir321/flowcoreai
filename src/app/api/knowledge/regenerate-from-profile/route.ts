@@ -7,6 +7,8 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
+const PROFILE_SOURCE_LABEL = "Business Profile (auto-generated)"
+
 function profileSectionToText(businessProfile: any, tag: string): string | null {
   const bp = { ...((businessProfile?.suggestion as any) || {}), ...businessProfile }
 
@@ -133,61 +135,95 @@ export async function POST(req: Request) {
 
     const allTags = [...new Set<string>(["services", "faqs", "contact", "location", "pricing", "about", "amenities", "hours", "specials", ...(profileTags || [])])]
 
-    const chunks: { workspace_id: string; content: string; metadata: any }[] = []
-    const sourceTags: string[] = []
-
+    const sections: { tag: string; content: string }[] = []
     for (const tag of allTags) {
       const content = profileSectionToText(businessProfile, tag)
-      if (content) {
-        chunks.push({
-          workspace_id,
-          content,
-          metadata: { tag, source: "auto-generated", generated_at: new Date().toISOString() },
-        })
-        sourceTags.push(tag)
-      }
+      if (content) sections.push({ tag, content })
     }
 
-    if (chunks.length === 0) {
+    if (sections.length === 0) {
       return NextResponse.json({ error: "No profile data to generate chunks from. Fill in your business profile first." }, { status: 400 })
     }
 
-    const { error: deleteError } = await supabaseAdmin
+    // Delete old auto-generated chunks
+    await supabaseAdmin
       .from("kb_chunks")
       .delete()
       .eq("workspace_id", workspace_id)
       .filter("metadata->>source", "eq", "auto-generated")
 
-    if (deleteError) {
-      console.error("[REGENERATE] Delete error:", deleteError)
+    // Find or create a profile source row
+    let sourceId: string | null = null
+    const { data: existingSource } = await supabaseAdmin
+      .from("kb_sources")
+      .select("id")
+      .eq("workspace_id", workspace_id)
+      .eq("label", PROFILE_SOURCE_LABEL)
+      .is("deleted_at", null)
+      .maybeSingle()
+
+    if (existingSource) {
+      sourceId = existingSource.id
+      // Delete old chunks for this source
+      await supabaseAdmin.from("kb_chunks").delete().eq("source_id", sourceId)
+    } else {
+      const { data: newSource } = await supabaseAdmin
+        .from("kb_sources")
+        .insert({
+          workspace_id,
+          label: PROFILE_SOURCE_LABEL,
+          source_type: "profile",
+          status: "processing",
+        })
+        .select()
+        .single()
+      if (newSource) sourceId = newSource.id
     }
+
+    if (!sourceId) {
+      return NextResponse.json({ error: "Failed to create source" }, { status: 500 })
+    }
+
+    // Insert each section as a chunk with null embedding
+    const rows = sections.map((s, i) => ({
+      workspace_id,
+      source_id: sourceId,
+      content: s.content,
+      embedding: null,
+      chunk_index: i,
+      token_count: Math.ceil(s.content.length / 4),
+      metadata: { tag: s.tag, source: "auto-generated", generated_at: new Date().toISOString() },
+    }))
 
     const { error: insertError } = await supabaseAdmin
       .from("kb_chunks")
-      .insert(chunks)
+      .insert(rows)
 
     if (insertError) {
       console.error("[REGENERATE] Insert error:", insertError)
       return NextResponse.json({ error: "Failed to save chunks" }, { status: 500 })
     }
 
-    // Also trigger embed-text for each chunk if the function is available
-    // Fire-and-forget to avoid timeout
-    for (const chunk of chunks) {
-      supabaseAdmin.functions.invoke("embed-text", {
-        body: {
-          workspace_id,
-          text_content: chunk.content,
-          tag: chunk.metadata.tag,
-          skip_source: true,
-        }
-      }).catch(() => {})
-    }
+    // Trigger embed-text batch embedding chain via edge function
+    supabaseAdmin.functions.invoke("embed-text", {
+      body: { source_id: sourceId, workspace_id, embed_batch: true }
+    }).catch((err) => {
+      console.error("[REGENERATE] embed-text trigger failed:", err)
+      // Mark source as failed if embedding can't start
+      supabaseAdmin.from("kb_sources").update({
+        status: "failed",
+        error_message: "Embedding trigger failed"
+      }).eq("id", sourceId).then(() => {}, () => {})
+    })
+
+    // Also update the business profile action to trigger regeneration
+    // (handled by updateBusinessProfile server action)
 
     return NextResponse.json({
       success: true,
-      chunks_created: chunks.length,
-      tags: sourceTags,
+      chunks_created: rows.length,
+      source_id: sourceId,
+      tags: sections.map(s => s.tag),
     })
   } catch (err: any) {
     console.error("[REGENERATE] Error:", err)

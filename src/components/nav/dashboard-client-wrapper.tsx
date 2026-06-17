@@ -117,7 +117,7 @@ export function DashboardClientWrapper({
       )}>
         <div className={cn(
           "h-full w-full",
-          !isFullBleed ? "p-3 md:p-4 lg:p-6 overflow-y-auto" : "flex flex-col text-gray-900"
+          !isFullBleed ? "p-3 md:p-4 lg:p-6 overflow-hidden" : "flex flex-col text-gray-900"
         )}>
           <PageTransition>
             {children}

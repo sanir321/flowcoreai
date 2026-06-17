@@ -3,7 +3,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { createClient } from "@/lib/supabase/server"
-import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import { logAudit } from "@/lib/audit"
@@ -129,19 +128,7 @@ export async function updateBusinessProfile(input: unknown) {
       entity_id: workspaceId,
     })
 
-    revalidatePath("/settings/business-profile")
     revalidatePath("/knowledge")
-
-    // Trigger KB regeneration from profile data (fire-and-forget)
-    try {
-      const adminClient = createSupabaseClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-      )
-      adminClient.functions.invoke("embed-text", {
-        body: { workspace_id: workspaceId, source_id: null, text_content: JSON.stringify(merged), tag: "auto-profile" }
-      }).catch(() => {})
-    } catch {}
 
     return { data: { success: true }, error: null }
   } catch (err) {

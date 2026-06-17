@@ -1,6 +1,6 @@
 import { PipelineContext } from "../lib/types.ts";
 
-const GREETING_PATTERNS = /^(hi|hello|hey|howdy|hola|good\s*(morning|afternoon|evening|day)|greetings|sup|yo|namaste|hiya|heya|what's up|whats up|hii+|hell+o+)\s*[!?.]*$/i;
+const GREETING_PATTERNS = /^(hi|hello|hey|howdy|hola|good\s*(morning|afternoon|evening|day)|greetings|sup|yo|namaste|hiya|heya|what'?s\s*up|hii+|hell+o+)\s*[!?.]*(?:\s+(how|what|there|everyone)\s*.*)?$/i;
 
 export function checkGreeting(ctx: PipelineContext, workspace: any): string | null {
   if ((ctx.session.message_count ?? 0) > 0) return null;

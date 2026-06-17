@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import {
   Loader2, MapPin, Phone, Mail, Globe, Clock, Plus,
   Sparkles, Building2, AtSign, Link2, Lightbulb, Check,
+  CheckCircle2, X,
 } from "lucide-react"
 import { toast } from "sonner"
 import { updateBusinessProfile } from "@/app/actions/business-profile"
@@ -57,16 +58,24 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
   const [suggestionsOpen, setSuggestionsOpen] = useState(true)
   const [appliedSuggestions, setAppliedSuggestions] = useState<Set<string>>(new Set())
   
-  const [profile, setProfile] = useState<BusinessProfile>(() => ({
-    workspace_id: workspaceId,
-    contact: initialProfile?.contact || { phone: "", email: "", address: "", google_maps_link: "" },
-    social: initialProfile?.social || { instagram: "", facebook: "", twitter: "", linkedin: "", youtube: "", whatsapp: "" },
-    hours: initialProfile?.hours || { daily: {} },
-    amenities: initialProfile?.amenities || [],
-    policies: initialProfile?.policies || {},
-    pricing: initialProfile?.pricing || { description: "", currency: "INR" },
-    extras: initialProfile?.extras || {},
-  }))
+  const defaultDaily = { open: "09:00", close: "17:00", closed: false }
+  const [profile, setProfile] = useState<BusinessProfile>(() => {
+    const existingDaily = initialProfile?.hours?.daily || {} as Record<string, any>
+    const daily: Record<string, { open: string; close: string; closed: boolean }> = {}
+    for (const day of DAYS) {
+      daily[day] = existingDaily[day] || { ...defaultDaily }
+    }
+    return {
+      workspace_id: workspaceId,
+      contact: initialProfile?.contact || { phone: "", email: "", address: "", google_maps_link: "" },
+      social: initialProfile?.social || { instagram: "", facebook: "", twitter: "", linkedin: "", youtube: "", whatsapp: "" },
+      hours: { daily },
+      amenities: initialProfile?.amenities || [],
+      policies: initialProfile?.policies || {},
+      pricing: initialProfile?.pricing || { description: "", currency: "INR" },
+      extras: initialProfile?.extras || {},
+    }
+  })
 
   useEffect(() => {
     setMounted(true)
@@ -253,47 +262,60 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
               <h2 className="text-lg font-semibold text-gray-900 tracking-tight">Hours</h2>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
               {DAYS.map(day => {
                 const dayData = safeDaily[day] || { open: "09:00", close: "17:00", closed: false }
+                const isOpen = !dayData.closed
                 
                 return (
                   <div key={day} className="flex items-center justify-between p-4 rounded-2xl bg-gray-50/50 border border-gray-100/50 transition-all hover:bg-white hover:shadow-sm">
                     <div className="flex items-center gap-4">
                       <div className="w-10 text-xs font-bold text-gray-900 capitalize">{DAY_LABELS[day]}</div>
-                      <input 
-                        type="checkbox" 
-                        checked={!dayData.closed} 
-                        onChange={e => {
+                      <button
+                        type="button"
+                        onClick={() => {
                           const newDaily = { ...safeDaily }
-                          newDaily[day] = { ...dayData, closed: !e.target.checked }
+                          newDaily[day] = { ...dayData, closed: !isOpen }
                           setNestedField("hours", "daily", newDaily)
                         }}
-                        className="h-4 w-4 rounded border-gray-300 text-[#c65f39] focus:ring-[#c65f39]"
-                      />
-                      <span className="text-[10px] text-gray-400 w-14">{dayData.closed ? "Closed" : "Open"}</span>
+                        className={cn(
+                          "h-6 w-6 rounded-lg flex items-center justify-center transition-all",
+                          isOpen 
+                            ? "bg-emerald-50 text-emerald-500 border border-emerald-200 hover:bg-emerald-100" 
+                            : "bg-gray-100 text-gray-400 border border-gray-200 hover:bg-gray-200"
+                        )}
+                        aria-pressed={isOpen}
+                        aria-label={isOpen ? `Mark ${DAY_LABELS[day]} as closed` : `Mark ${DAY_LABELS[day]} as open`}
+                      >
+                        {isOpen ? <CheckCircle2 className="h-3.5 w-3.5" /> : <X className="h-3.5 w-3.5" />}
+                      </button>
+                      <span className="text-xs font-medium text-gray-500 w-14">{isOpen ? "Open" : "Closed"}</span>
                     </div>
 
-                    {!dayData.closed && (
+                    {isOpen && (
                       <div className="flex items-center gap-2">
                         <Input 
-                          value={dayData.open || ""} 
+                          type="time"
+                          value={dayData.open || "09:00"} 
                           onChange={e => {
                             const newDaily = { ...safeDaily }
                             newDaily[day] = { ...dayData, open: e.target.value }
                             setNestedField("hours", "daily", newDaily)
                           }}
                           className="h-9 w-24 text-center text-xs rounded-lg border-gray-100 bg-white" 
+                          aria-label={`${DAY_LABELS[day]} opening time`}
                         />
-                        <span className="text-gray-300">to</span>
+                        <span className="text-gray-300 text-xs">to</span>
                         <Input 
-                          value={dayData.close || ""} 
+                          type="time"
+                          value={dayData.close || "17:00"} 
                           onChange={e => {
                             const newDaily = { ...safeDaily }
                             newDaily[day] = { ...dayData, close: e.target.value }
                             setNestedField("hours", "daily", newDaily)
                           }}
                           className="h-9 w-24 text-center text-xs rounded-lg border-gray-100 bg-white" 
+                          aria-label={`${DAY_LABELS[day]} closing time`}
                         />
                       </div>
                     )}
@@ -349,7 +371,7 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
 
                 <div className="pt-4 space-y-3">
                   <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">Amenities</Label>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2 max-h-[200px] overflow-y-auto pr-1 pb-2">
                     {suggestedAmenities.map(item => {
                       const isActive = safeAmenities.includes(item)
                       return (
@@ -363,7 +385,7 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
                             setField("amenities", newAmenities)
                           }}
                           className={cn(
-                            "px-4 py-2 rounded-xl text-xs font-semibold transition-all border",
+                            "px-4 py-2 rounded-xl text-xs font-semibold transition-all border shrink-0",
                             isActive 
                               ? "bg-[#c65f39] border-[#c65f39] text-white shadow-md shadow-[#c65f39]/20" 
                               : "bg-gray-50/50 border-gray-100 text-gray-500 hover:bg-white hover:border-gray-200"

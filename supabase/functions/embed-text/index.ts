@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
       serviceRoleKey ?? ''
     )
 
-    const { workspace_id, source_id, content, embed_batch } = await req.json()
+    const { workspace_id, source_id, content, embed_batch, tag } = await req.json()
 
     // ── Mode 2: embed a batch of pending (null-embedding) chunks ──
     // Each batch runs in its own worker invocation so the gte-small CPU budget
@@ -71,7 +71,8 @@ Deno.serve(async (req) => {
       content: c,
       embedding: null,
       chunk_index: i,
-      token_count: Math.ceil(c.length / 4)
+      token_count: Math.ceil(c.length / 4),
+      metadata: tag ? { tag } : {}
     }))
 
     if (rows.length > 0) {

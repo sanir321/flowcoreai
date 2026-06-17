@@ -56,11 +56,35 @@ export function formatIST(isoString: string): string {
   return `${datePart} at ${timePart} IST`;
 }
 
+function getDayName(dateStr: string): string {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString("en-US", { weekday: "long", timeZone: "UTC" }).toLowerCase();
+}
+
+function validateBusinessHours(dateStr: string, ctx: PipelineContext): string | null {
+  const hours = (ctx.workspace as any)?.business_profile?.hours?.daily;
+  if (!hours) return null;
+  const dayName = getDayName(dateStr);
+  const daySchedule = hours[dayName];
+  if (!daySchedule) return null;
+  if (daySchedule.closed) return "We're closed on that day. Please choose a different day.";
+  if (daySchedule.open && daySchedule.close) {
+    const d = new Date(dateStr);
+    const timeStr = `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
+    if (timeStr < daySchedule.open || timeStr >= daySchedule.close) {
+      return `We're closed at that time. Our hours on ${dayName.charAt(0).toUpperCase() + dayName.slice(1)} are ${daySchedule.open}-${daySchedule.close}.`;
+    }
+  }
+  return null;
+}
+
 export async function checkAvailability(
   params: { date: string; time?: string },
   ctx: PipelineContext
 ) {
   const startAt = parseDT(params.date, params.time);
+  const hoursError = validateBusinessHours(startAt, ctx);
+  if (hoursError) return { error: hoursError, requested_time: startAt };
   try {
     const gConfig = await getGoogleConfig(ctx.supabase, ctx.payload.workspace_id);
     const gRes = await fetch("https://www.googleapis.com/calendar/v3/freeBusy", {
@@ -104,6 +128,8 @@ export async function createAppointment(
   }
 
   const startAt = parseDT(params.date, params.time);
+  const hoursError = validateBusinessHours(startAt, ctx);
+  if (hoursError) return { error: hoursError };
   const endAt = new Date(new Date(startAt).getTime() + 30 * 60 * 1000).toISOString();
 
   const { data: slotTaken } = await ctx.supabase.from("appointments")
@@ -214,8 +240,12 @@ export async function createAppointment(
 
   EdgeRuntime.waitUntil(sendAppointmentNotifications(ctx, appt, meetLink));
 
+  const updatedAppt = googleEventId
+    ? { ...appt, google_event_id: googleEventId, meeting_link: meetLink }
+    : appt;
+
   return {
-    ...appt,
+    ...updatedAppt,
     ...(calendarSyncFailed ? { warning: "Appointment saved but Google Calendar sync failed. A Meet link was not generated." } : {})
   };
 }

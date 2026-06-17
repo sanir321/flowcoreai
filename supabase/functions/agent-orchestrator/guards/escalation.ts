@@ -6,7 +6,7 @@ const CRON_SECRET = Deno.env.get("INTERNAL_CRON_SECRET") || "";
 const DEFAULT_KEYWORDS = [
   "human", "agent", "person", "manager", "staff", "real person",
   "talk to someone", "talk to a person",
-  "refund", "complaint",
+  "complaint",
   // Generic escalation keywords
   "owner", "call owner", "contact person", "talk to owner", "director", "boss",
   // Emotional escalation signals

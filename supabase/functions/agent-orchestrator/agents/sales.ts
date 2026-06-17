@@ -19,6 +19,15 @@ export function buildSalesSystemPrompt(ctx: PipelineContext): string {
     if (socialEntries.length) profileParts.push(`Social: ${socialEntries.join(', ')}`)
   }
   if (workspace.services_offered) profileParts.push(`Services: ${workspace.services_offered}`)
+  if (profile.hours?.daily) {
+    const days = Object.entries(profile.hours.daily)
+      .filter(([, d]: [string, any]) => !d.closed)
+      .map(([day, d]: [string, any]) => `${day}: ${d.open}-${d.close}`)
+      .join(', ')
+    if (days) profileParts.push(`Hours: ${days}`)
+  }
+  if (profile.amenities?.length) profileParts.push(`Amenities: ${profile.amenities.join(', ')}`)
+  if (profile.pricing?.description) profileParts.push(`Pricing: ${profile.pricing.description}`)
   const profileSummary = profileParts.length > 0 ? profileParts.join('\n') : 'No profile data yet. Call get_business_info for details.'
 
   const sentimentLine = working.sentiment

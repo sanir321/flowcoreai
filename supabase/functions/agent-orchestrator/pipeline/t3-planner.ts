@@ -72,7 +72,8 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
   }
 
   const buildPrompt = AGENT_SYSTEM_PROMPTS[agentType] || AGENT_SYSTEM_PROMPTS.customer_support;
-  let systemPrompt = buildPrompt(ctx);
+  let systemPrompt = buildPrompt(ctx)
+    + `\n\n## Current Date/Time\nToday is ${new Date().toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", weekday: "long", year: "numeric", month: "long", day: "numeric" })}. Current time in India is ${new Date().toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit" })} IST. Use this to calculate relative dates like "tomorrow", "next week", "today" correctly.`;
 
   if (agentType === "customer_support") {
     try {
@@ -180,6 +181,7 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
 
   for (let attempt = 0; attempt <= 2; attempt++) {
     try {
+      const isLastAttempt = attempt === 2;
       llmResponse = await callLLM({
         agentType,
         max_tokens: 1000,
@@ -187,16 +189,36 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
         system: systemPrompt,
         messages,
         tools: [SUBMIT_PLAN_TOOL, ...getAgentToolDefinitions(agentType)],
-        tool_choice: { type: "function", function: { name: "submit_plan" } }
+        tool_choice: isLastAttempt ? "auto" : { type: "function", function: { name: "submit_plan" } }
       });
 
       const toolCall = llmResponse.choices?.[0]?.message?.tool_calls?.[0];
-      if (!toolCall || toolCall.function.name !== "submit_plan") {
-        throw new Error("LLM did not call submit_plan");
+      if (toolCall && toolCall.function.name === "submit_plan") {
+        parsedPlan = JSON.parse(toolCall.function.arguments);
+        lastError = null;
+        break;
       }
-      parsedPlan = JSON.parse(toolCall.function.arguments);
-      lastError = null;
-      break;
+
+      if (isLastAttempt) {
+        const content = llmResponse.choices?.[0]?.message?.content?.trim();
+        // Accept any tool call as an action wrap
+        if (toolCall) {
+          parsedPlan = {
+            response: content || "Let me help you with that.",
+            actions: [{ tool: toolCall.function.name, params: JSON.parse(toolCall.function.arguments || "{}") }]
+          };
+          lastError = null;
+          break;
+        }
+        // Accept any content-only response (even short)
+        if (content && content.length > 0) {
+          parsedPlan = { response: content, actions: [] };
+          lastError = null;
+          break;
+        }
+      }
+
+      throw new Error("LLM did not call submit_plan");
     } catch (e: any) {
       lastError = e;
       console.error(`[T3] Plan attempt ${attempt + 1} error:`, e.message);
@@ -221,7 +243,7 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
       session_id: ctx.session.id,
       workspace_id: ctx.payload.workspace_id,
       trace_id: crypto.randomUUID(),
-      model_used: "gpt-5-mini",
+      model_used: "gpt-4o",
       tokens_used: llmResponse?.usage?.total_tokens || 0,
       intent_detected: ctx.agentType || agentType,
       message_length: ctx.payload.message.length,
@@ -407,6 +429,9 @@ function enrichResponseWithToolResults(
           }).join("\n");
           appended.push(`\n\nAvailable slots:\n${formatted}`);
         }
+        if (data.meeting_link) {
+          appended.push(`\n\nGoogle Meet link: ${data.meeting_link}`);
+        }
         break;
       }
       case "search_kb": {
@@ -441,6 +466,24 @@ function enrichResponseWithToolResults(
         }
         if (data.follow_up_id) {
           appended.push(`\n\n✅ Follow-up scheduled for ${new Date(data.scheduled_at).toLocaleString()}.`);
+        }
+        break;
+      }
+      case "get_business_info": {
+        const profile = data?.data || data;
+        if (profile?.contact || profile?.hours) {
+          const parts: string[] = [];
+          if (profile.contact?.phone) parts.push(`Phone: ${profile.contact.phone}`);
+          if (profile.contact?.email) parts.push(`Email: ${profile.contact.email}`);
+          if (profile.contact?.address) parts.push(`Address: ${profile.contact.address}`);
+          if (profile.hours?.daily) {
+            const days = Object.entries(profile.hours.daily)
+              .filter(([_, d]: [string, any]) => !d.closed)
+              .map(([day, d]: [string, any]) => `${day.charAt(0).toUpperCase() + day.slice(1)}: ${d.open}-${d.close}`)
+              .join(', ');
+            if (days) parts.push(`Hours: ${days}`);
+          }
+          if (parts.length > 0) appended.push(`\n\n${parts.join('\n')}`);
         }
         break;
       }
@@ -585,7 +628,12 @@ async function postProcess(
     .eq("id", ctx.session.id);
 }
 
+function normalizeToolName(name: string): string {
+  return name.replace(/^(functions\.|tool_calls\[|tools\.)/, "");
+}
+
 async function validatePlanActions(ctx: PipelineContext, plan: AgentPlan) {
+  plan.actions.forEach(a => { a.tool = normalizeToolName(a.tool); });
   const actionTools = plan.actions.map(a => a.tool);
 
   const { data: lastCustomerMsg } = await ctx.supabase

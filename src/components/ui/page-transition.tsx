@@ -24,7 +24,7 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
         damping: 30,
         mass: 1
       }}
-      className="flex-1 h-full flex flex-col"
+      className="flex-1 min-h-0 flex flex-col"
     >
       {children}
     </motion.div>

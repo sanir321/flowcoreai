@@ -8,10 +8,27 @@ export async function captureLead(
   params: { name?: string; email?: string; phone?: string; notes?: string },
   ctx: PipelineContext
 ) {
-  const { data: contact } = await ctx.supabase.from("contacts").upsert({
-    workspace_id: ctx.payload.workspace_id,
-    name: params.name, email: params.email, phone: params.phone, notes: params.notes
-  }).select().single();
+  if (!params.name && !params.email && !params.phone) {
+    return { success: false, error: "At least one of name, email, or phone is required to capture a lead." };
+  }
+  const jid = ctx.payload.customer_jid || ctx.session.customer_jid;
+  const { data: existing } = await ctx.supabase
+    .from("contacts")
+    .select("id")
+    .eq("workspace_id", ctx.payload.workspace_id)
+    .or(`whatsapp_jid.eq.${jid},session_token.eq.${jid}`)
+    .maybeSingle();
+  const { data: contact } = existing
+    ? await ctx.supabase.from("contacts").update({
+        name: params.name, email: params.email, phone: params.phone,
+        notes: params.notes ? `[Lead] ${params.notes}` : undefined,
+        updated_at: new Date().toISOString()
+      }).eq("id", existing.id).select().single()
+    : await ctx.supabase.from("contacts").insert({
+        workspace_id: ctx.payload.workspace_id,
+        [ctx.payload.source === "whatsapp" ? "whatsapp_jid" : "session_token"]: jid,
+        name: params.name, email: params.email, phone: params.phone, notes: params.notes
+      }).select().single();
 
   // Link contact to session immediately (fix: session.contact_id was never set)
   let sessionLinked = false;

@@ -44,8 +44,13 @@ function stripPII(args: Record<string, unknown>): Record<string, unknown> {
   try { return JSON.parse(cleaned); } catch { return args; }
 }
 
+function normalizeToolName(name: string): string {
+  return name.replace(/^(functions\.|tool_calls\[|tools\.)/, "");
+}
+
 export const toolExecutor = {
   async run(toolName: string, params: Record<string, unknown>, ctx: PipelineContext): Promise<any> {
+    toolName = normalizeToolName(toolName);
     const startTime = Date.now();
 
     const limit = TOOL_RATE_LIMITS[toolName] ?? 20;
@@ -168,7 +173,7 @@ async function routeToImpl(toolName: string, params: any, ctx: PipelineContext):
     case "manage_catalog": {
       switch (action) {
         case "search": return searchMenu(params, ctx);
-        case "check-stock": return checkStock(params, ctx);
+        case "check-stock": return checkStock({ product_name: params.query || params.product_name || "" }, ctx);
         case "send-catalog": return sendCatalog(params, ctx);
         case "send-media": return sendMenuMedia(params, ctx);
         default: return { success: false, error: `Unknown manage_catalog action: ${action}` };
