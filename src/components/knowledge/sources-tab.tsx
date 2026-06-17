@@ -7,10 +7,11 @@ import {
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { Card } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { createClient } from "@/lib/supabase/client"
@@ -198,14 +199,14 @@ export function SourcesTab({ initialSources, workspaceId }: SourcesTabProps) {
       ) : (
         <div className="space-y-8">
           {sources.map(source => (
-            <div key={source.id} className="p-8 rounded-[2rem] bg-white border border-gray-100 shadow-sm">
+            <Card key={source.id} className="p-8 border-gray-100 rounded-[2rem] shadow-sm space-y-6">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="h-10 w-10 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400">
+                  <div className="h-10 w-10 rounded-xl bg-orange-50 flex items-center justify-center text-[#c65f39]">
                     {source.source_type === 'url' ? <Globe className="h-5 w-5" /> : <FileText className="h-5 w-5" />}
                   </div>
                   <div>
-                    <h4 className="text-sm font-semibold text-gray-900">{source.label}</h4>
+                    <h2 className="text-lg font-semibold text-gray-900 tracking-tight">{source.label}</h2>
                     <p className="text-xs text-gray-500 mt-0.5 capitalize">{source.source_type}</p>
                   </div>
                 </div>
@@ -213,7 +214,7 @@ export function SourcesTab({ initialSources, workspaceId }: SourcesTabProps) {
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
-              <div className="flex items-center gap-6 mt-5 pt-5 border-t border-gray-50">
+              <div className="flex items-center gap-6 pt-4 border-t border-gray-50">
                 <div className="flex items-center gap-2">
                   <div className={cn("h-2 w-2 rounded-full",
                     source.status === 'active' ? "bg-emerald-500" : source.status === 'processing' ? "bg-amber-500 animate-pulse" : source.status === 'failed' ? "bg-red-500" : "bg-gray-300")} />
@@ -229,7 +230,7 @@ export function SourcesTab({ initialSources, workspaceId }: SourcesTabProps) {
                   <span className="text-xs text-red-400 truncate" title={source.error_message}>{source.error_message}</span>
                 )}
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       )}

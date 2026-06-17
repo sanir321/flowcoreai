@@ -1,41 +1,24 @@
-WHAT'S WORKING
+If the UI in your browser or preview still looks like those narrow, misaligned screenshots despite the code in sources-tab.tsx being updated, it means the code is correct, but something is blocking it from rendering or building properly. Here is a quick checklist to diagnose why your visual changes aren't showing up:
 
-— The visual identity is strong. Dark background + orange accent is bold and distinctive. Doesn't look like a generic SaaS template, which matters a lot at this stage.
+1. The Parent Container Clashing (TabsContent)
+Even if sources-tab.tsx is built perfectly, check the file where the tabs are actually rendered (likely index.tsx or page.tsx).
 
-— The "How it works" 4-step section on the Features page is excellent. Clear, numbered, no jargon. "Setup in under 10 minutes" is exactly the right message.
+Look at the <TabsContent value="sources"> wrapper. If that specific wrapper has a hardcoded width modifier like max-w-md or mx-auto text-center, it will override everything inside it and force your wide card back into a narrow column. Ensure it looks like this:
 
-— The FAQ is one of the best I've seen on an early-stage product. You've answered refund policy, GoWA failure modes, payment retry logic, data retention — most funded startups don't ship this level of detail. Real trust builder.
+TypeScript
+<TabsContent value="sources" className="w-full mt-6">
+  <SourcesTab />
+</TabsContent>
+2. Radical Cache Issues
+If you are using Next.js, Vite, or Create React App, local caching can aggressively serve old styles.
 
-— The About page "What We Believe" section is genuinely good copy. "AI should assist, not replace" and "Your data, your control" are the right messages for this market. This deserves more visibility.
+Kill the dev server in your terminal (Ctrl + C).
 
-— Publishing your changelog publicly (v0.4 → v0.7 in 6 weeks) is a smart move. Active shipping signals credibility to technic
-al buyers.
-THINGS TO FIX
+Clear the local cache build folder (e.g., delete the .next folder or run npm run clean).
 
-1. SOC 2 Type II + HIPAA badges in the footer — this is your biggest credibility risk right now. These certifications cost $30–50k+ to obtain and require third-party audits. You're also showing "8+ Businesses" on the About page. Any technical buyer, investor, or enterprise prospect who sees both will immediately ask for the audit report. If you don't have it, this backfires badly. Either remove the badges entirely or replace with "SOC 2 compliance in progress" until you actually have it.
+Restart the server: npm run dev.
 
-2. The hero email input is nearly invisible. On a dark background, the input field has no visible border — it blends in. Someone landing on the page for the first time may not even register it as a clickable field. Add a border or a slightly lighter background. This is directly costing you signups.
+Hard Refresh your browser: Hold Shift and click the Reload button (or Ctrl + F5 / Cmd + Shift + R).
 
-3. The Smol Launch badge is blocking your conversion funnel. It's a large black pill sitting between your headline and your email capture CTA. Social proof is valuable, but not when it interrupts the one action you want visitors to take. Move it below the email input or shrink it to a small text badge.
-
-4. The hero subheadline — "Connect specialized AI to manage and resolve your customer conversations with business precision" — the phrase "business precision" is vague and does no work. What does that mean to a clinic owner or restaurant manager? Swap it for a concrete outcome: something like "Your customers get instant answers on WhatsApp. You stop answering the same questions 30 times a day."
-
-5. The headline is a feature description, not a value proposition. "Automated customer service assistants" tells me what it is, not what I get. Who is this for? What changes for them? The best-performing SaaS heroes lead with the customer's life after using the product, not the product itself.
-
-6. Two competing CTAs with no hierarchy. "Book Demo" in the nav and "Get Started" in the hero target completely different buyer intents but look similar in weight. Book Demo should be for enterprise/high-intent visitors. Get Started (free tier) is for self-serve SMBs. Make that distinction clearer — even just adding "Free — no credit card required" directly under the Get Started button would help significantly.
-
-7. GoWA dependency is under-explained on the homepage. "Scan a QR code" sounds unofficial to someone who doesn't know what GoWA is. A first-time visitor might assume it's fragile or could get banned. Add a one-liner that contextualises it: "Same connection method as WhatsApp Web — no Meta approval or WABA number required."
-
-8. No product screenshot anywhere. The entire homepage is text + CTA. At this stage that's understandable, but even one real dashboard screenshot above the fold would dramatically reduce bounce. People want to see what they're signing up for before they give you their email.
-
-
- QUICK WINS (can fix this week)
-
-→ Add "No credit card required" text under the Get Started button
-→ Fix the email input border contrast
-→ Move or shrink the Smol Launch badge
-→ Add a version tag + date near the hero ("v0.7 — actively shipping") — signals momentum
-→ Pull the "What We Believe" section from the About page onto the homepage
-→ Remove or qualify the compliance badges
-
-Overall — the bones are really solid. The tech stack decisions (Groq for inference, Razorpay for India billing, Supabase RLS for tenant isolation) show you're thinking properly about the product. The gaps are mostly marketing and positioning, not product(Edited)
+3. Missing/Uncompiled Custom Color Styles
+If you just introduced the brand color #c65f39 directly into a Tailwind class name (like bg-[#c65f39]), Tailwind's JIT (Just-In-Time) compiler sometimes misses it if it was added while the server was running. Restarting your build terminal forces Tailwind to re-scan your files and generate that background color utility class.
