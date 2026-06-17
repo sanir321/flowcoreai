@@ -174,7 +174,7 @@ function hasNonEmptyValue(obj: Record<string, unknown>): boolean {
   })
 }
 
-// NOTE: This function must be kept in sync with computeItems in knowledge-client.tsx
+// NOTE: This function must be kept in sync with computeItems in overview-tab.tsx
 export async function getRequiredInfo(workspaceId: string): Promise<{ data: RequiredInfoResult | null; error: string | null }> {
   try {
     const supabase = await createClient()
