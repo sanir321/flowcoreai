@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { Bot, Sparkles, Database, CheckCircle2, Globe, FileText, ArrowRight, Loader2 } from "lucide-react"
+import { Building2, Database, CheckCircle2, FileText, ArrowRight, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface OverviewTabProps {
@@ -67,10 +67,10 @@ export function OverviewTab({ businessProfile, sources, templates, usedTags, onN
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="p-5 rounded-2xl bg-white border border-gray-100 hover:border-gray-200 transition-all">
-          <div className="h-10 w-10 rounded-xl bg-[#c65f39]/10 flex items-center justify-center mb-3">
-            <Bot className="h-5 w-5 text-[#c65f39]" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="p-8 rounded-[2rem] bg-white border border-gray-100 hover:border-gray-200 transition-all shadow-sm">
+          <div className="h-10 w-10 rounded-xl bg-[#c65f39]/10 flex items-center justify-center mb-4">
+            <Building2 className="h-5 w-5 text-[#c65f39]" />
           </div>
           <p className="text-2xl font-bold text-gray-900">{profileComplete}/{profileItems.length}</p>
           <p className="text-xs text-gray-500 mt-1">Profile fields filled</p>
@@ -78,8 +78,8 @@ export function OverviewTab({ businessProfile, sources, templates, usedTags, onN
             Complete profile <ArrowRight className="h-3 w-3" />
           </button>
         </div>
-        <div className="p-5 rounded-2xl bg-white border border-gray-100 hover:border-gray-200 transition-all">
-          <div className="h-10 w-10 rounded-xl bg-emerald-50 flex items-center justify-center mb-3">
+        <div className="p-8 rounded-[2rem] bg-white border border-gray-100 hover:border-gray-200 transition-all shadow-sm">
+          <div className="h-10 w-10 rounded-xl bg-emerald-50 flex items-center justify-center mb-4">
             <Database className="h-5 w-5 text-emerald-600" />
           </div>
           <p className="text-2xl font-bold text-gray-900">{kbComplete}/{kbItems.length}</p>
@@ -88,8 +88,8 @@ export function OverviewTab({ businessProfile, sources, templates, usedTags, onN
             Add sources <ArrowRight className="h-3 w-3" />
           </button>
         </div>
-        <div className="p-5 rounded-2xl bg-white border border-gray-100 hover:border-gray-200 transition-all">
-          <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center mb-3">
+        <div className="p-8 rounded-[2rem] bg-white border border-gray-100 hover:border-gray-200 transition-all shadow-sm">
+          <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center mb-4">
             <FileText className="h-5 w-5 text-blue-600" />
           </div>
           <p className="text-2xl font-bold text-gray-900">{totalChunks}</p>
@@ -100,7 +100,7 @@ export function OverviewTab({ businessProfile, sources, templates, usedTags, onN
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-100 p-6">
+      <div className="bg-white rounded-[2rem] border border-gray-100 p-8 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-semibold text-gray-900">Setup Progress</h2>
           <span className="text-xs font-bold text-gray-500">{progress}%</span>
@@ -124,13 +124,13 @@ export function OverviewTab({ businessProfile, sources, templates, usedTags, onN
         </div>
       </div>
 
-      <div className="bg-gradient-to-r from-[#c65f39]/5 to-emerald-50 rounded-2xl border border-[#c65f39]/10 p-6">
+      <div className="bg-gradient-to-r from-[#c65f39]/5 to-emerald-50 rounded-[2rem] border border-[#c65f39]/10 p-8">
         <div className="flex items-start gap-4">
           <div className="h-10 w-10 rounded-xl bg-[#c65f39]/10 flex items-center justify-center shrink-0">
-            <Sparkles className="h-5 w-5 text-[#c65f39]" />
+            <Building2 className="h-5 w-5 text-[#c65f39]" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-gray-900">AI agents use this information</h3>
+            <h3 className="text-sm font-semibold text-gray-900">Agents use this information</h3>
             <p className="text-xs text-gray-500 mt-1 max-w-lg">
               Your business profile and knowledge base feed directly into your AI agents.
               The more complete your setup, the better your agents can answer customer questions,

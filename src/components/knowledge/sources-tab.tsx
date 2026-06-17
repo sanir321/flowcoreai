@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import {
   Plus, FileText, Globe, Trash2, Database, Loader2, RefreshCw,
-  PenLine, Upload, Link as LinkIcon, CheckCircle2
+  Upload, Link as LinkIcon
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -138,7 +138,7 @@ export function SourcesTab({ initialSources, workspaceId }: SourcesTabProps) {
                   <button key={tab} onClick={() => setActiveTab(tab)}
                     className={cn("flex-1 py-2.5 rounded-lg text-xs font-semibold transition-all capitalize",
                       activeTab === tab ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700")}
-                  >{tab === 'url' ? <Globe className="h-3.5 w-3.5 inline mr-1" /> : tab === 'file' ? <Upload className="h-3.5 w-3.5 inline mr-1" /> : <PenLine className="h-3.5 w-3.5 inline mr-1" />}
+                  >{tab === 'url' ? <Globe className="h-3.5 w-3.5 inline mr-1" /> : tab === 'file' ? <Upload className="h-3.5 w-3.5 inline mr-1" /> : <FileText className="h-3.5 w-3.5 inline mr-1" />}
                     {tab === 'url' ? 'Website' : tab === 'file' ? 'Document' : 'Paste'}
                   </button>
                 ))}
@@ -185,7 +185,7 @@ export function SourcesTab({ initialSources, workspaceId }: SourcesTabProps) {
       </div>
 
       {sources.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center bg-white rounded-2xl border border-gray-100">
+        <div className="flex flex-col items-center justify-center py-20 text-center bg-white rounded-[2rem] border border-gray-100 shadow-sm">
           <div className="h-12 w-12 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 mb-4">
             <Database className="h-5 w-5" />
           </div>
@@ -196,22 +196,22 @@ export function SourcesTab({ initialSources, workspaceId }: SourcesTabProps) {
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {sources.map(source => (
-            <div key={source.id} className="p-5 rounded-2xl bg-white border border-gray-100 hover:border-gray-200 hover:shadow-sm transition-all group">
-              <div className="flex items-start justify-between mb-4">
-                <div className="h-9 w-9 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400 group-hover:bg-black group-hover:text-white group-hover:border-black transition-all duration-300">
-                  {source.source_type === 'url' ? <Globe className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
+              <div key={source.id} className="p-8 rounded-[2rem] bg-white border border-gray-100 hover:border-gray-200 hover:shadow-sm transition-all group">
+              <div className="flex items-start justify-between mb-5">
+                <div className="h-10 w-10 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400 group-hover:bg-black group-hover:text-white group-hover:border-black transition-all duration-300">
+                  {source.source_type === 'url' ? <Globe className="h-5 w-5" /> : <FileText className="h-5 w-5" />}
                 </div>
                 <button onClick={() => handleDelete(source.id)} className="h-8 w-8 rounded-lg flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100">
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
-              <div className="mb-3">
+              <div className="mb-4">
                 <h4 className="text-sm font-medium text-gray-900 truncate">{source.label}</h4>
                 <p className="text-[11px] text-gray-500 mt-0.5 capitalize">{source.source_type}</p>
               </div>
-              <div className="flex items-center justify-between border-t border-gray-50 pt-3">
+              <div className="flex items-center justify-between border-t border-gray-50 pt-4">
                 <div className="flex items-center gap-2">
                   <div className={cn("h-1.5 w-1.5 rounded-full",
                     source.status === 'active' ? "bg-emerald-500" : source.status === 'processing' ? "bg-amber-500 animate-pulse" : source.status === 'failed' ? "bg-red-500" : "bg-gray-300")} />

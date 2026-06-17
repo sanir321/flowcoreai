@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Loader2, RefreshCw, Globe, Zap, Bot, Sparkles } from "lucide-react"
+import { Loader2, RefreshCw, Globe, Building2, LayoutDashboard } from "lucide-react"
 import { BusinessProfileClient } from "@/app/(dashboard)/settings/business-profile/business-profile-client"
 import { SourcesTab } from "@/components/knowledge/sources-tab"
 import { OverviewTab } from "@/components/knowledge/overview-tab"
@@ -81,11 +81,11 @@ export function KnowledgeHubClient({
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="inline-flex h-10 items-center justify-start gap-1 rounded-xl bg-gray-100 p-1">
           <TabsTrigger value="overview" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all data-[state=active]:bg-[#c65f39] data-[state=active]:text-white data-[state=inactive]:text-gray-500 data-[state=inactive]:hover:text-gray-700">
-            <Bot className="h-4 w-4" />
+            <LayoutDashboard className="h-4 w-4" />
             Overview
           </TabsTrigger>
           <TabsTrigger value="profile" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all data-[state=active]:bg-[#c65f39] data-[state=active]:text-white data-[state=inactive]:text-gray-500 data-[state=inactive]:hover:text-gray-700">
-            <Zap className="h-4 w-4" />
+            <Building2 className="h-4 w-4" />
             Business Profile
           </TabsTrigger>
           <TabsTrigger value="sources" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all data-[state=active]:bg-[#c65f39] data-[state=active]:text-white data-[state=inactive]:text-gray-500 data-[state=inactive]:hover:text-gray-700">
