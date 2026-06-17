@@ -186,7 +186,7 @@ export function SourcesTab({ initialSources, workspaceId }: SourcesTabProps) {
       </div>
 
       {sources.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center bg-white rounded-2xl border border-gray-100 shadow-sm">
+        <div className="flex flex-col items-center justify-center py-20 text-center">
           <div className="h-11 w-11 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 mb-4">
             <Database className="h-5 w-5" />
           </div>

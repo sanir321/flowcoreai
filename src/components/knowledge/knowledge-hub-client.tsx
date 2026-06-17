@@ -103,31 +103,33 @@ export function KnowledgeHubClient({
       </aside>
 
       <main className="flex-1 min-w-0 p-6">
-        {activeTab === "overview" && (
-          <OverviewTab
-            workspaceId={workspaceId}
-            businessProfile={initialBusinessProfile}
-            sources={initialSources}
-            templates={initialTemplates}
-            usedTags={initialUsedTags}
-            onNavigate={setActiveTab}
-          />
-        )}
-        {activeTab === "profile" && (
-          <BusinessProfileClient
-            workspaceId={workspaceId}
-            initialProfile={initialBusinessProfile}
-            businessType={businessType}
-            initialServicesOffered={initialServicesOffered}
-            initialSuggestions={initialSuggestions}
-          />
-        )}
-        {activeTab === "sources" && (
-          <SourcesTab
-            initialSources={initialSources}
-            workspaceId={workspaceId}
-          />
-        )}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          {activeTab === "overview" && (
+            <OverviewTab
+              workspaceId={workspaceId}
+              businessProfile={initialBusinessProfile}
+              sources={initialSources}
+              templates={initialTemplates}
+              usedTags={initialUsedTags}
+              onNavigate={setActiveTab}
+            />
+          )}
+          {activeTab === "profile" && (
+            <BusinessProfileClient
+              workspaceId={workspaceId}
+              initialProfile={initialBusinessProfile}
+              businessType={businessType}
+              initialServicesOffered={initialServicesOffered}
+              initialSuggestions={initialSuggestions}
+            />
+          )}
+          {activeTab === "sources" && (
+            <SourcesTab
+              initialSources={initialSources}
+              workspaceId={workspaceId}
+            />
+          )}
+        </div>
       </main>
     </div>
   )
