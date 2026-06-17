@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Loader2, RefreshCw, Globe, Building2, LayoutDashboard } from "lucide-react"
+import { Loader2, RefreshCw, Globe, Building2, LayoutDashboard, Plus } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { BusinessProfileClient } from "@/app/(dashboard)/settings/business-profile/business-profile-client"
 import { SourcesTab } from "@/components/knowledge/sources-tab"
 import { OverviewTab } from "@/components/knowledge/overview-tab"
@@ -37,6 +38,7 @@ export function KnowledgeHubClient({
 }: KnowledgeHubClientProps) {
   const [activeTab, setActiveTab] = useState<"overview" | "profile" | "sources">("overview")
   const [regenerating, setRegenerating] = useState(false)
+  const [dialogOpen, setDialogOpen] = useState(false)
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -67,13 +69,15 @@ export function KnowledgeHubClient({
     }
   }
 
+  const tabLabel = activeTab === "overview" ? "Overview" : activeTab === "profile" ? "Business Profile" : "Sources"
+
   return (
-    <div className="flex gap-0 max-w-7xl mx-auto pb-16">
-      <aside className="w-56 shrink-0 border-r border-gray-100 min-h-[calc(100vh-12rem)]">
+    <div className="flex max-w-7xl mx-auto">
+      <aside className="w-64 shrink-0 border-r border-gray-100 min-h-[calc(100vh-8rem)] flex flex-col">
         <div className="p-5 border-b border-gray-100">
           <h1 className="text-sm font-semibold text-gray-900">Knowledge Hub</h1>
         </div>
-        <nav className="p-3 space-y-1">
+        <nav className="flex-1 p-3 space-y-1">
           {sidebarItems.map(({ key, label, icon: Icon }) => (
             <button
               key={key}
@@ -90,7 +94,7 @@ export function KnowledgeHubClient({
             </button>
           ))}
         </nav>
-        <div className="p-3 mt-auto">
+        <div className="p-3">
           <button
             onClick={handleRegenerateKB}
             disabled={regenerating}
@@ -102,33 +106,48 @@ export function KnowledgeHubClient({
         </div>
       </aside>
 
-      <main className="flex-1 min-w-0 p-6">
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-          {activeTab === "overview" && (
-            <OverviewTab
-              workspaceId={workspaceId}
-              businessProfile={initialBusinessProfile}
-              sources={initialSources}
-              templates={initialTemplates}
-              usedTags={initialUsedTags}
-              onNavigate={setActiveTab}
-            />
-          )}
-          {activeTab === "profile" && (
-            <BusinessProfileClient
-              workspaceId={workspaceId}
-              initialProfile={initialBusinessProfile}
-              businessType={businessType}
-              initialServicesOffered={initialServicesOffered}
-              initialSuggestions={initialSuggestions}
-            />
-          )}
-          {activeTab === "sources" && (
-            <SourcesTab
-              initialSources={initialSources}
-              workspaceId={workspaceId}
-            />
-          )}
+      <main className="flex-1 min-w-0 p-10">
+        <div className="max-w-6xl mx-auto w-full space-y-8">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold tracking-tight text-gray-900">{tabLabel}</h2>
+            {activeTab === "sources" && (
+              <Button
+                onClick={() => setDialogOpen(true)}
+                className="h-11 px-8 bg-[#c65f39] hover:bg-[#b55533] text-white rounded-xl font-semibold shadow-lg shadow-[#c65f39]/20 transition-all gap-2 text-sm"
+              >
+                <Plus className="h-4 w-4" /> Add Source
+              </Button>
+            )}
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
+            {activeTab === "overview" && (
+              <OverviewTab
+                businessProfile={initialBusinessProfile}
+                sources={initialSources}
+                templates={initialTemplates}
+                usedTags={initialUsedTags}
+                onNavigate={setActiveTab}
+              />
+            )}
+            {activeTab === "profile" && (
+              <BusinessProfileClient
+                workspaceId={workspaceId}
+                initialProfile={initialBusinessProfile}
+                businessType={businessType}
+                initialServicesOffered={initialServicesOffered}
+                initialSuggestions={initialSuggestions}
+              />
+            )}
+            {activeTab === "sources" && (
+              <SourcesTab
+                initialSources={initialSources}
+                workspaceId={workspaceId}
+                dialogOpen={dialogOpen}
+                onDialogOpenChange={setDialogOpen}
+              />
+            )}
+          </div>
         </div>
       </main>
     </div>

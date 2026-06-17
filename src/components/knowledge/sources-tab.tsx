@@ -3,14 +3,14 @@
 import { useState, useEffect, useCallback } from "react"
 import {
   Plus, FileText, Globe, Trash2, Database, Loader2, RefreshCw,
-  Upload, Link as LinkIcon
+  Upload,
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import {
-  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger,
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
@@ -28,13 +28,14 @@ interface Source {
 interface SourcesTabProps {
   initialSources: Source[]
   workspaceId: string
+  dialogOpen: boolean
+  onDialogOpenChange: (open: boolean) => void
 }
 
-export function SourcesTab({ initialSources, workspaceId }: SourcesTabProps) {
+export function SourcesTab({ initialSources, workspaceId, dialogOpen, onDialogOpenChange }: SourcesTabProps) {
   const router = useRouter()
   const [sources, setSources] = useState<Source[]>(initialSources)
   const [isRefreshing, setIsRefreshing] = useState(false)
-  const [open, setOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'url' | 'file' | 'paste'>('url')
   const [newUrl, setNewUrl] = useState("")
   const [isAdding, setIsAdding] = useState(false)
@@ -65,7 +66,7 @@ export function SourcesTab({ initialSources, workspaceId }: SourcesTabProps) {
     try {
       const r = await addUrlSource({ workspace_id: workspaceId, url: newUrl, label: new URL(newUrl).hostname, source_type: 'url' })
       if (r.error) { toast.error(r.error); setIsAdding(false) }
-      else { toast.success("Source added"); setNewUrl(""); setOpen(false); router.refresh(); setTimeout(async () => { await refreshSources(); setIsAdding(false) }, 2000) }
+      else { toast.success("Source added"); setNewUrl(""); onDialogOpenChange(false); router.refresh(); setTimeout(async () => { await refreshSources(); setIsAdding(false) }, 2000) }
     } catch { toast.error("Invalid URL"); setIsAdding(false) }
   }
 
@@ -83,7 +84,7 @@ export function SourcesTab({ initialSources, workspaceId }: SourcesTabProps) {
       if (uploadError) throw uploadError
       const r = await addUrlSource({ workspace_id: workspaceId, label: selectedFile.name, source_type: fileExt === 'pdf' || fileExt === 'docx' || fileExt === 'txt' ? fileExt : 'txt', storage_path: storagePath })
       if (r.error) { toast.error(r.error); setIsAdding(false) }
-      else { toast.success("Document added"); setSelectedFile(null); setOpen(false); router.refresh(); setTimeout(async () => { await refreshSources(); setIsAdding(false) }, 2000) }
+      else { toast.success("Document added"); setSelectedFile(null); onDialogOpenChange(false); router.refresh(); setTimeout(async () => { await refreshSources(); setIsAdding(false) }, 2000) }
     } catch (err: any) { toast.error(err.message); setIsAdding(false) }
   }
 
@@ -94,7 +95,7 @@ export function SourcesTab({ initialSources, workspaceId }: SourcesTabProps) {
     try {
       const r = await pasteKbText({ workspace_id: workspaceId, content: pasteContent, tag: pasteTag || undefined })
       if (r.error) { toast.error(r.error); setIsAdding(false) }
-      else { toast.success("Text saved"); setPasteContent(""); setPasteTag(""); setOpen(false); router.refresh(); setTimeout(async () => { await refreshSources(); setIsAdding(false) }, 2000) }
+      else { toast.success("Text saved"); setPasteContent(""); setPasteTag(""); onDialogOpenChange(false); router.refresh(); setTimeout(async () => { await refreshSources(); setIsAdding(false) }, 2000) }
     } catch (err: any) { toast.error(err.message); setIsAdding(false) }
   }
 
@@ -111,79 +112,72 @@ export function SourcesTab({ initialSources, workspaceId }: SourcesTabProps) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-sm font-semibold text-gray-900">Sources</h2>
-          <p className="text-xs text-gray-500 mt-0.5">
-            {activeCount} active
-            {processingCount > 0 ? `, ${processingCount} processing` : ""}
-            {failedCount > 0 ? `, ${failedCount} failed` : ""}
-          </p>
-        </div>
+        <p className="text-sm text-gray-500">
+          {activeCount} active
+          {processingCount > 0 ? `, ${processingCount} processing` : ""}
+          {failedCount > 0 ? `, ${failedCount} failed` : ""}
+        </p>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="icon" onClick={refreshSources} disabled={isRefreshing} className="h-9 w-9 rounded-xl border-gray-200 text-gray-400 hover:text-gray-900">
             <RefreshCw className={cn("h-3.5 w-3.5", isRefreshing && "animate-spin")} />
           </Button>
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger>
-              <Button className="h-9 px-5 bg-[#c65f39] hover:bg-[#b55533] text-white rounded-xl font-semibold shadow-sm transition-all gap-1.5 text-xs">
-                <Plus className="h-3.5 w-3.5" /> Add Source
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="bg-white rounded-2xl sm:max-w-md p-6 border-gray-100 shadow-xl">
-              <DialogHeader className="space-y-1 pb-4 border-b border-gray-50">
-                <DialogTitle className="text-lg font-semibold text-gray-900 tracking-tight">Add Knowledge</DialogTitle>
-                <DialogDescription className="text-xs text-gray-500">Link a website, upload a document, or paste text.</DialogDescription>
-              </DialogHeader>
-              <div className="flex p-1 bg-gray-100 rounded-xl gap-1 mt-4">
-                {(['url', 'file', 'paste'] as const).map(tab => (
-                  <button key={tab} onClick={() => setActiveTab(tab)}
-                    className={cn("flex-1 py-2.5 rounded-lg text-xs font-semibold transition-all capitalize",
-                      activeTab === tab ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700")}
-                  >{tab === 'url' ? <Globe className="h-3.5 w-3.5 inline mr-1" /> : tab === 'file' ? <Upload className="h-3.5 w-3.5 inline mr-1" /> : <FileText className="h-3.5 w-3.5 inline mr-1" />}
-                    {tab === 'url' ? 'Website' : tab === 'file' ? 'Document' : 'Paste'}
-                  </button>
-                ))}
-              </div>
-
-              {activeTab === 'url' && (
-                <form onSubmit={handleAddUrl} className="mt-6 space-y-4">
-                  <Input placeholder="https://yourwebsite.com" value={newUrl} onChange={e => setNewUrl(e.target.value)} className="h-11 rounded-xl bg-gray-50 border-gray-100 focus:bg-white text-sm" />
-                  <Button type="submit" disabled={isAdding || !newUrl} className="w-full h-11 bg-black hover:bg-gray-800 text-white rounded-xl text-xs font-semibold">
-                    {isAdding ? <Loader2 className="h-4 w-4 animate-spin" /> : "Add URL"}
-                  </Button>
-                </form>
-              )}
-
-              {activeTab === 'file' && (
-                <form onSubmit={handleFileUpload} className="mt-6 space-y-4">
-                  <div className="group relative">
-                    <input type="file" accept=".pdf,.txt,.docx" onChange={e => setSelectedFile(e.target.files?.[0] || null)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-                    <div className={cn("h-28 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-1.5 transition-all",
-                      selectedFile ? "border-black bg-black/5" : "border-gray-200 bg-gray-50 group-hover:border-gray-300")}>
-                      <FileText className={cn("h-5 w-5", selectedFile ? "text-black" : "text-gray-300")} />
-                      <p className={cn("text-xs font-medium", selectedFile ? "text-black" : "text-gray-400")}>{selectedFile ? selectedFile.name : "Choose File"}</p>
-                      <p className="text-[10px] text-gray-400">PDF, TXT or DOCX</p>
-                    </div>
-                  </div>
-                  <Button type="submit" disabled={isAdding || !selectedFile} className="w-full h-11 bg-black hover:bg-gray-800 text-white rounded-xl text-xs font-semibold">
-                    {isAdding ? <Loader2 className="h-4 w-4 animate-spin" /> : "Upload"}
-                  </Button>
-                </form>
-              )}
-
-              {activeTab === 'paste' && (
-                <form onSubmit={handlePasteText} className="mt-6 space-y-4">
-                  <Input placeholder="Tag (optional, e.g. 'services')" value={pasteTag} onChange={e => setPasteTag(e.target.value)} className="h-11 rounded-xl bg-gray-50 border-gray-100 focus:bg-white text-sm" />
-                  <Textarea placeholder="Paste your content here..." value={pasteContent} onChange={e => setPasteContent(e.target.value)} rows={8} className="rounded-xl bg-gray-50 border-gray-100 focus:bg-white text-sm resize-none" />
-                  <Button type="submit" disabled={isAdding || !pasteContent.trim()} className="w-full h-11 bg-black hover:bg-gray-800 text-white rounded-xl text-xs font-semibold">
-                    {isAdding ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save to Knowledge Base"}
-                  </Button>
-                </form>
-              )}
-            </DialogContent>
-          </Dialog>
         </div>
       </div>
+
+      <Dialog open={dialogOpen} onOpenChange={onDialogOpenChange}>
+        <DialogContent className="bg-white rounded-2xl sm:max-w-md p-6 border-gray-100 shadow-xl">
+          <DialogHeader className="space-y-1 pb-4 border-b border-gray-50">
+            <DialogTitle className="text-lg font-semibold text-gray-900 tracking-tight">Add Knowledge</DialogTitle>
+            <DialogDescription className="text-xs text-gray-500">Link a website, upload a document, or paste text.</DialogDescription>
+          </DialogHeader>
+          <div className="flex p-1 bg-gray-100 rounded-xl gap-1 mt-4">
+            {(['url', 'file', 'paste'] as const).map(tab => (
+              <button key={tab} onClick={() => setActiveTab(tab)}
+                className={cn("flex-1 py-2.5 rounded-lg text-xs font-semibold transition-all capitalize",
+                  activeTab === tab ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700")}
+              >{tab === 'url' ? <Globe className="h-3.5 w-3.5 inline mr-1" /> : tab === 'file' ? <Upload className="h-3.5 w-3.5 inline mr-1" /> : <FileText className="h-3.5 w-3.5 inline mr-1" />}
+                {tab === 'url' ? 'Website' : tab === 'file' ? 'Document' : 'Paste'}
+              </button>
+            ))}
+          </div>
+
+          {activeTab === 'url' && (
+            <form onSubmit={handleAddUrl} className="mt-6 space-y-4">
+              <Input placeholder="https://yourwebsite.com" value={newUrl} onChange={e => setNewUrl(e.target.value)} className="h-11 rounded-xl bg-gray-50 border-gray-100 focus:bg-white text-sm" />
+              <Button type="submit" disabled={isAdding || !newUrl} className="w-full h-11 bg-black hover:bg-gray-800 text-white rounded-xl text-xs font-semibold">
+                {isAdding ? <Loader2 className="h-4 w-4 animate-spin" /> : "Add URL"}
+              </Button>
+            </form>
+          )}
+
+          {activeTab === 'file' && (
+            <form onSubmit={handleFileUpload} className="mt-6 space-y-4">
+              <div className="group relative">
+                <input type="file" accept=".pdf,.txt,.docx" onChange={e => setSelectedFile(e.target.files?.[0] || null)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                <div className={cn("h-28 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-1.5 transition-all",
+                  selectedFile ? "border-black bg-black/5" : "border-gray-200 bg-gray-50 group-hover:border-gray-300")}>
+                  <FileText className={cn("h-5 w-5", selectedFile ? "text-black" : "text-gray-300")} />
+                  <p className={cn("text-xs font-medium", selectedFile ? "text-black" : "text-gray-400")}>{selectedFile ? selectedFile.name : "Choose File"}</p>
+                  <p className="text-[10px] text-gray-400">PDF, TXT or DOCX</p>
+                </div>
+              </div>
+              <Button type="submit" disabled={isAdding || !selectedFile} className="w-full h-11 bg-black hover:bg-gray-800 text-white rounded-xl text-xs font-semibold">
+                {isAdding ? <Loader2 className="h-4 w-4 animate-spin" /> : "Upload"}
+              </Button>
+            </form>
+          )}
+
+          {activeTab === 'paste' && (
+            <form onSubmit={handlePasteText} className="mt-6 space-y-4">
+              <Input placeholder="Tag (optional, e.g. 'services')" value={pasteTag} onChange={e => setPasteTag(e.target.value)} className="h-11 rounded-xl bg-gray-50 border-gray-100 focus:bg-white text-sm" />
+              <Textarea placeholder="Paste your content here..." value={pasteContent} onChange={e => setPasteContent(e.target.value)} rows={8} className="rounded-xl bg-gray-50 border-gray-100 focus:bg-white text-sm resize-none" />
+              <Button type="submit" disabled={isAdding || !pasteContent.trim()} className="w-full h-11 bg-black hover:bg-gray-800 text-white rounded-xl text-xs font-semibold">
+                {isAdding ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save to Knowledge Base"}
+              </Button>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {sources.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -192,8 +186,8 @@ export function SourcesTab({ initialSources, workspaceId }: SourcesTabProps) {
           </div>
           <h3 className="text-sm font-semibold text-gray-900">No sources yet</h3>
           <p className="text-xs text-gray-500 mt-1">Add a website, upload a document, or paste text.</p>
-          <Button onClick={() => setOpen(true)} className="mt-4 h-9 px-4 bg-black text-white rounded-xl hover:bg-gray-800 transition-all text-xs font-semibold">
-            <Plus className="h-4 w-4 mr-1" /> Add Source
+          <Button onClick={() => onDialogOpenChange(true)} className="mt-4 h-9 px-5 bg-[#c65f39] hover:bg-[#b55533] text-white rounded-xl font-semibold shadow-sm transition-all text-xs gap-1.5">
+            <Plus className="h-4 w-4" /> Add Source
           </Button>
         </div>
       ) : (
