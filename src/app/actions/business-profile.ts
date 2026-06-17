@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { createClient } from "@/lib/supabase/server"
-
+import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import { logAudit } from "@/lib/audit"
@@ -92,19 +92,25 @@ export async function updateBusinessProfile(input: unknown) {
 
     if (!existing) return { data: null, error: "Workspace not found" }
 
-    const merged = {
-      ...(existing.business_profile || {}),
-      ...result.data.profile,
-    } as Record<string, unknown>
-
-    for (const [key, val] of Object.entries(result.data.profile)) {
-      if (val && typeof val === 'object' && !Array.isArray(val)) {
-        merged[key] = {
-          ...((existing.business_profile as Record<string, unknown>)?.[key] as Record<string, unknown> || {}),
-          ...val as Record<string, unknown>,
+    function deepMerge(target: Record<string, unknown>, source: Record<string, unknown>): Record<string, unknown> {
+      const result = { ...target }
+      for (const [key, val] of Object.entries(source)) {
+        if (val && typeof val === 'object' && !Array.isArray(val)) {
+          const existing = result[key]
+          result[key] = existing && typeof existing === 'object' && !Array.isArray(existing)
+            ? deepMerge(existing as Record<string, unknown>, val as Record<string, unknown>)
+            : { ...val as Record<string, unknown> }
+        } else {
+          result[key] = val
         }
       }
+      return result
     }
+
+    const merged = deepMerge(
+      (existing.business_profile || {}) as Record<string, unknown>,
+      result.data.profile as Record<string, unknown>,
+    )
 
     const { error } = await (supabase as any)
       .from("workspaces")
@@ -124,6 +130,19 @@ export async function updateBusinessProfile(input: unknown) {
     })
 
     revalidatePath("/settings/business-profile")
+    revalidatePath("/knowledge")
+
+    // Trigger KB regeneration from profile data (fire-and-forget)
+    try {
+      const adminClient = createSupabaseClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      )
+      adminClient.functions.invoke("embed-text", {
+        body: { workspace_id: workspaceId, source_id: null, text_content: JSON.stringify(merged), tag: "auto-profile" }
+      }).catch(() => {})
+    } catch {}
+
     return { data: { success: true }, error: null }
   } catch (err) {
     console.error(err)
@@ -147,6 +166,15 @@ export interface RequiredInfoResult {
   progress: number
 }
 
+function hasNonEmptyValue(obj: Record<string, unknown>): boolean {
+  return Object.values(obj).some(v => {
+    if (v == null || v === "") return false
+    if (typeof v === "object" && !Array.isArray(v)) return hasNonEmptyValue(v as Record<string, unknown>)
+    return true
+  })
+}
+
+// NOTE: This function must be kept in sync with computeItems in knowledge-client.tsx
 export async function getRequiredInfo(workspaceId: string): Promise<{ data: RequiredInfoResult | null; error: string | null }> {
   try {
     const supabase = await createClient()
@@ -166,6 +194,12 @@ export async function getRequiredInfo(workspaceId: string): Promise<{ data: Requ
 
     const businessProfile = (wsResult.data.business_profile || {}) as Record<string, unknown>
 
+    // Merge suggestion data into root (onboarding stores old profile data under suggestion)
+    const mergedProfile = {
+      ...(businessProfile.suggestion as Record<string, unknown> || {}),
+      ...businessProfile,
+    }
+
     const { data: templates, error } = await (supabase as any)
       .from("required_info_templates")
       .select("*")
@@ -184,7 +218,7 @@ export async function getRequiredInfo(workspaceId: string): Promise<{ data: Requ
       let status: "complete" | "empty" = "empty"
 
       if (t.section === "business_profile") {
-        const bp = businessProfile as Record<string, unknown>
+        const bp = mergedProfile
         const extras = (bp.extras || {}) as Record<string, unknown>
 
         let val: unknown = null
@@ -199,7 +233,7 @@ export async function getRequiredInfo(workspaceId: string): Promise<{ data: Requ
           if (Array.isArray(val)) {
             status = val.length > 0 ? "complete" : "empty"
           } else if (typeof val === "object") {
-            status = Object.values(val as Record<string, unknown>).some(v => v != null && v !== "") ? "complete" : "empty"
+            status = hasNonEmptyValue(val as Record<string, unknown>) ? "complete" : "empty"
           } else if (typeof val === "string") {
             status = val.trim().length > 0 ? "complete" : "empty"
           } else {

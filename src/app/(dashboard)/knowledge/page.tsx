@@ -2,9 +2,9 @@
 import type { Metadata } from "next"
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
-import { KnowledgeClient } from "@/components/knowledge/knowledge-client"
+import { KnowledgeHubClient } from "@/components/knowledge/knowledge-hub-client"
 
-export const metadata: Metadata = { title: "Knowledge Base" }
+export const metadata: Metadata = { title: "Knowledge Hub" }
 
 export default async function KnowledgePage() {
   const supabase = await createClient()
@@ -37,13 +37,15 @@ export default async function KnowledgePage() {
       .order("created_at", { ascending: false }),
     (supabase as any)
       .from("workspaces")
-      .select("business_type, business_profile")
+      .select("business_type, business_profile, name, services_offered")
       .eq("id", workspaceId)
       .single(),
   ])
 
   const businessType = ws?.business_type || "hotel"
   const businessProfile = ws?.business_profile || {}
+  const servicesOffered = ws?.services_offered || ""
+  const suggestion = (businessProfile as any)?.suggestion || null
 
   const [{ data: wildcardTemplates }, { data: typeTemplates }] = await Promise.all([
     (supabase as any).from("required_info_templates").select("*").eq("business_type", "*").order("priority", { ascending: true }),
@@ -51,12 +53,22 @@ export default async function KnowledgePage() {
   ])
   const templates = [...(wildcardTemplates || []), ...(typeTemplates || [])]
 
+  const usedTags = [...new Set(
+    (sources || [])
+      .filter(s => s.source_type === 'txt' && s.label !== "Pasted text")
+      .map(s => s.label)
+  )]
+
   return (
-    <KnowledgeClient
-      initialSources={(sources || []) as any}
+    <KnowledgeHubClient
       workspaceId={workspaceId}
       initialBusinessProfile={businessProfile}
+      businessType={businessType}
+      initialServicesOffered={servicesOffered}
+      initialSuggestions={suggestion}
+      initialSources={(sources || []) as any}
       initialTemplates={templates || []}
+      initialUsedTags={usedTags}
     />
   )
 }

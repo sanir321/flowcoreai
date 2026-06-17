@@ -9,7 +9,7 @@ export default function SettingsLoading() {
           <Skeleton className="h-3 w-28 rounded mt-1.5" />
         </div>
         <nav className="flex-1 py-4 px-3 space-y-0.5">
-          {["Workspace", "Business Profile", "Notifications", "Integrations", "Web Widget", "Data & Privacy", "Billing & Credits", "Menu", "Orders"].map((_, i) => (
+          {["Workspace", "Notifications", "Integrations", "Web Widget", "Data & Privacy", "Billing & Credits", "Menu", "Orders"].map((_, i) => (
             <div key={i} className="flex items-center gap-2.5 px-3 py-2 rounded-lg">
               <Skeleton className="h-4 w-4 rounded" />
               <Skeleton className="h-3.5 w-28 rounded" />

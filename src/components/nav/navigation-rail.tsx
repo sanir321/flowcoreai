@@ -9,7 +9,6 @@ import {
   BookOpen, 
   Settings, 
   LogOut,
-  User as UserIcon,
   TrendingUp,
   Calendar as CalendarIcon
 } from "lucide-react"
@@ -150,10 +149,8 @@ export function NavigationRail() {
                   </div>
                </DropdownMenuLabel>
                <DropdownMenuSeparator className="bg-gray-50 mx-1" />
-               <DropdownMenuItem onClick={() => router.push("/settings/business-profile")} className="rounded-lg px-3 py-2 text-[10px] font-bold text-gray-700 focus:bg-gray-50 focus:text-black cursor-pointer group transition-all">
-                  <UserIcon className="mr-2 h-3.5 w-3.5 text-gray-400" />
-                  <span>Business Profile</span>
-               </DropdownMenuItem>
+
+
                <DropdownMenuItem 
                  onClick={handleSignOut}
                  className="rounded-lg px-3 py-2 text-[10px] font-bold text-rose-600 focus:bg-rose-50 focus:text-rose-700 cursor-pointer group transition-all"

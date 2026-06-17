@@ -12,14 +12,13 @@ import {
   ShieldCheck,
   ShoppingBag,
   ClipboardList,
-  Building2,
   MessageCircle,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const SETTINGS_NAV = [
   { name: "Workspace", href: "/settings", icon: SettingsIcon },
-  { name: "Business Profile", href: "/settings/business-profile", icon: Building2 },
+
   { name: "Notifications", href: "/settings/notifications", icon: Bell },
   { name: "Integrations", href: "/settings/integrations", icon: Puzzle },
   { name: "WhatsApp", href: "/settings/whatsapp", icon: MessageCircle },
@@ -88,8 +87,8 @@ export default function SettingsLayout({
         </nav>
       </aside>
 
-      <main className="flex-1 overflow-y-auto bg-white">
-          <div className="max-w-3xl mx-auto p-4 md:p-6 lg:p-8">
+      <main className="flex-1 min-h-0 overflow-y-auto bg-white">
+          <div className="max-w-5xl mx-auto p-4 md:p-6 lg:p-8">
           {children}
         </div>
       </main>
