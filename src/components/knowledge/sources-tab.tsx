@@ -196,24 +196,26 @@ export function SourcesTab({ initialSources, workspaceId }: SourcesTabProps) {
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        <div className="space-y-8">
           {sources.map(source => (
-              <div key={source.id} className="p-8 rounded-[2rem] bg-white border border-gray-100 hover:border-gray-200 hover:shadow-sm transition-all group">
-              <div className="flex items-start justify-between mb-5">
-                <div className="h-10 w-10 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400 group-hover:bg-black group-hover:text-white group-hover:border-black transition-all duration-300">
-                  {source.source_type === 'url' ? <Globe className="h-5 w-5" /> : <FileText className="h-5 w-5" />}
+            <div key={source.id} className="p-8 rounded-[2rem] bg-white border border-gray-100 shadow-sm">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400">
+                    {source.source_type === 'url' ? <Globe className="h-5 w-5" /> : <FileText className="h-5 w-5" />}
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-900">{source.label}</h4>
+                    <p className="text-xs text-gray-500 mt-0.5 capitalize">{source.source_type}</p>
+                  </div>
                 </div>
-                <button onClick={() => handleDelete(source.id)} className="h-8 w-8 rounded-lg flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100">
+                <button onClick={() => handleDelete(source.id)} className="h-8 w-8 rounded-lg flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 transition-all">
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
-              <div className="mb-4">
-                <h4 className="text-sm font-medium text-gray-900 truncate">{source.label}</h4>
-                <p className="text-[11px] text-gray-500 mt-0.5 capitalize">{source.source_type}</p>
-              </div>
-              <div className="flex items-center justify-between border-t border-gray-50 pt-4">
+              <div className="flex items-center gap-6 mt-5 pt-5 border-t border-gray-50">
                 <div className="flex items-center gap-2">
-                  <div className={cn("h-1.5 w-1.5 rounded-full",
+                  <div className={cn("h-2 w-2 rounded-full",
                     source.status === 'active' ? "bg-emerald-500" : source.status === 'processing' ? "bg-amber-500 animate-pulse" : source.status === 'failed' ? "bg-red-500" : "bg-gray-300")} />
                   <span className={cn("text-xs font-medium",
                     source.status === 'active' ? "text-emerald-600" : source.status === 'failed' ? "text-red-600" : source.status === 'processing' ? "text-amber-600" : "text-gray-500")}>
@@ -221,10 +223,10 @@ export function SourcesTab({ initialSources, workspaceId }: SourcesTabProps) {
                   </span>
                 </div>
                 {source.chunk_count != null && source.chunk_count > 0 && (
-                  <span className="text-[11px] text-gray-400">{source.chunk_count} chunks</span>
+                  <span className="text-xs text-gray-400">{source.chunk_count} chunks indexed</span>
                 )}
                 {source.error_message && (
-                  <span className="text-[10px] text-red-400 truncate ml-2" title={source.error_message}>{source.error_message}</span>
+                  <span className="text-xs text-red-400 truncate" title={source.error_message}>{source.error_message}</span>
                 )}
               </div>
             </div>
