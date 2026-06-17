@@ -109,24 +109,24 @@ export function SourcesTab({ initialSources, workspaceId }: SourcesTabProps) {
   const processingCount = sources.filter(s => s.status === 'pending' || s.status === 'processing').length
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">Sources</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h2 className="text-sm font-semibold text-gray-900">Sources</h2>
+          <p className="text-xs text-gray-500 mt-0.5">
             {activeCount} active
             {processingCount > 0 ? `, ${processingCount} processing` : ""}
             {failedCount > 0 ? `, ${failedCount} failed` : ""}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={refreshSources} disabled={isRefreshing} className="h-11 w-11 rounded-xl border-gray-200 text-gray-400 hover:text-gray-900">
-            <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
+          <Button variant="outline" size="icon" onClick={refreshSources} disabled={isRefreshing} className="h-9 w-9 rounded-xl border-gray-200 text-gray-400 hover:text-gray-900">
+            <RefreshCw className={cn("h-3.5 w-3.5", isRefreshing && "animate-spin")} />
           </Button>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger>
-              <Button className="h-11 px-8 bg-[#c65f39] hover:bg-[#b55533] text-white rounded-xl font-semibold shadow-lg shadow-[#c65f39]/20 transition-all gap-2">
-                <Plus className="h-4 w-4" /> Add Source
+              <Button className="h-9 px-5 bg-[#c65f39] hover:bg-[#b55533] text-white rounded-xl font-semibold shadow-sm transition-all gap-1.5 text-xs">
+                <Plus className="h-3.5 w-3.5" /> Add Source
               </Button>
             </DialogTrigger>
             <DialogContent className="bg-white rounded-2xl sm:max-w-md p-6 border-gray-100 shadow-xl">
@@ -186,20 +186,20 @@ export function SourcesTab({ initialSources, workspaceId }: SourcesTabProps) {
       </div>
 
       {sources.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center bg-white rounded-[2rem] border border-gray-100 shadow-sm">
-          <div className="h-12 w-12 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 mb-4">
+        <div className="flex flex-col items-center justify-center py-20 text-center bg-white rounded-2xl border border-gray-100 shadow-sm">
+          <div className="h-11 w-11 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 mb-4">
             <Database className="h-5 w-5" />
           </div>
-          <h3 className="text-base font-semibold text-gray-900">No sources yet</h3>
-          <p className="text-sm text-gray-500 mt-1 max-w-xs">Add a website, upload a document, or paste text.</p>
+          <h3 className="text-sm font-semibold text-gray-900">No sources yet</h3>
+          <p className="text-xs text-gray-500 mt-1">Add a website, upload a document, or paste text.</p>
           <Button onClick={() => setOpen(true)} className="mt-4 h-9 px-4 bg-black text-white rounded-xl hover:bg-gray-800 transition-all text-xs font-semibold">
             <Plus className="h-4 w-4 mr-1" /> Add Source
           </Button>
         </div>
       ) : (
-        <div className="space-y-8">
+        <div className="space-y-3">
           {sources.map(source => (
-            <Card key={source.id} className="px-6 py-5 border-gray-100 rounded-xl shadow-sm">
+            <Card key={source.id} className="px-5 py-4 border-gray-100 rounded-xl shadow-sm">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3 min-w-0 flex-1">
                   <div className="h-8 w-8 rounded-lg bg-orange-50 flex items-center justify-center text-[#c65f39] shrink-0">
