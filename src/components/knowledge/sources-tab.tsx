@@ -180,14 +180,14 @@ export function SourcesTab({ initialSources, workspaceId, dialogOpen, onDialogOp
       </Dialog>
 
       {sources.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
+        <div className="bg-white border border-gray-100 rounded-2xl p-16 flex flex-col items-center justify-center text-center shadow-sm">
           <div className="h-11 w-11 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 mb-4">
             <Database className="h-5 w-5" />
           </div>
           <h3 className="text-sm font-semibold text-gray-900">No sources yet</h3>
           <p className="text-xs text-gray-500 mt-1">Add a website, upload a document, or paste text.</p>
-          <Button onClick={() => onDialogOpenChange(true)} className="mt-4 h-9 px-5 bg-[#c65f39] hover:bg-[#b55533] text-white rounded-xl font-semibold shadow-sm transition-all text-xs gap-1.5">
-            <Plus className="h-4 w-4" /> Add Source
+          <Button onClick={() => onDialogOpenChange(true)} className="bg-[#c65f39] hover:bg-[#b55533] text-white text-xs font-semibold px-4 py-2 rounded-xl transition-all shadow-sm">
+            <Plus className="h-4 w-4 mr-1" /> Add Source
           </Button>
         </div>
       ) : (

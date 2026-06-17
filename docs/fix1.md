@@ -1,32 +1,29 @@
-Refactor the React components and router layout for the "Knowledge Hub" dashboard to eliminate structural layout shifting when switching between navigation tabs. 
+Refactor the Next.js `KnowledgeHubClient` component (`app/(dashboard)/knowledge/page-f7b90448e2ac0d23.js`) to resolve aggressive layout shifting and container dimension collapse when toggling between sidebar tabs.
 
-### THE PROBLEM
-Currently, clicking the "Sources" tab ("image_521ae8.png") alters the root container layout entirely compared to the "Overview" tab ("image_521acb.png"). The sidebar alignment shifts, the structural canvas margins disappear, and the main view container collapses into an asymmetrical layout with broken horizontal alignment. 
+### THE PROBLEMS (As seen in image_51ffe6.png and image_51fd45.png)
+1. Structural Grid Contraction: Clicking "Sources" collapses the right-hand layout bounds, breaking the universal dashboard alignment grid compared to the "Overview" view.
+2. Double Header Scaling: The page section titles ("Overview" vs "Sources") have mismatching paddings, fonts, and baseline vertical alignments.
+3. Asymmetric Card Sizing: The empty state card for Sources drops off abruptly instead of spanning gracefully across the main content layout shell.
 
-### THE GOAL
-Implement a strict, persistent App Shell pattern using React and Tailwind CSS. The left sidebar and main content canvas framework must remain absolutely fixed, rigid, and stationary. Only the internal child content area should dynamic-swap when switching views.
+### CORE REFACTORING INSTRUCTIONS
 
-### REFACTORING REQUIREMENTS
+1. ENFORCE COHESIVE SYSTEM SHELL
+Ensure that the main workspace wrapper behaves as a strict structural container that remains completely stationary. Toggle views conditionally *only* within the innermost child component slot to prevent re-triggering parent flex recalculations.
+- Base Parent Framework Classes: Use `flex w-full max-w-7xl mx-auto min-h-[calc(100vh-8rem)]` to match the global platform constraints.
 
-1. PERSISTENT APPSHELL STRUCTURE
-- Create a parent viewport wrapper containing a fixed-width sidebar layout (`w-64` or `w-72` shrink-0) and a flexible main workspace pane (`flex-1 min-h-screen bg-slate-50`).
-- Ensure that switching states between 'Overview', 'Business Profile', and 'Sources' only renders different inner child fragments, preventing any root layout recalculations.
+2. LOCK HEADER TYPOGRAPHY AND MARGINS
+Standardize the page layout header block across all sidebar states. 
+- The section title text string must preserve identical text styles (`text-2xl font-bold tracking-tight text-gray-900`).
+- Ensure it wraps smoothly inside a flexbox header element (`flex items-center justify-between min-h-[40px]`). 
+- When the tab state is set to 'Sources', project the primary action button (`+ Add Source`) to float on the far right of this header row.
 
-2. CONTENT WORKSPACE CONTAINMENT
-- Wrap the main dynamic content space in a standardized, responsive outer container wrapper (e.g., `p-10 max-w-6xl mx-auto w-full space-y-6`). 
-- Both the "Overview" elements and the "Sources" elements must sit within this identical layout grid to maintain structural alignment.
+3. RECONSTRUCT THE SOURCES VIEW (image_51ffe6.png)
+- Expand the white empty-state card wrapper to span `w-full` across the standard main view column bounds.
+- Apply clean Vercel-style aesthetics: `bg-white border border-gray-100 rounded-2xl p-16 flex flex-col items-center justify-center text-center shadow-sm`.
+- Replace the standalone, floating upper-right black button from the original layout with the dedicated, unified brand accent CTA button (`bg-[#c65f39] hover:bg-[#b55533] text-white text-xs font-semibold px-4 py-2 rounded-xl transition-all shadow-sm`).
 
-3. PAGE HEADER STANDARD
-- Unify the top typography hierarchy across all tabs. 
-- The section title (e.g., "Overview" or "Sources") must use the exact same text tracking, weight, and sizing (`text-2xl font-bold tracking-tight text-slate-900`). 
-- If a view has a primary CTA (like the orange `+ Add Source` button), it should float gracefully to the right of this header container using a flex-row `justify-between` layout.
+4. FIX SIDEBAR SELECTION CONTRAST (image_51fd45.png)
+- Standardize the active tracking capsule state for the selected item in the navigation panel (`bg-[#c65f39]/10 text-[#c65f39]`).
+- Ensure the active capsule internal paddings match perfectly across all tabs (`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium`).
 
-4. SOURCES EMPTY STATE CORRECTION (image_521ae8.png)
-- Refactor the empty state container card for "Sources" to span the full width of the standardized main content canvas instead of dropping off abruptly.
-- Unify the primary CTA button styles. The center black pill button in the empty state must be replaced with the branded orange primary button style (`bg-orange-600 hover:bg-orange-700 text-white`) to match the header's primary action button.
-
-5. SIDEBAR CLEANUP (image_521acb.png)
-- Standardize the padding inside the sidebar's navigation list items. 
-- Ensure that active state item highlights (the light orange pill background) wrap seamlessly around the left-aligned text links ("Overview", "Business Profile", "Sources").
-
-Please output the fully refactored, single-file React component utilizing clean Tailwind CSS utility classes.
+Please return the cleaned up, production-ready `KnowledgeHubClient` React code using modern Tailwind CSS utility classes.

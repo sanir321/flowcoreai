@@ -72,8 +72,8 @@ export function KnowledgeHubClient({
   const tabLabel = activeTab === "overview" ? "Overview" : activeTab === "profile" ? "Business Profile" : "Sources"
 
   return (
-    <div className="flex max-w-7xl mx-auto">
-      <aside className="w-64 shrink-0 border-r border-gray-100 min-h-[calc(100vh-8rem)] flex flex-col">
+    <div className="flex w-full max-w-7xl mx-auto min-h-[calc(100vh-8rem)]">
+      <aside className="w-64 shrink-0 border-r border-gray-100 flex flex-col">
         <div className="p-5 border-b border-gray-100">
           <h1 className="text-sm font-semibold text-gray-900">Knowledge Hub</h1>
         </div>
@@ -83,7 +83,7 @@ export function KnowledgeHubClient({
               key={key}
               onClick={() => setActiveTab(key)}
               className={cn(
-                "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
+                "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all",
                 activeTab === key
                   ? "bg-[#c65f39]/10 text-[#c65f39]"
                   : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
@@ -108,7 +108,7 @@ export function KnowledgeHubClient({
 
       <main className="flex-1 min-w-0 p-10">
         <div className="max-w-6xl mx-auto w-full space-y-8">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between min-h-[40px]">
             <h2 className="text-2xl font-bold tracking-tight text-gray-900">{tabLabel}</h2>
             {activeTab === "sources" && (
               <Button
