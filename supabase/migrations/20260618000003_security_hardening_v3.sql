@@ -44,9 +44,37 @@ revoke execute on function public.purge_old_audit_logs() from public;
 revoke execute on function public.purge_old_debug_logs() from public;
 revoke execute on function public.record_login_attempt(p_email text, p_ip text, p_success boolean) from public;
 
--- get_distinct_kb_tags needs to stay accessible to authenticated dashboard users, but not to anon
-revoke execute on function public.get_distinct_kb_tags(p_workspace_id uuid) from public;
-grant execute on function public.get_distinct_kb_tags(p_workspace_id uuid) to authenticated;
+-- get_distinct_kb_tags: switch from SECURITY DEFINER to INVOKER
+-- (reads kb_chunks with RLS scoped by workspace_id — caller perms are sufficient)
+drop function if exists public.get_distinct_kb_tags(uuid);
+create function public.get_distinct_kb_tags(p_workspace_id uuid)
+ returns text[]
+ language plpgsql
+ security invoker
+ set search_path to ''
+as $function$
+declare
+    tags text[];
+begin
+    select array_agg(distinct t.tag)
+    into tags
+    from (
+        select jsonb_array_elements_text(
+            case
+                when metadata is not null and metadata ? 'tag'
+                then jsonb_build_array(metadata->>'tag')
+                else '[]'::jsonb
+            end
+        ) as tag
+        from kb_chunks
+        where workspace_id = p_workspace_id
+        and deleted_at is null
+    ) t
+    where t.tag is not null and t.tag != '';
+    return coalesce(tags, '{}'::text[]);
+end;
+$function$;
+grant execute on function public.get_distinct_kb_tags(uuid) to authenticated;
 
 -- ==========================================
 -- 4. Fix auth_rls_initPlan on all policies
@@ -86,6 +114,12 @@ create policy "waitlist_admin_update" on waitlist
   for update using ((select auth.role()) = 'service_role') with check ((select auth.role()) = 'service_role');
 create policy "waitlist_admin_delete" on waitlist
   for delete using ((select auth.role()) = 'service_role');
+-- waitlist_public_insert: email format validation instead of always-true
+drop policy if exists "waitlist_public_insert" on waitlist;
+create policy "waitlist_public_insert" on waitlist
+  for insert with check (
+    email ~* '^[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'
+  );
 
 -- audit_logs — merge into single SELECT policy to avoid duplicate
 drop policy if exists "audit_logs_service_role_select" on audit_logs;
@@ -136,6 +170,10 @@ create index if not exists idx_callback_queue_workspace ON callback_queue(worksp
 create index if not exists idx_contacts_merged_into ON contacts(merged_into);
 create index if not exists idx_kb_sources_agent ON kb_sources(agent_id);
 create index if not exists idx_kb_sources_workspace ON kb_sources(workspace_id);
+
+-- pg_net extension cannot be moved out of public schema
+-- (it contains the 'net' schema internally — known Supabase limitation)
+-- https://github.com/supabase/postgres/issues/608
 
 -- ==========================================
 -- 7. Drop stale unused indexes
