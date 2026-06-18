@@ -120,12 +120,19 @@ export function AppointmentsClient({ initialAppointments, workspaceId, isModuleA
   const [isRescheduleOpen, setIsRescheduleOpen] = useState(false)
   const [copiedLink, setCopiedLink] = useState(false)
 
-  const handleCopyLink = (id: string) => {
+  const handleCopyLink = (id?: string) => {
+    if (!id) return;
     const url = `${window.location.origin}/appointment/${id}`
     navigator.clipboard.writeText(url)
-    setCopiedLink(true)
-    toast.success("Appointment link copied")
-    setTimeout(() => setCopiedLink(false), 2000)
+      .then(() => {
+        setCopiedLink(true)
+        toast.success("Appointment link copied")
+        setTimeout(() => setCopiedLink(false), 2000)
+      })
+      .catch((err) => {
+        console.error("Failed to copy:", err);
+        toast.error("Failed to copy link");
+      });
   }
   const [rescheduleForm, setRescheduleForm] = useState({ date: '', startTime: '09:00', startPeriod: 'am', endTime: '09:30', endPeriod: 'am' })
   
