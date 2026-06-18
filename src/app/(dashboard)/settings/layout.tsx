@@ -11,7 +11,6 @@ import {
   Zap,
   ShieldCheck,
   ShoppingBag,
-  ClipboardList,
   MessageCircle,
 } from "lucide-react"
 import { cn } from "@/lib/utils"

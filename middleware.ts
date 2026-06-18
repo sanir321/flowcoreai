@@ -21,14 +21,14 @@ export async function middleware(request: NextRequest) {
 
   const url = request.nextUrl.clone()
 
-  const publicRoutes = ["/", "/login", "/faq", "/changelog", "/legal", "/auth/callback"]
+  const publicRoutes = ["/", "/login", "/faq", "/changelog", "/legal", "/pricing", "/features", "/about", "/auth/callback"]
   const isPublicRoute = publicRoutes.some(route =>
     route === "/" ? url.pathname === "/" : url.pathname.startsWith(route)
   )
 
   const dashboardRoutes = [
     "/inbox", "/agent-hub", "/knowledge", "/contacts",
-    "/settings", "/insights",
+    "/settings", "/insights", "/appointments", "/orders", "/ceo",
   ]
   const isDashboardRoute = dashboardRoutes.some((route) =>
     url.pathname.startsWith(route)

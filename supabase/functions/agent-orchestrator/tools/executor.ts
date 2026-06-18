@@ -171,12 +171,13 @@ async function routeToImpl(toolName: string, params: any, ctx: PipelineContext):
     }
 
     case "manage_catalog": {
-      switch (action) {
+      const catalogAction = action || (params.query ? "search" : params.caption ? "send-media" : "");
+      switch (catalogAction) {
         case "search": return searchMenu(params, ctx);
         case "check-stock": return checkStock({ product_name: params.query || params.product_name || "" }, ctx);
         case "send-catalog": return sendCatalog(params, ctx);
         case "send-media": return sendMenuMedia(params, ctx);
-        default: return { success: false, error: `Unknown manage_catalog action: ${action}` };
+        default: return { success: false, error: `Unknown manage_catalog action: ${action || "(empty)"}` };
       }
     }
 

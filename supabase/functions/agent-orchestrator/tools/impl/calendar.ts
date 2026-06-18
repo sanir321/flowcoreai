@@ -70,7 +70,8 @@ function validateBusinessHours(dateStr: string, ctx: PipelineContext): string | 
   if (daySchedule.closed) return "We're closed on that day. Please choose a different day.";
   if (daySchedule.open && daySchedule.close) {
     const d = new Date(dateStr);
-    const timeStr = `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
+    const istTime = new Date(d.getTime() + IST_OFFSET);
+    const timeStr = `${String(istTime.getUTCHours()).padStart(2, "0")}:${String(istTime.getUTCMinutes()).padStart(2, "0")}`;
     if (timeStr < daySchedule.open || timeStr >= daySchedule.close) {
       return `We're closed at that time. Our hours on ${dayName.charAt(0).toUpperCase() + dayName.slice(1)} are ${daySchedule.open}-${daySchedule.close}.`;
     }
