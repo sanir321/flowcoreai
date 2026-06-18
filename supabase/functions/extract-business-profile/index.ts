@@ -48,8 +48,8 @@ Deno.serve(async (req) => {
 
     return await processSingle(supabase, workspace_id, source_id)
   } catch (error: any) {
-    console.error("[ExtractBP] Top-level error:", error.message, error.stack)
-    return new Response(JSON.stringify({ error: "Failed to extract business profile: " + error.message }), {
+    console.error("[ExtractBP] Top-level error")
+    return new Response(JSON.stringify({ error: "Failed to extract business profile" }), {
       status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" }
     })
   }
@@ -139,7 +139,7 @@ async function processBatch(supabase: any): Promise<Response> {
 }
 
 async function processSingle(supabase: any, workspace_id: string, source_id: string): Promise<Response> {
-  console.log("[ExtractBP] processSingle called:", { workspace_id, source_id })
+  console.log("[ExtractBP] processSingle called")
   const { data: chunks, error: chunkError } = await supabase
     .from("kb_chunks")
     .select("content")
@@ -180,7 +180,7 @@ async function processSingle(supabase: any, workspace_id: string, source_id: str
 
   console.log("[ExtractBP] Calling OpenCode API...")
   const extracted = await extractBusinessProfile(fullText, businessType, opencodeKey)
-  console.log("[ExtractBP] LLM returned:", JSON.stringify(extracted))
+  console.log("[ExtractBP] LLM returned profile")
 
   if (parsedSocial && Object.keys(parsedSocial).length > 0) {
     extracted.social = { ...(extracted.social as Record<string, string> || {}), ...parsedSocial }
@@ -402,7 +402,7 @@ ${text.slice(0, 19000)}`
   }
 
   const result = await response.json()
-  console.log("[ExtractBP] OpenCode full response:", JSON.stringify(result))
+  console.log("[ExtractBP] OpenCode response received")
   const content = result.choices?.[0]?.message?.content
 
   if (!content) {
@@ -410,7 +410,7 @@ ${text.slice(0, 19000)}`
     return {}
   }
 
-  console.log("[ExtractBP] Raw LLM content:", content.slice(0, 1000))
+  console.log("[ExtractBP] Raw LLM content parsed")
 
   try {
     return JSON.parse(content)

@@ -46,7 +46,16 @@ Deno.serve(async (req) => {
     const isInternal = internalSecret && timingSafeEqual(token, internalSecret);
 
     if (!isServiceRole && !isInternal) {
-      console.warn(`[ORCHESTRATOR] Auth token doesn't match SRK — allowing request anyway (verify_jwt disabled)`)
+      const fallbackClient = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        serviceRoleKey
+      )
+      const { data: { user }, error: authError } = await fallbackClient.auth.getUser(token)
+      if (authError || !user) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401, headers: responseHeaders
+        })
+      }
     }
 
     const payload = await parseWebhook(req)
@@ -71,9 +80,9 @@ Deno.serve(async (req) => {
     
     return new Response("ok", { status: 200 })
   } catch (e: any) {
-    console.error("[ORCHESTRATOR] Request error:", e.message)
+    console.error("[ORCHESTRATOR] Request error")
     return new Response(JSON.stringify({ error: "Internal error" }), {
-      status: 200, headers: responseHeaders
+      status: 500, headers: responseHeaders
     })
   }
 })
@@ -85,7 +94,7 @@ async function processMessage(payload: WebhookPayload): Promise<[TierResult, Pip
   )
 
   try {
-    console.log(`[ORCHESTRATOR] Starting pipeline for session: ${payload.session_id || 'new'}`)
+    console.log(`[ORCHESTRATOR] Starting pipeline`)
     const session = await getOrCreateSession(supabase, {
       workspace_id: payload.workspace_id,
       customer_jid: payload.customer_jid,
@@ -97,7 +106,7 @@ async function processMessage(payload: WebhookPayload): Promise<[TierResult, Pip
     ctx.workspace = session.workspaces
     ctx.payload.message = sanitizeUserInput(ctx.payload.message || "")
 
-    console.log(`[ORCHESTRATOR] Context ready. Workspace: ${ctx.workspace?.name}`)
+    console.log(`[ORCHESTRATOR] Context ready`)
 
     const t0 = await runT0(ctx)
     if (t0.handled) {
@@ -129,7 +138,7 @@ async function processMessage(payload: WebhookPayload): Promise<[TierResult, Pip
     console.log(`[ORCHESTRATOR] Entering T3 for agent: ${ctx.agentType}`)
     const t3 = await runT3(ctx)
     t3.response = sanitizeLlmOutput(t3.response || "")
-    console.log(`[ORCHESTRATOR] T3 finished. Response length: ${t3.response?.length || 0}`)
+    console.log(`[ORCHESTRATOR] T3 finished`)
     await dispatch(ctx, t3.response)
     return [{ ...t3, agent_type: ctx.agentType }, ctx]
   } catch (e: any) {
@@ -143,9 +152,7 @@ async function processMessage(payload: WebhookPayload): Promise<[TierResult, Pip
         message: e.message,
         metadata: { 
           stack: e.stack, 
-          workspace_id: payload.workspace_id, 
-          customer_jid: payload.customer_jid,
-          message: payload.message 
+          workspace_id: payload.workspace_id,
         }
       })
     } catch (dbErr) {
