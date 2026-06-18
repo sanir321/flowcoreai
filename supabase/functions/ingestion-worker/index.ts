@@ -45,6 +45,25 @@ Deno.serve(async (req) => {
 
     let content = ""
     if (source.source_type === 'url') {
+      // SSRF protection: block private IPs + DNS rebinding
+      try {
+        const url = new URL(source.url)
+        if (url.hostname === 'localhost' || url.hostname === '127.0.0.1' || url.hostname === '::1' ||
+            url.hostname.startsWith('10.') || url.hostname.startsWith('172.16.') || url.hostname.startsWith('192.168.') ||
+            url.hostname.endsWith('.local') || url.hostname.endsWith('.internal')) {
+          throw new Error('URL resolves to a private or internal address')
+        }
+        const ipMatch = url.hostname.match(/^\d+\.\d+\.\d+\.\d+$/)
+        if (ipMatch) {
+          const parts = ipMatch[0].split('.').map(Number)
+          if (parts[0] === 10 || (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) || (parts[0] === 192 && parts[1] === 168) || parts[0] === 127) {
+            throw new Error('URL resolves to a private IP address')
+          }
+        }
+      } catch (e: any) {
+        if (e.message?.includes('private') || e.message?.includes('internal')) throw e
+        throw new Error('Invalid URL')
+      }
       const controller = new AbortController()
       const timeout = setTimeout(() => controller.abort(), 15000)
       const response = await fetch(source.url, { signal: controller.signal })

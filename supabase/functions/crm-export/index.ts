@@ -77,7 +77,7 @@ Deno.serve(async (req) => {
     )
 
   } catch (error: any) {
-    console.error(error)
+    console.error("[crm-export] Export failed")
     return new Response(
       JSON.stringify({ error: "Export failed" }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }

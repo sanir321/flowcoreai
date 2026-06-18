@@ -84,7 +84,7 @@ async function processBatch(supabase: any): Promise<Response> {
       .limit(5)
 
     if (srcError) {
-      console.error(`[Batch] Error fetching sources for ${ws.id}: ${srcError.message}`)
+      console.error(`[Batch] Error fetching sources: ${srcError.message}`)
       results.push({ workspace: ws.id, status: "error" })
       continue
     }
@@ -211,7 +211,7 @@ async function processSingle(supabase: any, workspace_id: string, source_id: str
     console.error(`[ExtractBP] Failed to update bp_extracted_fields: ${fieldsError.message}`)
   }
 
-  console.log(`[ExtractBP] Updated business profile for workspace ${workspace_id} from source ${source_id}: ${extractedFields.join(", ")}`)
+  console.log(`[ExtractBP] Updated business profile: ${extractedFields.join(", ")}`)
 
   return new Response(JSON.stringify({ success: true, extracted: extractedFields }), {
     headers: { ...corsHeaders, "Content-Type": "application/json" }
@@ -219,7 +219,7 @@ async function processSingle(supabase: any, workspace_id: string, source_id: str
 }
 
 async function processUrl(supabase: any, workspace_id: string, website_url: string): Promise<Response> {
-  console.log("[ExtractBP] processUrl called:", { workspace_id, website_url })
+  console.log("[ExtractBP] processUrl called")
 
   const { data: workspace, error: wsError } = await supabase
     .from("workspaces")
@@ -290,7 +290,7 @@ async function processUrl(supabase: any, workspace_id: string, website_url: stri
   if (updateError) throw new Error(`Failed to update workspace: ${updateError.message}`)
 
   const extractedFields = Object.keys(extracted)
-  console.log(`[ExtractBP] URL-scraped business profile for workspace ${workspace_id}: ${extractedFields.join(", ")}`)
+  console.log(`[ExtractBP] URL-scraped business profile: ${extractedFields.join(", ")}`)
 
   return new Response(JSON.stringify({ success: true, extracted: extractedFields, source: "url" }), {
     headers: { ...corsHeaders, "Content-Type": "application/json" }

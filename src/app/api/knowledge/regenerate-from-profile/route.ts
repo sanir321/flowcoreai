@@ -128,7 +128,7 @@ export async function POST(req: Request) {
     }
 
     const businessProfile = workspace.business_profile || {}
-    const businessType = workspace.business_type || "hotel"
+    const businessType = workspace.business_type || "general"
 
     const { data: templates } = await supabaseAdmin
       .from("required_info_templates")
@@ -229,6 +229,6 @@ export async function POST(req: Request) {
     })
   } catch (err: any) {
     console.error("[REGENERATE] Error:", err)
-    return NextResponse.json({ error: err.message || "Internal error" }, { status: 500 })
+    return NextResponse.json({ error: "Failed to regenerate from profile" }, { status: 500 })
   }
 }

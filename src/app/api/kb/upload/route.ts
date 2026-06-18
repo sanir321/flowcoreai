@@ -38,7 +38,7 @@ export async function POST(req: Request) {
       .from('kb-documents')
       .upload(storagePath, file)
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return NextResponse.json({ error: "Storage upload failed" }, { status: 500 })
 
     return NextResponse.json({ storage_path: data.path })
   } catch (err: any) { // eslint-disable-line @typescript-eslint/no-explicit-any

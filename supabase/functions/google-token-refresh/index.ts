@@ -107,7 +107,7 @@ Deno.serve(async (req) => {
     })
   } catch (e: any) {
     console.error("[google-token-refresh] Error:", e.message)
-    return new Response(JSON.stringify({ error: e.message }), {
+    return new Response(JSON.stringify({ error: "Token refresh failed" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" }
     })
   }

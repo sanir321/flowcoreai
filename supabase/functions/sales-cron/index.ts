@@ -127,6 +127,7 @@ Deno.serve(async (req) => {
       headers: responseHeaders,
     })
   } catch (e: any) {
-    return new Response(JSON.stringify({ error: e.message }), { headers: responseHeaders, status: 500 })
+    console.error("[sales-cron] Error:", e.message)
+    return new Response(JSON.stringify({ error: "Follow-up processing failed" }), { headers: responseHeaders, status: 500 })
   }
 })

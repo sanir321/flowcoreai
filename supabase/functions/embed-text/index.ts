@@ -16,7 +16,7 @@ Deno.serve(async (req) => {
     const token = authHeader.replace('Bearer ', '')
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     const internalSecret = Deno.env.get('INTERNAL_CRON_SECRET')
-    const publishableKeys = Deno.env.get('SUPABASE_PUBLISHABLE_KEYS') || ''
+    const publishableKeys = (Deno.env.get('SUPABASE_PUBLISHABLE_KEYS') || '').split(',').filter(Boolean)
     if (token && (token === serviceRoleKey || token === internalSecret || publishableKeys.includes(token))) {
       // Authorized via key match
     } else {
