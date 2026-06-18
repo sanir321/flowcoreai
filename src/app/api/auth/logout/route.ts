@@ -4,13 +4,14 @@ import { createClient } from "@/lib/supabase/server";
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+
     const { error } = await supabase.auth.signOut();
-    
     if (error) {
       console.error("[LOGOUT] Sign out error:", error.message);
     }
 
-    // Clear all auth cookies
     const response = NextResponse.json({ success: true });
     const cookies = req.cookies.getAll();
     cookies.forEach(cookie => {
@@ -20,6 +21,6 @@ export async function POST(req: NextRequest) {
     return response;
   } catch (error) {
     console.error("[LOGOUT] Error:", error);
-    return NextResponse.json({ success: true }); // Always succeed
+    return NextResponse.json({ error: "Logout failed" }, { status: 500 });
   }
 }

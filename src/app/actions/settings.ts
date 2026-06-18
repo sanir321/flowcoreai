@@ -84,40 +84,42 @@ export async function updateWidgetConfig(input: unknown): Promise<ActionResponse
 }
 
 export async function getGoogleAuthUrl(workspace_id: string): Promise<ActionResponse<{ url: string; nonce: string }>> {
-  const result = z.string().uuid().safeParse(workspace_id)
-  if (!result.success) return { data: null, error: "Invalid workspace ID" }
+  try {
+    const result = z.string().uuid().safeParse(workspace_id)
+    if (!result.success) return { data: null, error: "Invalid workspace ID" }
 
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { data: null, error: "Unauthorized" }
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { data: null, error: "Unauthorized" }
 
-  // IDOR Check
-  if (user.app_metadata.workspace_id !== result.data) {
-    return { data: null, error: "Forbidden: Workspace mismatch" }
+    if (user.app_metadata.workspace_id !== result.data) {
+      return { data: null, error: "Forbidden: Workspace mismatch" }
+    }
+
+    const client_id = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    const redirect_uri = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/google/callback`;
+    const scope = encodeURIComponent(
+      "openid https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/spreadsheets"
+    );
+
+    const { createHmac, randomBytes } = await import('node:crypto');
+    if (!process.env.INTERNAL_CRON_SECRET) {
+      return { data: null, error: "Server configuration error: missing secret" };
+    }
+
+    const nonce = randomBytes(16).toString('hex');
+    const hmac = createHmac('sha256', process.env.INTERNAL_CRON_SECRET);
+    hmac.update(result.data + ':' + nonce);
+    const stateSig = hmac.digest('hex');
+    const state = `${result.data}.${nonce}.${stateSig}`;
+
+    const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${client_id}&redirect_uri=${redirect_uri}&response_type=code&scope=${scope}&access_type=offline&prompt=consent&state=${state}`;
+
+    return { data: { url, nonce }, error: null };
+  } catch (err) {
+    console.error(err)
+    return { data: null, error: "Failed to generate auth URL" }
   }
-
-  const client_id = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-  const redirect_uri = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/google/callback`;
-  const scope = encodeURIComponent(
-    "openid https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/spreadsheets"
-  );
-
-  // Sign the state parameter to prevent IDOR during OAuth callback
-  const { createHmac, randomBytes } = await import('node:crypto');
-  if (!process.env.INTERNAL_CRON_SECRET) {
-    return { data: null, error: "Server configuration error: missing secret" };
-  }
-  
-  // Generate session nonce for CSRF binding
-  const nonce = randomBytes(16).toString('hex');
-  const hmac = createHmac('sha256', process.env.INTERNAL_CRON_SECRET);
-  hmac.update(result.data + ':' + nonce);
-  const stateSig = hmac.digest('hex');
-  const state = `${result.data}.${nonce}.${stateSig}`;
-
-  const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${client_id}&redirect_uri=${redirect_uri}&response_type=code&scope=${scope}&access_type=offline&prompt=consent&state=${state}`;
-
-  return { data: { url, nonce }, error: null };
 }
 
 export interface GoogleConfigInput {

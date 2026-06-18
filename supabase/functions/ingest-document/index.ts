@@ -213,34 +213,74 @@ function parseSocialUrls(text: string): Record<string, string> {
 }
 
 function splitIntoChunks(text: string, maxSize: number): string[] {
+  const OVERLAP = 150;
+  const HARD_CAP = Math.round(maxSize * 1.5);
+
   const urls: string[] = []
   const cleaned = text.replace(/https?:\/\/[^\s<>"]+/g, (url) => {
     urls.push(url)
     return `\x00URL_${urls.length - 1}\x00`
   })
 
-  const sentenceRegex = /[^.!?]+[.!?]+/g
-  const sentences: string[] = []
-  let lastIndex = 0
-  let m: RegExpExecArray | null
-  while ((m = sentenceRegex.exec(cleaned)) !== null) {
-    sentences.push(m[0])
-    lastIndex = sentenceRegex.lastIndex
-  }
-  const tail = cleaned.slice(lastIndex).trim()
-  if (tail) sentences.push(tail)
+  const restore = (s: string) => s.replace(/\x00URL_(\d+)\x00/g, (_, i) => urls[Number(i)] || "")
 
-  if (sentences.length === 0) return [text.slice(0, maxSize)]
+  const lines = cleaned.split('\n')
+  const headingIdx = lines.findIndex(l => /^#{1,6}\s+\S/.test(l))
+
+  if (headingIdx === -1) {
+    return splitByParagraphs(cleaned, maxSize, HARD_CAP, OVERLAP, restore)
+  }
+
+  const sections: { heading: string; bodyLines: string[] }[] = []
+  let currentHeading = '## (Intro)'
+  let currentBody: string[] = []
+  let inCodeBlock = false
+
+  for (const line of lines) {
+    const trimmed = line.trimEnd()
+    if (/^```/.test(trimmed)) { inCodeBlock = !inCodeBlock; currentBody.push(line); continue }
+    if (!inCodeBlock && /^#{1,6}\s+\S/.test(trimmed)) {
+      if (currentBody.length > 0) sections.push({ heading: currentHeading, bodyLines: currentBody })
+      currentHeading = trimmed
+      currentBody = []
+      continue
+    }
+    currentBody.push(line)
+  }
+  if (currentBody.length > 0) sections.push({ heading: currentHeading, bodyLines: currentBody })
+
+  const chunks: string[] = []
+  for (const section of sections) {
+    const sectionText = section.heading + '\n' + section.bodyLines.join('\n')
+    const cleanedSection = restore(sectionText)
+    if (cleanedSection.length <= maxSize) {
+      chunks.push(cleanedSection.trim())
+    } else {
+      chunks.push(...splitByParagraphs(cleanedSection, maxSize, HARD_CAP, OVERLAP, restore))
+    }
+  }
+
+  return chunks
+}
+
+function splitByParagraphs(text: string, maxSize: number, HARD_CAP: number, OVERLAP: number, restore: (s: string) => string): string[] {
+  const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim().length > 0)
+  if (paragraphs.length <= 1) return [restore(text).slice(0, HARD_CAP)]
 
   const chunks: string[] = []
   let current = ""
-  for (const sentence of sentences) {
-    const restored = sentence.replace(/\x00URL_(\d+)\x00/g, (_, i) => urls[Number(i)] || "")
+  for (const para of paragraphs) {
+    const restored = restore(para)
     if ((current.length + restored.length) > maxSize && current.length > 0) {
       chunks.push(current.trim())
-      current = restored
+      const overlapTail = current.slice(-OVERLAP)
+      current = overlapTail + restored
     } else {
       current += restored
+    }
+    while (current.length > HARD_CAP) {
+      chunks.push(current.slice(0, HARD_CAP).trim())
+      current = current.slice(HARD_CAP - OVERLAP)
     }
   }
   if (current.trim()) chunks.push(current.trim())

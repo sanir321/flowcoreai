@@ -27,7 +27,6 @@ const SETTINGS_NAV = [
   { name: "Data & Privacy", href: "/settings/data", icon: ShieldCheck },
   { name: "Billing & Credits", href: "/settings/billing", icon: Zap },
   { name: "Menu", href: "/settings/menu", icon: ShoppingBag },
-  { name: "Orders", href: "/settings/orders", icon: ClipboardList },
 ]
 
 export default function SettingsLayout({

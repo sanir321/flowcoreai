@@ -318,7 +318,7 @@ function convertHtmlToText(html: string): string {
 
 function splitIntoChunks(text: string, maxSize: number): string[] {
   const OVERLAP = 150;
-  const HARD_CAP = Math.round(maxSize * 1.25);
+  const HARD_CAP = Math.round(maxSize * 1.5);
 
   const urls: string[] = []
   const cleaned = text.replace(/https?:\/\/[^\s<>"]+/g, (url) => {
@@ -328,43 +328,70 @@ function splitIntoChunks(text: string, maxSize: number): string[] {
 
   const restore = (s: string) => s.replace(/\x00URL_(\d+)\x00/g, (_, i) => urls[Number(i)] || "")
 
-  const sentenceRegex = /[^.!?\n]+[.!?\n]+/g
-  const sentences: string[] = []
-  let lastIndex = 0
-  let m: RegExpExecArray | null
-  while ((m = sentenceRegex.exec(cleaned)) !== null) {
-    sentences.push(m[0])
-    lastIndex = sentenceRegex.lastIndex
-  }
-  const tail = cleaned.slice(lastIndex).trim()
-  if (tail) sentences.push(tail)
+  const lines = cleaned.split('\n')
+  const headingIdx = lines.findIndex(l => /^#{1,6}\s+\S/.test(l))
 
-  if (sentences.length === 0) return [restore(cleaned).slice(0, HARD_CAP)]
+  if (headingIdx === -1) {
+    return splitByParagraphs(cleaned, maxSize, HARD_CAP, OVERLAP, restore).filter(isMeaningfulChunk)
+  }
+
+  const sections: { heading: string; bodyLines: string[] }[] = []
+  let currentHeading = '## (Intro)'
+  let currentBody: string[] = []
+  let inCodeBlock = false
+
+  for (const line of lines) {
+    const trimmed = line.trimEnd()
+    if (/^```/.test(trimmed)) { inCodeBlock = !inCodeBlock; currentBody.push(line); continue }
+    if (!inCodeBlock && /^#{1,6}\s+\S/.test(trimmed)) {
+      if (currentBody.length > 0) sections.push({ heading: currentHeading, bodyLines: currentBody })
+      currentHeading = trimmed
+      currentBody = []
+      continue
+    }
+    currentBody.push(line)
+  }
+  if (currentBody.length > 0) sections.push({ heading: currentHeading, bodyLines: currentBody })
+
+  const chunks: string[] = []
+  for (const section of sections) {
+    const sectionText = section.heading + '\n' + section.bodyLines.join('\n')
+    const cleanedSection = restore(sectionText)
+    if (cleanedSection.length <= maxSize) {
+      chunks.push(cleanedSection.trim())
+    } else {
+      const subChunks = splitByParagraphs(cleanedSection, maxSize, HARD_CAP, OVERLAP, restore)
+      chunks.push(...subChunks)
+    }
+  }
+
+  return chunks.filter(isMeaningfulChunk)
+}
+
+function splitByParagraphs(text: string, maxSize: number, HARD_CAP: number, OVERLAP: number, restore: (s: string) => string): string[] {
+  const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim().length > 0)
+  if (paragraphs.length <= 1) return [restore(text).slice(0, HARD_CAP)]
 
   const chunks: string[] = []
   let current = ""
-  for (const sentence of sentences) {
-    const restored = restore(sentence)
+  for (const para of paragraphs) {
+    const restored = restore(para)
     if ((current.length + restored.length) > maxSize && current.length > 0) {
       chunks.push(current.trim())
-      // Carry an overlap tail from the previous chunk for context continuity.
       const overlapTail = current.slice(-OVERLAP)
       current = overlapTail + restored
     } else {
       current += restored
     }
-    // Safety: never let a single run exceed the hard cap.
     while (current.length > HARD_CAP) {
       chunks.push(current.slice(0, HARD_CAP).trim())
       current = current.slice(HARD_CAP - OVERLAP)
     }
   }
   if (current.trim()) chunks.push(current.trim())
-
-  return chunks.filter(isMeaningfulChunk)
+  return chunks
 }
 
-// Drop boilerplate/noise chunks (nav bars, dash menus, link lists) that hurt retrieval.
 function isMeaningfulChunk(chunk: string): boolean {
   const informative = chunk.replace(/[-|#*`>\s\d.]/g, "")
   if (informative.length < 40) return false

@@ -34,7 +34,7 @@ export async function takeOverSession(input: unknown): Promise<ActionResponse<{ 
       .update({ status: 'escalated' })
       .eq("id", session_id)
 
-    if (error) return { data: null, error: error.message }
+    if (error) return { data: null, error: "Failed to take over session" }
 
     revalidatePath("/inbox")
     return { data: { success: true }, error: null }
@@ -81,7 +81,7 @@ export async function sendManualReply(input: unknown): Promise<ActionResponse<an
       .select()
       .single()
 
-    if (msgError) return { data: null, error: msgError.message }
+    if (msgError) return { data: null, error: "Failed to send message" }
 
     // Update session metadata
     await supabase
@@ -158,7 +158,7 @@ export async function resolveEscalation(input: unknown): Promise<ActionResponse<
       })
       .eq("id", escalation_id)
 
-    if (logError) return { data: null, error: logError.message }
+    if (logError) return { data: null, error: "Failed to resolve escalation" }
 
     // 2. Set session back to active
     await supabase

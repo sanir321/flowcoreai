@@ -23,14 +23,12 @@ export async function POST(req: NextRequest) {
     const workspaceId = user.app_metadata.workspace_id
     if (!workspaceId) return new NextResponse("No workspace", { status: 400 })
 
-    // Get DB session for this workspace
     const { data: dbSession } = await (supabase
       .from("gowa_sessions")
       .select("gowa_session_id")
       .eq("workspace_id", workspaceId)
       .maybeSingle() as any)
 
-    // Logout and delete ONLY this workspace's device from GoWA
     const deviceName = `FlowCore_${workspaceId}`
     try {
       const resp = await fetch(`${GOWA_BASE_URL}/devices`, {
@@ -41,7 +39,6 @@ export async function POST(req: NextRequest) {
         const data = await resp.json()
         const devices = data.results || []
 
-        // Find our device by name or stored session ID
         const ourDevice = devices.find((d: any) =>
           d.name === deviceName || d.id === dbSession?.gowa_session_id
         )
@@ -61,9 +58,8 @@ export async function POST(req: NextRequest) {
       console.error("[LOGOUT_GOWA_ERROR]", e)
     }
 
-    // Clear gowa_sessions from DB for this workspace
     await (supabase.from("gowa_sessions") as any)
-      .delete()
+      .update({ deleted_at: new Date().toISOString() })
       .eq("workspace_id", workspaceId)
 
     return NextResponse.json({ status: 'ok', message: 'Session disconnected' })

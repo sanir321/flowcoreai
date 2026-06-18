@@ -109,28 +109,85 @@ Deno.serve(async (req) => {
 })
 
 function splitIntoChunks(text: string, maxSize: number): string[] {
-  const OVERLAP = 150
-  const HARD_CAP = Math.round(maxSize * 1.25)
+  const HARD_CAP = Math.round(maxSize * 1.5)
 
-  const sentences = text.match(/[^.!?\n]+[.!?\n]+/g) || [text]
+  const headingInfo = findHeadings(text)
+  if (headingInfo.length === 0) {
+    return splitByParagraphs(text, maxSize, HARD_CAP)
+  }
+
+  const lines = text.split('\n')
   const chunks: string[] = []
-  let current = ""
-  for (const sentence of sentences) {
-    if ((current + sentence).length > maxSize && current.length > 0) {
-      chunks.push(current.trim())
-      current = current.slice(-OVERLAP) + sentence
+  for (let i = 0; i < headingInfo.length; i++) {
+    const startLine = headingInfo[i].lineIndex
+    const endLine = i + 1 < headingInfo.length ? headingInfo[i + 1].lineIndex : lines.length
+    const section = lines.slice(startLine, endLine).join('\n').trim()
+    if (!section) continue
+
+    if (section.length <= maxSize) {
+      chunks.push(section)
     } else {
-      current += sentence
-    }
-    while (current.length > HARD_CAP) {
-      chunks.push(current.slice(0, HARD_CAP).trim())
-      current = current.slice(HARD_CAP - OVERLAP)
+      chunks.push(...splitByParagraphs(section, maxSize, HARD_CAP))
     }
   }
-  if (current.trim()) chunks.push(current.trim())
 
   const filtered = chunks.filter(isMeaningfulChunk)
   return filtered.length > 0 ? filtered : [text.slice(0, HARD_CAP)]
+}
+
+function findHeadings(text: string): { lineIndex: number }[] {
+  const lines = text.split('\n')
+  const headings: { lineIndex: number }[] = []
+  let inCode = false
+  for (let i = 0; i < lines.length; i++) {
+    const trimmed = lines[i].trim()
+    if (trimmed.startsWith('```')) { inCode = !inCode; continue }
+    if (!inCode && /^#{1,6}\s+\S/.test(trimmed)) {
+      headings.push({ lineIndex: i })
+    }
+  }
+  return headings
+}
+
+function splitByParagraphs(text: string, maxSize: number, hardCap: number): string[] {
+  const paras = text.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean)
+  if (paras.length <= 1) return splitBySentences(text, maxSize, hardCap)
+
+  const chunks: string[] = []
+  let current = ""
+  for (const para of paras) {
+    const candidate = current ? current + '\n\n' + para : para
+    if (candidate.length > maxSize && current) {
+      chunks.push(current)
+      current = para
+    } else {
+      current = candidate
+    }
+  }
+  if (current) chunks.push(current)
+
+  return chunks.flatMap(c => c.length > hardCap ? splitBySentences(c, maxSize, hardCap) : [c])
+}
+
+function splitBySentences(text: string, maxSize: number, hardCap: number): string[] {
+  const sentences = text.match(/[^.!?\n]+[.!?\n]+/g) || [text]
+  const chunks: string[] = []
+  let current = ""
+  for (const s of sentences) {
+    const candidate = current ? current + s : s
+    if (candidate.length > maxSize && current) {
+      chunks.push(current.trim())
+      current = s
+    } else {
+      current = candidate
+    }
+    while (current.length > hardCap) {
+      chunks.push(current.slice(0, hardCap).trim())
+      current = current.slice(hardCap)
+    }
+  }
+  if (current.trim()) chunks.push(current.trim())
+  return chunks
 }
 
 function isMeaningfulChunk(chunk: string): boolean {

@@ -49,8 +49,48 @@ function scoreAgentType(msgLower: string, agentKeywords: typeof AGENT_KEYWORDS.a
   return maxScore;
 }
 
+function detectEmotionalTone(msgLower: string, msg: string): string {
+  const distressSignals = /\b(helpless|desperate|urgent|emergency|asap|immediately|can't take|lost|scared|worried|anxious)\b/i;
+  const frustrationSignals = /\b(annoying|frustrated|frustrating|useless|terrible|horrible|awful|worst|waste|useless|unacceptable|ridiculous|fed up|sick of|tired of|this is not|still not)\b/i;
+  const urgencySignals = /\b(hurry|quick|fast|need.*now|important|critical|deadline|due|expiring|limited time|today|right now|immediately)\b/i;
+  if (distressSignals.test(msg)) return "distressed";
+  if (frustrationSignals.test(msg)) return "frustrated";
+  if (urgencySignals.test(msg)) return "urgent";
+  if (msgLower.match(/\b(thanks|great|perfect|awesome|good|nice|wonderful|excellent|amazing|appreciate)\b/i)) return "positive";
+  return "calm";
+}
+
+function detectPatternSignals(msgLower: string, msg: string): { churnRisk: boolean; maskedComplaint: boolean; ventVsSolve: string } {
+  const churnSignals = /\b(cancel.*account|switch.*provider|competitor|moving to|better option|other.*option|exploring|considering.*leaving|thought about|not worth|too expensive|cancel.*subscription|delete.*account)\b/i;
+  const complaintMaskers = /\b(how.*work|what.*policy|do you.*offer|is there.*way|can I.*but)\b/i;
+  const ventSignals = /\b(story|always|never|every time|every single|all the time|just like|same thing|exactly)\b/i;
+  return {
+    churnRisk: churnSignals.test(msg),
+    maskedComplaint: complaintMaskers.test(msgLower) && (/\b(issue|problem|wrong|broken|not work|error|didn't|hasn't)\b/i.test(msg)),
+    ventVsSolve: ventSignals.test(msg) && msg.length > 100 ? "vent" : "solve"
+  };
+}
+
+function detectEscalationLevel(msg: string): string {
+  const immediateSignals = /\b(legal|attorney|lawsuit|sue|police|safety|unsafe|danger|emergency|fire|injured|injury|threat)\b/i;
+  const urgentSignals = /\b(furious|refund.*now|cancel.*immediately|speak.*manager|supervisor|owner|complaint.*formal|social.*media.*post|chargeback|dispute)\b/i;
+  const standardSignals = /\b(complicated|confus|not working|broken|wrong|incorrect|bill.*issue|payment.*problem|technical)\b/i;
+  if (immediateSignals.test(msg)) return "immediate";
+  if (urgentSignals.test(msg)) return "urgent";
+  if (standardSignals.test(msg)) return "standard";
+  return "normal";
+}
+
 export async function runT2(ctx: PipelineContext): Promise<TierResult> {
-  const msgLower = ctx.payload.message.toLowerCase();
+  const msg = ctx.payload.message;
+  const msgLower = msg.toLowerCase();
+
+  ctx._emotionalTone = detectEmotionalTone(msgLower, msg);
+  const patterns = detectPatternSignals(msgLower, msg);
+  ctx._churnRisk = patterns.churnRisk;
+  ctx._maskedComplaint = patterns.maskedComplaint;
+  ctx._ventVsSolve = patterns.ventVsSolve;
+  ctx._escalationLevel = detectEscalationLevel(msg);
 
   const businessInfoKeywords = ["business hours", "working hours", "office hours", "open hours", "what are your hours", "what is your address", "your location", "where are you located", "your phone number", "your email address", "how to contact", "contact number", "phone number", "email address"];
   const isBusinessInfo = businessInfoKeywords.some(kw => msgLower.includes(kw));

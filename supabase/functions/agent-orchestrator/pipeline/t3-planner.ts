@@ -75,6 +75,37 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
   let systemPrompt = buildPrompt(ctx)
     + `\n\n## Current Date/Time\nToday is ${new Date().toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", weekday: "long", year: "numeric", month: "long", day: "numeric" })}. Current time in India is ${new Date().toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit" })} IST. Use this to calculate relative dates like "tomorrow", "next week", "today" correctly.`;
 
+  const tone = ctx._emotionalTone;
+  if (tone && tone !== "calm" && tone !== "positive") {
+    const toneInstructions: Record<string, string> = {
+      frustrated: "Calibrate: speak calmly and briefly. Do not match their agitation. Acknowledge their feelings before moving to solutions. Use short, clean sentences. If frustration persists past 2 exchanges, escalate using transfer_agent.",
+      urgent: "Calibrate: prioritize speed and clarity. Give clear timelines. Avoid extra information — focus on what matters now. If you cannot resolve immediately, warm-transfer to a human with full context.",
+      distressed: "Calibrate: slow down your responses. Use a warmer, more patient tone. Let them know you understand. Do not overwhelm with options. If safety is involved, escalate immediately."
+    };
+    systemPrompt += `\n\n## Emotional Calibration\nDetected customer tone: ${tone}. ${toneInstructions[tone] || "Respond with extra care."}`;
+  }
+
+  if (ctx._churnRisk) {
+    systemPrompt += "\n\n[CHURN WARNING] The customer is showing signals they may leave. Handle with care — probe gently, never pressure. If this is a cancellation request, follow the retention protocol: first understand the reason, then address the root cause, then present an alternative before processing.";
+  }
+
+  if (ctx._maskedComplaint) {
+    systemPrompt += "\n[COMPLAINT PROBE] The customer may be framing a complaint behind a question. After answering their surface question, gently ask if they've had a specific issue: e.g., 'Have you run into something specific?'";
+  }
+
+  if (ctx._escalationLevel && ctx._escalationLevel !== "normal") {
+    const escalationRules: Record<string, string> = {
+      immediate: "IMMEDIATE ESCALATION REQUIRED: safety, legal threat, or authority limit reached. Do not delay — call transfer_agent with full context.",
+      urgent: "URGENT: customer is nearing escalation threshold (furious, requesting manager, or threatening social media/chargeback). Offer warm transfer proactively.",
+      standard: "STANDARD: issue may require specialist or management attention. Resolve what you can, warm-transfer the rest with full context."
+    };
+    systemPrompt += `\n\n## Escalation Severity\n${escalationRules[ctx._escalationLevel]}`;
+  }
+
+  if (ctx._ventVsSolve === "vent") {
+    systemPrompt += "\n[VENT DETECTED] The customer may need to be heard before they want a solution. Let them finish. Acknowledge their experience fully before offering to help. Do not jump to troubleshooting.";
+  }
+
   if (agentType === "customer_support") {
     try {
       const kbResult = ctx.kbSearchPromise

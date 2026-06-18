@@ -55,7 +55,7 @@ export async function getBusinessProfile(workspaceId: string) {
     .eq("id", workspaceId)
     .single()
 
-  if (error) return { data: null, error: error.message }
+  if (error) return { data: null, error: "Failed to fetch business profile" }
 
   return {
     data: (data?.business_profile || {}) as BusinessProfile,

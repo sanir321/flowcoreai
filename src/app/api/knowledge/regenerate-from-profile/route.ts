@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
+import { rateLimit } from "@/lib/rate-limit"
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -93,6 +94,12 @@ function profileSectionToText(businessProfile: any, tag: string): string | null 
 
 export async function POST(req: Request) {
   try {
+    const ip = req.headers.get("x-forwarded-for") || "127.0.0.1";
+    const { success: isAllowed } = await rateLimit(ip);
+    if (!isAllowed) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
     const { workspace_id } = await req.json()
     if (!workspace_id || typeof workspace_id !== "string") {
       return NextResponse.json({ error: "workspace_id is required" }, { status: 400 })
@@ -145,13 +152,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "No profile data to generate chunks from. Fill in your business profile first." }, { status: 400 })
     }
 
-    // Delete old auto-generated chunks
-    await supabaseAdmin
-      .from("kb_chunks")
-      .delete()
-      .eq("workspace_id", workspace_id)
-      .filter("metadata->>source", "eq", "auto-generated")
-
     // Find or create a profile source row
     let sourceId: string | null = null
     const { data: existingSource } = await supabaseAdmin
@@ -164,8 +164,6 @@ export async function POST(req: Request) {
 
     if (existingSource) {
       sourceId = existingSource.id
-      // Delete old chunks for this source
-      await supabaseAdmin.from("kb_chunks").delete().eq("source_id", sourceId)
     } else {
       const { data: newSource } = await supabaseAdmin
         .from("kb_sources")
@@ -204,20 +202,24 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Failed to save chunks" }, { status: 500 })
     }
 
+    // Delete old auto-generated chunks (after insert to avoid data loss)
+    await supabaseAdmin
+      .from("kb_chunks")
+      .delete()
+      .eq("workspace_id", workspace_id)
+      .neq("source_id", sourceId)
+      .filter("metadata->>source", "eq", "auto-generated")
+
     // Trigger embed-text batch embedding chain via edge function
     supabaseAdmin.functions.invoke("embed-text", {
       body: { source_id: sourceId, workspace_id, embed_batch: true }
     }).catch((err) => {
       console.error("[REGENERATE] embed-text trigger failed:", err)
-      // Mark source as failed if embedding can't start
       supabaseAdmin.from("kb_sources").update({
         status: "failed",
         error_message: "Embedding trigger failed"
       }).eq("id", sourceId).then(() => {}, () => {})
     })
-
-    // Also update the business profile action to trigger regeneration
-    // (handled by updateBusinessProfile server action)
 
     return NextResponse.json({
       success: true,

@@ -83,6 +83,11 @@ export interface PipelineContext {
   _toolCallBuffer?: any[];
   _toolFailCounts?: Record<string, number>;
   _sentiment?: string;
+  _emotionalTone?: string;
+  _escalationLevel?: string;
+  _churnRisk?: boolean;
+  _maskedComplaint?: boolean;
+  _ventVsSolve?: string;
 }
 
 export interface AgentPlan {
