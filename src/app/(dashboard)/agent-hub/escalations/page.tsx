@@ -3,8 +3,9 @@
 import { useState, useEffect, useCallback } from "react"
 import {
   ShieldAlert, User, Search, Filter, X, CheckCircle, Clock,
-  AlertTriangle, MessageSquare, ChevronDown, ExternalLink, RefreshCw
+  AlertTriangle, MessageSquare, ChevronDown, ExternalLink, RefreshCw, PanelRightClose, PanelRight
 } from "lucide-react"
+import { AssistantsSidebar } from "@/components/nav/assistants-sidebar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -146,18 +147,25 @@ export default function EscalationsPage() {
     : null
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Escalations</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            Monitor and resolve conversations that need human intervention.
-          </p>
+    <div className="flex min-h-0 flex-1 bg-gray-50/30 font-sans">
+      <AssistantsSidebar />
+      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex items-center justify-between px-8 border-b border-gray-100 bg-white shrink-0" style={{ height: 52 }}>
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center text-white shadow-sm">
+            <ShieldAlert size={15} />
+          </div>
+          <div>
+            <h1 className="text-sm font-semibold text-gray-900 tracking-tight">Escalations</h1>
+            <p className="text-[9px] font-medium text-gray-400 uppercase tracking-widest">Human Intervention</p>
+          </div>
         </div>
         <Button variant="outline" size="sm" onClick={fetchLogs} className="gap-2">
           <RefreshCw className={cn("h-3.5 w-3.5", isLoading && "animate-spin")} /> Refresh
         </Button>
-      </header>
+      </div>
+      <div className="flex-1 overflow-y-auto px-8 py-6">
+      <div className="max-w-[1400px] space-y-6">
 
       {error && (
         <Card className="p-6 text-center">
@@ -371,6 +379,9 @@ export default function EscalationsPage() {
           )}
         </>
       )}
+      </div>
+      </div>
+      </div>
     </div>
   )
 }
