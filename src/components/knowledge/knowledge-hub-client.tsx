@@ -11,11 +11,14 @@ import { cn } from "@/lib/utils"
 
 interface KnowledgeHubClientProps {
   workspaceId: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   initialBusinessProfile: any
   businessType: string
   initialServicesOffered?: string
   initialSuggestions?: Record<string, unknown> | null
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   initialSources: any[]
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   initialTemplates: any[]
   initialUsedTags: string[]
 }
@@ -62,8 +65,8 @@ export function KnowledgeHubClient({
         toast.success(`KB regenerated: ${data.chunks_created} chunks created`)
         window.location.reload()
       }
-    } catch (err: any) {
-      toast.error(err.message || "Failed to regenerate KB")
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to regenerate KB")
     } finally {
       setRegenerating(false)
     }

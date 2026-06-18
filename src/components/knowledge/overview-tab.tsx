@@ -4,10 +4,21 @@ import { useMemo } from "react"
 import { Building2, Database, CheckCircle2, FileText, ArrowRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 
+interface KbTemplate {
+  id: string
+  label: string
+  section: string
+  field_key: string
+}
+interface KbSource {
+  status: string
+  chunk_count?: number
+}
+
 interface OverviewTabProps {
-  businessProfile: any
-  sources: any[]
-  templates: any[]
+  businessProfile: Record<string, unknown>
+  sources: KbSource[]
+  templates: KbTemplate[]
   usedTags: string[]
   onNavigate: (tab: "profile" | "sources") => void
 }
@@ -24,7 +35,8 @@ export function OverviewTab({ businessProfile, sources, templates, usedTags, onN
   const usedTagsSet = useMemo(() => new Set(usedTags || []), [usedTags])
   const mergedProfile = useMemo(() => {
     const bp = businessProfile || {}
-    return { ...(bp.suggestion || {}), ...bp }
+    const suggestion = bp.suggestion as Record<string, unknown> | undefined
+    return { ...suggestion, ...bp } as Record<string, unknown>
   }, [businessProfile])
 
   const items = useMemo(() => {

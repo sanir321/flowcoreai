@@ -85,7 +85,7 @@ export function SourcesTab({ initialSources, workspaceId, dialogOpen, onDialogOp
       const r = await addUrlSource({ workspace_id: workspaceId, label: selectedFile.name, source_type: fileExt === 'pdf' || fileExt === 'docx' || fileExt === 'txt' ? fileExt : 'txt', storage_path: storagePath })
       if (r.error) { toast.error(r.error); setIsAdding(false) }
       else { toast.success("Document added"); setSelectedFile(null); onDialogOpenChange(false); router.refresh(); setTimeout(async () => { await refreshSources(); setIsAdding(false) }, 2000) }
-    } catch (err: any) { toast.error(err.message); setIsAdding(false) }
+    } catch (err: unknown) { toast.error(err instanceof Error ? err.message : "Failed"); setIsAdding(false) }
   }
 
   const handlePasteText = async (e: React.FormEvent) => {
@@ -96,7 +96,7 @@ export function SourcesTab({ initialSources, workspaceId, dialogOpen, onDialogOp
       const r = await pasteKbText({ workspace_id: workspaceId, content: pasteContent, tag: pasteTag || undefined })
       if (r.error) { toast.error(r.error); setIsAdding(false) }
       else { toast.success("Text saved"); setPasteContent(""); setPasteTag(""); onDialogOpenChange(false); router.refresh(); setTimeout(async () => { await refreshSources(); setIsAdding(false) }, 2000) }
-    } catch (err: any) { toast.error(err.message); setIsAdding(false) }
+    } catch (err: unknown) { toast.error(err instanceof Error ? err.message : "Failed"); setIsAdding(false) }
   }
 
   const handleDelete = async (id: string) => {

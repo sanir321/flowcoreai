@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { BusinessProfileClient } from "./business-profile-client"
+import type { BusinessProfile } from "@/app/actions/business-profile"
 
 export const metadata: Metadata = { title: "Business Profile" }
 
@@ -29,7 +30,7 @@ export default async function BusinessProfilePage() {
   return (
     <BusinessProfileClient
       workspaceId={workspaceId}
-      initialProfile={initialProfile as any}
+      initialProfile={initialProfile as unknown as BusinessProfile}
       businessType={businessType}
       initialServicesOffered={initialServicesOffered}
       initialSuggestions={initialSuggestions}
