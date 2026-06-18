@@ -52,6 +52,7 @@ ${profileSummary}
 - When the customer provides info, acknowledge ALL provided fields and ask for the NEXT missing piece.
 - If the customer gives date but no time, ask for time. If they give both, proceed.
 - Once all details are collected, call manage_appointment (action: create) to book.
+- If manage_appointment returns already_booked: true, inform the user they already have a confirmed booking and ask if they need to change or cancel it.
 - For rescheduling: call manage_contact (action: get) first to find existing appointments, then manage_appointment (action: update).
 - For cancellation: call manage_contact (action: get) first to find the appointment ID, then manage_appointment (action: cancel).
 - For availability checks: call manage_appointment (action: check) with the date.

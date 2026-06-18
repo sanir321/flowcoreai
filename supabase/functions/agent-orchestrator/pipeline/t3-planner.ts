@@ -50,30 +50,33 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
     return { handled: true, response, reason: "t3_escalation_handoff" };
   }
 
-  if (ctx._msgCount === undefined) {
-    const { count } = await ctx.supabase
-      .from("messages")
-      .select("*", { count: "exact", head: true })
-      .eq("session_id", ctx.session.id)
-      .eq("direction", "inbound");
-    ctx._msgCount = count || 0;
-  }
-
-  const { count: currentCount } = await ctx.supabase
+  const { data: latestMsg } = await ctx.supabase
     .from("messages")
-    .select("*", { count: "exact", head: true })
+    .select("id, created_at, metadata")
     .eq("session_id", ctx.session.id)
-    .eq("direction", "inbound");
+    .eq("direction", "inbound")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const isStale = latestMsg 
+    && latestMsg.metadata?.gowa_message_id !== ctx.payload.gowa_message_id
+    && new Date(latestMsg.created_at).getTime() > (ctx.payload.timestamp || 0) + 2000;
     
-  if (currentCount !== null && currentCount > (ctx._msgCount || 0)) {
+  if (isStale) {
     const fallback = ctx.workspace?.guardrail_config?.fallback_message
       ?? "I'm not sure about that. Please contact us directly for more information.";
     return { handled: true, response: fallback, reason: "t3_stale_message" };
   }
 
   const buildPrompt = AGENT_SYSTEM_PROMPTS[agentType] || AGENT_SYSTEM_PROMPTS.customer_support;
-  let systemPrompt = buildPrompt(ctx)
-    + `\n\n## Current Date/Time\nToday is ${new Date().toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", weekday: "long", year: "numeric", month: "long", day: "numeric" })}. Current time in India is ${new Date().toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit" })} IST. Use this to calculate relative dates like "tomorrow", "next week", "today" correctly.`;
+  let systemPrompt = buildPrompt(ctx);
+
+  if (ctx.pricingBlocked) {
+    systemPrompt += "\n\n[SECURITY] Pricing information is restricted for this workspace. Do NOT provide specific prices. Instead, refer the customer to the official website or offer to connect them with a human.";
+  }
+
+  systemPrompt += `\n\n## Current Date/Time\nToday is ${new Date().toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", weekday: "long", year: "numeric", month: "long", day: "numeric" })}. Current time in India is ${new Date().toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit" })} IST. Use this to calculate relative dates like "tomorrow", "next week", "today" correctly.`;
 
   const tone = ctx._emotionalTone;
   if (tone && tone !== "calm" && tone !== "positive") {
@@ -602,6 +605,10 @@ async function handleHandoff(ctx: PipelineContext, targetAgent: string, context:
   await ctx.supabase.from("conversation_sessions")
     .update({ 
       agent_type: targetAgent, 
+      working_context: {
+        ...(ctx.session.working_context || {}),
+        transferred: true
+      },
       updated_at: new Date().toISOString() 
     })
     .eq("id", ctx.session.id);

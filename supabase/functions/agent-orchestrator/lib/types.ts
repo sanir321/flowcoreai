@@ -47,6 +47,7 @@ export interface WorkingContext {
   agent_type: string;
   handoff_count: number;
   sentiment: "positive" | "neutral" | "negative" | "frustrated" | null;
+  transferred?: boolean;
 }
 
 export interface PipelineContext {

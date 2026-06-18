@@ -51,8 +51,13 @@ export async function GET(req: NextRequest) {
       return new Response("Missing origin header", { status: 403 });
     }
     try {
-      const hostname = new URL(origin).hostname;
-      const allowed = config.allowed_domains.some((d: string) => hostname === d || hostname.endsWith("." + d));
+      const url = new URL(origin);
+      const hostname = url.hostname;
+      
+      // Bypass for local development/preview
+      const isLocal = hostname === "localhost" || hostname === "127.0.0.1";
+      
+      const allowed = isLocal || config.allowed_domains.some((d: string) => hostname === d || hostname.endsWith("." + d));
       if (!allowed) {
         return new Response("Domain not allowed", { status: 403 });
       }

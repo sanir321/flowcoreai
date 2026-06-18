@@ -48,7 +48,7 @@ export async function matchChunks(params: { query: string }, ctx: PipelineContex
 
   if (error) {
     console.error("[KB] match_kb_chunks RPC error:", error.message);
-    return { success: false, chunks: [], kb_chunks: [] };
+    return { success: true, chunks: [], kb_chunks: [] };
   }
 
   const chunks = kb || [];

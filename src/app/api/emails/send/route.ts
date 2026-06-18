@@ -80,6 +80,7 @@ export async function POST(req: NextRequest) {
             service: data.service,
             date: data.date,
             meetLink: data.meetLink,
+            appointmentLink: data.appointmentLink,
           })
         );
         break;

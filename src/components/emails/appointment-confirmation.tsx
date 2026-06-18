@@ -18,6 +18,7 @@ interface AppointmentConfirmationEmailProps {
   service: string;
   date: string;
   meetLink?: string;
+  appointmentLink?: string;
 }
 
 export const AppointmentConfirmationEmail = ({
@@ -26,6 +27,7 @@ export const AppointmentConfirmationEmail = ({
   service = "Consultation",
   date = new Date().toLocaleString(),
   meetLink,
+  appointmentLink,
 }: AppointmentConfirmationEmailProps) => {
   const previewText = `Appointment Confirmed with ${workspaceName}`;
 
@@ -74,17 +76,28 @@ export const AppointmentConfirmationEmail = ({
                 </Text>
               )}
             </Section>
-            {meetLink && (
-              <Section className="text-center mt-[32px] mb-[32px]">
+
+            <Section className="text-center mt-[32px] mb-[12px] flex gap-4">
+              {appointmentLink && (
+                <a
+                  href={appointmentLink}
+                  className="bg-brand rounded-lg text-white text-[12px] font-semibold no-underline text-center px-5 py-3 mx-1"
+                  style={{ display: 'inline-block' }}
+                >
+                  View Appointment Details
+                </a>
+              )}
+              {meetLink && (
                 <a
                   href={meetLink}
-                  className="bg-brand rounded-lg text-white text-[12px] font-semibold no-underline text-center px-5 py-3"
+                  className="bg-white border border-solid border-[#eaeaea] rounded-lg text-black text-[12px] font-semibold no-underline text-center px-5 py-3 mx-1"
                   style={{ display: 'inline-block' }}
                 >
                   Join Google Meet
                 </a>
-              </Section>
-            )}
+              )}
+            </Section>
+
             <Text className="text-[#666666] text-[12px] leading-[24px]">
               If you need to reschedule or cancel, please contact {workspaceName} directly.
             </Text>

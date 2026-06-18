@@ -42,9 +42,14 @@ export default function WidgetPreview({ workspaceId, view = "chat", isOpen = tru
 
   useEffect(() => {
     fetch("/api/widget/config?id=" + workspaceId)
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error("Config not found or domain restricted")
+        return r.json()
+      })
       .then((d) => setDbConfig(d))
-      .catch(() => {})
+      .catch((err) => {
+        console.warn("[WIDGET_PREVIEW] Using local fallback:", err.message)
+      })
   }, [workspaceId])
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

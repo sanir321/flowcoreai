@@ -118,6 +118,15 @@ export function AppointmentsClient({ initialAppointments, workspaceId, isModuleA
   const [isActionLoading, setIsActionLoading] = useState(false)
   const [isCancelling, setIsCancelling] = useState(false)
   const [isRescheduleOpen, setIsRescheduleOpen] = useState(false)
+  const [copiedLink, setCopiedLink] = useState(false)
+
+  const handleCopyLink = (id: string) => {
+    const url = `${window.location.origin}/appointment/${id}`
+    navigator.clipboard.writeText(url)
+    setCopiedLink(true)
+    toast.success("Appointment link copied")
+    setTimeout(() => setCopiedLink(false), 2000)
+  }
   const [rescheduleForm, setRescheduleForm] = useState({ date: '', startTime: '09:00', startPeriod: 'am', endTime: '09:30', endPeriod: 'am' })
   
   // Creation Form State
@@ -813,7 +822,14 @@ export function AppointmentsClient({ initialAppointments, workspaceId, isModuleA
                 </section>
              </div>
 
-             <div className="p-8 border-t border-gray-100 bg-white">
+             <div className="p-8 border-t border-gray-100 bg-white space-y-3">
+                <Button 
+                   onClick={() => handleCopyLink(selectedAppt.id)}
+                   className="w-full h-12 rounded-xl text-[10px] font-bold bg-[#f9510b] text-white hover:bg-[#d8430a] shadow-lg flex items-center justify-center gap-2"
+                >
+                   {copiedLink ? <Check size={14} /> : <Copy size={14} />}
+                   {copiedLink ? "Link Copied" : "Copy Customer Appointment Link"}
+                </Button>
                 <div className="flex gap-3">
                    <Button 
                       variant="outline" 

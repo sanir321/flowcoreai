@@ -125,7 +125,7 @@ export async function createAppointment(
     .not("status", "eq", "cancelled")
     .maybeSingle();
   if (existingAppt) {
-    return { id: existingAppt.id, start_at: existingAppt.start_at, service: existingAppt.service, customer_name: customerName, note: "Already booked for this session." };
+    return { id: existingAppt.id, start_at: existingAppt.start_at, service: existingAppt.service, customer_name: customerName, note: "Already booked for this session.", already_booked: true };
   }
 
   const startAt = parseDT(params.date, params.time);
@@ -279,9 +279,12 @@ async function sendAppointmentWhatsApp(ctx: PipelineContext, appt: any, meetLink
     if (!gowaBase || !gowaKey) return;
     const auth = btoa(gowaKey);
     const formattedDate = formatIST(appt.start_at);
+    const appUrl = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://7flowcore.vercel.app";
+    const appointmentLink = `${appUrl}/appointment/${appt.id}`;
+
     let message = `✅ Appointment Confirmed!\n\nHi ${appt.customer_name},\n\nYour appointment has been confirmed:\n• Service: ${appt.service}\n• Date: ${formattedDate}`;
     if (meetLink) message += `\n• Google Meet: ${meetLink}`;
-    message += `\n\nThank you!`;
+    message += `\n\nView details: ${appointmentLink}\n\nThank you!`;
     await fetch(`${gowaBase}/send/message`, {
       method: "POST",
       headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json", "X-Device-Id": deviceId },
@@ -310,6 +313,7 @@ async function sendAppointmentEmail(ctx: PipelineContext, appt: any, meetLink: s
     const appUrl = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://7flowcore.vercel.app";
     const workspaceName = workspaceData.name || "FlowCore";
     const formattedDate = formatIST(appt.start_at);
+    const appointmentLink = `${appUrl}/appointment/${appt.id}`;
     const cronSecret = Deno.env.get("INTERNAL_CRON_SECRET") || "";
     await fetch(`${appUrl}/api/emails/send`, {
       method: "POST",
@@ -317,7 +321,7 @@ async function sendAppointmentEmail(ctx: PipelineContext, appt: any, meetLink: s
       body: JSON.stringify({
         to: email, subject: `Appointment Confirmed — ${workspaceName}`,
         template: "appointment",
-        data: { customerName: appt.customer_name, workspaceName, service: appt.service, date: formattedDate, meetLink }
+        data: { customerName: appt.customer_name, workspaceName, service: appt.service, date: formattedDate, meetLink, appointmentLink }
       })
     });
   } catch (_) {}
