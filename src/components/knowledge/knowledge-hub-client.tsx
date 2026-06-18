@@ -75,12 +75,12 @@ export function KnowledgeHubClient({
   const tabLabel = activeTab === "overview" ? "Overview" : activeTab === "profile" ? "Business Profile" : "Sources"
 
   return (
-    <div className="flex w-full max-w-7xl mx-auto min-h-[calc(100vh-8rem)]">
-      <aside className="w-64 shrink-0 border-r border-gray-100 flex flex-col">
+    <div className="flex w-full max-w-7xl mx-auto h-full overflow-hidden">
+      <aside className="w-64 shrink-0 border-r border-gray-100 flex flex-col bg-white">
         <div className="p-5 border-b border-gray-100">
           <h1 className="text-sm font-semibold text-gray-900">Knowledge Hub</h1>
         </div>
-        <nav className="flex-1 p-3 space-y-1">
+        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
           {sidebarItems.map(({ key, label, icon: Icon }) => (
             <button
               key={key}
@@ -97,7 +97,7 @@ export function KnowledgeHubClient({
             </button>
           ))}
         </nav>
-        <div className="p-3">
+        <div className="p-3 bg-white">
           <button
             onClick={handleRegenerateKB}
             disabled={regenerating}
@@ -109,7 +109,7 @@ export function KnowledgeHubClient({
         </div>
       </aside>
 
-      <main className="flex-1 min-w-0 p-10">
+      <main className="flex-1 min-w-0 p-4 md:p-6 lg:p-10 overflow-y-auto">
         <div className="max-w-6xl mx-auto w-full space-y-8">
           <div className="flex items-center justify-between min-h-[40px]">
             <h2 className="text-2xl font-bold tracking-tight text-gray-900">{tabLabel}</h2>

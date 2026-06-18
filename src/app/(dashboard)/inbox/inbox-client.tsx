@@ -120,6 +120,27 @@ export function InboxClient({
     setMessages((data as Message[]) || [])
   }, [supabase])
 
+  // Polling fallback as a safety net
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (realtimeStatus !== 'connected') {
+        const fetchAll = async () => {
+          const { data } = await supabase
+            .from("conversation_sessions")
+            .select("*, contacts(*)")
+            .eq("workspace_id", workspaceId)
+            .is("deleted_at", null)
+            .order("last_message_at", { ascending: false })
+          if (data) setSessions(data as unknown as Session[])
+        }
+        void fetchAll()
+        if (selectedSessionId) void fetchMessages(selectedSessionId)
+      }
+    }, 10000) // Poll every 10s if not connected
+
+    return () => clearInterval(interval)
+  }, [workspaceId, supabase, realtimeStatus, selectedSessionId, fetchMessages])
+
   // Real-time for sessions
   useEffect(() => {
     const sessionChannel = supabase
@@ -141,7 +162,6 @@ export function InboxClient({
           })
         } else {
           // Re-fetch everything if a new session is created or deleted
-          // to keep logic simple for now. In a larger app, handle specifically.
           const fetchAll = async () => {
             const { data } = await supabase
               .from("conversation_sessions")
@@ -151,7 +171,7 @@ export function InboxClient({
               .order("last_message_at", { ascending: false })
             setSessions((data as unknown as Session[]) || [])
           }
-          fetchAll()
+          void fetchAll()
         }
       })
       .subscribe((status) => {
@@ -319,8 +339,8 @@ export function InboxClient({
   )
 
   return (
-    <div className="flex-1 flex flex-col bg-white overflow-hidden font-sans min-h-0 text-gray-900">
-      <div className="flex-1 flex overflow-hidden min-h-0">
+    <div className="flex-1 flex flex-col bg-white min-h-0 text-gray-900">
+      <div className="flex-1 flex min-h-0 overflow-hidden">
         
         {/* Session List (Left Pane) */}
         <div className={cn(

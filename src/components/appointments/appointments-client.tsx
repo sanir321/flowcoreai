@@ -294,7 +294,7 @@ export function AppointmentsClient({ initialAppointments, workspaceId, isModuleA
   }
 
   return (
-    <div className="h-full flex flex-col font-sans bg-white overflow-hidden relative text-gray-900">
+    <div className="h-full flex flex-col font-sans bg-white min-h-0 relative text-gray-900">
           {/* Header Actions */}
           <div className="h-20 px-4 md:px-6 lg:px-10 border-b border-gray-100 flex items-center justify-between shrink-0 bg-white z-30">
           <h1 className="text-xl font-bold tracking-tight">Appointments</h1>
