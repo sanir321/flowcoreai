@@ -77,6 +77,8 @@ export async function GET(req: NextRequest) {
       greeting: config?.greeting || "Hi! How can I help you today?",
       theme: config?.theme || "dark",
       avatar_url: config?.avatar_url || null,
+      logo_url: config?.logo_url || null,
+      launcher_icon: config?.launcher_icon || "chat",
       allow_anonymous: config?.allow_anonymous ?? false,
       is_active: config?.is_active ?? true,
     };

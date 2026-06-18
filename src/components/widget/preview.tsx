@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { Send, X, MessageSquare } from "lucide-react"
+import { Send, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface WidgetConfig {
@@ -23,6 +23,15 @@ interface PreviewProps {
   view: "start" | "form" | "chat"
   isOpen: boolean
   config: Partial<WidgetConfig>
+}
+
+const LAUNCHER_ICON_SVGS: Record<string, string> = {
+  chat: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/></svg>`,
+  message: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>`,
+  support: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-5Zm0 0a9 9 0 1 1 18 0m0 0v5a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3Z"/><path d="M21 16v2a4 4 0 0 1-4 4h-5"/></svg>`,
+  bot: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>`,
+  comment: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
+  whatsapp: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 6.5a7 7 0 0 1-9.9 9.9l-2.1.7.7-2.1a7 7 0 0 1 9.9-9.9"/><path d="M12 2a10 10 0 0 1 10 10 10 10 0 0 1-10 10 10 10 0 0 1-8.5-4.9"/><path d="M8 11c.3-1 1-1.5 2-1.5s1.7.5 2 1.5c.3 1 .5 2 1 2.5s1.5 1 2.5 1"/><circle cx="9" cy="10" r=".5" fill="currentColor"/><circle cx="15" cy="10" r=".5" fill="currentColor"/></svg>`
 }
 
 export default function WidgetPreview({ workspaceId, view = "chat", isOpen = true, config: localConfig }: PreviewProps) {
@@ -55,18 +64,27 @@ export default function WidgetPreview({ workspaceId, view = "chat", isOpen = tru
   }, [msgs])
 
   const name = config.agent_name || "Assistant"
+  const logoUrl = config.logo_url || null
+  const iconKey = config.launcher_icon || "chat"
+  const launcherSvg = (LAUNCHER_ICON_SVGS[iconKey] || LAUNCHER_ICON_SVGS.chat) as string
 
   if (!isOpen) return (
-    <div className="w-14 h-14 rounded-[18px] flex items-center justify-center text-white shadow-lg" style={{ background: accent }}>
-      <MessageSquare className="w-6 h-6" />
-    </div>
+    <div className="w-14 h-14 rounded-[18px] flex items-center justify-center text-white shadow-lg" style={{ background: accent }}
+      dangerouslySetInnerHTML={{ __html: launcherSvg }}
+    />
   )
+
 
   return (
     <div className="w-[360px] h-[520px] bg-white rounded-[28px] shadow-2xl border border-gray-100 flex flex-col overflow-hidden font-sans">
       <div className="p-6 border-b border-gray-100 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-[14px] flex items-center justify-center text-white font-bold font-outfit" style={{ background: accent }}>
-          {name.charAt(0)}
+        <div className="w-10 h-10 rounded-[14px] flex items-center justify-center text-white font-bold font-outfit overflow-hidden" style={{ background: accent }}>
+          {logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
+          ) : (
+            name.charAt(0)
+          )}
         </div>
         <div className="flex-1">
           <h3 className="text-lg font-semibold text-gray-900 leading-none">{name}</h3>

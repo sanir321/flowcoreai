@@ -1250,32 +1250,59 @@ export type Database = {
       widget_config: {
         Row: {
           accent_color: string
+          agent_name: string
+          allow_anonymous: boolean
           allowed_domains: string[] | null
+          auto_fill_params: boolean
           avatar_url: string | null
           deleted_at: string | null
+          email_notifications: boolean
           greeting: string
+          header_text: string
+          launcher_icon: string
+          logo_url: string | null
+          post_form_message: string
           theme: string
           updated_at: string
+          whatsapp_number: string | null
           workspace_id: string
         }
         Insert: {
           accent_color?: string
+          agent_name?: string
+          allow_anonymous?: boolean
           allowed_domains?: string[] | null
+          auto_fill_params?: boolean
           avatar_url?: string | null
           deleted_at?: string | null
+          email_notifications?: boolean
           greeting?: string
+          header_text?: string
+          launcher_icon?: string
+          logo_url?: string | null
+          post_form_message?: string
           theme?: string
           updated_at?: string
+          whatsapp_number?: string | null
           workspace_id: string
         }
         Update: {
           accent_color?: string
+          agent_name?: string
+          allow_anonymous?: boolean
           allowed_domains?: string[] | null
+          auto_fill_params?: boolean
           avatar_url?: string | null
           deleted_at?: string | null
+          email_notifications?: boolean
           greeting?: string
+          header_text?: string
+          launcher_icon?: string
+          logo_url?: string | null
+          post_form_message?: string
           theme?: string
           updated_at?: string
+          whatsapp_number?: string | null
           workspace_id?: string
         }
         Relationships: [

@@ -83,7 +83,7 @@
       width: 40px; height: 40px; border-radius: 14px;
       background: var(--fc-accent); display: flex; align-items: center;
       justify-content: center; color: #fff; font-weight: 700; font-family: 'Outfit';
-      overflow: hidden;
+      overflow: hidden; flex-shrink: 0;
     }
     .fc-avatar img { width: 100%; height: 100%; object-fit: cover; }
     .fc-header-info h3 {
@@ -132,6 +132,11 @@
 
   const Icons = {
     chat: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/></svg>',
+    message: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>',
+    support: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-5Zm0 0a9 9 0 1 1 18 0m0 0v5a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3Z"/><path d="M21 16v2a4 4 0 0 1-4 4h-5"/></svg>',
+    bot: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>',
+    comment: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+    whatsapp: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 6.5a7 7 0 0 1-9.9 9.9l-2.1.7.7-2.1a7 7 0 0 1 9.9-9.9"/><path d="M12 2a10 10 0 0 1 10 10 10 10 0 0 1-10 10 10 10 0 0 1-8.5-4.9"/><path d="M8 11c.3-1 1-1.5 2-1.5s1.7.5 2 1.5c.3 1 .5 2 1 2.5s1.5 1 2.5 1"/><circle cx="9" cy="10" r=".5" fill="currentColor"/><circle cx="15" cy="10" r=".5" fill="currentColor"/></svg>',
     close: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>',
     send: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>'
   };
@@ -212,9 +217,13 @@
     }
   }
 
+  function getLauncherIcon(key) {
+    return Icons[key] || Icons.chat;
+  }
+
   fab.onclick = () => {
     const isOpen = panel.classList.toggle('open');
-    fab.innerHTML = isOpen ? Icons.close : Icons.chat;
+    fab.innerHTML = isOpen ? Icons.close : getLauncherIcon(config.launcher_icon || 'chat');
   };
 
   function isNearBottom() {
@@ -315,13 +324,23 @@
       // Apply accent color and theme immediately
       applyTheme(d.accent_color, d.theme);
 
+      // Set agent name & avatar
       if (d.agent_name) {
         document.getElementById('fc-agent-name').innerText = d.agent_name;
+      }
+      if (d.logo_url) {
+        document.getElementById('fc-avatar').innerHTML = `<img src="${d.logo_url}" alt="Logo">`;
+      } else if (d.avatar_url) {
+        document.getElementById('fc-avatar').innerHTML = `<img src="${d.avatar_url}" alt="Avatar">`;
+      } else if (d.agent_name) {
         document.getElementById('fc-avatar').innerText = d.agent_name.charAt(0);
       }
-      if (d.avatar_url) {
-        document.getElementById('fc-avatar').innerHTML = `<img src="${d.avatar_url}" alt="Avatar">`;
+
+      // Set launcher icon
+      if (d.launcher_icon) {
+        fab.innerHTML = Icons.close ? Icons.close : getLauncherIcon(d.launcher_icon);
       }
+
       // Skip form if profile already saved or anonymous allowed
       if (d.allow_anonymous || savedProfile) {
         document.getElementById('fc-view-form').classList.remove('active');
