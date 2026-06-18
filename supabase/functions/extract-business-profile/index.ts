@@ -139,7 +139,6 @@ async function processBatch(supabase: any): Promise<Response> {
 }
 
 async function processSingle(supabase: any, workspace_id: string, source_id: string): Promise<Response> {
-  console.log("[ExtractBP] processSingle called")
   const { data: chunks, error: chunkError } = await supabase
     .from("kb_chunks")
     .select("content")
@@ -149,12 +148,9 @@ async function processSingle(supabase: any, workspace_id: string, source_id: str
 
   if (chunkError) throw new Error(`Failed to read chunks: ${chunkError.message}`)
   if (!chunks || chunks.length === 0) {
-    console.log("[ExtractBP] No chunks found for source", source_id)
     return new Response(JSON.stringify({ skipped: true, reason: "no_chunks" }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } })
   }
-
-  console.log("[ExtractBP] Found chunks:", chunks.length)
 
   const { data: workspace, error: wsError } = await supabase
     .from("workspaces")
@@ -173,21 +169,17 @@ async function processSingle(supabase: any, workspace_id: string, source_id: str
 
   const opencodeKey = Deno.env.get("OPENCODE_ZEN_API_KEY")
   if (!opencodeKey) {
-    console.log("[ExtractBP] No OPENCODE_ZEN_API_KEY, skipping")
     return new Response(JSON.stringify({ skipped: true, reason: "no_opencode_key" }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } })
   }
 
-  console.log("[ExtractBP] Calling OpenCode API...")
   const extracted = await extractBusinessProfile(fullText, businessType, opencodeKey)
-  console.log("[ExtractBP] LLM returned profile")
 
   if (parsedSocial && Object.keys(parsedSocial).length > 0) {
     extracted.social = { ...(extracted.social as Record<string, string> || {}), ...parsedSocial }
   }
 
   if (!extracted || Object.keys(extracted).length === 0) {
-    console.log("[ExtractBP] No data extracted")
     return new Response(JSON.stringify({ skipped: true, reason: "no_data_extracted" }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } })
   }
@@ -211,16 +203,12 @@ async function processSingle(supabase: any, workspace_id: string, source_id: str
     console.error(`[ExtractBP] Failed to update bp_extracted_fields: ${fieldsError.message}`)
   }
 
-  console.log(`[ExtractBP] Updated business profile: ${extractedFields.join(", ")}`)
-
   return new Response(JSON.stringify({ success: true, extracted: extractedFields }), {
     headers: { ...corsHeaders, "Content-Type": "application/json" }
   })
 }
 
 async function processUrl(supabase: any, workspace_id: string, website_url: string): Promise<Response> {
-  console.log("[ExtractBP] processUrl called")
-
   const { data: workspace, error: wsError } = await supabase
     .from("workspaces")
     .select("business_type, business_profile")
@@ -238,7 +226,6 @@ async function processUrl(supabase: any, workspace_id: string, website_url: stri
   })
 
   if (!pageResp.ok) {
-    console.log("[ExtractBP] Failed to fetch URL:", pageResp.status)
     return new Response(JSON.stringify({ skipped: true, reason: "fetch_failed", status: pageResp.status }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } })
   }
@@ -290,8 +277,6 @@ async function processUrl(supabase: any, workspace_id: string, website_url: stri
   if (updateError) throw new Error(`Failed to update workspace: ${updateError.message}`)
 
   const extractedFields = Object.keys(extracted)
-  console.log(`[ExtractBP] URL-scraped business profile: ${extractedFields.join(", ")}`)
-
   return new Response(JSON.stringify({ success: true, extracted: extractedFields, source: "url" }), {
     headers: { ...corsHeaders, "Content-Type": "application/json" }
   })
@@ -402,15 +387,11 @@ ${text.slice(0, 19000)}`
   }
 
   const result = await response.json()
-  console.log("[ExtractBP] OpenCode response received")
   const content = result.choices?.[0]?.message?.content
 
   if (!content) {
-    console.log("[ExtractBP] Empty OpenCode response")
     return {}
   }
-
-  console.log("[ExtractBP] Raw LLM content parsed")
 
   try {
     return JSON.parse(content)

@@ -190,7 +190,7 @@ Deno.serve(async (req) => {
                   .eq('workspace_id', workspaceId)
                   .eq('customer_jid', normalizedFrom)
                   .is('deleted_at', null)
-                console.log(`[WEBHOOK] Updated contact name: ${contactName}`)
+                /* contact name updated */
               }
             }
           } catch (e) {

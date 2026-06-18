@@ -64,8 +64,6 @@ export async function addUrlSource(input: unknown): Promise<ActionResponse<{ id:
 
     if (error) throw error
 
-    console.log(`[KB_ACTION] Source created: ${data.id}. Triggering ingestion for type: ${source_type}...`)
-
     // Trigger the correct ingestion function based on type
     if (source_type === 'url' && url) {
         getSupabaseAdmin().functions.invoke("ingest-url", {
@@ -277,13 +275,13 @@ export async function pasteKbText(input: { workspace_id: string; content: string
       getSupabaseAdmin().functions.invoke("embed-text", {
         body: { workspace_id, source_id: source.id, text_content: content, tag: tag || null }
       }).catch(e => console.error("[KB_ACTION] Embed text failed:", e))
-    } catch {}
+    } catch (e) { console.warn("[KB_ACTION] Embed text invocation threw:", e) }
 
     try {
       getSupabaseAdmin().functions.invoke("extract-business-profile", {
         body: { workspace_id, source_id: source.id }
-      }).catch(() => {})
-    } catch {}
+      }).catch(e => console.error("[KB_ACTION] Extract BP failed:", e))
+    } catch (e) { console.warn("[KB_ACTION] Extract BP invocation threw:", e) }
 
     return { data: { id: source.id }, error: null }
   } catch (err: any) {

@@ -271,8 +271,8 @@ Dispatch: Store in DB + send via GoWA/Widget
 - `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` — Client-side Supabase
 - `SUPABASE_SERVICE_ROLE_KEY` — Server-side admin operations
 - `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` / `GOOGLE_REDIRECT_URI` — OAuth
-- `NEXT_PUBLIC_SITE_URL` — Site URL for metadata/OG
-- `RESEND_API_KEY` — Email delivery
+- `NEXT_PUBLIC_APP_URL` — Site URL for metadata/OG
+- `SMTP_HOST` / `SMTP_USER` / `SMTP_PASSWORD` — Email delivery (SMTP)
 
 ### Supabase Edge Function Secrets
 - `OPENCODE_ZEN_API_KEY` / `OPENCODE_ZEN_BASE_URL` — Free AI models (OpenCode Zen)

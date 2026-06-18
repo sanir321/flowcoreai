@@ -94,7 +94,6 @@ async function processMessage(payload: WebhookPayload): Promise<[TierResult, Pip
   )
 
   try {
-    console.log(`[ORCHESTRATOR] Starting pipeline`)
     const session = await getOrCreateSession(supabase, {
       workspace_id: payload.workspace_id,
       customer_jid: payload.customer_jid,
@@ -106,11 +105,8 @@ async function processMessage(payload: WebhookPayload): Promise<[TierResult, Pip
     ctx.workspace = session.workspaces
     ctx.payload.message = sanitizeUserInput(ctx.payload.message || "")
 
-    console.log(`[ORCHESTRATOR] Context ready`)
-
     const t0 = await runT0(ctx)
     if (t0.handled) {
-      console.log(`[ORCHESTRATOR] T0 handled. Reason: ${t0.reason}`)
       t0.response = sanitizeLlmOutput(t0.response || "")
       await touchSession(ctx, "customer_support", t0.response)
       await dispatch(ctx, t0.response)
@@ -119,7 +115,6 @@ async function processMessage(payload: WebhookPayload): Promise<[TierResult, Pip
 
     const t1 = await runT1(ctx)
     if (t1.handled) {
-      console.log(`[ORCHESTRATOR] T1 handled. Reason: ${t1.reason}`)
       t1.response = sanitizeLlmOutput(t1.response || "")
       await touchSession(ctx, "customer_support", t1.response)
       await dispatch(ctx, t1.response)
@@ -128,17 +123,14 @@ async function processMessage(payload: WebhookPayload): Promise<[TierResult, Pip
 
     const t2 = await runT2(ctx)
     if (t2.handled) {
-      console.log(`[ORCHESTRATOR] T2 handled. Reason: ${t2.reason}`)
       t2.response = sanitizeLlmOutput(t2.response || "")
       await touchSession(ctx, ctx.agentType || "customer_support", t2.response)
       await dispatch(ctx, t2.response)
       return [t2, ctx]
     }
 
-    console.log(`[ORCHESTRATOR] Entering T3 for agent: ${ctx.agentType}`)
     const t3 = await runT3(ctx)
     t3.response = sanitizeLlmOutput(t3.response || "")
-    console.log(`[ORCHESTRATOR] T3 finished`)
     await dispatch(ctx, t3.response)
     return [{ ...t3, agent_type: ctx.agentType }, ctx]
   } catch (e: any) {

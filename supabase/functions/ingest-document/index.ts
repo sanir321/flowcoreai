@@ -292,7 +292,7 @@ function fireAndForget(supabase: any, functionName: string, body: object) {
   supabase.functions.invoke(functionName, { body, headers: { Authorization: `Bearer ${secret}` } })
     .then(r => r.text())
     .then(t => { try { const j = JSON.parse(t); if (j.error) throw new Error(j.error) } catch { if (!t.includes('success')) throw new Error(t) } })
-    .then(() => console.log(`[FireAndForget] ${functionName} succeeded`))
+    .then(() => {})
     .catch((err) => {
       console.error(`[FireAndForget] ${functionName} failed:`, err.message)
       supabase.from('kb_sources').update({ error_message: `BP extraction failed: ${err.message}` }).eq('id', (body as any).source_id).catch(() => {})

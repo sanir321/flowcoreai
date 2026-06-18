@@ -2,8 +2,6 @@ import { PipelineContext } from "./types.ts";
 
 export async function dispatch(ctx: PipelineContext, response: string | null): Promise<void> {
   if (!response) return;
-  console.log(`[DISPATCH] Preparing response: ${response.substring(0, 50)}...`)
-
   const phone = ctx.payload.customer_phone;
   const source = ctx.payload.source || "whatsapp";
 

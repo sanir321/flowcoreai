@@ -31,7 +31,7 @@ export async function runT0(ctx: PipelineContext): Promise<TierResult> {
           role: "customer",
           gowa_message_id: payload.gowa_message_id
         });
-        console.log("[T0] Inbound message stored.")
+        /* message stored */
       } catch (e: any) {
         console.error("[T0] Message store failed:", e.message)
       }

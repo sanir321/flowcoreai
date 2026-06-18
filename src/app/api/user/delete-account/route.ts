@@ -10,14 +10,12 @@ const GOWA_API_KEY = process.env.GOWA_API_KEY || ""
 const GOWA_AUTH = GOWA_API_KEY ? Buffer.from(GOWA_API_KEY).toString("base64") : ""
 
 async function deleteGoWADevice(deviceId: string) {
-  try {
-    await fetch(`${GOWA_BASE_URL}/devices/${deviceId}/logout`, {
-      method: "POST", headers: { "Authorization": `Basic ${GOWA_AUTH}` },
-    }).catch(() => {})
-    await fetch(`${GOWA_BASE_URL}/devices/${deviceId}`, {
-      method: "DELETE", headers: { "Authorization": `Basic ${GOWA_AUTH}` },
-    }).catch(() => {})
-  } catch {}
+  await fetch(`${GOWA_BASE_URL}/devices/${deviceId}/logout`, {
+    method: "POST", headers: { "Authorization": `Basic ${GOWA_AUTH}` },
+  }).catch(() => {})
+  await fetch(`${GOWA_BASE_URL}/devices/${deviceId}`, {
+    method: "DELETE", headers: { "Authorization": `Basic ${GOWA_AUTH}` },
+  }).catch(() => {})
 }
 
 export async function POST(req: NextRequest) {

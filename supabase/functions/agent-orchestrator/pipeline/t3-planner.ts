@@ -588,7 +588,6 @@ function flattenObject(obj: any, prefix = ""): Record<string, string> {
 async function handleHandoff(ctx: PipelineContext, targetAgent: string, context: string): Promise<TierResult> {
   const depth = (ctx.handoffDepth ?? 0) + 1;
   if (depth > 2) {
-    console.log(`[T3] Handoff depth limit reached (${depth}). Returning fallback.`);
     const fallbackResponse = "I've reached the limit for transferring between specialists. A human agent will follow up with you shortly.";
     await ctx.supabase.from("conversation_sessions")
       .update({
@@ -600,8 +599,6 @@ async function handleHandoff(ctx: PipelineContext, targetAgent: string, context:
     return { handled: true, response: fallbackResponse, reason: "handoff_depth_limit" };
   }
 
-  console.log(`[T3] Executing handoff to: ${targetAgent}. Depth: ${depth}. Context: ${context.substring(0, 50)}...`);
-  
   await ctx.supabase.from("conversation_sessions")
     .update({ 
       agent_type: targetAgent, 

@@ -12,18 +12,20 @@ import {
   ShieldCheck,
   ShoppingBag,
   MessageCircle,
+  Building2,
+  FileText,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const SETTINGS_NAV = [
   { name: "Workspace", href: "/settings", icon: SettingsIcon },
-
+  { name: "Business Profile", href: "/settings/business-profile", icon: Building2 },
   { name: "Notifications", href: "/settings/notifications", icon: Bell },
   { name: "Integrations", href: "/settings/integrations", icon: Puzzle },
   { name: "WhatsApp", href: "/settings/whatsapp", icon: MessageCircle },
   { name: "Web Widget", href: "/settings/widget", icon: Globe },
   { name: "Security", href: "/settings/security", icon: ShieldCheck },
-  { name: "Data & Privacy", href: "/settings/data", icon: ShieldCheck },
+  { name: "Data & Privacy", href: "/settings/data", icon: FileText },
   { name: "Billing & Credits", href: "/settings/billing", icon: Zap },
   { name: "Menu", href: "/settings/menu", icon: ShoppingBag },
 ]

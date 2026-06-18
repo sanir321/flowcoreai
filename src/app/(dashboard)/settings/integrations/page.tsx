@@ -124,7 +124,7 @@ export default function IntegrationsPage() {
 
   const handleConnect = async (id: string) => {
     if (id !== 'google') {
-      toast.info("Salesforce integration coming soon!")
+      toast.info("Not available yet")
       return
     }
 

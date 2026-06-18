@@ -79,8 +79,8 @@ export async function GET(req: NextRequest) {
                     const { data: owner } = await supabaseAdmin.auth.admin.getUserById(workspace.owner_id);
                     const ownerEmail = owner?.user?.email;
                     if (ownerEmail) {
-                        const inboxUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://flowcore.ai'}/inbox`;
-                        await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'https://flowcore.ai'}/api/emails/send`, {
+                        const inboxUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://7flowcore.vercel.app'}/inbox`;
+                        await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'https://7flowcore.vercel.app'}/api/emails/send`, {
                             method: "POST",
                             headers: { "Content-Type": "application/json", "Authorization": `Bearer ${process.env.INTERNAL_CRON_SECRET}` },
                             body: JSON.stringify({

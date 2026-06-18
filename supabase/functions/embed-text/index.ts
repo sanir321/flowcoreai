@@ -275,7 +275,7 @@ function triggerEmbedBatch(supabase: any, source_id: string, workspace_id?: stri
       if (!r.ok) throw new Error(`HTTP ${r.status}`)
       return r.json()
     })
-    .then(() => console.log(`[triggerEmbedBatch] next batch kicked off for ${source_id}`))
+    .then(() => {})
     .catch((err: any) => {
       console.error('[triggerEmbedBatch] failed:', err?.message || err)
       supabase.from('kb_sources').update({
