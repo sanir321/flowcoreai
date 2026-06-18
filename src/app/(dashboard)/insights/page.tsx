@@ -45,7 +45,7 @@ export default async function InsightsPage() {
     supabase.from("contacts").select("*", { count: "exact", head: true }).eq("workspace_id", workspaceId).is("deleted_at", null).gte("created_at", fourteenDaysAgo).lt("created_at", sevenDaysAgo),
     supabase.from("conversation_sessions").select("*", { count: "exact", head: true }).eq("workspace_id", workspaceId).is("deleted_at", null).gte("created_at", sevenDaysAgo),
     supabase.from("conversation_sessions").select("*", { count: "exact", head: true }).eq("workspace_id", workspaceId).is("deleted_at", null).gte("created_at", fourteenDaysAgo).lt("created_at", sevenDaysAgo),
-    supabase.from("escalation_logs").select("*", { count: "exact", head: true }).eq("workspace_id", workspaceId).eq("status", "pending").is("deleted_at", null),
+    supabase.from("escalation_logs").select("*", { count: "exact", head: true }).eq("workspace_id", workspaceId).eq("status", "open").is("deleted_at", null),
     supabase.from("gowa_sessions").select("status").eq("workspace_id", workspaceId).is("deleted_at", null).maybeSingle(),
     supabase.from("google_oauth_tokens").select("calendar_id, sheet_id").eq("workspace_id", workspaceId).is("deleted_at", null).maybeSingle(),
     supabase.from("kb_chunks").select("*", { count: "exact", head: true }).eq("workspace_id", workspaceId).is("deleted_at", null),

@@ -137,7 +137,7 @@ export default function EscalationsPage() {
     return true
   })
 
-  const pending = logs.filter(l => l.status === "pending").length
+  const pending = logs.filter(l => l.status === "open").length
   const resolved = logs.filter(l => l.status === "resolved").length
   const avgResolutionMs = logs
     .filter(l => l.status === "resolved" && l.resolved_at)
@@ -221,7 +221,7 @@ export default function EscalationsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="open">Pending</SelectItem>
                 <SelectItem value="resolved">Resolved</SelectItem>
               </SelectContent>
             </Select>
@@ -287,7 +287,7 @@ export default function EscalationsPage() {
                               </p>
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
-                              {log.status === "pending" ? (
+                              {log.status === "open" ? (
                                 <Button
                                   size="sm"
                                   variant="outline"
