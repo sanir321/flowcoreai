@@ -21,6 +21,10 @@ export async function middleware(request: NextRequest) {
 
   const url = request.nextUrl.clone()
 
+  // Mobile Detection
+  const userAgent = request.headers.get("user-agent") || ""
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent)
+
   const publicRoutes = ["/", "/login", "/faq", "/changelog", "/legal", "/pricing", "/features", "/about", "/auth/callback"]
   const isPublicRoute = publicRoutes.some(route =>
     route === "/" ? url.pathname === "/" : url.pathname.startsWith(route)
@@ -33,6 +37,13 @@ export async function middleware(request: NextRequest) {
   const isDashboardRoute = dashboardRoutes.some((route) =>
     url.pathname.startsWith(route)
   )
+
+  // Redirect mobile users trying to access dashboard routes
+  if (isMobile && isDashboardRoute) {
+    url.pathname = "/"
+    return NextResponse.redirect(url)
+  }
+
   const isOnboardingRoute = url.pathname.startsWith("/onboarding")
   const isInternalApiRoute = url.pathname.startsWith("/api/") && 
     !url.pathname.startsWith("/api/widget/") && 
