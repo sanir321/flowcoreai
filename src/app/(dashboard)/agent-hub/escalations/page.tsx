@@ -34,7 +34,19 @@ export default function EscalationsPage() {
     async function fetchLogs() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      const workspaceId = user.app_metadata.workspace_id
+      let workspaceId = user.app_metadata?.workspace_id as string | undefined
+      if (!workspaceId) {
+        const { data: ws } = await supabase
+          .from("workspaces")
+          .select("id")
+          .eq("owner_id", user.id)
+          .is("deleted_at", null)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .single()
+        workspaceId = ws?.id
+      }
+      if (!workspaceId) return
 
       const { data } = await supabase
         .from("escalation_logs")
