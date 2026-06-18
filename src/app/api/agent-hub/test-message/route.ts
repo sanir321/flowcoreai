@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     const { data: { user }, error: authErr } = await supabase.auth.getUser();
 
     if (authErr || !user) {
-      console.error("[TEST_MSG] Auth failed:", authErr?.message);
+      if (process.env.NODE_ENV !== 'production') console.error("[TEST_MSG] Auth failed:", authErr?.message);
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
 
     // IDOR Check: Ensure user owns the workspace
     if (user.app_metadata?.workspace_id !== workspace_id) {
-      console.error("[TEST_MSG] IDOR mismatch:", { uid: user.id, meta_ws: user.app_metadata?.workspace_id, req_ws: workspace_id });
+      if (process.env.NODE_ENV !== 'production') console.error("[TEST_MSG] IDOR mismatch:", { uid: user.id, meta_ws: user.app_metadata?.workspace_id, req_ws: workspace_id });
       return NextResponse.json({ error: "Forbidden: You do not own this workspace" }, { status: 403 });
     }
 
@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
         .select()
         .single();
       if (sessErr) {
-        console.error("[TEST_MSG] Session create failed:", sessErr.message);
+        if (process.env.NODE_ENV !== 'production') console.error("[TEST_MSG] Session create failed:", sessErr.message);
         throw new Error("Could not create test session");
       }
       session = newSession;
@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
       role: "customer",
       is_test: true
     });
-    if (msgErr) console.warn("[TEST_MSG] Inbound message store failed:", msgErr.message);
+    if (msgErr && process.env.NODE_ENV !== 'production') console.warn("[TEST_MSG] Inbound message store failed:", msgErr.message);
 
     // 3. Invoke AI Orchestrator with timeout
     const controller = new AbortController();
@@ -121,7 +121,7 @@ export async function POST(req: NextRequest) {
     // The edge function catches all errors internally and returns 200 with { error: "..." }
     // supabase-js maps that to aiError. We should still try to use the response.
     if (aiError && !aiResponse) {
-      console.error("[TEST_MSG] Edge function error:", aiError);
+      if (process.env.NODE_ENV !== 'production') console.error("[TEST_MSG] Edge function error:", aiError);
       return NextResponse.json({
         reply: "The AI agent encountered an internal error. Please try again.",
         metadata: { reason: "edge_error", agent_type, tool_calls: [] }
@@ -146,7 +146,7 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
-    console.error("[TEST_MSG] Unhandled error:", error?.message, error?.stack);
+    if (process.env.NODE_ENV !== 'production') console.error("[TEST_MSG] Unhandled error:", error?.message, error?.stack);
     return NextResponse.json({ error: "Failed to process test message" }, { status: 500 });
   }
 }

@@ -80,7 +80,7 @@ Deno.serve(async (req) => {
     console.error(error)
     return new Response(
       JSON.stringify({ error: "Export failed" }),
-      { status: 400, headers: { 'Content-Type': 'application/json' } }
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
     )
   }
 })

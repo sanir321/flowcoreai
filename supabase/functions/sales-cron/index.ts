@@ -12,7 +12,10 @@ Deno.serve(async (req) => {
     // Auth: REQUIRED Bearer token against INTERNAL_CRON_SECRET
     const auth = req.headers.get('authorization') || ''
     const cronSecret = Deno.env.get('INTERNAL_CRON_SECRET')
-    if (!cronSecret || auth !== `Bearer ${cronSecret}`) {
+    if (!cronSecret) {
+      return new Response(JSON.stringify({ error: 'Server misconfigured' }), { status: 500, headers: responseHeaders })
+    }
+    if (auth !== `Bearer ${cronSecret}`) {
       return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401, headers: responseHeaders })
     }
 

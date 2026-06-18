@@ -42,7 +42,7 @@ export default async function KnowledgePage() {
       .single(),
   ])
 
-  const businessType = ws?.business_type || "hotel"
+  const businessType = ws?.business_type || "general"
   const businessProfile = ws?.business_profile || {}
   const servicesOffered = ws?.services_offered || ""
   const suggestion = (businessProfile as any)?.suggestion || null

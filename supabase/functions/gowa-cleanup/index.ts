@@ -35,7 +35,8 @@ Deno.serve(async (req) => {
     }).catch(() => {})
 
     return new Response("ok", { status: 200 })
-  } catch {
-    return new Response("ok", { status: 200 })
+  } catch (err) {
+    console.error("gowa-cleanup error:", err)
+    return new Response(JSON.stringify({ error: "Cleanup failed" }), { status: 500, headers: { 'Content-Type': 'application/json' } })
   }
 })

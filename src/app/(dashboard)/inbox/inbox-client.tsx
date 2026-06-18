@@ -196,7 +196,7 @@ export function InboxClient({
 
     // Optimistic Update
     const optimisticMsg = {
-      id: `temp-${Date.now()}`,
+      id: `temp-${crypto.randomUUID()}`,
       content: text,
       role: 'agent' as const,
       direction: 'outbound' as const,
