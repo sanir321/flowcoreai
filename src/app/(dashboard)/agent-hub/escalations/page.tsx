@@ -1,213 +1,376 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { 
-  ShieldAlert, 
-  User, 
-  MoreHorizontal,
-  Filter,
-  Search
+import { useState, useEffect, useCallback } from "react"
+import {
+  ShieldAlert, User, Search, Filter, X, CheckCircle, Clock,
+  AlertTriangle, MessageSquare, ChevronDown, ExternalLink, RefreshCw
 } from "lucide-react"
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { createClient } from "@/lib/supabase/client"
 import { cn } from "@/lib/utils"
+import type { Json } from "@/types/supabase"
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select"
+import { Card } from "@/components/ui/card"
+
+type EscalationLog = {
+  id: string
+  workspace_id: string
+  session_id: string
+  trigger_type: string
+  trigger_message: string | null
+  conversation_snapshot: Json
+  status: string
+  resolved_by: string | null
+  resolved_at: string | null
+  notes: string | null
+  notification_sent: boolean
+  created_at: string
+  updated_at: string
+  conversation_sessions: {
+    id: string
+    contacts: { name: string | null; phone: string | null } | null
+  } | null
+}
+
+type FilterState = {
+  search: string
+  status: string
+}
+
+const TRIGGER_ICONS: Record<string, typeof ShieldAlert> = {
+  keyword: AlertTriangle,
+  sentiment: MessageSquare,
+  manual: User,
+  greeting: MessageSquare,
+}
+
+const TRIGGER_COLORS: Record<string, string> = {
+  keyword: "text-red-600 bg-red-50 border-red-100",
+  sentiment: "text-amber-600 bg-amber-50 border-amber-100",
+  manual: "text-blue-600 bg-blue-50 border-blue-100",
+  greeting: "text-purple-600 bg-purple-50 border-purple-100",
+}
+
+function pluralize(n: number, s: string) {
+  return `${n} ${s}${n !== 1 ? "s" : ""}`
+}
+
+function timeAgo(date: string) {
+  const diff = Date.now() - new Date(date).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return "just now"
+  if (mins < 60) return pluralize(mins, "min")
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return pluralize(hrs, "hr")
+  const days = Math.floor(hrs / 24)
+  return pluralize(days, "day")
+}
 
 export default function EscalationsPage() {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [logs, setLogs] = useState<any[]>([])
+  const [logs, setLogs] = useState<EscalationLog[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [search, setSearch] = useState("")
+  const [error, setError] = useState<string | null>(null)
+  const [filters, setFilters] = useState<FilterState>({ search: "", status: "all" })
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [resolving, setResolving] = useState<string | null>(null)
   const supabase = createClient()
 
-  useEffect(() => {
-    async function fetchLogs() {
+  const fetchLogs = useCallback(async () => {
+    setIsLoading(true)
+    setError(null)
+    try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
+
       let workspaceId = user.app_metadata?.workspace_id as string | undefined
       if (!workspaceId) {
-        const { data: ws } = await supabase
-          .from("workspaces")
-          .select("id")
-          .eq("owner_id", user.id)
-          .is("deleted_at", null)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .single()
+        const { data: ws } = await supabase.from("workspaces").select("id").eq("owner_id", user.id).is("deleted_at", null).order("created_at", { ascending: false }).limit(1).single()
         workspaceId = ws?.id
       }
       if (!workspaceId) return
 
-      const { data } = await supabase
+      const { data, error: fetchError } = await supabase
         .from("escalation_logs")
-        .select(`
-          *,
-          conversation_sessions (
-            id,
-            contacts (name, phone)
-          )
-        `)
+        .select(`*, conversation_sessions (id, contacts (name, phone))`)
         .eq("workspace_id", workspaceId)
+        .is("deleted_at", null)
         .order("created_at", { ascending: false })
-      
+
+      if (fetchError) throw fetchError
       setLogs(data || [])
+    } catch {
+      setError("Failed to load escalations")
+    } finally {
       setIsLoading(false)
     }
-    fetchLogs()
   }, [supabase])
 
-  const filteredLogs = logs.filter(log => 
-    log.trigger_type.toLowerCase().includes(search.toLowerCase()) ||
-    log.conversation_sessions?.contacts?.name?.toLowerCase().includes(search.toLowerCase())
-  )
+  useEffect(() => { fetchLogs() }, [fetchLogs])
+
+  const handleResolve = async (log: EscalationLog) => {
+    setResolving(log.id)
+    await supabase
+      .from("escalation_logs")
+      .update({ status: "resolved", resolved_at: new Date().toISOString() })
+      .eq("id", log.id)
+    setLogs(prev => prev.map(l => l.id === log.id ? { ...l, status: "resolved", resolved_at: new Date().toISOString() } : l))
+    setResolving(null)
+  }
+
+  const filteredLogs = logs.filter(log => {
+    if (filters.status !== "all" && log.status !== filters.status) return false
+    if (filters.search) {
+      const q = filters.search.toLowerCase()
+      const contact = log.conversation_sessions?.contacts
+      const name = contact?.name?.toLowerCase() || ""
+      const phone = contact?.phone?.toLowerCase() || ""
+      const msg = log.trigger_message?.toLowerCase() || ""
+      const type = log.trigger_type.toLowerCase()
+      if (!name.includes(q) && !phone.includes(q) && !msg.includes(q) && !type.includes(q)) return false
+    }
+    return true
+  })
+
+  const pending = logs.filter(l => l.status === "pending").length
+  const resolved = logs.filter(l => l.status === "resolved").length
+  const avgResolutionMs = logs
+    .filter(l => l.status === "resolved" && l.resolved_at)
+    .reduce((acc, l) => acc + (new Date(l.resolved_at!).getTime() - new Date(l.created_at).getTime()), 0)
+  const avgResolutionMins = logs.filter(l => l.status === "resolved" && l.resolved_at).length
+    ? Math.round(avgResolutionMs / 60000 / logs.filter(l => l.status === "resolved" && l.resolved_at).length)
+    : null
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 font-sans">
-      <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold text-gray-900">Escalation Insights</h1>
-        <p className="text-sm text-gray-500">Monitor and review manual intervention triggers across your Agents.</p>
+    <div className="max-w-6xl mx-auto space-y-6">
+      <header className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900">Escalations</h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Monitor and resolve conversations that need human intervention.
+          </p>
+        </div>
+        <Button variant="outline" size="sm" onClick={fetchLogs} className="gap-2">
+          <RefreshCw className={cn("h-3.5 w-3.5", isLoading && "animate-spin")} /> Refresh
+        </Button>
       </header>
 
-      {/* Stats Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {isLoading ? (
-          <>
-            {[...Array(3)].map((_, i) => (
-              <div key={i} className="p-6 bg-white border border-gray-100 rounded-xl shadow-sm space-y-3">
-                <Skeleton className="h-3 w-28" />
-                <div className="flex items-center justify-between">
-                  <Skeleton className="h-8 w-12" />
-                  <Skeleton className="h-10 w-10 rounded-lg" />
-                </div>
-              </div>
-            ))}
-          </>
-        ) : (
-          logs.filter((_, i) => i < 3).length > 0 ? (
-            [
-              { label: "Active Escalations", val: logs.filter(l => l.status === 'pending').length, color: "text-rose-600", bg: "bg-rose-50" },
-              { label: "Avg Resolution", val: "14m", color: "text-emerald-600", bg: "bg-emerald-50" },
-              { label: "Critical Priority", val: logs.filter(l => l.priority === 'high').length, color: "text-amber-600", bg: "bg-amber-50" },
-            ].map((stat, i) => (
-              <div key={i} className="p-6 bg-white border border-gray-100 rounded-xl shadow-sm space-y-3">
-                 <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">{stat.label}</p>
-                 <div className="flex items-center justify-between">
-                    <h3 className={cn("text-3xl font-bold", stat.color)}>{stat.val}</h3>
-                    <div className={cn("h-10 w-10 rounded-lg flex items-center justify-center", stat.bg)}>
-                       <ShieldAlert className={cn("h-5 w-5", stat.color)} />
-                    </div>
-                 </div>
-              </div>
-            ))
-          ) : null
-        )}
-      </div>
-
-      {/* Filter Bar */}
-      {isLoading ? (
-        <div className="flex flex-col sm:flex-row items-center gap-4">
-          <Skeleton className="h-10 flex-1 w-full max-w-md rounded-lg" />
-          <Skeleton className="h-10 w-20 rounded-lg" />
-        </div>
-      ) : (
-        <div className="flex flex-col sm:flex-row items-center gap-4">
-          <div className="relative flex-1 w-full max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input 
-              placeholder="Search by reason or contact..." 
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 h-10 border-gray-200 rounded-lg text-sm"
-            />
-          </div>
-          <Button variant="outline" className="h-10 px-4 gap-2 rounded-lg text-sm text-gray-600 border-gray-200">
-             <Filter className="h-4 w-4" /> Filter
-          </Button>
-        </div>
+      {error && (
+        <Card className="p-6 text-center">
+          <AlertTriangle className="h-8 w-8 text-red-400 mx-auto mb-2" />
+          <p className="text-sm text-red-600">{error}</p>
+        </Card>
       )}
 
-      {/* Logs Table */}
-      <div className="bg-white border border-gray-100 rounded-xl overflow-x-auto shadow-sm">
-        <Table>
-          <TableHeader className="bg-gray-50/50 border-b border-gray-100">
-            <TableRow className="hover:bg-transparent">
-              <TableHead className="text-[11px] font-bold uppercase text-gray-500 py-4 pl-6">Trigger Event</TableHead>
-              <TableHead className="text-[11px] font-bold uppercase text-gray-500 py-4">Contact</TableHead>
-              <TableHead className="text-[11px] font-bold uppercase text-gray-500 py-4">Status</TableHead>
-              <TableHead className="text-[11px] font-bold uppercase text-gray-500 py-4">Priority</TableHead>
-              <TableHead className="text-[11px] font-bold uppercase text-gray-500 py-4">Created</TableHead>
-              <TableHead className="text-right pr-6 py-4"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
+      {!error && (
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {isLoading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}>
-                  <TableCell className="pl-6"><Skeleton className="h-4 w-32" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                  <TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-12" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                  <TableCell />
-                </TableRow>
+              Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="p-5 bg-white border border-gray-100 rounded-xl shadow-sm space-y-2">
+                  <Skeleton className="h-3 w-20" />
+                  <Skeleton className="h-8 w-10" />
+                </div>
               ))
-            ) : filteredLogs.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="h-40 text-center text-gray-400 text-sm font-medium">No escalation triggers found.</TableCell>
-              </TableRow>
             ) : (
-              filteredLogs.map((log) => (
-                <TableRow key={log.id} className="border-gray-50 hover:bg-gray-50/30 transition-colors group">
-                  <TableCell className="pl-6">
-                    <div className="flex flex-col">
-                      <span className="text-sm font-semibold text-gray-900 capitalize">{log.trigger_type.replace(/_/g, ' ')}</span>
-                      <span className="text-[10px] text-gray-400 font-medium">REF_{log.id.slice(0, 8).toUpperCase()}</span>
+              <>
+                {[
+                  { label: "Total", val: logs.length, color: "text-gray-900", icon: ShieldAlert },
+                  { label: "Pending", val: pending, color: "text-rose-600", icon: Clock },
+                  { label: "Resolved", val: resolved, color: "text-emerald-600", icon: CheckCircle },
+                  { label: "Avg Resolution", val: avgResolutionMins ? `${avgResolutionMins}m` : "—", color: "text-blue-600", icon: Clock },
+                ].map((stat) => (
+                  <div key={stat.label} className="p-5 bg-white border border-gray-100 rounded-xl shadow-sm space-y-2">
+                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">{stat.label}</p>
+                    <div className="flex items-center justify-between">
+                      <h3 className={cn("text-2xl font-bold", stat.color)}>{stat.val}</h3>
+                      <stat.icon className={cn("h-5 w-5", stat.color)} />
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                       <User className="h-3.5 w-3.5 text-gray-300" />
-                       <span className="text-xs font-medium text-gray-700">{log.conversation_sessions?.contacts?.name || "Unknown"}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={cn(
-                      "text-[10px] font-bold uppercase px-2.5 h-6 border-none rounded-md",
-                      log.status === 'resolved' ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"
-                    )}>
-                      {log.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                     <span className={cn(
-                       "text-[10px] font-bold uppercase",
-                       log.priority === 'high' ? "text-rose-500" : "text-gray-400"
-                     )}>{log.priority}</span>
-                  </TableCell>
-                  <TableCell className="text-xs text-gray-500">
-                    {new Date(log.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
-                  </TableCell>
-                  <TableCell className="text-right pr-6">
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-lg text-gray-300 hover:text-gray-900 group-hover:bg-white transition-all">
-                       <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
+                  </div>
+                ))}
+              </>
             )}
-          </TableBody>
-        </Table>
-      </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+            <div className="relative flex-1 w-full max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search by contact, trigger, or message..."
+                value={filters.search}
+                onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                className="pl-9 h-10 border-gray-200 rounded-lg text-sm"
+              />
+            </div>
+            <Select value={filters.status} onValueChange={(v) => setFilters(prev => ({ ...prev, status: v }))}>
+              <SelectTrigger className="w-36 h-10 border-gray-200 rounded-lg text-sm">
+                <Filter className="h-3.5 w-3.5 mr-2 text-gray-400" />
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="resolved">Resolved</SelectItem>
+              </SelectContent>
+            </Select>
+            {(filters.search || filters.status !== "all") && (
+              <Button variant="ghost" size="sm" onClick={() => setFilters({ search: "", status: "all" })} className="h-10 gap-1 text-xs">
+                <X className="h-3.5 w-3.5" /> Clear
+              </Button>
+            )}
+          </div>
+
+          {isLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="p-5 bg-white border border-gray-100 rounded-xl shadow-sm">
+                  <div className="flex items-start gap-4">
+                    <Skeleton className="h-10 w-10 rounded-lg shrink-0" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-40" />
+                      <Skeleton className="h-3 w-64" />
+                      <div className="flex gap-2">
+                        <Skeleton className="h-6 w-20 rounded-full" />
+                        <Skeleton className="h-6 w-16 rounded-full" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : filteredLogs.length === 0 ? (
+            <Card className="p-12 text-center">
+              <ShieldAlert className="h-10 w-10 text-gray-300 mx-auto mb-3" />
+              <p className="text-sm font-medium text-gray-500">
+                {logs.length === 0 ? "No escalations yet" : "No escalations match your filters"}
+              </p>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {filteredLogs.map((log) => {
+                const Icon = TRIGGER_ICONS[log.trigger_type] || ShieldAlert
+                const isExpanded = expandedId === log.id
+                const contact = log.conversation_sessions?.contacts
+                const snapshot = log.conversation_snapshot as Record<string, unknown> | null
+
+                return (
+                  <div key={log.id} className="bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden transition-all hover:shadow-md">
+                    <div className="p-5">
+                      <div className="flex items-start gap-4">
+                        <div className={cn(
+                          "h-10 w-10 rounded-lg border flex items-center justify-center shrink-0",
+                          TRIGGER_COLORS[log.trigger_type] || "text-gray-600 bg-gray-50 border-gray-200"
+                        )}>
+                          <Icon className="h-4 w-4" />
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <h3 className="text-sm font-semibold text-gray-900 capitalize">
+                                {log.trigger_type.replace(/_/g, " ")}
+                              </h3>
+                              <p className="text-xs text-gray-500 mt-0.5">
+                                {contact?.name || "Unknown"} {contact?.phone ? `· ${contact.phone}` : ""}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              {log.status === "pending" ? (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleResolve(log)}
+                                  disabled={resolving === log.id}
+                                  className="h-7 text-xs gap-1.5 border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                                >
+                                  <CheckCircle className={cn("h-3 w-3", resolving === log.id && "animate-spin")} />
+                                  Resolve
+                                </Button>
+                              ) : (
+                                <Badge className="text-[10px] font-bold uppercase px-2.5 h-6 border-none rounded-md bg-emerald-50 text-emerald-700">
+                                  Resolved
+                                </Badge>
+                              )}
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => setExpandedId(isExpanded ? null : log.id)}
+                                className="h-7 w-7 p-0 text-gray-400"
+                              >
+                                <ChevronDown className={cn("h-4 w-4 transition-transform", isExpanded && "rotate-180")} />
+                              </Button>
+                            </div>
+                          </div>
+
+                          {log.trigger_message && (
+                            <p className="text-xs text-gray-600 mt-2 line-clamp-2">{log.trigger_message}</p>
+                          )}
+
+                          <div className="flex items-center gap-3 mt-3">
+                            <Badge variant="outline" className={cn(
+                              "text-[10px] font-bold uppercase px-2.5 h-6 rounded-md",
+                              log.status === "resolved"
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                : "bg-rose-50 text-rose-700 border-rose-200"
+                            )}>
+                              {log.status}
+                            </Badge>
+                            <span className="text-[11px] text-gray-400">{timeAgo(log.created_at)}</span>
+                            {log.resolved_at && (
+                              <span className="text-[11px] text-gray-400">· resolved {timeAgo(log.resolved_at)}</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {isExpanded && (
+                      <div className="border-t border-gray-100 bg-gray-50/50 px-5 py-4 space-y-3">
+                        <div className="flex items-center gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                          <MessageSquare className="h-3.5 w-3.5" />
+                          Conversation Snapshot
+                        </div>
+                        {snapshot && Array.isArray(snapshot.messages) ? (
+                          <div className="space-y-2 max-h-60 overflow-y-auto">
+                            {(snapshot.messages as Array<{ role?: string; content?: string }>).slice(-6).map((msg, i) => (
+                              <div key={i} className={cn(
+                                "p-3 rounded-lg text-xs leading-relaxed",
+                                msg.role === "assistant"
+                                  ? "bg-white border border-gray-100 ml-6"
+                                  : "bg-[#c65f39]/5 border border-[#c65f39]/10 mr-6"
+                              )}>
+                                <span className={cn(
+                                  "text-[10px] font-bold uppercase tracking-wider block mb-0.5",
+                                  msg.role === "assistant" ? "text-gray-400" : "text-[#c65f39]"
+                                )}>
+                                  {msg.role || "user"}
+                                </span>
+                                {msg.content}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-gray-400 italic">No conversation data available</p>
+                        )}
+                        {log.notes && (
+                          <div className="pt-2 border-t border-gray-200">
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Notes</p>
+                            <p className="text-xs text-gray-600">{log.notes}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </>
+      )}
     </div>
   )
 }
