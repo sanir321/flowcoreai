@@ -3,20 +3,31 @@ import { PipelineContext } from "../lib/types.ts";
 const APP_URL = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://7flowcore.vercel.app";
 const CRON_SECRET = Deno.env.get("INTERNAL_CRON_SECRET") || "";
 
+// Only trigger escalation on explicit requests for human handoff or severe emotional distress
+// Single-word emotional signals like "frustrated" are NOT enough — require context
 const DEFAULT_KEYWORDS = [
-  "human", "agent", "person", "manager", "staff", "real person",
-  "talk to someone", "talk to a person",
-  "complaint",
-  // Generic escalation keywords
-  "owner", "call owner", "contact person", "talk to owner", "director", "boss",
-  // Emotional escalation signals
-  "frustrated", "fed up", "waste", "useless", "scam", "cheating",
-  "terrible service", "worst", "hopeless", "not helpful"
+  // Explicit human handoff requests
+  "talk to a human", "talk to a person", "speak to a human", "speak to a person",
+  "connect me to", "transfer me to", "escalate to",
+  // Management/authority requests
+  "talk to manager", "speak to manager", "talk to owner", "speak to owner",
+  "call manager", "call owner", "contact manager", "contact owner",
+  "where is the manager", "where is the owner", "get me the boss",
+  // Severe emotional distress (require compound phrases, not single words)
+  "i am furious", "i'm furious", "this is unacceptable", "unacceptable service",
+  "worst service ever", "terrible service", "absolutely terrible",
+  "i want a refund", "give me a refund", "refund my money",
+  "i will sue", "i'm going to sue", "legal action", "lawyer",
+  "social media complaint", "posting on social", "chargeback",
 ];
 
 export async function checkEscalation(ctx: PipelineContext, workspace: any): Promise<string | null> {
   // Don't re-escalate if already escalated
   if (ctx.session?.status === "escalated") return null;
+
+  // Don't re-escalate within the same request cycle
+  if (ctx._escalationHandled) return null;
+  ctx._escalationHandled = true;
 
   const customKeywords = workspace.guardrail_config?.escalation_keywords;
   const keywords = customKeywords ? [...new Set([...DEFAULT_KEYWORDS, ...customKeywords])] : DEFAULT_KEYWORDS;

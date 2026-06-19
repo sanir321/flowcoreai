@@ -31,7 +31,8 @@ export async function matchChunks(params: { query: string }, ctx: PipelineContex
       embedding = await generateEmbedding(params.query);
     }
   } catch {
-    return { success: false, chunks: [], kb_chunks: [] };
+    // Embedding failed - return success with empty results so KB doesn't block the pipeline
+    return { success: true, chunks: [], kb_chunks: [] };
   }
 
   // Fetch workspace-specific KB config

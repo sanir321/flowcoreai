@@ -89,6 +89,9 @@ export interface PipelineContext {
   _churnRisk?: boolean;
   _maskedComplaint?: boolean;
   _ventVsSolve?: string;
+  _appointmentCreated?: boolean;
+  _transferAgentCalled?: boolean;
+  _escalationHandled?: boolean;
 }
 
 export interface AgentPlan {

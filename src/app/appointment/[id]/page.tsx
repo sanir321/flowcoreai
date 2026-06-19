@@ -14,7 +14,8 @@ function formatIST(isoString: string): string {
   return `${datePart} at ${timePart} IST`;
 }
 
-export default async function PublicAppointmentPage({ params }: { params: { id: string } }) {
+export default async function PublicAppointmentPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const supabase = createAdminClient()
   
   // Fetch appointment with workspace details
@@ -27,7 +28,7 @@ export default async function PublicAppointmentPage({ params }: { params: { id: 
         business_profile
       )
     `)
-    .eq("id", params.id)
+    .eq("id", id)
     .single()
 
   if (error || !appt) {

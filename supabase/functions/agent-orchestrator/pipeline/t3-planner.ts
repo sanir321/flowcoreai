@@ -78,6 +78,24 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
 
   systemPrompt += `\n\n## Current Date/Time\nToday is ${new Date().toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", weekday: "long", year: "numeric", month: "long", day: "numeric" })}. Current time in India is ${new Date().toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit" })} IST. Use this to calculate relative dates like "tomorrow", "next week", "today" correctly.`;
 
+  // For booking agent, inject existing appointment info
+  if (agentType === "appointment_booking") {
+    try {
+      const { data: existingAppt } = await ctx.supabase
+        .from("appointments")
+        .select("id, start_at, service, status")
+        .eq("session_id", ctx.session.id)
+        .not("status", "eq", "cancelled")
+        .maybeSingle();
+      
+      if (existingAppt) {
+        systemPrompt += `\n\n## IMPORTANT: Existing Appointment Detected\nThis customer already has a confirmed appointment:\n- ID: ${existingAppt.id}\n- Service: ${existingAppt.service}\n- Date/Time: ${existingAppt.start_at}\n- Status: ${existingAppt.status}\n\nDo NOT attempt to create another appointment. Instead:\n1. Inform the customer they already have a booking\n2. Ask if they need to reschedule, cancel, or have questions about their existing appointment\n3. Use the appointment ID for any updates or cancellations`;
+      }
+    } catch (e: any) {
+      console.error("[T3] Failed to check existing appointment:", e.message);
+    }
+  }
+
   const tone = ctx._emotionalTone;
   if (tone && tone !== "calm" && tone !== "positive") {
     const toneInstructions: Record<string, string> = {

@@ -53,6 +53,32 @@ export const toolExecutor = {
     toolName = normalizeToolName(toolName);
     const startTime = Date.now();
 
+    // Session-level idempotency guard for manage_appointment create
+    if (toolName === "manage_appointment" && params.action === "create") {
+      if (!ctx._appointmentCreated) {
+        ctx._appointmentCreated = true;
+      } else {
+        // Already created an appointment in this request cycle
+        return { 
+          success: true, 
+          already_booked: true, 
+          note: "Appointment already created in this session." 
+        };
+      }
+    }
+
+    // Session-level guard for transfer_agent - prevent duplicate escalations
+    if (toolName === "transfer_agent") {
+      if (ctx._transferAgentCalled) {
+        return { 
+          success: true, 
+          handoff_to: params.target_agent, 
+          note: "Already transferred in this session." 
+        };
+      }
+      ctx._transferAgentCalled = true;
+    }
+
     const limit = TOOL_RATE_LIMITS[toolName] ?? 20;
     if (limit > 0) {
       let counts = countCache.get(ctx);
