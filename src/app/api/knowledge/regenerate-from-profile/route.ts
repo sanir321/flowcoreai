@@ -185,6 +185,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Failed to create source" }, { status: 500 })
     }
 
+    // Delete old auto-generated chunks BEFORE inserting new ones (prevents duplicates)
+    await supabaseAdmin
+      .from("kb_chunks")
+      .delete()
+      .eq("workspace_id", workspace_id)
+      .eq("source_id", sourceId)
+      .filter("metadata->>source", "eq", "auto-generated")
+
     // Insert each section as a chunk with null embedding
     const rows = sections.map((s, i) => ({
       workspace_id,
@@ -204,14 +212,6 @@ export async function POST(req: Request) {
       console.error("[REGENERATE] Insert error:", insertError)
       return NextResponse.json({ error: "Failed to save chunks" }, { status: 500 })
     }
-
-    // Delete old auto-generated chunks (after insert to avoid data loss)
-    await supabaseAdmin
-      .from("kb_chunks")
-      .delete()
-      .eq("workspace_id", workspace_id)
-      .neq("source_id", sourceId)
-      .filter("metadata->>source", "eq", "auto-generated")
 
     // Kick off embedding — first batch
     await supabaseAdmin.functions.invoke("embed-text", {
