@@ -330,12 +330,13 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
                         <button
                           type="button"
                           onClick={() => {
-                            const newDaily = { ...safeDaily }
-                            newDaily[day] = { open: dayData.open || "09:00", close: dayData.close || "17:00", closed: !isOpen }
-                            setProfile(prev => ({
-                              ...prev,
-                              hours: { ...(prev.hours || {}), daily: newDaily }
-                            }))
+                            setProfile(prev => {
+                              const currentDaily = (prev.hours as any)?.daily || {}
+                              const current = currentDaily[day] || { open: "09:00", close: "17:00", closed: false }
+                              const newDaily = { ...currentDaily }
+                              newDaily[day] = { open: current.open, close: current.close, closed: !current.closed }
+                              return { ...prev, hours: { ...(prev.hours || {}), daily: newDaily } }
+                            })
                           }}
                           className={cn(
                             "relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0",
@@ -360,9 +361,13 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
                             type="time"
                             value={dayData.open || "09:00"} 
                             onChange={e => {
-                              const newDaily = { ...safeDaily }
-                              newDaily[day] = { ...dayData, open: e.target.value }
-                              setNestedField("hours", "daily", newDaily)
+                              setProfile(prev => {
+                                const currentDaily = (prev.hours as any)?.daily || {}
+                                const current = currentDaily[day] || { open: "09:00", close: "17:00", closed: false }
+                                const newDaily = { ...currentDaily }
+                                newDaily[day] = { ...current, open: e.target.value }
+                                return { ...prev, hours: { ...(prev.hours || {}), daily: newDaily } }
+                              })
                             }}
                             className="h-8 w-20 text-center text-xs rounded-lg border-gray-100 bg-white" 
                             aria-label={`${DAY_LABELS[day]} opening time`}
@@ -372,9 +377,13 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
                             type="time"
                             value={dayData.close || "17:00"} 
                             onChange={e => {
-                              const newDaily = { ...safeDaily }
-                              newDaily[day] = { ...dayData, close: e.target.value }
-                              setNestedField("hours", "daily", newDaily)
+                              setProfile(prev => {
+                                const currentDaily = (prev.hours as any)?.daily || {}
+                                const current = currentDaily[day] || { open: "09:00", close: "17:00", closed: false }
+                                const newDaily = { ...currentDaily }
+                                newDaily[day] = { ...current, close: e.target.value }
+                                return { ...prev, hours: { ...(prev.hours || {}), daily: newDaily } }
+                              })
                             }}
                             className="h-8 w-20 text-center text-xs rounded-lg border-gray-100 bg-white" 
                             aria-label={`${DAY_LABELS[day]} closing time`}
