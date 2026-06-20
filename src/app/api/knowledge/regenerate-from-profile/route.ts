@@ -1,7 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { createClient as createAdminClient } from "@supabase/supabase-js"
 import { rateLimit } from "@/lib/rate-limit"
+
+const supabaseAdmin = createAdminClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
 const PROFILE_SOURCE_LABEL = "Business Profile (auto-generated)"
 
@@ -100,6 +106,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "workspace_id is required" }, { status: 400 })
     }
 
+    // Verify user via cookies
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
@@ -111,7 +118,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    const { data: workspace } = await supabase
+    // Use admin client for DB operations (bypass RLS)
+    const { data: workspace } = await supabaseAdmin
       .from("workspaces")
       .select("business_profile, business_type")
       .eq("id", workspace_id)
@@ -124,7 +132,7 @@ export async function POST(req: Request) {
     const businessProfile = workspace.business_profile || {}
     const businessType = workspace.business_type || "general"
 
-    const { data: templates } = await supabase
+    const { data: templates } = await supabaseAdmin
       .from("required_info_templates")
       .select("*")
       .in("business_type", ["*", businessType])
@@ -148,7 +156,7 @@ export async function POST(req: Request) {
 
     // Find or create a profile source row
     let sourceId: string | null = null
-    const { data: existingSource } = await supabase
+    const { data: existingSource } = await supabaseAdmin
       .from("kb_sources")
       .select("id")
       .eq("workspace_id", workspace_id)
@@ -159,7 +167,7 @@ export async function POST(req: Request) {
     if (existingSource) {
       sourceId = existingSource.id
     } else {
-      const { data: newSource } = await supabase
+      const { data: newSource } = await supabaseAdmin
         .from("kb_sources")
         .insert({
           workspace_id,
@@ -187,7 +195,7 @@ export async function POST(req: Request) {
       metadata: { tag: s.tag, source: "auto-generated", generated_at: new Date().toISOString() },
     }))
 
-    const { error: insertError } = await supabase
+    const { error: insertError } = await supabaseAdmin
       .from("kb_chunks")
       .insert(rows)
 
@@ -197,7 +205,7 @@ export async function POST(req: Request) {
     }
 
     // Delete old auto-generated chunks (after insert to avoid data loss)
-    await supabase
+    await supabaseAdmin
       .from("kb_chunks")
       .delete()
       .eq("workspace_id", workspace_id)
@@ -205,7 +213,7 @@ export async function POST(req: Request) {
       .filter("metadata->>source", "eq", "auto-generated")
 
     // Kick off embedding — first batch
-    await supabase.functions.invoke("embed-text", {
+    await supabaseAdmin.functions.invoke("embed-text", {
       body: { source_id: sourceId, workspace_id, embed_batch: true }
     })
 
@@ -214,7 +222,7 @@ export async function POST(req: Request) {
     let attempts = 0
     while (status === "processing" && attempts < 20) {
       await new Promise(r => setTimeout(r, 1000))
-      const { data: src } = await supabase
+      const { data: src } = await supabaseAdmin
         .from("kb_sources")
         .select("status, error_message")
         .eq("id", sourceId)
@@ -223,7 +231,7 @@ export async function POST(req: Request) {
       attempts++
     }
 
-    const { count: finalChunks } = await supabase
+    const { count: finalChunks } = await supabaseAdmin
       .from("kb_chunks")
       .select("id", { count: "exact", head: true })
       .eq("source_id", sourceId)
