@@ -331,8 +331,11 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
                           type="button"
                           onClick={() => {
                             const newDaily = { ...safeDaily }
-                            newDaily[day] = { ...dayData, closed: !isOpen }
-                            setNestedField("hours", "daily", newDaily)
+                            newDaily[day] = { open: dayData.open || "09:00", close: dayData.close || "17:00", closed: !isOpen }
+                            setProfile(prev => ({
+                              ...prev,
+                              hours: { ...(prev.hours || {}), daily: newDaily }
+                            }))
                           }}
                           className={cn(
                             "relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0",
