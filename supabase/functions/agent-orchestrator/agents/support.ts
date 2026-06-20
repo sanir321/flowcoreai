@@ -9,9 +9,11 @@ export function buildSupportSystemPrompt(ctx: PipelineContext): string {
 
   const profile = (workspace as any).business_profile || {};
   const profileParts: string[] = []
+  if (profile.description) profileParts.push(`About: ${profile.description}`)
   if (profile.contact?.phone) profileParts.push(`Phone: ${profile.contact.phone}`)
   if (profile.contact?.email) profileParts.push(`Email: ${profile.contact.email}`)
   if (profile.contact?.address) profileParts.push(`Address: ${profile.contact.address}`)
+  if (profile.contact?.google_maps_link) profileParts.push(`Maps: ${profile.contact.google_maps_link}`)
   if (profile.social) {
     const socialEntries = Object.entries(profile.social)
       .filter(([, url]) => url)
@@ -28,6 +30,12 @@ export function buildSupportSystemPrompt(ctx: PipelineContext): string {
   }
   if (profile.amenities?.length) profileParts.push(`Amenities: ${profile.amenities.join(', ')}`)
   if (profile.pricing?.description) profileParts.push(`Pricing: ${profile.pricing.description}`)
+  if (profile.policies) {
+    const policyEntries = Object.entries(profile.policies).filter(([, v]) => v)
+    if (policyEntries.length) profileParts.push(`Policies: ${policyEntries.map(([k, v]) => `${k}: ${v}`).join(' | ')}`)
+  }
+  if (profile.extras?.specials?.length) profileParts.push(`Specials: ${profile.extras.specials.join(', ')}`)
+  if (profile.extras?.project_types?.length) profileParts.push(`Project Types: ${profile.extras.project_types.join(', ')}`)
   const profileSummary = profileParts.length > 0 ? profileParts.join('\n') : 'No profile data yet. Call get_business_info for details.'
 
   const sentimentLine = working.sentiment
