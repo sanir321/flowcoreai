@@ -460,10 +460,8 @@ export function AppointmentsClient({ initialAppointments, workspaceId, isModuleA
                                  );
                                })}
                             </div>
-                            <div className="flex justify-end gap-3 pt-6 border-t border-gray-50">
-                               <DialogClose>
-                                  <button className="px-6 py-2 text-xs font-bold text-gray-500 hover:text-black transition-colors">Close</button>
-                               </DialogClose>
+                             <div className="flex justify-end gap-3 pt-6 border-t border-gray-50">
+                                <button className="px-6 py-2 text-xs font-bold text-gray-500 hover:text-black transition-colors">Close</button>
                             </div>
                          </div>
                       </DropdownMenuContent>

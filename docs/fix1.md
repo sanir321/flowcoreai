@@ -1,27 +1,40 @@
-Vercel AI SDK tool calling github lightweight10 resultsGitHub - vercel/ai: The AI Toolkit for TypeScript. From the creators of Next.js, the AI SDK is a free open-source library for building AI-powered applications and agents · GitHubgithub.comAI SDKvercel.comAI SDK 6 - Vercelvercel.comGitHub - vercel-labs/github-tools: GitHub tools and agents for the Vercel AI SDK, wrap GitHub's API as AI SDK tools ready to plug into any agent · GitHubgithub.comAI SDK Core: Tool Callingai-sdk.devGitHub - midday-ai/ai-sdk-tools: Essential utilities for building production-ready AI applications with Vercel AI SDK. State management, debugging, structured streaming, intelligent agents, and caching. · GitHubgithub.comDynamically discover tools and optimize tool calling - AI SDK - Vercel Communitycommunity.vercel.comVercel Plugin for AI Coding Agentsvercel.comReleases · vercel/aigithub.comGitHub - python-ai-sdk/sdk: The Vercel AI SDK, in Python · GitHubgithub.comGood, this confirms Vercel AI SDK is solid for tool calling. Now let me search for knowledge extraction / RAG repos that fit with Supabase pgvector for Next.js, lightweight.
-Let me search.lightweight RAG knowledge base extraction Supabase pgvector Next.js github starter10 resultsCreate a RAG application using Next.JS, Supabase and OpenAI’s text-embedding-3-small model | by Ollie | Mediummedium.comHow to Build an AI-Powered RAG Search Application with Next.js, Supabase, and OpenAIwww.freecodecamp.orgBeyond Simple RAG: Building an Agentic Workflow with Next.js, Python, and Supabase - DEV Communitydev.toBuild RAG Chatbot with Next.js & Supabase | pgvector Tutorialfreeacademy.aiGitHub - HamedMP/NextRag: Next.js RAG with PGVector · GitHubgithub.comGitHub - supavec/supabase-ai: TypeScript SDK for building RAG applications with Supabase and pgvector. Features semantic search, OpenAI embeddings, LangChain support, and comprehensive type definitions. · GitHubgithub.comVector search with Next.js and OpenAI | Supabase Docssupabase.comGitHub - supabase-community/chatgpt-your-files: Production-ready MVP for securely chatting with your documents using pgvector · GitHubgithub.comBuilding a React.dev RAG chatbot using Vercel AI SDK - DEV Communitydev.toCreating RAG Applications Using Supabase and pgvector - EVOKEHUBevokehub.comGreat, now I have several good options for the knowledge extraction side:
+I'm getting this runtime error on the Calendar tab of my Next.js 14 app:
 
-supabase-community/chatgpt-your-files - official Supabase repo, production-ready MVP for RAG, uses Edge Functions, exactly matches his stack (Supabase, Edge Functions, pgvector). This is probably the BEST match since he's already using GOWA + Supabase Edge Functions.
-HamedMP/NextRag - Next.js + pgvector + Prisma + Vercel AI SDK - good but uses Prisma not directly Supabase client, and node-pg
-supavec/supabase-ai - TypeScript SDK wrapping Supabase + pgvector + OpenAI embeddings, simple chunked storage and search - lightweight SDK, no need to write boilerplate. This seems like a really good lightweight option for "knowledge extraction" given it's literally a small SDK: ai.embeddings.store() and ai.embeddings.search(). This fits "no heavy work" perfectly since it's not an agent framework, just a thin wrapper.
+"Cannot destructure property 'store' of '(0, o.P)(...)' as it is undefined."
 
-For document parsing/extraction (especially since FlowCore needs to handle business owners uploading PDFs/docs of their menu, services, etc.) - I should also check if there's something for the "extraction" part specifically - parsing PDFs/docs into text first. Let me search for that too, since "knowledge extraction" might emphasize the parsing/extraction step (turning raw documents into text) more than the storage/retrieval step.
-Let me search for unstructured.io or similar document parsing repos, and maybe llamaparse alternatives, but lightweight, ideally JS-compatible or with simple API call.
-Also, I want to check what "Kilo Gateway" + DeepSeek V3 looks like for embeddings - does DeepSeek offer embedding models? Actually, I recall DeepSeek doesn't have a dedicated embedding model widely used; more commonly used would be OpenAI text-embedding-3-small, or open-source embedding models. Since he's already using Kilo Gateway (LLM router) for chat completions, for embeddings he might need a separate embedding model provider. …Show moreWhatsApp AI customer service bot RAG knowledge base github SMB10 resultsGitHub - wassengerhq/whatsapp-chatgpt-bot: Ready-to-use AI Multimodal ChatGPT-based WhatsApp chatbot assistant for your business. Now supports GPT-4o with text + audio + image input, audio responses, and improved RAG + MCP 🤩github.comGitHub - worldbank/WhatsApp-RAG-Example · GitHubgithub.comTutorial: WhatsApp AI Support Agent with RAG & Memory (PydanticAI, LangGraph, Supabase, FastAPI) - YouTubewww.youtube.comwhatsapp-chatbot · GitHub Topics · GitHubgithub.comwhatsapp-bot · GitHub Topics · GitHubgithub.comwhatsapp-ai · GitHub Topics · GitHubgithub.comComplete business WhatsApp AI-powered RAG chatbot using OpenAI | n8n workflow templaten8n.ioWhatsApp RAG AI Bot using APIs - CustomGPT docsdocs.customgpt.aiGitHub - RaheesAhmed/WhatsApp-Bot: A complete AI-powered WhatsApp chatbot solution with an admin dashboard for management and analytics. This platform enables businesses to automate customer support, provide instant responses, and learn from interactions. · GitHubgithub.comWhatsApp AI bot using Azure Open AI and Azure Communication Servicestechcommunity.microsoft.comOK, I have plenty of good info now. Let me synthesize.
-Best fit for "knowledge extraction, easy, no heavy agent, fits FlowCore stack" given his actual stack (Next.js 14, Supabase pgvector, Edge Functions, DeepSeek V3 via Kilo Gateway):
+This means a hook or function call is returning undefined, and code is
+immediately destructuring `{ store }` out of it.
 
-supabase-community/chatgpt-your-files - Official Supabase repo. Production-ready MVP for chatting with documents using pgvector. Uses Edge Functions (matches his stack exactly), shows how to swap in OpenAI-compatible providers (which is exactly what Kilo Gateway/DeepSeek would be), uses Supabase Storage for file upload, chunks docs by markdown headings. This is THE most natural fit since he's already on Supabase + Edge Functions, and the repo explicitly documents using OpenAI-compatible APIs for other providers (Ollama etc.) - so swapping in DeepSeek via Kilo Gateway base URL would be straightforward. No heavy agent framework, no LangChain dependency - very lean.
-supavec/supabase-ai - a thin TypeScript SDK: ai.embeddings.store() / ai.embeddings.search(). If he wants something even more minimal/just a library rather than a full reference app, this is good - literally just wraps pgvector storage and search, no agent loop, no orchestrator. Though it's tied to OpenAI for embeddings currently (per the docs) — worth flagging that limitation.
-HamedMP/NextRag - Next.js + pgvector + Vercel AI SDK, reference implementation, demonstrates different chunking strategies. Uses Prisma + node-pg directly though, which is a bit redundant since he already has @supabase/supabase-js for the rest of FlowCore — could create stack inconsistency. Worth mentioning as alternative but less ideal than the official Supabase repo.
+Do the following, in order:
 
-For tool calling: vercel/ai (AI SDK) is clearly the best fit:
+1. Search the codebase for the exact pattern causing this:
+   grep -rn "{ store }" --include="*.tsx" --include="*.ts" .
+   grep -rn "const { store } =" --include="*.tsx" --include="*.ts" .
 
-TypeScript-native, built for Next.js, from the creators of Next.js
-tool() helper + zod schema = clean tool calling, no heavy boilerplate
+2. For each match, trace the function/hook being called on the right-hand
+   side. Identify whether it is:
+   a) useContext(SomeContext) — check if the Provider wrapping it actually
+      wraps the Calendar route/layout. List the component tree from root
+      layout down to the Calendar page and confirm the Provider is present
+      at every level this component renders under.
+   b) A Zustand/Jotai/custom store hook — check if it's being called during
+      SSR or before client hydration, and whether the store needs a
+      "use client" boundary or lazy initialization guard.
+   c) A broken import — check if the store module's export still exists and
+      isn't resolving to undefined due to a circular import or a recent
+      refactor (especially anything touched during the multi-tenant
+      hardcoding fixes).
 
-…
-Show moreDoneFor your stack — Next.js 14, Supabase with pgvector, Edge Functions, DeepSeek V3 through Kilo Gateway — here's what fits without pulling in a LangChain/CrewAI-style framework you don't need. Knowledge extraction and tool calling are different problems, so two separate picks, plus one bonus.
-For knowledge extraction, supabase-community/chatgpt-your-files (github.com/supabase-community/chatgpt-your-files) is close to a drop-in match since it's built on the same primitives FlowCore already uses. It breaks uploaded markdown content into sections at each heading boundary, so retrieval queries return focused, appropriately-sized chunks instead of whole documents, storing the result across a documents table and a separate document_sections table backed by pgvector. The part that matters most for you: the chat logic is written against the OpenAI client library, but the repo notes this same code works with any provider that exposes an OpenAI-compatible API — so pointing it at DeepSeek through Kilo Gateway is a base-URL swap, not a rewrite. It also walks through wiring up Supabase's gte-small embedding model directly through Transformers.js as a free, local alternative to an embeddings API — worth using since DeepSeek itself doesn't do embeddings, and this way you're not adding a paid API just for that piece. GitHub + 3
-If you want something thinner than a full reference app, supavec/supabase-ai (github.com/supavec/supabase-ai) is just a small TypeScript SDK wrapping Supabase and pgvector with built-in semantic search — store() and search() calls, no app scaffolding around it. The catch: the embeddings layer currently only supports OpenAI as a provider, so you'd still need an OpenAI key for that one piece even with DeepSeek handling chat. GitHub
-For tool calling, vercel/ai (github.com/vercel/ai) is the right shape — a provider-agnostic TypeScript toolkit built for Next.js and Node.js runtimes, with a unified API across model providers rather than lock-in to one, not a heavy agent framework. Its tool() helper has each tool defined with a Zod or JSON schema for its inputs, which the model consumes and which also validates whatever the model actually sends back, plus an execute function that runs once those inputs check out — typed, validated function calling with none of the orchestration baggage. It also ships an official openai-compatible provider package, so it talks to Kilo Gateway/DeepSeek the same way it'd talk to OpenAI, and it's still actively shipping (last release was just a couple days ago). You don't need their agent loop at all — just pull in the tool definitions and execute() logic and drop them wherever your T0–T3 orchestrator currently handles schema validation and execution. GitHub + 2
-One bonus: midday-ai/ai-sdk-tools (github.com/midday-ai/ai-sdk-tools) bolts on devtools for inspecting tool calls, messages, and execution flow directly in your app — handy if you want visibility into what your orchestrator's tools are actually doing when something misfires in production. GitHub
+3. Narrow it to the Calendar feature specifically — this isn't failing on
+   other tabs, so check what's different about the Calendar route's layout,
+   providers, or data-fetching compared to working tabs (Inbox, Tasks, etc).
+
+4. Once you find the root cause, fix it and explain in one sentence what
+   was broken and why it only affected Calendar.
+
+5. After fixing, double check this doesn't break multi-tenant isolation —
+   confirm the store/context is scoped per-tenant and not leaking a shared
+   instance across tenants.
+
+Report back: the exact file/line of the bug, the root cause, and the fix
+applied.
