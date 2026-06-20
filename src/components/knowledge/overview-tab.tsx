@@ -31,6 +31,10 @@ function hasNonEmptyValue(obj: Record<string, unknown>): boolean {
   })
 }
 
+function resolveNestedValue(obj: Record<string, unknown>, path: string): unknown {
+  return path.split(".").reduce((acc: any, key) => (acc != null ? acc[key] : undefined), obj)
+}
+
 export function OverviewTab({ businessProfile, sources, templates, usedTags, onNavigate }: OverviewTabProps) {
   const usedTagsSet = useMemo(() => new Set(usedTags || []), [usedTags])
   const mergedProfile = useMemo(() => {
@@ -45,10 +49,13 @@ export function OverviewTab({ businessProfile, sources, templates, usedTags, onN
       const fkey = t.field_key
 
       if (t.section === "business_profile") {
-        const extras = (mergedProfile?.extras || {}) as Record<string, unknown>
         let val: unknown = null
-        if (fkey.startsWith("extras.")) val = extras[fkey.replace("extras.", "")]
-        else val = mergedProfile?.[fkey]
+        if (fkey.startsWith("extras.")) {
+          const extras = (mergedProfile?.extras || {}) as Record<string, unknown>
+          val = extras[fkey.replace("extras.", "")]
+        } else {
+          val = resolveNestedValue(mergedProfile, fkey)
+        }
         if (val != null) {
           if (Array.isArray(val)) status = val.length > 0 ? "complete" : "empty"
           else if (typeof val === "object") status = hasNonEmptyValue(val as Record<string, unknown>) ? "complete" : "empty"
