@@ -11,7 +11,8 @@ export async function getOrCreateSession(supabase: any, {
   channel: string;
   agent_type: string;
 }) {
-  const dbChannel = channel === 'webchat' ? 'widget' : channel;
+  const ALLOWED_CHANNELS = ["whatsapp", "widget", "api", "test"];
+  const dbChannel = ALLOWED_CHANNELS.includes(channel) ? channel : 'widget';
 
   let { data: session } = await supabase
     .from('conversation_sessions')

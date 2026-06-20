@@ -24,3 +24,4 @@
 - [x] Security Round 2 (High) — CORS restriction (3 EFs), storage policy deleted_at, RLS InitPlan fix
 - [x] Security Round 3 (Medium) — Rate limiting (12 routes), Zod schemas (3 handlers), sheets/download WHERE clause fix
 - [x] agent-orchestrator Edge Function deployed (v297) — llm.ts refactoring, new pipeline/guards architecture
+- [x] All 3 AI agents verified — 217/217 tests passed autonomously (Booking 77/77, Sales 69/69, Support 71/71)

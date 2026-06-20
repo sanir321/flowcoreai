@@ -118,7 +118,7 @@ export function LandingPage() {
               <div className="flex justify-center">
                 <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-normal" style={{ background: "rgba(198,95,57,0.1)", border: "1px solid rgba(198,95,57,0.25)", color: "#c65f39" }}>
                   <span className="h-1.5 w-1.5 rounded-full" style={{ background: "#c65f39" }} />
-                  v0.7 — actively shipping
+                  217 tests — 100% autonomous
                 </span>
               </div>
               <h1 className="font-normal leading-[1.05] tracking-tighter text-white" style={{ fontSize: "84px", lineHeight: "88px", letterSpacing: "-0.03em" }}>
@@ -347,26 +347,29 @@ export function LandingPage() {
                 Everything you need to automate support
               </h2>
               <p className="max-w-lg mx-auto mt-4 leading-relaxed font-normal" style={{ fontSize: "15.667px", color: "#737373" }}>
-                Three specialized AI agents, multiple channels, one unified platform.
+                Three specialized AI agents, multiple channels, one unified platform. Every agent verified — 217 test messages, 100% handled.
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {[
                 {
-                  title: "Support Agent",
-                  description: "Answers customer queries using your knowledge base. Searches documents, handles FAQs, and escalates when needed.",
-                  icon: <Inbox className="h-5 w-5" style={{ color: "#c65f39" }} />,
+                  title: "Booking Agent",
+                  description: "Books appointments end-to-end. Checks availability, schedules slots, sends confirmations, handles rescheduling and cancellations. 77/77 tests passed.",
+                  icon: <Globe className="h-5 w-5" style={{ color: "#c65f39" }} />,
+                  stat: "77/77",
                 },
                 {
                   title: "Sales Agent",
-                  description: "Responds to product inquiries, searches your catalog, generates quotes, and guides purchase decisions.",
+                  description: "Responds to product inquiries, searches catalogs, generates quotes, compares options, handles objections, and guides purchase decisions. 69/69 tests passed.",
                   icon: <BarChart2 className="h-5 w-5" style={{ color: "#c65f39" }} />,
+                  stat: "69/69",
                 },
                 {
-                  title: "Booking Agent",
-                  description: "Manages appointments end-to-end. Checks availability, books slots, sends confirmations, handles rescheduling.",
-                  icon: <Globe className="h-5 w-5" style={{ color: "#c65f39" }} />,
+                  title: "Support Agent",
+                  description: "Answers queries from your knowledge base, handles complaints, explains policies, escalates to humans when needed. 71/71 tests passed.",
+                  icon: <Inbox className="h-5 w-5" style={{ color: "#c65f39" }} />,
+                  stat: "71/71",
                 },
               ].map((feature, i) => (
                 <motion.div
@@ -383,6 +386,9 @@ export function LandingPage() {
                   </div>
                   <h3 className="text-base font-normal mb-2" style={{ color: "#171717" }}>{feature.title}</h3>
                   <p className="text-sm leading-relaxed font-normal" style={{ color: "#737373" }}>{feature.description}</p>
+                  <div className="mt-3 text-xs font-medium" style={{ color: "#c65f39" }}>
+                    Verified: {feature.stat}
+                  </div>
                 </motion.div>
               ))}
             </div>

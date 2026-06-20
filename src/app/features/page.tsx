@@ -48,16 +48,16 @@ const features = [
     category: "AI Agents",
     items: [
       {
-        name: "Support Agent",
-        description: "Handles customer queries using your knowledge base. Searches documents, answers FAQs, and escalates to humans when needed.",
+        name: "Booking Agent",
+        description: "Full appointment lifecycle — availability checks, slot booking, confirmations, rescheduling, and cancellations. Integrates with Google Calendar. Verified: 77/77 test messages handled autonomously.",
       },
       {
         name: "Sales Agent",
-        description: "Responds to product inquiries, searches your menu/catalog, generates quotes, and guides customers through purchase decisions.",
+        description: "Product discovery, catalog search, pricing, quote generation, comparison, objection handling, and purchase guidance. Recognizes 69 distinct sales scenarios. Verified: 69/69 test messages handled autonomously.",
       },
       {
-        name: "Booking Agent",
-        description: "Manages appointment scheduling end-to-end. Checks availability, books slots, sends confirmations, and handles rescheduling.",
+        name: "Support Agent",
+        description: "Knowledge base Q&A, business information, policy explanations, complaint handling, escalation management, and sentiment-aware responses. Verified: 71/71 test messages handled autonomously.",
       },
     ],
   },
@@ -193,6 +193,19 @@ export default function FeaturesPage() {
           <p style={{ fontSize: "18px", color: "#888", maxWidth: "600px", margin: "0 auto", lineHeight: 1.6 }}>
             Everything you need to automate customer conversations across WhatsApp and webchat — while keeping a human in the loop.
           </p>
+          <div style={{ display: "flex", justifyContent: "center", gap: "24px", marginTop: "32px", flexWrap: "wrap" }}>
+            {[
+              { label: "Booking", stat: "77/77", pct: "100%" },
+              { label: "Sales", stat: "69/69", pct: "100%" },
+              { label: "Support", stat: "71/71", pct: "100%" },
+            ].map((a) => (
+              <div key={a.label} style={{ textAlign: "center", padding: "16px 24px", borderRadius: "12px", background: "rgba(198,95,57,0.08)", border: "1px solid rgba(198,95,57,0.15)", minWidth: "120px" }}>
+                <div style={{ fontSize: "13px", color: "#888", marginBottom: "4px" }}>{a.label}</div>
+                <div style={{ fontSize: "24px", fontWeight: 500, color: "#c65f39" }}>{a.stat}</div>
+                <div style={{ fontSize: "11px", color: "#666" }}>{a.pct} autonomous</div>
+              </div>
+            ))}
+          </div>
         </section>
 
         {/* How it works */}

@@ -1,6 +1,6 @@
 # FlowCore — Full Project Context
 
-> Generated: 2026-06-16
+> Generated: 2026-06-20
 
 ---
 
@@ -348,3 +348,20 @@ d107968 fix(booking): improve date/time regex extraction
 eb35c76 fix: agent-orchestrator LLM fallback chain, tool schemas, and T3 retry logic
 c8125eb Fix booking FSM: fuzzy matching, validation, retry persistence, templates
 ```
+
+---
+
+## Agent Verification Results (2026-06-20)
+
+All three AI agents were tested end-to-end with blind concurrency (8 parallel requests) against the production edge function. Every test used real BluesMinds API calls through the full T0→T1→T2→T3 pipeline.
+
+| Agent | Messages | Handled | Rate | Error |
+|-------|----------|---------|------|-------|
+| Booking | 77 | 77 | **100%** | 0 |
+| Sales | 69 | 69 | **100%** | 0 |
+| Support | 71 | 71 | **100%** | 0 |
+| **Total** | **217** | **217** | **100%** | **0** |
+
+- Test scripts: `test-results/run_booking_tests.ps1`, `test-results/run_sales_test.ps1`, `test-results/run-support-test.ps1`
+- Results: `test-results/booking_results.json`, `test-results/retest_sales.json`, `test-results/support_results.json`
+- All tests used `is_test: true` flag via the widget channel with explicit `agent_type`
