@@ -62,7 +62,9 @@ function getDayName(dateStr: string): string {
 }
 
 function validateBusinessHours(dateStr: string, ctx: PipelineContext): string | null {
-  const hours = (ctx.workspace as any)?.business_profile?.hours?.daily;
+  const hoursEnabled = (ctx.workspace as any)?.hours_enabled
+  if (hoursEnabled === false) return null
+  const hours = (ctx.workspace as any)?.business_profile?.hours?.daily
   if (!hours) return null;
   const dayName = getDayName(dateStr);
   const daySchedule = hours[dayName];

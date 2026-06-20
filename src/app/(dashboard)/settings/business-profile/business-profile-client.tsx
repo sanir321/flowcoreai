@@ -255,11 +255,46 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
 
           {/* Operating Hours */}
           <Card className="p-8 border-gray-100 rounded-[2rem] shadow-sm space-y-6">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500">
-                <Clock className="h-5 w-5" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500">
+                  <Clock className="h-5 w-5" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900 tracking-tight">Hours</h2>
+                  <p className="text-[11px] text-gray-400 mt-0.5">Enforce booking times</p>
+                </div>
               </div>
-              <h2 className="text-lg font-semibold text-gray-900 tracking-tight">Hours</h2>
+              <button
+                type="button"
+                onClick={() => {
+                  const enabled = !(profile as any).hours_enabled
+                  setProfile(prev => ({ ...prev, hours_enabled: enabled } as any))
+                  // Also set default hours when enabling
+                  if (enabled && !profile.hours?.daily) {
+                    const defaultDaily: Record<string, any> = {}
+                    for (const day of DAYS) {
+                      if (["saturday", "sunday"].includes(day)) {
+                        defaultDaily[day] = { open: "09:00", close: "17:00", closed: true }
+                      } else {
+                        defaultDaily[day] = { open: "09:00", close: "17:00", closed: false }
+                      }
+                    }
+                    setNestedField("hours", "daily", defaultDaily)
+                  }
+                }}
+                className={cn(
+                  "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
+                  (profile as any).hours_enabled ? "bg-emerald-500" : "bg-gray-200"
+                )}
+              >
+                <span
+                  className={cn(
+                    "inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform",
+                    (profile as any).hours_enabled ? "translate-x-6" : "translate-x-1"
+                  )}
+                />
+              </button>
             </div>
 
             <div className="space-y-4">
