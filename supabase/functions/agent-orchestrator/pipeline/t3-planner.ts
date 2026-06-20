@@ -52,7 +52,7 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
 
   const { data: latestMsg } = await ctx.supabase
     .from("messages")
-    .select("id, created_at, metadata")
+    .select("id, created_at, gowa_message_id")
     .eq("session_id", ctx.session.id)
     .eq("direction", "inbound")
     .order("created_at", { ascending: false })
@@ -60,7 +60,7 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
     .maybeSingle();
 
   const isStale = latestMsg 
-    && latestMsg.metadata?.gowa_message_id !== ctx.payload.gowa_message_id
+    && latestMsg.gowa_message_id !== ctx.payload.gowa_message_id
     && new Date(latestMsg.created_at).getTime() > (ctx.payload.timestamp || 0) + 2000;
     
   if (isStale) {
@@ -483,6 +483,15 @@ function enrichResponseWithToolResults(
         }
         if (data.meeting_link) {
           appended.push(`\n\nGoogle Meet link: ${data.meeting_link}`);
+        }
+        if (data.appointment_link) {
+          appended.push(`\n\nAppointment details: ${data.appointment_link}`);
+        }
+        if (data.already_booked) {
+          appended.push(`\n\nExisting appointment ID: ${data.id}. Service: ${data.service}. Date: ${data.start_at}`);
+        }
+        if (data.error) {
+          appended.push(`\n\n${data.error}`);
         }
         break;
       }

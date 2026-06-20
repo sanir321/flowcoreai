@@ -154,8 +154,8 @@ export function AppointmentsClient({ initialAppointments, workspaceId, isModuleA
   // Filters
   const [statusFilter, setStatusFilter] = useState<string | null>(null)
   const [dateRange, setDateRange] = useState({ 
-    start: startOfWeek(new Date(), { weekStartsOn: 1 }), 
-    end: endOfWeek(new Date(), { weekStartsOn: 1 }) 
+    start: startOfDay(new Date()), 
+    end: endOfMonth(new Date()) 
   })
   const [pickerMonth, setPickerMonth] = useState(new Date())
 

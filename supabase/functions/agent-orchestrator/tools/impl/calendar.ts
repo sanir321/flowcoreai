@@ -67,16 +67,24 @@ function validateBusinessHours(dateStr: string, ctx: PipelineContext): string | 
   const dayName = getDayName(dateStr);
   const daySchedule = hours[dayName];
   if (!daySchedule) return null;
-  if (daySchedule.closed) return "We're closed on that day. Please choose a different day.";
+  const errors: string[] = [];
+  if (daySchedule.closed) {
+    const openDays = Object.entries(hours)
+      .filter(([, d]: [string, any]) => !d.closed)
+      .map(([day, d]: [string, any]) => `${day.charAt(0).toUpperCase() + day.slice(1)} ${d.open}-${d.close}`);
+    errors.push(`We're closed on ${dayName.charAt(0).toUpperCase() + dayName.slice(1)}.`);
+    if (openDays.length) errors.push(`Open: ${openDays.join(', ')}.`);
+    return errors.join(' ');
+  }
   if (daySchedule.open && daySchedule.close) {
     const d = new Date(dateStr);
     const istTime = new Date(d.getTime() + IST_OFFSET);
     const timeStr = `${String(istTime.getUTCHours()).padStart(2, "0")}:${String(istTime.getUTCMinutes()).padStart(2, "0")}`;
     if (timeStr < daySchedule.open || timeStr >= daySchedule.close) {
-      return `We're closed at that time. Our hours on ${dayName.charAt(0).toUpperCase() + dayName.slice(1)} are ${daySchedule.open}-${daySchedule.close}.`;
+      errors.push(`We're closed at ${timeStr}. Our hours on ${dayName.charAt(0).toUpperCase() + dayName.slice(1)} are ${daySchedule.open}-${daySchedule.close}.`);
     }
   }
-  return null;
+  return errors.length ? errors.join(' ') : null;
 }
 
 export async function checkAvailability(
@@ -245,8 +253,12 @@ export async function createAppointment(
     ? { ...appt, google_event_id: googleEventId, meeting_link: meetLink }
     : appt;
 
+  const appUrl = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://7flowcore.vercel.app";
+  const appointmentLink = `${appUrl}/appointment/${appt.id}`;
+
   return {
     ...updatedAppt,
+    appointment_link: appointmentLink,
     ...(calendarSyncFailed ? { warning: "Appointment saved but Google Calendar sync failed. A Meet link was not generated." } : {})
   };
 }

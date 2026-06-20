@@ -22,11 +22,14 @@ export function buildSalesSystemPrompt(ctx: PipelineContext): string {
   }
   if (workspace.services_offered) profileParts.push(`Services: ${workspace.services_offered}`)
   if (profile.hours?.daily) {
-    const days = Object.entries(profile.hours.daily)
+    const openDays = Object.entries(profile.hours.daily)
       .filter(([, d]: [string, any]) => !d.closed)
-      .map(([day, d]: [string, any]) => `${day}: ${d.open}-${d.close}`)
-      .join(', ')
-    if (days) profileParts.push(`Hours: ${days}`)
+      .map(([day, d]: [string, any]) => `${day.charAt(0).toUpperCase() + day.slice(1)}: ${d.open}-${d.close}`)
+    const closedDays = Object.entries(profile.hours.daily)
+      .filter(([, d]: [string, any]) => d.closed)
+      .map(([day]: [string, any]) => day.charAt(0).toUpperCase() + day.slice(1))
+    if (openDays.length) profileParts.push(`Business Hours: ${openDays.join(', ')}`)
+    if (closedDays.length) profileParts.push(`Closed on: ${closedDays.join(', ')}`)
   }
   if (profile.amenities?.length) profileParts.push(`Amenities: ${profile.amenities.join(', ')}`)
   if (profile.pricing?.description) profileParts.push(`Pricing: ${profile.pricing.description}`)
