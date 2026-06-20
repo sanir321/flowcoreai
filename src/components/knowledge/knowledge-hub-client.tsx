@@ -50,7 +50,7 @@ export function KnowledgeHubClient({
     else if (tab === "sources") setActiveTab("sources")
   }, [])
 
-  const handleRegenerateKB = async () => {
+  const handleSyncKB = async () => {
     setRegenerating(true)
     try {
       const response = await fetch(`/api/knowledge/regenerate-from-profile`, {
@@ -62,7 +62,7 @@ export function KnowledgeHubClient({
       if (data.error) {
         toast.error(data.error)
       } else {
-        toast.success(`KB regenerated: ${data.chunks_created} chunks created`)
+        toast.success(`Synced: ${data.chunks_created} chunks created`)
         window.location.reload()
       }
     } catch (err: unknown) {
@@ -99,12 +99,12 @@ export function KnowledgeHubClient({
         </nav>
         <div className="p-3 bg-white">
           <button
-            onClick={handleRegenerateKB}
+            onClick={handleSyncKB}
             disabled={regenerating}
             className="w-full inline-flex items-center justify-center gap-2 h-9 px-3 rounded-xl border border-gray-200 bg-white text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-all disabled:opacity-50"
           >
             {regenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
-            Regenerate
+            Sync Profile
           </button>
         </div>
       </aside>
