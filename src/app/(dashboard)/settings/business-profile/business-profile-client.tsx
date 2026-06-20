@@ -262,66 +262,124 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
               <h2 className="text-lg font-semibold text-gray-900 tracking-tight">Hours</h2>
             </div>
 
-            <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
-              {DAYS.map(day => {
-                const dayData = safeDaily[day] || { open: "09:00", close: "17:00", closed: false }
-                const isOpen = !dayData.closed
-                
-                return (
-                  <div key={day} className="flex items-center justify-between p-4 rounded-2xl bg-gray-50/50 border border-gray-100/50 transition-all hover:bg-white hover:shadow-sm">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 text-xs font-bold text-gray-900 capitalize">{DAY_LABELS[day]}</div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const newDaily = { ...safeDaily }
-                          newDaily[day] = { ...dayData, closed: !isOpen }
-                          setNestedField("hours", "daily", newDaily)
-                        }}
-                        className={cn(
-                          "h-6 w-6 rounded-lg flex items-center justify-center transition-all",
-                          isOpen 
-                            ? "bg-emerald-50 text-emerald-500 border border-emerald-200 hover:bg-emerald-100" 
-                            : "bg-gray-100 text-gray-400 border border-gray-200 hover:bg-gray-200"
-                        )}
-                        aria-pressed={isOpen}
-                        aria-label={isOpen ? `Mark ${DAY_LABELS[day]} as closed` : `Mark ${DAY_LABELS[day]} as open`}
-                      >
-                        {isOpen ? <CheckCircle2 className="h-3.5 w-3.5" /> : <X className="h-3.5 w-3.5" />}
-                      </button>
-                      <span className="text-xs font-medium text-gray-500 w-14">{isOpen ? "Open" : "Closed"}</span>
-                    </div>
+            <div className="space-y-4">
+              {/* Quick Presets */}
+              <div className="flex flex-wrap gap-2">
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Quick set:</span>
+                {[
+                  { label: "9–5 weekdays", open: "09:00", close: "17:00", weekdays: true },
+                  { label: "10–6 weekdays", open: "10:00", close: "18:00", weekdays: true },
+                  { label: "9–9 daily", open: "09:00", close: "21:00", weekdays: false },
+                  { label: "All closed", open: "09:00", close: "17:00", weekdays: false, allClosed: true },
+                ].map(preset => (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    onClick={() => {
+                      const newDaily = { ...safeDaily }
+                      for (const day of DAYS) {
+                        if (preset.allClosed) {
+                          newDaily[day] = { ...newDaily[day], closed: true }
+                        } else if (preset.weekdays && ["saturday", "sunday"].includes(day)) {
+                          newDaily[day] = { ...newDaily[day], closed: true }
+                        } else {
+                          newDaily[day] = { open: preset.open, close: preset.close, closed: false }
+                        }
+                      }
+                      setNestedField("hours", "daily", newDaily)
+                    }}
+                    className="px-3 py-1.5 text-[11px] font-medium rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-all"
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
 
-                    {isOpen && (
-                      <div className="flex items-center gap-2">
-                        <Input 
-                          type="time"
-                          value={dayData.open || "09:00"} 
-                          onChange={e => {
+              {/* Copy time to all open days */}
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Apply first open day's hours to all:</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const firstOpen = Object.values(safeDaily).find(d => !d.closed)
+                    if (!firstOpen) return
+                    const newDaily = { ...safeDaily }
+                    for (const day of DAYS) {
+                      if (!newDaily[day]?.closed) {
+                        newDaily[day] = { open: firstOpen.open, close: firstOpen.close, closed: false }
+                      }
+                    }
+                    setNestedField("hours", "daily", newDaily)
+                    toast.success("Applied to all open days")
+                  }}
+                  className="px-3 py-1.5 text-[11px] font-medium rounded-lg bg-[#c65f39]/10 text-[#c65f39] hover:bg-[#c65f39]/20 transition-all"
+                >
+                  Copy hours
+                </button>
+              </div>
+
+              {/* Day rows */}
+              <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
+                {DAYS.map(day => {
+                  const dayData = safeDaily[day] || { open: "09:00", close: "17:00", closed: false }
+                  const isOpen = !dayData.closed
+                  
+                  return (
+                    <div key={day} className="flex items-center justify-between p-3 rounded-xl bg-gray-50/50 border border-gray-100/50 transition-all hover:bg-white hover:shadow-sm">
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => {
                             const newDaily = { ...safeDaily }
-                            newDaily[day] = { ...dayData, open: e.target.value }
+                            newDaily[day] = { ...dayData, closed: !isOpen }
                             setNestedField("hours", "daily", newDaily)
                           }}
-                          className="h-9 w-24 text-center text-xs rounded-lg border-gray-100 bg-white" 
-                          aria-label={`${DAY_LABELS[day]} opening time`}
-                        />
-                        <span className="text-gray-300 text-xs">to</span>
-                        <Input 
-                          type="time"
-                          value={dayData.close || "17:00"} 
-                          onChange={e => {
-                            const newDaily = { ...safeDaily }
-                            newDaily[day] = { ...dayData, close: e.target.value }
-                            setNestedField("hours", "daily", newDaily)
-                          }}
-                          className="h-9 w-24 text-center text-xs rounded-lg border-gray-100 bg-white" 
-                          aria-label={`${DAY_LABELS[day]} closing time`}
-                        />
+                          className={cn(
+                            "h-5 w-5 rounded-md flex items-center justify-center transition-all",
+                            isOpen 
+                              ? "bg-emerald-500 text-white" 
+                              : "bg-gray-200 text-gray-400"
+                          )}
+                          aria-pressed={isOpen}
+                          aria-label={isOpen ? `Mark ${DAY_LABELS[day]} as closed` : `Mark ${DAY_LABELS[day]} as open`}
+                        >
+                          {isOpen ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                        </button>
+                        <span className="text-xs font-semibold text-gray-900 w-10">{DAY_LABELS[day]}</span>
+                        <span className="text-[11px] text-gray-400 w-12">{isOpen ? "Open" : "Closed"}</span>
                       </div>
-                    )}
-                  </div>
-                )
-              })}
+
+                      {isOpen && (
+                        <div className="flex items-center gap-1.5">
+                          <Input 
+                            type="time"
+                            value={dayData.open || "09:00"} 
+                            onChange={e => {
+                              const newDaily = { ...safeDaily }
+                              newDaily[day] = { ...dayData, open: e.target.value }
+                              setNestedField("hours", "daily", newDaily)
+                            }}
+                            className="h-8 w-20 text-center text-xs rounded-lg border-gray-100 bg-white" 
+                            aria-label={`${DAY_LABELS[day]} opening time`}
+                          />
+                          <span className="text-gray-300 text-xs">–</span>
+                          <Input 
+                            type="time"
+                            value={dayData.close || "17:00"} 
+                            onChange={e => {
+                              const newDaily = { ...safeDaily }
+                              newDaily[day] = { ...dayData, close: e.target.value }
+                              setNestedField("hours", "daily", newDaily)
+                            }}
+                            className="h-8 w-20 text-center text-xs rounded-lg border-gray-100 bg-white" 
+                            aria-label={`${DAY_LABELS[day]} closing time`}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           </Card>
         </div>
