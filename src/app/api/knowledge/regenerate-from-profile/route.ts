@@ -204,22 +204,37 @@ export async function POST(req: Request) {
       .neq("source_id", sourceId)
       .filter("metadata->>source", "eq", "auto-generated")
 
-    // Trigger embed-text batch embedding chain via edge function
-    supabase.functions.invoke("embed-text", {
+    // Kick off embedding — first batch
+    await supabase.functions.invoke("embed-text", {
       body: { source_id: sourceId, workspace_id, embed_batch: true }
-    }).catch((err) => {
-      console.error("[REGENERATE] embed-text trigger failed:", err)
-      supabase.from("kb_sources").update({
-        status: "failed",
-        error_message: "Embedding trigger failed"
-      }).eq("id", sourceId).then(() => {}, () => {})
     })
+
+    // Poll until all chunks are embedded (source status becomes 'active' or 'failed')
+    let status = "processing"
+    let attempts = 0
+    while (status === "processing" && attempts < 20) {
+      await new Promise(r => setTimeout(r, 1000))
+      const { data: src } = await supabase
+        .from("kb_sources")
+        .select("status, error_message")
+        .eq("id", sourceId)
+        .single()
+      status = src?.status || "processing"
+      attempts++
+    }
+
+    const { count: finalChunks } = await supabase
+      .from("kb_chunks")
+      .select("id", { count: "exact", head: true })
+      .eq("source_id", sourceId)
+      .is("deleted_at", null)
 
     return NextResponse.json({
       success: true,
-      chunks_created: rows.length,
+      chunks_created: finalChunks || rows.length,
       source_id: sourceId,
       tags: sections.map(s => s.tag),
+      embedded: status === "active",
     })
   } catch (err: any) {
     console.error("[REGENERATE] Error:", err)

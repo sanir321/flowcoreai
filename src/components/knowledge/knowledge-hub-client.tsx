@@ -62,7 +62,7 @@ export function KnowledgeHubClient({
       if (data.error) {
         toast.error(data.error)
       } else {
-        toast.success(`Synced: ${data.chunks_created} chunks created`)
+        toast.success(data.embedded ? `Synced: ${data.chunks_created} chunks embedded` : `Synced: ${data.chunks_created} chunks created`)
         window.location.reload()
       }
     } catch (err: unknown) {
