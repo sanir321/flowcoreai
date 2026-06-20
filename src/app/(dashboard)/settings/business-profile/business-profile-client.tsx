@@ -335,21 +335,23 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
                             setNestedField("hours", "daily", newDaily)
                           }}
                           className={cn(
-                            "h-5 w-5 rounded-md flex items-center justify-center transition-all",
-                            isOpen 
-                              ? "bg-emerald-500 text-white" 
-                              : "bg-gray-200 text-gray-400"
+                            "relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0",
+                            isOpen ? "bg-emerald-500" : "bg-gray-300"
                           )}
                           aria-pressed={isOpen}
                           aria-label={isOpen ? `Mark ${DAY_LABELS[day]} as closed` : `Mark ${DAY_LABELS[day]} as open`}
                         >
-                          {isOpen ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                          <span
+                            className={cn(
+                              "inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform",
+                              isOpen ? "translate-x-6" : "translate-x-1"
+                            )}
+                          />
                         </button>
                         <span className="text-xs font-semibold text-gray-900 w-10">{DAY_LABELS[day]}</span>
-                        <span className="text-[11px] text-gray-400 w-12">{isOpen ? "Open" : "Closed"}</span>
                       </div>
 
-                      {isOpen && (
+                      {isOpen ? (
                         <div className="flex items-center gap-1.5">
                           <Input 
                             type="time"
@@ -375,6 +377,8 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
                             aria-label={`${DAY_LABELS[day]} closing time`}
                           />
                         </div>
+                      ) : (
+                        <span className="text-[11px] text-gray-400 font-medium">Closed</span>
                       )}
                     </div>
                   )
