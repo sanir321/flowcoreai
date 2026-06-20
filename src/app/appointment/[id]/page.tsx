@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import { Card } from "@/components/ui/card"
 import { Calendar, MapPin, Video, Building2, CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import type { Metadata } from "next"
 
 const IST_OFFSET = 5.5 * 60 * 60 * 1000;
 
@@ -12,6 +13,36 @@ function formatIST(isoString: string): string {
   const datePart = ist.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
   const timePart = ist.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true, timeZone: "UTC" });
   return `${datePart} at ${timePart} IST`;
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params
+  const supabase = createAdminClient()
+  const { data: appt } = await supabase
+    .from("appointments")
+    .select("customer_name, service, start_at, workspace:workspaces(name)")
+    .eq("id", id)
+    .single()
+
+  if (!appt) return { title: "Appointment Not Found" }
+
+  const workspace = appt.workspace as any
+  const dateStr = formatIST(appt.start_at)
+
+  return {
+    title: `Appointment Confirmed — ${workspace?.name || "FlowCore"}`,
+    description: `Hi ${appt.customer_name}, your ${appt.service} appointment on ${dateStr} is confirmed.`,
+    openGraph: {
+      title: `Appointment Confirmed — ${workspace?.name || "FlowCore"}`,
+      description: `Hi ${appt.customer_name}, your ${appt.service} appointment on ${dateStr} is confirmed.`,
+      type: "website",
+    },
+    twitter: {
+      card: "summary",
+      title: `Appointment Confirmed — ${workspace?.name || "FlowCore"}`,
+      description: `Hi ${appt.customer_name}, your ${appt.service} appointment on ${dateStr} is confirmed.`,
+    },
+  }
 }
 
 export default async function PublicAppointmentPage({ params }: { params: Promise<{ id: string }> }) {
