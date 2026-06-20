@@ -595,20 +595,33 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
             </Card>
           )}
 
-          {/* Policies — link to Knowledge Base */}
-          <Card className="p-6 border-gray-100 rounded-[2rem] shadow-sm">
+          {/* Policies */}
+          <Card className="p-8 border-gray-100 rounded-[2rem] shadow-sm space-y-6">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-500">
                 <Building2 className="h-5 w-5" />
               </div>
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900 tracking-tight">Policies</h2>
-                <p className="text-xs text-gray-400">Add policies as Knowledge Base entries for AI to reference them.</p>
-              </div>
+              <h2 className="text-lg font-semibold text-gray-900 tracking-tight">Policies</h2>
             </div>
-            <a href="/knowledge" className="mt-4 inline-flex items-center text-sm font-medium text-[#c65f39] hover:underline">
-              Go to Knowledge Base →
-            </a>
+            <p className="text-xs text-gray-400">These are injected into the AI agent system prompt for accurate policy references.</p>
+            <div className="space-y-5">
+              {[
+                { key: "refund", label: "Refund Policy", placeholder: "e.g. Full refund within 7 days if no work has commenced." },
+                { key: "payment", label: "Payment Terms", placeholder: "e.g. 50% advance, 50% upon completion." },
+                { key: "cancellation", label: "Cancellation Policy", placeholder: "e.g. Free cancellation up to 48 hours before appointment." },
+                { key: "warranty", label: "Warranty", placeholder: "e.g. 5-year structural warranty on all construction work." },
+              ].map(field => (
+                <div key={field.key} className="space-y-1.5">
+                  <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">{field.label}</Label>
+                  <Textarea
+                    value={(profile.policies as any)?.[field.key] || ""}
+                    onChange={e => setNestedField("policies", field.key, e.target.value)}
+                    placeholder={field.placeholder}
+                    className="min-h-[60px] rounded-xl bg-gray-50/50 border-gray-100 focus:bg-white focus:border-[#c65f39] focus:ring-1 focus:ring-[#c65f39]/10 transition-all resize-none text-sm"
+                  />
+                </div>
+              ))}
+            </div>
           </Card>
         </div>
       </div>
