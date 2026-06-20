@@ -165,7 +165,9 @@ export function AppointmentsClient({ initialAppointments, workspaceId, isModuleA
       if (statusFilter && appt.status !== statusFilter) return false;
       
       // Date range filter - Apply to both views for consistency
+      if (!appt.start_at || !dateRange.start || !dateRange.end) return true;
       const apptDate = new Date(appt.start_at);
+      if (isNaN(apptDate.getTime())) return true;
       const start = startOfDay(dateRange.start);
       const end = endOfDay(dateRange.end);
       if (apptDate < start || apptDate > end) return false;
@@ -426,17 +428,23 @@ export function AppointmentsClient({ initialAppointments, workspaceId, isModuleA
                                            const inRange = isWithinInterval(day, { start: dateRange.start, end: dateRange.end });
                                            const isCurrentMonth = day.getMonth() === monthDate.getMonth();
 
-                                           return (
-                                             <button 
-                                              key={i} 
-                                              onClick={() => {
-                                                if (isSameDay(day, dateRange.start)) return;
-                                                if (day < dateRange.start) {
-                                                  setDateRange({ start: startOfDay(day), end: endOfDay(dateRange.end) });
-                                                } else {
-                                                  setDateRange({ start: dateRange.start, end: endOfDay(day) });
-                                                }
-                                              }}
+                                            return (
+                                              <button 
+                                               key={i} 
+                                               onClick={() => {
+                                                 try {
+                                                   if (!day || !(day instanceof Date) || isNaN(day.getTime())) return;
+                                                   if (!dateRange.start || !dateRange.end) return;
+                                                   if (isSameDay(day, dateRange.start)) return;
+                                                   if (day < dateRange.start) {
+                                                     setDateRange({ start: startOfDay(day), end: endOfDay(dateRange.end) });
+                                                   } else {
+                                                     setDateRange({ start: dateRange.start, end: endOfDay(day) });
+                                                   }
+                                                 } catch (e) {
+                                                   console.error('[DATE_PICKER_CLICK_ERROR]', e);
+                                                 }
+                                               }}
                                               className={cn(
                                                 "w-8 h-8 text-[11px] font-semibold flex items-center justify-center transition-all relative",
                                                 !isCurrentMonth && "opacity-20",
