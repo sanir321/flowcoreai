@@ -4,8 +4,17 @@ import { getGoogleConfig } from "./google.ts";
 const APP_URL = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://7flowcore.vercel.app";
 const CRON_SECRET = Deno.env.get("INTERNAL_CRON_SECRET") || "";
 
+function potentialToScore(potential: string): number {
+  switch (potential) {
+    case "high": return 80;
+    case "intermediate": return 50;
+    case "low": return 20;
+    default: return 0;
+  }
+}
+
 export async function captureLead(
-  params: { name?: string; email?: string; phone?: string; notes?: string },
+  params: { name?: string; email?: string; phone?: string; notes?: string; potential?: string },
   ctx: PipelineContext
 ) {
   if (!params.name && !params.email && !params.phone) {
@@ -18,17 +27,21 @@ export async function captureLead(
     .eq("workspace_id", ctx.payload.workspace_id)
     .or(`whatsapp_jid.eq.${jid},session_token.eq.${jid}`)
     .maybeSingle();
+  const updateData: Record<string, unknown> = {
+    name: params.name, email: params.email, phone: params.phone,
+    notes: params.notes ? `[Lead] ${params.notes}` : undefined,
+    updated_at: new Date().toISOString()
+  };
+  if (params.potential) updateData.lead_score = potentialToScore(params.potential);
+  const insertData: Record<string, unknown> = {
+    workspace_id: ctx.payload.workspace_id,
+    [ctx.payload.source === "whatsapp" ? "whatsapp_jid" : "session_token"]: jid,
+    name: params.name, email: params.email, phone: params.phone, notes: params.notes
+  };
+  if (params.potential) insertData.lead_score = potentialToScore(params.potential);
   const { data: contact } = existing
-    ? await ctx.supabase.from("contacts").update({
-        name: params.name, email: params.email, phone: params.phone,
-        notes: params.notes ? `[Lead] ${params.notes}` : undefined,
-        updated_at: new Date().toISOString()
-      }).eq("id", existing.id).select().single()
-    : await ctx.supabase.from("contacts").insert({
-        workspace_id: ctx.payload.workspace_id,
-        [ctx.payload.source === "whatsapp" ? "whatsapp_jid" : "session_token"]: jid,
-        name: params.name, email: params.email, phone: params.phone, notes: params.notes
-      }).select().single();
+    ? await ctx.supabase.from("contacts").update(updateData).eq("id", existing.id).select().single()
+    : await ctx.supabase.from("contacts").insert(insertData).select().single();
 
   // Link contact to session immediately (fix: session.contact_id was never set)
   let sessionLinked = false;
@@ -44,7 +57,7 @@ export async function captureLead(
     const gConfig = await getGoogleConfig(ctx.supabase, ctx.payload.workspace_id);
     if (gConfig?.sheet_id) {
       const sheetRange = gConfig.sheet_range ?? "Sheet1!A:Z";
-      const row = [params.name ?? "", params.email ?? "", params.phone ?? "", "", "", new Date().toISOString(), new Date().toISOString()];
+      const row = [params.name ?? "", params.email ?? "", params.phone ?? "", params.potential ?? "", "", new Date().toISOString(), new Date().toISOString()];
       await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${gConfig.sheet_id}/values/${sheetRange}:append?valueInputOption=USER_ENTERED`, {
         method: "POST",
         headers: { Authorization: `Bearer ${gConfig.access_token}`, "Content-Type": "application/json" },

@@ -6,7 +6,7 @@ export async function middleware(request: NextRequest) {
   // Generate CSP nonce (base64-encoded random bytes)
   const nonce = randomBytes(16).toString("base64")
 
-  // EMERGENCY 431 GUARD: Clear bloated cookies by setting Max-Age=0
+  // EMERGENCY 431 GUARD: Clear non-auth cookies if header size exceeds 12KB
   const requestHeaders = new Headers(request.headers)
   const headerSize = JSON.stringify([...requestHeaders.entries()]).length
 
@@ -14,7 +14,9 @@ export async function middleware(request: NextRequest) {
     const response = NextResponse.redirect(new URL('/login', request.url))
     const allCookies = request.cookies.getAll()
     allCookies.forEach(cookie => {
-      response.cookies.set(cookie.name, '', { maxAge: 0, path: '/' })
+      if (!cookie.name.includes("sb-")) {
+        response.cookies.set(cookie.name, '', { maxAge: 0, path: '/' })
+      }
     })
     return response
   }
@@ -61,11 +63,16 @@ export async function middleware(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_URL || "",
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
     {
+      cookieOptions: {
+        maxAge: 60 * 60 * 24 * 30,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production"
+      },
       cookies: {
         getAll() {
           return request.cookies.getAll()
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet, headers) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           )
@@ -73,6 +80,11 @@ export async function middleware(request: NextRequest) {
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
           )
+          if (headers) {
+            Object.entries(headers).forEach(([key, value]) =>
+              supabaseResponse.headers.set(key, value)
+            )
+          }
         },
       },
     }

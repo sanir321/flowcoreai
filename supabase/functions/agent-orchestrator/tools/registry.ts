@@ -33,6 +33,7 @@ export const ALL_TOOLS: Record<string, ToolDefinition> = {
         email: { type: "string", description: "Customer email." },
         phone: { type: "string", description: "Customer phone." },
         notes: { type: "string", description: "Context notes or lead details." },
+        potential: { type: "string", enum: ["high", "intermediate", "low"], description: "For capture-lead: lead potential assessment." },
         stage: { type: "string", enum: ["new", "contacted", "qualified", "proposal", "negotiation", "won", "lost"], description: "For update-stage: pipeline stage." },
         hours: { type: "number", description: "For schedule-follow-up: hours from now." },
         message: { type: "string", description: "For schedule-follow-up: follow-up message content." }
