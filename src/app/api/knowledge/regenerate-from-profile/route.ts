@@ -1,13 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
-import { createClient as createAdminClient } from "@supabase/supabase-js"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { rateLimit } from "@/lib/rate-limit"
 
-const supabaseAdmin = createAdminClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+const supabaseAdmin = createAdminClient()
 
 const PROFILE_SOURCE_LABEL = "Business Profile (auto-generated)"
 
@@ -167,7 +164,7 @@ export async function POST(req: Request) {
     if (existingSource) {
       sourceId = existingSource.id
     } else {
-      const { data: newSource } = await supabaseAdmin
+      const { data: newSource, error: insertErr } = await supabaseAdmin
         .from("kb_sources")
         .insert({
           workspace_id,
@@ -177,6 +174,10 @@ export async function POST(req: Request) {
         })
         .select()
         .single()
+      if (insertErr) {
+        console.error("[SYNC] Source insert error:", insertErr)
+        return NextResponse.json({ error: `Failed to create source: ${insertErr.message}` }, { status: 500 })
+      }
       if (newSource) sourceId = newSource.id
     }
 
