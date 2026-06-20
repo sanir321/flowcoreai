@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import { logAudit } from "@/lib/audit"
+import { Json } from "@/types/supabase"
 
 const businessProfileSchema = z.object({
   workspace_id: z.string().uuid(),
@@ -49,7 +50,7 @@ export async function getBusinessProfile(workspaceId: string) {
   const userWsId = user.app_metadata?.workspace_id
   if (!userWsId || userWsId !== workspaceId) return { data: null, error: "Unauthorized" }
 
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from("workspaces")
     .select("business_profile")
     .eq("id", workspaceId)
@@ -83,7 +84,7 @@ export async function updateBusinessProfile(input: unknown) {
     const userWsId = user.app_metadata?.workspace_id
     if (!userWsId || userWsId !== workspaceId) return { data: null, error: "Unauthorized" }
 
-    const { data: existing } = await (supabase as any)
+    const { data: existing } = await supabase
       .from("workspaces")
       .select("business_profile")
       .eq("id", workspaceId)
@@ -111,10 +112,10 @@ export async function updateBusinessProfile(input: unknown) {
       result.data.profile as Record<string, unknown>,
     )
 
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from("workspaces")
       .update({
-        business_profile: merged as any,
+        business_profile: merged as Json,
         updated_at: new Date().toISOString(),
       })
       .eq("id", workspaceId)
@@ -171,9 +172,9 @@ export async function getRequiredInfo(workspaceId: string): Promise<{ data: Requ
     const userWsId = user.app_metadata?.workspace_id
     if (!userWsId || userWsId !== workspaceId) return { data: null, error: "Unauthorized" }
 
-    const wsResult = await (supabase as any)
+    const wsResult = await supabase
       .from("workspaces")
-      .select("name, business_profile")
+      .select("name, business_profile, business_type")
       .eq("id", workspaceId)
       .single()
 
@@ -187,7 +188,7 @@ export async function getRequiredInfo(workspaceId: string): Promise<{ data: Requ
       ...businessProfile,
     }
 
-    const { data: templates, error } = await (supabase as any)
+    const { data: templates, error } = await supabase
       .from("required_info_templates")
       .select("*")
       .in("business_type", ["*", wsResult.data.business_type || ""])
@@ -195,7 +196,7 @@ export async function getRequiredInfo(workspaceId: string): Promise<{ data: Requ
 
     if (error) return { data: null, error: error.message }
 
-    const { data: tags } = await (supabase as any).rpc("get_distinct_kb_tags", {
+    const { data: tags } = await supabase.rpc("get_distinct_kb_tags", {
       p_workspace_id: workspaceId
     })
 

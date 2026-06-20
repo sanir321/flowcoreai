@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -233,28 +233,46 @@ export type Database = {
       billing_transactions: {
         Row: {
           amount_credits: number
+          amount_paid: number | null
           created_at: string
+          currency: string
           deleted_at: string | null
           description: string | null
           id: string
+          payment_status: string
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
+          razorpay_signature: string | null
           transaction_type: string
           workspace_id: string
         }
         Insert: {
           amount_credits: number
+          amount_paid?: number | null
           created_at?: string
+          currency?: string
           deleted_at?: string | null
           description?: string | null
           id?: string
+          payment_status?: string
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          razorpay_signature?: string | null
           transaction_type: string
           workspace_id: string
         }
         Update: {
           amount_credits?: number
+          amount_paid?: number | null
           created_at?: string
+          currency?: string
           deleted_at?: string | null
           description?: string | null
           id?: string
+          payment_status?: string
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          razorpay_signature?: string | null
           transaction_type?: string
           workspace_id?: string
         }
@@ -415,6 +433,10 @@ export type Database = {
           first_contact: string
           id: string
           last_active: string | null
+          last_followed_up_at: string | null
+          lead_score: number | null
+          lead_source: string | null
+          merged_into: string | null
           name: string | null
           notes: string | null
           phone: string | null
@@ -434,6 +456,10 @@ export type Database = {
           first_contact?: string
           id?: string
           last_active?: string | null
+          last_followed_up_at?: string | null
+          lead_score?: number | null
+          lead_source?: string | null
+          merged_into?: string | null
           name?: string | null
           notes?: string | null
           phone?: string | null
@@ -453,6 +479,10 @@ export type Database = {
           first_contact?: string
           id?: string
           last_active?: string | null
+          last_followed_up_at?: string | null
+          lead_score?: number | null
+          lead_source?: string | null
+          merged_into?: string | null
           name?: string | null
           notes?: string | null
           phone?: string | null
@@ -465,6 +495,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "contacts_merged_into_fkey"
+            columns: ["merged_into"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "contacts_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
@@ -475,6 +512,7 @@ export type Database = {
       }
       conversation_sessions: {
         Row: {
+          active_agent: string | null
           agent_type: string | null
           channel: string
           contact_id: string | null
@@ -483,14 +521,17 @@ export type Database = {
           customer_name: string | null
           deleted_at: string | null
           failed_attempts: number
+          handoff_at: string | null
           handoff_reason: string | null
           id: string
           is_test: boolean
           last_customer_message_at: string | null
+          last_intent: string | null
           last_message_at: string | null
           last_message_preview: string | null
           message_count: number
           metadata: Json
+          pending_confirmation: Json | null
           resolved_by: string | null
           status: string
           total_tokens_used: number
@@ -500,6 +541,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          active_agent?: string | null
           agent_type?: string | null
           channel: string
           contact_id?: string | null
@@ -508,14 +550,17 @@ export type Database = {
           customer_name?: string | null
           deleted_at?: string | null
           failed_attempts?: number
+          handoff_at?: string | null
           handoff_reason?: string | null
           id?: string
           is_test?: boolean
           last_customer_message_at?: string | null
+          last_intent?: string | null
           last_message_at?: string | null
           last_message_preview?: string | null
           message_count?: number
           metadata?: Json
+          pending_confirmation?: Json | null
           resolved_by?: string | null
           status?: string
           total_tokens_used?: number
@@ -525,6 +570,7 @@ export type Database = {
           workspace_id: string
         }
         Update: {
+          active_agent?: string | null
           agent_type?: string | null
           channel?: string
           contact_id?: string | null
@@ -533,14 +579,17 @@ export type Database = {
           customer_name?: string | null
           deleted_at?: string | null
           failed_attempts?: number
+          handoff_at?: string | null
           handoff_reason?: string | null
           id?: string
           is_test?: boolean
           last_customer_message_at?: string | null
+          last_intent?: string | null
           last_message_at?: string | null
           last_message_preview?: string | null
           message_count?: number
           metadata?: Json
+          pending_confirmation?: Json | null
           resolved_by?: string | null
           status?: string
           total_tokens_used?: number
@@ -1750,6 +1799,7 @@ export type Database = {
           post_form_message: string | null
           theme: string
           updated_at: string
+          whatsapp_number: string | null
           workspace_id: string
         }
         Insert: {
@@ -1771,6 +1821,7 @@ export type Database = {
           post_form_message?: string | null
           theme?: string
           updated_at?: string
+          whatsapp_number?: string | null
           workspace_id: string
         }
         Update: {
@@ -1792,6 +1843,7 @@ export type Database = {
           post_form_message?: string | null
           theme?: string
           updated_at?: string
+          whatsapp_number?: string | null
           workspace_id?: string
         }
         Relationships: [
@@ -1904,6 +1956,7 @@ export type Database = {
           owner_id: string
           owner_personal_phone: string | null
           plan: string
+          safety_pin_hash: string | null
           service_synonyms: Json | null
           services_offered: string | null
           status: string
@@ -1930,6 +1983,7 @@ export type Database = {
           owner_id: string
           owner_personal_phone?: string | null
           plan?: string
+          safety_pin_hash?: string | null
           service_synonyms?: Json | null
           services_offered?: string | null
           status?: string
@@ -1956,6 +2010,7 @@ export type Database = {
           owner_id?: string
           owner_personal_phone?: string | null
           plan?: string
+          safety_pin_hash?: string | null
           service_synonyms?: Json | null
           services_offered?: string | null
           status?: string

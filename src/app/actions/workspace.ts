@@ -250,16 +250,14 @@ export async function deleteWorkspace(): Promise<ActionResponse<{ success: true 
     // Soft-delete gowa_sessions
     await supabase
       .from("gowa_sessions")
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .update({ deleted_at: new Date().toISOString() } as any)
+      .update({ deleted_at: new Date().toISOString() })
       .eq("workspace_id", workspaceId)
 
     // Soft-delete workspace
     const admin = createAdminClient()
     const { error } = await admin
       .from("workspaces")
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .update({ deleted_at: new Date().toISOString() } as any)
+      .update({ deleted_at: new Date().toISOString() })
       .eq("id", workspaceId)
       .eq("owner_id", user.id)
 

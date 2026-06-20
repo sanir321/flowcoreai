@@ -49,8 +49,8 @@ export async function addUrlSource(input: unknown): Promise<ActionResponse<{ id:
     if (!userWorkspaceId) return { data: null, error: "No workspace" }
     if (workspace_id !== userWorkspaceId) return { data: null, error: "Unauthorized" }
 
-    const { data, error } = await (supabase
-      .from("kb_sources") as any)
+    const { data, error } = await supabase
+      .from("kb_sources")
       .insert({
         workspace_id,
         source_type,
@@ -101,7 +101,7 @@ export async function deleteSource(id: string): Promise<ActionResponse<{ success
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
 
-    const { data: source } = await (supabase.from("kb_sources") as any).select("workspace_id, bp_extracted_fields").eq("id", res.data).maybeSingle()
+    const { data: source } = await supabase.from("kb_sources").select("workspace_id, bp_extracted_fields").eq("id", res.data).maybeSingle()
     if (!source) return { data: null, error: "Source not found" }
 
     // Verify workspace ownership
@@ -119,12 +119,12 @@ export async function deleteSource(id: string): Promise<ActionResponse<{ success
 
     const { error } = await supabase
       .from("kb_sources")
-      .update({ deleted_at: new Date().toISOString() } as any)
+      .update({ deleted_at: new Date().toISOString() })
       .eq("id", res.data)
 
     if (error) throw error
 
-    const extractedFields = ((source as any).bp_extracted_fields as string[]) || []
+    const extractedFields = (source.bp_extracted_fields as string[]) || []
     if (extractedFields.length > 0) {
       const { data: otherSources } = await getSupabaseAdmin()
         .from("kb_sources")
@@ -198,8 +198,8 @@ export async function createDocumentSource(input: unknown): Promise<ActionRespon
       return { data: null, error: "Forbidden: Workspace mismatch" }
     }
 
-    const { data, error } = await (supabase
-      .from("kb_sources") as any)
+    const { data, error } = await supabase
+      .from("kb_sources")
       .insert({
         workspace_id,
         label,
@@ -246,8 +246,8 @@ export async function pasteKbText(input: { workspace_id: string; content: string
     if (!userWorkspaceId) return { data: null, error: "No workspace" }
     if (workspace_id !== userWorkspaceId) return { data: null, error: "Unauthorized" }
 
-    const { data: source, error: sourceError } = await (supabase
-      .from("kb_sources") as any)
+    const { data: source, error: sourceError } = await supabase
+      .from("kb_sources")
       .insert({
         workspace_id,
         label: tag || "Pasted text",
@@ -313,8 +313,8 @@ export async function uploadDocumentSource(input: unknown): Promise<ActionRespon
       return { data: null, error: "Forbidden: Workspace mismatch" }
     }
 
-    const { data, error } = await (supabase
-      .from("kb_sources") as any)
+    const { data, error } = await supabase
+      .from("kb_sources")
       .insert({
         workspace_id,
         label,
