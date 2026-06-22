@@ -2036,11 +2036,6 @@ export type Database = {
         Returns: string[]
       }
       get_user_email: { Args: { user_id: string }; Returns: string }
-      get_workspace_health: { Args: { p_workspace_id: string }; Returns: Json }
-      lock_booking_session: {
-        Args: { p_session_id: string }
-        Returns: undefined
-      }
       match_kb_chunks: {
         Args: {
           match_count: number

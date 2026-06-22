@@ -51,12 +51,30 @@ export async function updateNotifications(input: unknown): Promise<ActionRespons
   }
 }
 
+function sanitizeDomain(domain: string): string {
+  let d = domain.trim();
+  // Remove protocol
+  d = d.replace(/^https?:\/\//i, '');
+  // Remove path (everything after first /)
+  d = d.replace(/\/.*$/, '');
+  // Remove port
+  d = d.replace(/:.*$/, '');
+  // Lowercase
+  d = d.toLowerCase();
+  // Remove trailing dot
+  d = d.replace(/\.$/, '');
+  return d;
+}
+
 export async function updateWidgetConfig(input: unknown): Promise<ActionResponse<{ success: true }>> {
   try {
     const result = UpdateWidgetConfigSchema.safeParse(input)
     if (!result.success) return { data: null, error: "Invalid input" }
 
-    const { workspace_id, ...config } = result.data
+    const { workspace_id, allowed_domains, ...config } = result.data
+
+    // Sanitize each allowed domain (strip protocol, path, port, etc.)
+    const sanitized = allowed_domains?.map(sanitizeDomain).filter(Boolean) || []
 
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -69,7 +87,7 @@ export async function updateWidgetConfig(input: unknown): Promise<ActionResponse
 
     const { error } = await supabase
       .from("widget_config")
-      .upsert({ workspace_id, ...config, updated_at: new Date().toISOString() }, { onConflict: "workspace_id" })
+      .upsert({ workspace_id, allowed_domains: sanitized, ...config, updated_at: new Date().toISOString() }, { onConflict: "workspace_id" })
 
     if (error) throw error
 

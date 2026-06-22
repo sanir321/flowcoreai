@@ -14,10 +14,6 @@ verify_jwt = false
 # Auth: Manual Bearer token check against INTERNAL_CRON_SECRET
 verify_jwt = false
 
-[functions.tool-executor]
-# Auth: JWT verification via supabase.auth.getUser() (manual in code)
-verify_jwt = false
-
 [functions.ingest-url]
 # Auth: Manual Bearer token check against INTERNAL_CRON_SECRET or JWT via auth.getUser()
 verify_jwt = false
