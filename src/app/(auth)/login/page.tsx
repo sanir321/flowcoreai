@@ -32,17 +32,6 @@ export default function LoginPage() {
 
   const handleGoogleLogin = async () => {
     setIsLoading(true)
-    setTermsError("")
-
-    // Try to detect if user exists via their current session or stored preference
-    const { data: { user } } = await supabase.auth.getUser()
-    const isReturningUser = user !== null
-
-    if (!isReturningUser && !acceptedTerms) {
-      setTermsError("You must accept the Privacy Policy and Terms & Conditions")
-      setIsLoading(false)
-      return
-    }
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",

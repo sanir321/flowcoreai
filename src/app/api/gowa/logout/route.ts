@@ -1,12 +1,9 @@
 import { createClient } from "@/lib/supabase/server"
 import { NextRequest, NextResponse } from "next/server"
 import { rateLimit } from "@/lib/rate-limit"
+import { getDevices, logoutSession, deleteDevice } from "@/lib/gowa"
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
-const GOWA_BASE_URL = process.env.GOWA_BASE_URL?.replace(/\/$/, "") || ""
-const GOWA_API_KEY = process.env.GOWA_API_KEY || ""
-const GOWA_AUTH = GOWA_API_KEY ? Buffer.from(GOWA_API_KEY).toString("base64") : ""
 
 export async function POST(req: NextRequest) {
   try {
@@ -31,28 +28,14 @@ export async function POST(req: NextRequest) {
 
     const deviceName = `FlowCore_${workspaceId}`
     try {
-      const resp = await fetch(`${GOWA_BASE_URL}/devices`, {
-        headers: { "Authorization": `Basic ${GOWA_AUTH}` },
-        signal: AbortSignal.timeout(5000),
-      })
-      if (resp.ok) {
-        const data = await resp.json()
-        const devices = data.results || []
+      const devices = await getDevices()
+      const ourDevice = devices.find((d: any) =>
+        d.name === deviceName || d.id === dbSession?.gowa_session_id
+      )
 
-        const ourDevice = devices.find((d: any) =>
-          d.name === deviceName || d.id === dbSession?.gowa_session_id
-        )
-
-        if (ourDevice) {
-          await fetch(`${GOWA_BASE_URL}/devices/${ourDevice.id}/logout`, {
-            method: "POST",
-            headers: { "Authorization": `Basic ${GOWA_AUTH}` },
-          }).catch(() => {})
-          await fetch(`${GOWA_BASE_URL}/devices/${ourDevice.id}`, {
-            method: "DELETE",
-            headers: { "Authorization": `Basic ${GOWA_AUTH}` },
-          }).catch(() => {})
-        }
+      if (ourDevice) {
+        await logoutSession(ourDevice.id).catch(() => {})
+        await deleteDevice(ourDevice.id).catch(() => {})
       }
     } catch (e) {
       console.error("[LOGOUT_GOWA_ERROR]", e)

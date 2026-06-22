@@ -95,32 +95,6 @@ export async function sendWhatsAppText(workspaceId: string, phone: string, messa
 }
 
 /**
- * Health Check (Verify if specific device is connected)
- */
-export async function checkGoWASessionHealth(deviceId?: string): Promise<boolean> {
-  try {
-    if (!deviceId) return false;
-    
-    const response = await fetch(`${GOWA_BASE_URL}/devices`, {
-      headers: { 
-        'Authorization': `Basic ${GOWA_AUTH}`
-      },
-      signal: AbortSignal.timeout(5000)
-    });
-    
-    if (!response.ok) return false;
-    
-    const data = await response.json();
-    // GoWA returns an array of devices
-    const device = data.results?.find((d: any) => d.id === deviceId);
-    
-    return device?.state === 'connected' || device?.state === 'logged_in';
-  } catch {
-    return false;
-  }
-}
-
-/**
  * Get specific device details from GoWA
  */
 export async function getDeviceDetails(deviceId: string): Promise<any | null> {

@@ -1437,6 +1437,57 @@ export type Database = {
           },
         ]
       }
+      pending_replies: {
+        Row: {
+          created_at: string
+          edited_response: string | null
+          generated_response: string
+          id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          session_id: string | null
+          status: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          edited_response?: string | null
+          generated_response: string
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          session_id?: string | null
+          status?: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          edited_response?: string | null
+          generated_response?: string
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          session_id?: string | null
+          status?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pending_replies_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pending_replies_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "conversation_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pricing_requests: {
         Row: {
           created_at: string

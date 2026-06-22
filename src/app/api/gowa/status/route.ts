@@ -2,10 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { NextRequest, NextResponse } from "next/server"
 import { rateLimit } from "@/lib/rate-limit"
-
-const GOWA_BASE_URL = process.env.GOWA_BASE_URL?.replace(/\/$/, "") || ""
-const GOWA_API_KEY = process.env.GOWA_API_KEY || ""
-const GOWA_AUTH = GOWA_API_KEY ? Buffer.from(GOWA_API_KEY).toString("base64") : ""
+import { getDevices } from "@/lib/gowa"
 
 export async function GET(req: NextRequest) {
   try {
@@ -38,38 +35,30 @@ export async function GET(req: NextRequest) {
     let gowaDeviceId = ""
     const deviceName = `FlowCore_${workspaceId}`
     try {
-      const resp = await fetch(`${GOWA_BASE_URL}/devices`, {
-        headers: { "Authorization": `Basic ${GOWA_AUTH}` },
-        signal: AbortSignal.timeout(5000),
-      })
-      if (resp.ok) {
-        const data = await resp.json()
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const devices: any[] = data.results || []
+      const devices = await getDevices()
 
-        // Match by device name (GoWA may or may not return 'name' field)
-        const named = devices.find(d => d.name === deviceName)
-        // Match by stored session ID
-        const byId = session?.gowa_session_id
-          ? devices.find(d => d.id === session.gowa_session_id)
-          : null
-        // Match by stored phone JID (handles device reconnection with new ID)
-        const byJid = session?.phone_jid
-          ? devices.find(d => d.jid === session.phone_jid)
-          : null
-        // Match by display name (GoVA shows name/phone as display_name)
-        const byDisplay = devices.find(d =>
-          d.display_name && d.display_name.includes(workspaceId.substring(0, 8))
-        )
+      // Match by device name (GoWA may or may not return 'name' field)
+      const named = devices.find((d: any) => d.name === deviceName)
+      // Match by stored session ID
+      const byId = session?.gowa_session_id
+        ? devices.find((d: any) => d.id === session.gowa_session_id)
+        : null
+      // Match by stored phone JID (handles device reconnection with new ID)
+      const byJid = session?.phone_jid
+        ? devices.find((d: any) => d.jid === session.phone_jid)
+        : null
+      // Match by display name (GoVA shows name/phone as display_name)
+      const byDisplay = devices.find((d: any) =>
+        d.display_name && d.display_name.includes(workspaceId.substring(0, 8))
+      )
 
-        const candidate = named || byId || byJid || byDisplay
-        const connectedStates = ["connected", "logged_in", "logged-in"]
-        if (candidate && connectedStates.includes(candidate.state)) {
-          gowaConnected = true
-          gowaJid = candidate.jid || ""
-          gowaDisplay = candidate.display_name || ""
-          gowaDeviceId = candidate.id || ""
-        }
+      const candidate = named || byId || byJid || byDisplay
+      const connectedStates = ["connected", "logged_in", "logged-in"]
+      if (candidate && connectedStates.includes(candidate.state)) {
+        gowaConnected = true
+        gowaJid = candidate.jid || ""
+        gowaDisplay = candidate.display_name || ""
+        gowaDeviceId = candidate.id || ""
       }
     } catch (e) {
       console.error("[STATUS_GOWA_FETCH_ERROR]", e)
