@@ -43,10 +43,7 @@ async function gowaApiCall<T>(
   }
 }
 
-/**
- * ALWAYS use this formatter before any GoWA API call
- */
-export async function formatPhoneForGoWA(phone: string): Promise<string> {
+async function formatPhoneForGoWA(phone: string): Promise<string> {
   let cleaned = phone.replace(/\D/g, '');
   if (cleaned.length === 10 && /^[6-9]/.test(cleaned)) {
     cleaned = '91' + cleaned;
@@ -94,77 +91,11 @@ export async function sendWhatsAppText(workspaceId: string, phone: string, messa
   });
 }
 
-/**
- * Get specific device details from GoWA
- */
-export async function getDeviceDetails(deviceId: string): Promise<any | null> {
-  try {
-    // We fetch all and find the ID locally because the header filtering is inconsistent on some GoWA versions
-    const response = await fetch(`${GOWA_BASE_URL}/devices`, {
-      headers: { 
-        'Authorization': `Basic ${GOWA_AUTH}`
-      },
-      cache: 'no-store'
-    });
-    if (!response.ok) return null;
-    const data = await response.json();
-    const results = data.results;
-    
-    if (Array.isArray(results)) {
-      return results.find((d: any) => d.id === deviceId) || null;
-    } else if (results && typeof results === 'object' && results.id === deviceId) {
-      return results;
-    }
-    
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Core Send Message (Universal)
- */
 export async function sendTextMessage(deviceId: string, to: string, message: string): Promise<void> {
   const formattedPhone = await formatPhoneForGoWA(to);
-  await gowaApiCall('/send/message', deviceId, { 
-    phone: formattedPhone, 
-    message 
-  });
-}
-
-/**
- * Send Image via URL
- */
-export async function sendWhatsAppImage(deviceId: string, phone: string, imageUrl: string, caption: string): Promise<void> {
-  const formattedPhone = await formatPhoneForGoWA(phone);
-  await gowaApiCall('/send/image', deviceId, { 
-    phone: formattedPhone, 
-    image_url: imageUrl, 
-    caption 
-  });
-}
-
-/**
- * Send Link Preview
- */
-export async function sendWhatsAppLink(deviceId: string, phone: string, link: string, caption: string): Promise<void> {
-  const formattedPhone = await formatPhoneForGoWA(phone);
-  await gowaApiCall('/send/link', deviceId, { 
-    phone: formattedPhone, 
-    link, 
-    caption 
-  });
-}
-
-/**
- * Send Presence Update (composing/paused)
- */
-export async function sendPresenceUpdate(deviceId: string, phone: string, type: 'composing' | 'paused'): Promise<void> {
-  const formattedPhone = await formatPhoneForGoWA(phone);
-  await gowaApiCall('/send/presence', deviceId, { 
-    phone: formattedPhone, 
-    type 
+  await gowaApiCall('/send/message', deviceId, {
+    phone: formattedPhone,
+    message
   });
 }
 
@@ -252,43 +183,3 @@ export async function deleteDevice(deviceId: string): Promise<void> {
     headers: gowaHeaders
   });
 }
-
-/**
- * Get all chats for a specific device
- */
-export async function getChats(deviceId: string): Promise<any[]> {
-  try {
-    const response = await fetch(`${GOWA_BASE_URL}/chats`, {
-      headers: { 
-        ...gowaHeaders,
-        'X-Device-Id': deviceId
-      }
-    });
-    if (!response.ok) return [];
-    const data = await response.json();
-    return data.results?.data || [];
-  } catch {
-    return [];
-  }
-}
-
-/**
- * Get message history for a specific chat
- */
-export async function getChatMessages(deviceId: string, jid: string, limit: number = 50): Promise<any[]> {
-  try {
-    const response = await fetch(`${GOWA_BASE_URL}/chat/${jid}/messages?limit=${limit}`, {
-      headers: { 
-        ...gowaHeaders,
-        'X-Device-Id': deviceId
-      }
-    });
-    if (!response.ok) return [];
-    const data = await response.json();
-    return data.results?.data || [];
-  } catch {
-    return [];
-  }
-}
-
-
