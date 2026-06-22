@@ -286,6 +286,102 @@ export type Database = {
           },
         ]
       }
+      booking_sessions: {
+        Row: {
+          appointment_id: string | null
+          attempts: Json
+          collected: Json
+          created_at: string
+          deleted_at: string | null
+          id: string
+          session_id: string
+          state: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          appointment_id?: string | null
+          attempts?: Json
+          collected?: Json
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          session_id: string
+          state?: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          appointment_id?: string | null
+          attempts?: Json
+          collected?: Json
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          session_id?: string
+          state?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_sessions_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "conversation_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_sessions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_sessions_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_templates: {
+        Row: {
+          id: string
+          workspace_id: string | null
+          template_key: string
+          content: string
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          workspace_id?: string | null
+          template_key: string
+          content: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          workspace_id?: string | null
+          template_key?: string
+          content?: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_templates_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contacts: {
         Row: {
           channel: string
@@ -496,6 +592,33 @@ export type Database = {
         }
         Relationships: []
       }
+      debug_logs: {
+        Row: {
+          created_at: string | null
+          id: string
+          level: string
+          message: string | null
+          metadata: Json | null
+          scope: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          level: string
+          message?: string | null
+          metadata?: Json | null
+          scope: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          level?: string
+          message?: string | null
+          metadata?: Json | null
+          scope?: string
+        }
+        Relationships: []
+      }
       escalation_logs: {
         Row: {
           conversation_snapshot: Json
@@ -555,6 +678,127 @@ export type Database = {
           },
           {
             foreignKeyName: "escalation_logs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      failed_messages: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          failure_reason: string | null
+          id: string
+          last_retried_at: string | null
+          raw_message: Json
+          resolved: boolean
+          retry_count: number
+          session_id: string | null
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          failure_reason?: string | null
+          id?: string
+          last_retried_at?: string | null
+          raw_message: Json
+          resolved?: boolean
+          retry_count?: number
+          session_id?: string | null
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          failure_reason?: string | null
+          id?: string
+          last_retried_at?: string | null
+          raw_message?: Json
+          resolved?: boolean
+          retry_count?: number
+          session_id?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "failed_messages_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "conversation_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "failed_messages_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      follow_ups: {
+        Row: {
+          contact_id: string | null
+          created_at: string
+          deleted_at: string | null
+          failure_reason: string | null
+          id: string
+          message_template: string
+          scheduled_at: string
+          sent_at: string | null
+          session_id: string | null
+          status: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          contact_id?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          failure_reason?: string | null
+          id?: string
+          message_template: string
+          scheduled_at: string
+          sent_at?: string | null
+          session_id?: string | null
+          status?: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          contact_id?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          failure_reason?: string | null
+          id?: string
+          message_template?: string
+          scheduled_at?: string
+          sent_at?: string | null
+          session_id?: string | null
+          status?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "follow_ups_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "follow_ups_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "conversation_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "follow_ups_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
@@ -665,6 +909,60 @@ export type Database = {
           },
         ]
       }
+      ingestion_jobs: {
+        Row: {
+          attempts: number
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          max_attempts: number
+          source_id: string
+          started_at: string | null
+          status: string
+          workspace_id: string
+        }
+        Insert: {
+          attempts?: number
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          max_attempts?: number
+          source_id: string
+          started_at?: string | null
+          status?: string
+          workspace_id: string
+        }
+        Update: {
+          attempts?: number
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          max_attempts?: number
+          source_id?: string
+          started_at?: string | null
+          status?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ingestion_jobs_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "kb_sources"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ingestion_jobs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       kb_chunks: {
         Row: {
           chunk_index: number
@@ -712,6 +1010,56 @@ export type Database = {
           },
           {
             foreignKeyName: "kb_chunks_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kb_response_cache: {
+        Row: {
+          access_count: number
+          accessed_at: string
+          agent_hash: string | null
+          cache_key: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          model: string | null
+          query_text: string
+          response_text: string
+          workspace_id: string
+        }
+        Insert: {
+          access_count?: number
+          accessed_at?: string
+          agent_hash?: string | null
+          cache_key: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          model?: string | null
+          query_text: string
+          response_text: string
+          workspace_id: string
+        }
+        Update: {
+          access_count?: number
+          accessed_at?: string
+          agent_hash?: string | null
+          cache_key?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          model?: string | null
+          query_text?: string
+          response_text?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kb_response_cache_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
@@ -1069,6 +1417,78 @@ export type Database = {
         }
         Relationships: []
       }
+      quotes: {
+        Row: {
+          contact_id: string | null
+          created_at: string
+          currency: string
+          deleted_at: string | null
+          id: string
+          items: Json
+          notes: string | null
+          quote_number: string | null
+          sent_at: string | null
+          status: string
+          subtotal: number | null
+          tax: number | null
+          total: number | null
+          updated_at: string
+          valid_until: string | null
+          workspace_id: string
+        }
+        Insert: {
+          contact_id?: string | null
+          created_at?: string
+          currency?: string
+          deleted_at?: string | null
+          id?: string
+          items?: Json
+          notes?: string | null
+          quote_number?: string | null
+          sent_at?: string | null
+          status?: string
+          subtotal?: number | null
+          tax?: number | null
+          total?: number | null
+          updated_at?: string
+          valid_until?: string | null
+          workspace_id: string
+        }
+        Update: {
+          contact_id?: string | null
+          created_at?: string
+          currency?: string
+          deleted_at?: string | null
+          id?: string
+          items?: Json
+          notes?: string | null
+          quote_number?: string | null
+          sent_at?: string | null
+          status?: string
+          subtotal?: number | null
+          tax?: number | null
+          total?: number | null
+          updated_at?: string
+          valid_until?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotes_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rate_limits: {
         Row: {
           created_at: string
@@ -1230,6 +1650,60 @@ export type Database = {
           },
           {
             foreignKeyName: "support_tickets_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tool_call_logs: {
+        Row: {
+          args: Json | null
+          created_at: string | null
+          duration_ms: number | null
+          error: string | null
+          id: string
+          result: Json | null
+          session_id: string
+          success: boolean | null
+          tool_name: string
+          workspace_id: string
+        }
+        Insert: {
+          args?: Json | null
+          created_at?: string | null
+          duration_ms?: number | null
+          error?: string | null
+          id?: string
+          result?: Json | null
+          session_id: string
+          success?: boolean | null
+          tool_name: string
+          workspace_id: string
+        }
+        Update: {
+          args?: Json | null
+          created_at?: string | null
+          duration_ms?: number | null
+          error?: string | null
+          id?: string
+          result?: Json | null
+          session_id?: string
+          success?: boolean | null
+          tool_name?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tool_call_logs_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "conversation_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tool_call_logs_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
