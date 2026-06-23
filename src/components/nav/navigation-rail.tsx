@@ -26,6 +26,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { NotificationBell } from "@/components/nav/notification-bell"
 
 const NAV_ITEMS = [
   { icon: Inbox, href: "/inbox", label: "Inbox" },
@@ -121,6 +122,8 @@ export function NavigationRail() {
       </nav>
 
       <div className="mt-auto flex flex-col items-center gap-3 w-full">
+         <NotificationBell />
+
          <Link 
             href="/settings"
             onMouseEnter={() => handlePrefetch("/settings")}
