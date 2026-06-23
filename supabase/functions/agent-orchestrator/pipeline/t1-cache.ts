@@ -28,12 +28,12 @@ export async function runT1(ctx: PipelineContext): Promise<TierResult> {
     ctx.embedding = embedding;
     const { data: similar } = await ctx.supabase.rpc("match_kb_chunks", {
       query_embedding: embedding,
-      match_threshold: 0.92,
+      match_threshold: 0.80,
       match_count: 1,
       p_workspace_id: ctx.payload.workspace_id
     });
 
-    if (similar && similar.length > 0 && similar[0].similarity > 0.92) {
+    if (similar && similar.length > 0 && similar[0].similarity > 0.80) {
       return { handled: true, response: similar[0].content || similar[0].response_text, reason: "cache_hit_embedding" };
     }
   } catch (_) {}

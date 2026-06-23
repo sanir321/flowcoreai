@@ -33,6 +33,7 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get("Authorization") || ""
     const token = authHeader.replace("Bearer ", "")
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
+    const serviceKey = Deno.env.get("SERVICE_KEY") || ""
     const internalSecret = Deno.env.get("INTERNAL_CRON_SECRET") || ""
 
     if (!token) {
@@ -42,7 +43,7 @@ Deno.serve(async (req) => {
       })
     }
 
-    const isServiceRole = timingSafeEqual(token, serviceRoleKey);
+    const isServiceRole = timingSafeEqual(token, serviceRoleKey) || (serviceKey && timingSafeEqual(token, serviceKey));
     const isInternal = internalSecret && timingSafeEqual(token, internalSecret);
 
     if (!isServiceRole && !isInternal) {

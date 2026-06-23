@@ -5,6 +5,19 @@ export async function dispatch(ctx: PipelineContext, response: string | null): P
   const phone = ctx.payload.customer_phone;
   const source = ctx.payload.source || "whatsapp";
 
+  // Skip GoWA sends for test messages
+  if (ctx.payload.is_test) {
+    const parts = response.length > 1000 ? splitAtSentence(response, 1000) : [response];
+    for (const part of parts) {
+      await storeOutboundMessage(ctx, part);
+    }
+    await ctx.supabase
+      .from("conversation_sessions")
+      .update({ last_message_at: new Date().toISOString() })
+      .eq("id", ctx.session.id);
+    return;
+  }
+
   const gowaBase = Deno.env.get("GOWA_BASE_URL")?.replace(/\/$/, "");
   const gowaKey = Deno.env.get("GOWA_API_KEY");
   
@@ -27,21 +40,27 @@ export async function dispatch(ctx: PipelineContext, response: string | null): P
     
     if (source === "whatsapp" && deviceId && phone) {
       try {
+        const ac = new AbortController();
+        setTimeout(() => ac.abort(), 5000);
         await fetch(`${gowaBase}/send/presence`, {
           method: "POST",
           headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json", "X-Device-Id": deviceId },
-          body: JSON.stringify({ phone, type: "available" })
+          body: JSON.stringify({ phone, type: "available" }),
+          signal: ac.signal
         });
       } catch (_) {}
-      
+
       const delayMs = Math.min(part.length * 12, 1500);
       await new Promise(resolve => setTimeout(resolve, delayMs));
 
       try {
+        const ac2 = new AbortController();
+        setTimeout(() => ac2.abort(), 5000);
         await fetch(`${gowaBase}/send/presence`, {
           method: "POST",
           headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json", "X-Device-Id": deviceId },
-          body: JSON.stringify({ phone, type: "unavailable" })
+          body: JSON.stringify({ phone, type: "unavailable" }),
+          signal: ac2.signal
         });
       } catch (_) {}
     }
@@ -62,16 +81,28 @@ async function sendWithRetry(ctx: PipelineContext, gowaBase: string, phone: stri
   const backoffs = [0, 1000, 2000, 4000];
   if (attempt > 1) await new Promise(res => setTimeout(res, backoffs[attempt - 1]));
 
-  const res = await fetch(`${gowaBase}/send/message`, {
-    method: "POST",
-    headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json", "X-Device-Id": deviceId },
-    body: JSON.stringify({ phone, message: text })
-  });
+  const ac = new AbortController();
+  const timeout = setTimeout(() => ac.abort(), 10000);
+  try {
+    const res = await fetch(`${gowaBase}/send/message`, {
+      method: "POST",
+      headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json", "X-Device-Id": deviceId },
+      body: JSON.stringify({ phone, message: text }),
+      signal: ac.signal
+    });
 
-  if (!res.ok && attempt < 3) {
-    return sendWithRetry(ctx, gowaBase, phone, text, auth, deviceId, attempt + 1);
-  } else if (!res.ok) {
-    await saveFailedMessage(ctx, phone, text, `GoWA ${res.status}`);
+    if (!res.ok && attempt < 3) {
+      return sendWithRetry(ctx, gowaBase, phone, text, auth, deviceId, attempt + 1);
+    } else if (!res.ok) {
+      await saveFailedMessage(ctx, phone, text, `GoWA ${res.status}`);
+    }
+  } catch (_) {
+    if (attempt < 3) {
+      return sendWithRetry(ctx, gowaBase, phone, text, auth, deviceId, attempt + 1);
+    }
+    await saveFailedMessage(ctx, phone, text, "GoWA timeout");
+  } finally {
+    clearTimeout(timeout);
   }
 }
 

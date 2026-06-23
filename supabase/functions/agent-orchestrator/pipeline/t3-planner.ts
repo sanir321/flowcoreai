@@ -1,7 +1,7 @@
 import { PipelineContext, TierResult, AgentPlan } from "../lib/types.ts";
 import { callLLM } from "../lib/llm.ts";
 import { toolExecutor } from "../tools/executor.ts";
-import { SUBMIT_PLAN_TOOL, getAgentToolDefinitions } from "../tools/registry.ts";
+import { SUBMIT_PLAN_TOOL, ALL_TOOLS, AGENT_TOOLS } from "../tools/registry.ts";
 import { buildBookingSystemPrompt } from "../agents/booking.ts";
 import { buildSupportSystemPrompt } from "../agents/support.ts";
 import { buildSalesSystemPrompt } from "../agents/sales.ts";
@@ -72,6 +72,41 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
   const buildPrompt = AGENT_SYSTEM_PROMPTS[agentType] || AGENT_SYSTEM_PROMPTS.customer_support;
   let systemPrompt = buildPrompt(ctx);
 
+  try {
+    const { data: agentRow } = await ctx.supabase
+      .from("workspace_agents")
+      .select("id")
+      .eq("workspace_id", ctx.payload.workspace_id)
+      .eq("agent_type", agentType)
+      .maybeSingle();
+    if (agentRow) {
+      const { data: assignments } = await ctx.supabase
+        .from("agent_skill_assignments")
+        .select("skill_id")
+        .eq("agent_id", agentRow.id);
+      if (assignments && assignments.length > 0) {
+        const skillIds = assignments.map((a: any) => a.skill_id);
+        const { data: skills } = await ctx.supabase
+          .from("agent_skills")
+          .select("name, description, condition, instructions")
+          .in("id", skillIds)
+          .eq("is_active", true);
+        if (skills && skills.length > 0) {
+          const blocks = skills.map((s: any) => {
+            let block = `## ${s.name}`;
+            if (s.description) block += `\n${s.description}`;
+            if (s.condition) block += `\nTrigger: ${s.condition}`;
+            block += `\n${s.instructions}`;
+            return block;
+          });
+          systemPrompt += "\n\n" + blocks.join("\n\n");
+        }
+      }
+    }
+  } catch (e: any) {
+    console.error("[T3] Skills injection failed:", e.message);
+  }
+
   if (ctx.pricingBlocked) {
     systemPrompt += "\n\n[SECURITY] Pricing information is restricted for this workspace. Do NOT provide specific prices. Instead, refer the customer to the official website or offer to connect them with a human.";
   }
@@ -141,7 +176,7 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
           .select("kb_config")
           .eq("id", ctx.payload.workspace_id)
           .maybeSingle();
-        const kbConfig = ws?.kb_config || { match_count: 3, match_threshold: 0.35, chunk_truncation: 800, noise_stripping: true };
+        const kbConfig = ws?.kb_config || { match_count: 3, match_threshold: 0.35, chunk_truncation: 800, noise_stripping: true, message_history_count: 8 };
         const truncation = kbConfig.chunk_truncation ?? 800;
         const noiseStripping = kbConfig.noise_stripping ?? true;
 
@@ -225,24 +260,28 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
     console.error("[T3] Gap-filler failed:", e.message);
   }
 
+  systemPrompt += buildToolDescriptions(agentType);
+
   const messages = await buildMessages(ctx);
 
   let parsedPlan: AgentPlan;
   let llmResponse: any;
   let lastError: any;
 
-  for (let attempt = 0; attempt <= 2; attempt++) {
+  for (let attempt = 0; attempt <= 1; attempt++) {
     try {
-      const isLastAttempt = attempt === 2;
-      llmResponse = await callLLM({
+      const llmOpts: any = {
         agentType,
         max_tokens: 1000,
         temperature: 0.3,
         system: systemPrompt,
         messages,
-        tools: [SUBMIT_PLAN_TOOL, ...getAgentToolDefinitions(agentType)],
-        tool_choice: isLastAttempt ? "auto" : { type: "function", function: { name: "submit_plan" } }
-      });
+        tools: [SUBMIT_PLAN_TOOL],
+      };
+      if (attempt < 1) {
+        llmOpts.tool_choice = { type: "function", function: { name: "submit_plan" } };
+      }
+      llmResponse = await callLLM(llmOpts);
 
       const toolCall = llmResponse.choices?.[0]?.message?.tool_calls?.[0];
       if (toolCall && toolCall.function.name === "submit_plan") {
@@ -251,36 +290,70 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
         break;
       }
 
-      if (isLastAttempt) {
-        const content = llmResponse.choices?.[0]?.message?.content?.trim();
-        // Accept any tool call as an action wrap
-        if (toolCall) {
-          parsedPlan = {
-            response: content || "Let me help you with that.",
-            actions: [{ tool: toolCall.function.name, params: JSON.parse(toolCall.function.arguments || "{}") }]
-          };
-          lastError = null;
-          break;
-        }
-        // Accept any content-only response (even short)
-        if (content && content.length > 0) {
-          parsedPlan = { response: content, actions: [] };
-          lastError = null;
-          break;
-        }
+      // Accept any other tool call as an action wrap
+      if (toolCall) {
+        parsedPlan = {
+          response: "Let me help you with that.",
+          actions: [{ tool: toolCall.function.name, params: JSON.parse(toolCall.function.arguments || "{}") }]
+        };
+        lastError = null;
+        break;
+      }
+
+      // Accept content-only response
+      const content = llmResponse.choices?.[0]?.message?.content?.trim();
+      if (content && content.length > 0) {
+        parsedPlan = { response: content, actions: [] };
+        lastError = null;
+        break;
       }
 
       throw new Error("LLM did not call submit_plan");
     } catch (e: any) {
       lastError = e;
       console.error(`[T3] Plan attempt ${attempt + 1} error:`, e.message);
-      if (attempt < 2) {
-        await new Promise(res => setTimeout(res, 2000 * Math.pow(2, attempt)));
+      if (attempt < 1) {
+        await new Promise(res => setTimeout(res, 2000 + Math.random() * 3000));
       }
     }
   }
 
   if (lastError) {
+    console.error("[T3] All plan attempts failed. Attempting bare-text fallback LLM call.");
+    try {
+      const ZEN_KEY = Deno.env.get("OPENCODE_ZEN_API_KEY");
+      const ZEN_BASE = (Deno.env.get("OPENCODE_ZEN_BASE_URL") || "https://opencode.ai/zen/v1").replace(/\/+$/, "");
+      const fallbackBody = {
+        model: "mimo-v2.5-free",
+        messages: [
+          { role: "system", content: `You are a helpful assistant for ${ctx.workspace?.name || "this business"}. Be brief, natural, and helpful.` },
+          { role: "user", content: ctx.payload.message },
+        ],
+        max_tokens: 200,
+        temperature: 0.5,
+        stream: false,
+      };
+      const fc = new AbortController();
+      const ft = setTimeout(() => fc.abort(), 30000);
+      try {
+        const fb = await fetch(ZEN_BASE + "/chat/completions", {
+          method: "POST",
+          headers: { Authorization: "Bearer " + ZEN_KEY, "Content-Type": "application/json" },
+          body: JSON.stringify(fallbackBody),
+          signal: fc.signal,
+        });
+        if (fb.ok) {
+          const fj = await fb.json();
+          const text = fj?.choices?.[0]?.message?.content?.trim();
+          if (text && text.length > 0) {
+            return { handled: true, response: text, reason: "t3_plan_execute" };
+          }
+        }
+      } finally { clearTimeout(ft); }
+    } catch (e2: any) {
+      console.error("[T3] Bare-text fallback also failed:", e2.message);
+    }
+
     return {
       handled: true,
       response: ctx.workspace?.guardrail_config?.fallback_message ?? "I'm not sure about that. Please contact us directly for more information.",
@@ -400,6 +473,10 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
 
   finalResponse = finalResponse.replace(/\{[^}]+\}/g, "");
 
+  if (!finalResponse || finalResponse.trim().length === 0) {
+    finalResponse = parsedPlan.fallback || ctx.workspace?.guardrail_config?.fallback_message || "Thank you for your message. How else can I help you?";
+  }
+
   const sentimentMatch = finalResponse.match(/^\[SENTIMENT:\s*(\w+)\]\s*/i);
   if (sentimentMatch) {
     ctx._sentiment = sentimentMatch[1].toLowerCase();
@@ -412,12 +489,13 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
 }
 
 async function buildMessages(ctx: PipelineContext) {
+  const historyCount = (ctx.workspace as any)?.kb_config?.message_history_count ?? 8;
   const { data: msgHistory } = await ctx.supabase
     .from("messages")
     .select("*")
     .eq("session_id", ctx.session.id)
     .order("created_at", { ascending: false })
-    .limit(15);
+    .limit(historyCount);
 
   const history = (msgHistory || []).reverse();
   const messages: any[] = [];
@@ -692,6 +770,21 @@ async function postProcess(
   await ctx.supabase.from("conversation_sessions")
     .update(updateData)
     .eq("id", ctx.session.id);
+}
+
+function buildToolDescriptions(agentType: string): string {
+  const allowed = AGENT_TOOLS[agentType] || AGENT_TOOLS.customer_support;
+  const lines: string[] = ["\n\n## Available Tools"];
+  lines.push("You can invoke any of these tools by including them in the submit_plan actions array.");
+  lines.push("");
+  for (const name of allowed) {
+    const tool = ALL_TOOLS[name];
+    if (!tool) continue;
+    lines.push(`- ${name}: ${tool.description}`);
+  }
+  lines.push("");
+  lines.push("IMPORTANT: When including a tool in actions, set the 'tool' field to the tool name only (e.g. 'manage_catalog'), not 'functions.manage_catalog'.");
+  return lines.join("\n");
 }
 
 function normalizeToolName(name: string): string {

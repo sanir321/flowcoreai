@@ -1,5 +1,6 @@
 import { PipelineContext } from "../lib/types.ts";
 import { getPersonaInstructions } from "../lib/persona.ts";
+import { buildBusinessProfile, buildSentimentLine } from "../lib/profile.ts";
 
 export function buildSalesSystemPrompt(ctx: PipelineContext): string {
   const workspace = ctx.workspace || {};
@@ -7,43 +8,8 @@ export function buildSalesSystemPrompt(ctx: PipelineContext): string {
   const personaInstructions = getPersonaInstructions(traits);
   const working = ctx.session?.working_context || {};
 
-  const profile = (workspace as any).business_profile || {};
-  const profileParts: string[] = []
-  if (profile.description) profileParts.push(`About: ${profile.description}`)
-  if (profile.contact?.phone) profileParts.push(`Phone: ${profile.contact.phone}`)
-  if (profile.contact?.email) profileParts.push(`Email: ${profile.contact.email}`)
-  if (profile.contact?.address) profileParts.push(`Address: ${profile.contact.address}`)
-  if (profile.contact?.google_maps_link) profileParts.push(`Maps: ${profile.contact.google_maps_link}`)
-  if (profile.social) {
-    const socialEntries = Object.entries(profile.social)
-      .filter(([, url]) => url)
-      .map(([platform, url]) => `${platform.charAt(0).toUpperCase() + platform.slice(1)} (${url})`)
-    if (socialEntries.length) profileParts.push(`Social: ${socialEntries.join(', ')}`)
-  }
-  if (workspace.services_offered) profileParts.push(`Services: ${workspace.services_offered}`)
-  if (profile.hours?.daily) {
-    const openDays = Object.entries(profile.hours.daily)
-      .filter(([, d]: [string, any]) => !d.closed)
-      .map(([day, d]: [string, any]) => `${day.charAt(0).toUpperCase() + day.slice(1)}: ${d.open}-${d.close}`)
-    const closedDays = Object.entries(profile.hours.daily)
-      .filter(([, d]: [string, any]) => d.closed)
-      .map(([day]: [string, any]) => day.charAt(0).toUpperCase() + day.slice(1))
-    if (openDays.length) profileParts.push(`Business Hours: ${openDays.join(', ')}`)
-    if (closedDays.length) profileParts.push(`Closed on: ${closedDays.join(', ')}`)
-  }
-  if (profile.amenities?.length) profileParts.push(`Amenities: ${profile.amenities.join(', ')}`)
-  if (profile.pricing?.description) profileParts.push(`Pricing: ${profile.pricing.description}`)
-  if (profile.policies) {
-    const policyEntries = Object.entries(profile.policies).filter(([, v]) => v)
-    if (policyEntries.length) profileParts.push(`Policies: ${policyEntries.map(([k, v]) => `${k}: ${v}`).join(' | ')}`)
-  }
-  if (profile.extras?.specials?.length) profileParts.push(`Specials: ${profile.extras.specials.join(', ')}`)
-  if (profile.extras?.project_types?.length) profileParts.push(`Project Types: ${profile.extras.project_types.join(', ')}`)
-  const profileSummary = profileParts.length > 0 ? profileParts.join('\n') : 'No profile data yet. Call get_business_info for details.'
-
-  const sentimentLine = working.sentiment
-    ? `\nCustomer sentiment: ${working.sentiment}${working.sentiment === 'frustrated' ? ' — escalate if they remain frustrated.' : ''}`
-    : '';
+  const profileSummary = buildBusinessProfile(ctx);
+  const sentimentLine = buildSentimentLine(working);
 
   return `
 You are the Sales Specialist for ${workspace.name || "this business"}.

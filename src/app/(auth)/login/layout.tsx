@@ -12,6 +12,10 @@ export const metadata: Metadata = {
     url: `${siteUrl}/login`,
   },
   alternates: { canonical: `${siteUrl}/login` },
+  robots: {
+    index: false,
+    follow: false,
+  },
 }
 
 export default function LoginLayout({ children }: { children: React.ReactNode }) {

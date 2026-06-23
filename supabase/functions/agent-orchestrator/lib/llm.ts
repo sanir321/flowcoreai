@@ -1,38 +1,30 @@
 import { AgentPayload } from "./types.ts";
 
-const BLUESMINDS_API_KEY = Deno.env.get("BLUESMINDS_API_KEY");
-const BLUESMINDS_BASE_URL = "https://api.bluesminds.com/v1";
+const OPENCODE_ZEN_API_KEY = Deno.env.get("OPENCODE_ZEN_API_KEY");
+const OPENCODE_ZEN_BASE_URL = (Deno.env.get("OPENCODE_ZEN_BASE_URL") || "https://opencode.ai/zen/v1").replace(/\/+$/, "");
 
 export const DEFAULT_FALLBACK_MESSAGE = "I'm not sure about that. Please contact us directly for more information.";
 
 export async function callLLM(payload: AgentPayload & { agentType?: string }) {
-  const FALLBACK_1 = "gpt-4o";
-  // Use gpt-4o as primary for support agent (has KB context, faster)
-  const DEFAULT_PRIMARY = "gpt-4o";
+  const FALLBACK_1 = "mimo-v2.5-free";
+  const DEFAULT_PRIMARY = "nemotron-3-ultra-free";
   const modelChain = payload.model
     ? [payload.model, FALLBACK_1]
     : [DEFAULT_PRIMARY, FALLBACK_1];
 
+  let lastError: any;
   for (const model of modelChain) {
-    for (let attempt = 0; attempt <= 2; attempt++) {
-      try {
-        return await callBluesMinds({ ...payload, model });
-      } catch (error: any) {
-        const status = error.status;
-        const isRetryable = status === 429 || status === 500 || status === 502 || status === 503;
-        if (!isRetryable) throw error;
-        if (attempt < 2) {
-          const backoff = (status === 429 ? 1000 : 500) * Math.pow(2, attempt);
-          await new Promise(res => setTimeout(res, backoff));
-        }
-      }
+    try {
+      return await callZen({ ...payload, model });
+    } catch (error: any) {
+      lastError = error;
     }
   }
-  throw new Error("ALL_MODELS_FAILED");
+  throw lastError || new Error("ALL_MODELS_FAILED");
 }
 
-async function callBluesMinds(payload: AgentPayload & { model: string }) {
-  if (!BLUESMINDS_API_KEY) throw new Error("BLUESMINDS_API_KEY is not set");
+async function callZen(payload: AgentPayload & { model: string }) {
+  if (!OPENCODE_ZEN_API_KEY) throw new Error("OPENCODE_ZEN_API_KEY is not set");
 
   const body: Record<string, unknown> = {
     model: payload.model,
@@ -51,10 +43,10 @@ async function callBluesMinds(payload: AgentPayload & { model: string }) {
   const timeout = setTimeout(() => controller.abort(), 60000);
 
   try {
-    const res = await fetch(`${BLUESMINDS_BASE_URL}/chat/completions`, {
+    const res = await fetch(`${OPENCODE_ZEN_BASE_URL}/chat/completions`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${BLUESMINDS_API_KEY}`,
+        Authorization: `Bearer ${OPENCODE_ZEN_API_KEY}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify(body),
@@ -63,7 +55,7 @@ async function callBluesMinds(payload: AgentPayload & { model: string }) {
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      const e = new Error(err.error?.message ?? "BluesMinds error");
+      const e = new Error(err.error?.message ?? "OpenCode Zen error");
       (e as any).status = res.status;
       throw e;
     }
@@ -75,5 +67,5 @@ async function callBluesMinds(payload: AgentPayload & { model: string }) {
 }
 
 export async function callRouterModel(payload: AgentPayload) {
-  return await callLLM({ ...payload, model: "gpt-5-mini", max_tokens: 100 });
+  return await callLLM({ ...payload, model: "nemotron-3-ultra-free", max_tokens: 100 });
 }

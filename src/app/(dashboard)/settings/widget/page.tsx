@@ -14,6 +14,7 @@ import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
 import { updateWidgetConfig } from "@/app/actions/settings"
 import WidgetPreview from "@/components/widget/preview"
+import type { WidgetConfig } from "@/components/widget/preview"
 import { cn } from "@/lib/utils"
 
 const LAUNCHER_ICONS: { key: string; label: string; svg: string }[] = [
@@ -90,20 +91,20 @@ export default function WidgetSettingsPage() {
         setWorkspaceId(wid)
         supabase.from("widget_config").select("*").eq("workspace_id", wid).maybeSingle().then(({ data: d2 }) => {
           if (aborted) return
-          const d = d2 as any
-          if (d) {
+          if (d2) {
+            const d = d2 as Record<string, unknown>
             setConfig({
-              header_text: d.header_text || "FlowCore",
-              agent_name: d.agent_name || "Assistant",
-              greeting: d.greeting || "Hi! How can I help?",
-              post_form_message: d.post_form_message || "Thank you! How can I help you today?",
-              accent_color: d.accent_color || "#050505",
-              launcher_icon: d.launcher_icon || "chat",
-              allow_anonymous: d.allow_anonymous || false,
-              auto_fill_params: d.auto_fill_params || false,
-              trusted_domains: d.allowed_domains?.join(", ") || "",
-              email_notifications: d.email_notifications || false,
-              logo_url: d.logo_url || ""
+              header_text: (d.header_text as string) || "FlowCore",
+              agent_name: (d.agent_name as string) || "Assistant",
+              greeting: (d.greeting as string) || "Hi! How can I help?",
+              post_form_message: (d.post_form_message as string) || "Thank you! How can I help you today?",
+              accent_color: (d.accent_color as string) || "#050505",
+              launcher_icon: (d.launcher_icon as string) || "chat",
+              allow_anonymous: (d.allow_anonymous as boolean) || false,
+              auto_fill_params: (d.auto_fill_params as boolean) || false,
+              trusted_domains: ((d.allowed_domains as string[])?.join(", ")) || "",
+              email_notifications: (d.email_notifications as boolean) || false,
+              logo_url: (d.logo_url as string) || ""
             })
           }
         })
@@ -237,7 +238,6 @@ export default function WidgetSettingsPage() {
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={config.logo_url} alt="Logo" className="w-full h-full object-cover" />
                     ) : (
-                      // eslint-disable-next-line jsx-a11y/alt-text
                       <Image className="w-6 h-6 text-gray-300" />
                     )}
                   </div>
@@ -378,7 +378,7 @@ export default function WidgetSettingsPage() {
                     workspaceId={workspaceId}
                     view={previewView} 
                     isOpen={previewOpen} 
-                    config={config as any}
+                    config={config as unknown as WidgetConfig}
                   />
                 )}
               </div>

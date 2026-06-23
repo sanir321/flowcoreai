@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { UpdateAgentConfigSchema } from "@/lib/schemas"
 import { updateAgentConfig, deleteAgent } from "@/app/actions/agents"
 import { addUrlSource, deleteSource } from "@/app/actions/knowledge"
+import { createSkill, updateSkill, deleteSkill, assignSkill, unassignSkill } from "@/app/actions/skills"
 import { Card } from "@/components/ui/card"
 import { 
   ArrowLeft, 
@@ -13,13 +14,13 @@ import {
   Globe, 
   Trash2, 
   Shield,
-  BookOpen,
-  Calendar,
-  Table,
   Database,
   CheckCircle2,
   Wand2,
-  User as UserIcon
+  Plus,
+  Pencil,
+  Brain,
+  Lightbulb
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -33,6 +34,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
 import { createClient } from "@/lib/supabase/client"
@@ -44,7 +53,6 @@ import { useCallback, useState, useEffect } from "react"
 import { z } from "zod"
 import { AssistantsSidebar } from "@/components/nav/assistants-sidebar"
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable react-hooks/incompatible-library */
 
 const TRAIT_OPTIONS = {
   tone: ['professional', 'friendly', 'enthusiastic'],
@@ -53,46 +61,14 @@ const TRAIT_OPTIONS = {
   proactivity: ['passive', 'standard', 'assertive'],
 }
 
-const SKILLS = [
-    { 
-        id: 'google_calendar', 
-        name: "Google Calendar", 
-        desc: "Check availability and book appointments autonomously.", 
-        icon: Calendar,
-        category: "Scheduling",
-        configKey: "calendar_enabled"
-    },
-    { 
-        id: 'google_sheets', 
-        name: "Google Sheets", 
-        desc: "Automatically sync captured leads and data to your sheets.", 
-        icon: Table,
-        category: "Data",
-        configKey: "sheets_enabled"
-    },
-    { 
-        id: 'knowledge_bank', 
-        name: "Knowledge Bank", 
-        desc: "Allow agent to search your documentation for answers.", 
-        icon: BookOpen,
-        category: "Intelligence",
-        configKey: "kb_enabled"
-    },
-    { 
-        id: 'human_handover', 
-        name: "Human Handover", 
-        desc: "Detect when a user needs a human and escalate instantly.", 
-        icon: UserIcon, 
-        category: "Safety",
-        configKey: "escalation_enabled"
-    },
-]
-
-const AGENT_SKILL_MAP: Record<string, string[]> = {
-  'customer_support': ['knowledge_bank', 'human_handover'],
-  'appointment_booking': ['google_calendar', 'human_handover'],
-  'sales': ['google_sheets', 'knowledge_bank', 'human_handover']
-};
+interface Skill {
+  id: string
+  name: string
+  description: string | null
+  condition: string | null
+  instructions: string
+  is_active: boolean
+}
 
 interface Agent {
   id: string
@@ -120,6 +96,12 @@ export default function AgentConfigurePage() {
   const [isDeleting, setIsDeleting] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [newUrl, setNewUrl] = useState("")
+  const [skills, setSkills] = useState<Skill[]>([])
+  const [assignedSkillIds, setAssignedSkillIds] = useState<Set<string>>(new Set())
+  const [showSkillDialog, setShowSkillDialog] = useState(false)
+  const [editingSkill, setEditingSkill] = useState<Skill | null>(null)
+  const [skillForm, setSkillForm] = useState({ name: "", description: "", condition: "", instructions: "" })
+  const [isSavingSkill, setIsSavingSkill] = useState(false)
 
   const handleDelete = async () => {
     setIsDeleting(true)
@@ -165,6 +147,21 @@ export default function AgentConfigurePage() {
         .order("created_at", { ascending: false })
       
       setSources((sourcesData as unknown as Source[]) || [])
+
+      const { data: skillsData } = await (supabase as any)
+        .from("agent_skills")
+        .select("*")
+        .eq("workspace_id", data.workspace_id)
+        .order("created_at", { ascending: true })
+      setSkills((skillsData as unknown as Skill[]) || [])
+
+      const { data: assignmentData } = await (supabase as any)
+        .from("agent_skill_assignments")
+        .select("skill_id")
+        .eq("agent_id", agentId as string)
+      if (assignmentData) {
+        setAssignedSkillIds(new Set(assignmentData.map((a: any) => a.skill_id)))
+      }
     }
     setIsLoading(false)
   }, [agentId, supabase, form])
@@ -216,6 +213,71 @@ export default function AgentConfigurePage() {
       toast.success("Source removed")
       fetchData()
     }
+  }
+
+  const handleAssign = async (skillId: string) => {
+    const result = await assignSkill({ agent_id: agentId as string, skill_id: skillId })
+    if (result.error) { toast.error(result.error); return }
+    toast.success("Skill assigned")
+    fetchData()
+  }
+
+  const handleUnassign = async (skillId: string) => {
+    const result = await unassignSkill({ agent_id: agentId as string, skill_id: skillId })
+    if (result.error) { toast.error(result.error); return }
+    toast.success("Skill unassigned")
+    fetchData()
+  }
+
+  const handleEditSkill = (skill: Skill) => {
+    setEditingSkill(skill)
+    setSkillForm({
+      name: skill.name,
+      description: skill.description || "",
+      condition: skill.condition || "",
+      instructions: skill.instructions
+    })
+    setShowSkillDialog(true)
+  }
+
+  const handleDeleteSkill = async (skillId: string) => {
+    const result = await deleteSkill({ skill_id: skillId })
+    if (result.error) { toast.error(result.error); return }
+    toast.success("Skill deleted")
+    fetchData()
+  }
+
+  const handleSaveSkill = async () => {
+    if (!skillForm.name.trim() || !skillForm.instructions.trim()) {
+      toast.error("Name and instructions are required")
+      return
+    }
+    setIsSavingSkill(true)
+    if (editingSkill) {
+      const result = await updateSkill({
+        skill_id: editingSkill.id,
+        name: skillForm.name,
+        description: skillForm.description || null,
+        condition: skillForm.condition || null,
+        instructions: skillForm.instructions,
+      })
+      if (result.error) { toast.error(result.error); setIsSavingSkill(false); return }
+      toast.success("Skill updated")
+    } else {
+      if (!agent) { setIsSavingSkill(false); return }
+      const result = await createSkill({
+        workspace_id: agent.workspace_id,
+        name: skillForm.name,
+        description: skillForm.description || null,
+        condition: skillForm.condition || null,
+        instructions: skillForm.instructions,
+      })
+      if (result.error) { toast.error(result.error); setIsSavingSkill(false); return }
+      toast.success("Skill created")
+    }
+    setIsSavingSkill(false)
+    setShowSkillDialog(false)
+    fetchData()
   }
 
   if (isLoading) return (
@@ -293,42 +355,74 @@ export default function AgentConfigurePage() {
                 </TabsList>
 
                 <TabsContent value="skills" className="mt-0">
-                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 text-gray-900 font-sans">
-                      {SKILLS.filter(skill => {
-                         if (!agent) return false;
-                         const allowedSkills = (AGENT_SKILL_MAP as any)[agent.agent_type] || [];
-                         return allowedSkills.includes(skill.id);
-                      }).map((skill) => {
-                         return (
-                            <Card 
+                   <div className="space-y-8">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-1">
+                          <h2 className="text-lg font-semibold text-gray-900 tracking-tight">Assigned Skills</h2>
+                          <p className="text-xs text-gray-500 font-medium">Skills injected into this agent's system prompt at runtime.</p>
+                        </div>
+                        <Button
+                          onClick={() => {
+                            setEditingSkill(null)
+                            setSkillForm({ name: "", description: "", condition: "", instructions: "" })
+                            setShowSkillDialog(true)
+                          }}
+                          className="bg-black text-white hover:bg-gray-800 rounded-xl px-5 py-2 text-[11px] font-semibold transition-all active:scale-95 shadow-lg"
+                        >
+                          <Plus className="h-3.5 w-3.5 mr-1.5" />
+                          New Skill
+                        </Button>
+                      </div>
+
+                      {skills.filter(s => assignedSkillIds.has(s.id)).length === 0 ? (
+                        <div className="py-16 flex flex-col items-center justify-center text-center space-y-4 border-2 border-dashed border-gray-100 rounded-2xl">
+                          <div className="h-16 w-16 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-200">
+                            <Brain className="h-6 w-6" />
+                          </div>
+                          <div className="space-y-1">
+                            <p className="text-sm font-semibold text-gray-900">No Skills Assigned</p>
+                            <p className="text-[10px] text-gray-400 font-medium max-w-[260px] mx-auto">Assign skills from the available list below to extend this agent's capabilities.</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                          {skills.filter(s => assignedSkillIds.has(s.id)).map(skill => (
+                            <SkillCard
                               key={skill.id}
-                              className="p-6 border-[#c65f39]/20 transition-all duration-300 relative overflow-hidden group rounded-2xl bg-white shadow-md ring-1 ring-[#c65f39]/5"
-                            >
-                               <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                                  <Wand2 className="h-16 w-16 text-[#c65f39]" />
-                               </div>
+                              skill={skill}
+                              isAssigned={true}
+                              onToggle={() => handleUnassign(skill.id)}
+                              onEdit={() => handleEditSkill(skill)}
+                              onDelete={() => handleDeleteSkill(skill.id)}
+                            />
+                          ))}
+                        </div>
+                      )}
 
-                               <div className="flex items-start justify-between relative z-10">
-                                  <div className="flex items-center gap-4">
-                                     <div className="h-11 w-11 rounded-xl flex items-center justify-center transition-all duration-500 shadow-sm border bg-[#c65f39] border-[#c65f39] text-white">
-                                        <skill.icon className="h-5 w-5" />
-                                     </div>
-                                     <div>
-                                        <span className="text-[9px] font-semibold text-gray-500">{skill.category}</span>
-                                        <h3 className="text-sm font-semibold text-gray-900 tracking-tight">{skill.name}</h3>
-                                     </div>
-                                  </div>
-                               </div>
-
-                               <div className="mt-5 space-y-3 relative z-10">
-                                  <p className="text-xs text-gray-600 font-medium leading-relaxed">{skill.desc}</p>
-                                  <div className="flex items-center gap-1.5 text-[9px] font-semibold text-emerald-600">
-                                     <CheckCircle2 className="h-3 w-3" /> Capability Active
-                                  </div>
-                               </div>
-                            </Card>
-                         )
-                      })}
+                      <div className="pt-6 border-t border-gray-100">
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="space-y-1">
+                            <h3 className="text-sm font-semibold text-gray-900 tracking-tight">Available Skills</h3>
+                            <p className="text-[10px] text-gray-400 font-medium">Click to assign additional skills.</p>
+                          </div>
+                        </div>
+                        {skills.filter(s => !assignedSkillIds.has(s.id)).length === 0 ? (
+                          <p className="text-xs text-gray-400 font-medium text-center py-8">All skills are assigned, or no skills created yet.</p>
+                        ) : (
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                            {skills.filter(s => !assignedSkillIds.has(s.id)).map(skill => (
+                              <SkillCard
+                                key={skill.id}
+                                skill={skill}
+                                isAssigned={false}
+                                onToggle={() => handleAssign(skill.id)}
+                                onEdit={() => handleEditSkill(skill)}
+                                onDelete={() => handleDeleteSkill(skill.id)}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
                    </div>
                 </TabsContent>
 
@@ -486,6 +580,74 @@ export default function AgentConfigurePage() {
         </form>
       </div>
 
+      <Dialog open={showSkillDialog} onOpenChange={setShowSkillDialog}>
+        <DialogContent className="sm:max-w-[500px] rounded-2xl border-gray-100 shadow-xl">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-semibold text-gray-900 tracking-tight">
+              {editingSkill ? "Edit Skill" : "Create Skill"}
+            </DialogTitle>
+            <DialogDescription className="text-xs text-gray-500 font-medium">
+              {editingSkill ? "Update the skill definition." : "Define a new capability for your agent."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label className="text-[10px] font-bold text-gray-900 ml-0.5">Name *</Label>
+              <Input
+                value={skillForm.name}
+                onChange={(e) => setSkillForm(p => ({ ...p, name: e.target.value }))}
+                placeholder="e.g. Order Status Lookup"
+                className="h-10 rounded-xl bg-gray-50/30 border-gray-200 focus:bg-white focus:border-[#c65f39] focus:ring-1 focus:ring-[#c65f39]/10 transition-all text-sm font-medium"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-[10px] font-bold text-gray-900 ml-0.5">Description</Label>
+              <Input
+                value={skillForm.description}
+                onChange={(e) => setSkillForm(p => ({ ...p, description: e.target.value }))}
+                placeholder="Briefly describe what this skill does"
+                className="h-10 rounded-xl bg-gray-50/30 border-gray-200 focus:bg-white focus:border-[#c65f39] focus:ring-1 focus:ring-[#c65f39]/10 transition-all text-sm font-medium"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-[10px] font-bold text-gray-900 ml-0.5">Trigger Condition</Label>
+              <Input
+                value={skillForm.condition}
+                onChange={(e) => setSkillForm(p => ({ ...p, condition: e.target.value }))}
+                placeholder="e.g. When customer asks about order status"
+                className="h-10 rounded-xl bg-gray-50/30 border-gray-200 focus:bg-white focus:border-[#c65f39] focus:ring-1 focus:ring-[#c65f39]/10 transition-all text-sm font-medium"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-[10px] font-bold text-gray-900 ml-0.5">Instructions *</Label>
+              <Textarea
+                value={skillForm.instructions}
+                onChange={(e) => setSkillForm(p => ({ ...p, instructions: e.target.value }))}
+                placeholder="Step-by-step instructions for the agent to follow..."
+                className="min-h-[120px] rounded-xl bg-gray-50/30 border-gray-200 focus:bg-white focus:border-[#c65f39] focus:ring-1 focus:ring-[#c65f39]/10 transition-all text-sm p-4 resize-none font-medium leading-relaxed"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowSkillDialog(false)}
+              className="rounded-xl text-xs font-semibold border-gray-200"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveSkill}
+              disabled={isSavingSkill}
+              className="bg-black text-white hover:bg-gray-800 rounded-xl text-xs font-semibold shadow-lg"
+            >
+              {isSavingSkill ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : null}
+              {editingSkill ? "Update" : "Create"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <AnimatePresence>
         {showDeleteConfirm && (
           <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
@@ -526,5 +688,73 @@ export default function AgentConfigurePage() {
         )}
       </AnimatePresence>
     </div>
+  )
+}
+
+function SkillCard({ skill, isAssigned, onToggle, onEdit, onDelete }: {
+  skill: Skill
+  isAssigned: boolean
+  onToggle: () => void
+  onEdit: () => void
+  onDelete: () => void
+}) {
+  return (
+    <Card className="p-5 border-[#c65f39]/20 transition-all duration-300 relative overflow-hidden group rounded-2xl bg-white shadow-md ring-1 ring-[#c65f39]/5 hover:shadow-lg">
+      <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+        <Wand2 className="h-14 w-14 text-[#c65f39]" />
+      </div>
+
+      <div className="flex items-start justify-between relative z-10">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl flex items-center justify-center shadow-sm border bg-[#c65f39] border-[#c65f39] text-white">
+            <Lightbulb className="h-5 w-5" />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 tracking-tight">{skill.name}</h3>
+            {skill.description && (
+              <p className="text-[10px] text-gray-500 font-medium mt-0.5">{skill.description}</p>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-1">
+          <button onClick={onEdit} className="h-7 w-7 rounded-lg flex items-center justify-center text-gray-300 hover:text-gray-600 hover:bg-gray-100 transition-all">
+            <Pencil className="h-3 w-3" />
+          </button>
+          <button onClick={onDelete} className="h-7 w-7 rounded-lg flex items-center justify-center text-gray-300 hover:text-rose-500 hover:bg-rose-50 transition-all">
+            <Trash2 className="h-3 w-3" />
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-3 space-y-2 relative z-10">
+        {skill.condition && (
+          <p className="text-[10px] text-gray-400 font-medium">
+            <span className="font-semibold text-gray-500">Trigger:</span> {skill.condition}
+          </p>
+        )}
+        <p className="text-[10px] text-gray-500 font-medium leading-relaxed line-clamp-2">
+          {skill.instructions}
+        </p>
+      </div>
+
+      <div className="mt-4 flex items-center justify-between relative z-10">
+        <button
+          onClick={onToggle}
+          className={cn(
+            "text-[10px] font-bold uppercase tracking-widest transition-all active:scale-95 rounded-lg px-4 py-1.5",
+            isAssigned
+              ? "bg-red-50 text-red-500 hover:bg-red-100"
+              : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
+          )}
+        >
+          {isAssigned ? "Remove" : "Assign"}
+        </button>
+        {isAssigned && (
+          <div className="flex items-center gap-1.5 text-[9px] font-semibold text-emerald-600">
+            <CheckCircle2 className="h-3 w-3" /> Active
+          </div>
+        )}
+      </div>
+    </Card>
   )
 }

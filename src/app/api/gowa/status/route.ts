@@ -4,6 +4,14 @@ import { NextRequest, NextResponse } from "next/server"
 import { rateLimit } from "@/lib/rate-limit"
 import { getDevices } from "@/lib/gowa"
 
+interface GoWADevice {
+  id: string
+  name?: string
+  jid?: string
+  display_name?: string
+  state: string
+}
+
 export async function GET(req: NextRequest) {
   try {
     const ip = req.headers.get("x-forwarded-for") || "127.0.0.1";
@@ -38,17 +46,17 @@ export async function GET(req: NextRequest) {
       const devices = await getDevices()
 
       // Match by device name (GoWA may or may not return 'name' field)
-      const named = devices.find((d: any) => d.name === deviceName)
+      const named = devices.find((d: GoWADevice) => d.name === deviceName)
       // Match by stored session ID
       const byId = session?.gowa_session_id
-        ? devices.find((d: any) => d.id === session.gowa_session_id)
+        ? devices.find((d: GoWADevice) => d.id === session.gowa_session_id)
         : null
       // Match by stored phone JID (handles device reconnection with new ID)
       const byJid = session?.phone_jid
-        ? devices.find((d: any) => d.jid === session.phone_jid)
+        ? devices.find((d: GoWADevice) => d.jid === session.phone_jid)
         : null
       // Match by display name (GoVA shows name/phone as display_name)
-      const byDisplay = devices.find((d: any) =>
+      const byDisplay = devices.find((d: GoWADevice) =>
         d.display_name && d.display_name.includes(workspaceId.substring(0, 8))
       )
 

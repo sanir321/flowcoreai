@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
   if (!appt) return { title: "Appointment Not Found" }
 
-  const workspace = appt.workspace as any
+  const workspace = appt.workspace as { name: string } | null
   const dateStr = formatIST(appt.start_at)
 
   return {
@@ -66,9 +66,9 @@ export default async function PublicAppointmentPage({ params }: { params: Promis
     notFound()
   }
 
-  const workspace = appt.workspace as any
-  const profile = workspace?.business_profile || {}
-  const address = profile.contact?.address
+  const workspace = appt.workspace as { name: string; business_profile?: Record<string, unknown> } | null
+  const profile = workspace?.business_profile || ({} as Record<string, unknown>)
+  const address = (profile.contact as Record<string, unknown> | undefined)?.address as string | undefined
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 font-sans">

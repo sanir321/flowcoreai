@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import {
   ShieldAlert, User, Search, Filter, X, CheckCircle, Clock,
-  AlertTriangle, MessageSquare, ChevronDown, ExternalLink, RefreshCw, PanelRightClose, PanelRight
+  AlertTriangle, MessageSquare, ChevronDown, RefreshCw
 } from "lucide-react"
 import { AssistantsSidebar } from "@/components/nav/assistants-sidebar"
 import { Badge } from "@/components/ui/badge"

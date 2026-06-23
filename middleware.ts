@@ -126,7 +126,7 @@ function applySecurityHeaders(response: NextResponse, nonce: string): NextRespon
     "X-Content-Type-Options": "nosniff",
     "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
     "Referrer-Policy": "strict-origin-when-cross-origin",
-    "Content-Security-Policy": `default-src 'self'; script-src 'self' 'nonce-${nonce}'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co https://api.bluesminds.com https://go-whatsapp-web-multidevice-production-8644.up.railway.app; frame-ancestors 'none'`,
+    "Content-Security-Policy": `default-src 'self'; script-src 'self' 'nonce-${nonce}'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co https://opencode.ai https://go-whatsapp-web-multidevice-production-8644.up.railway.app; frame-ancestors 'none'`,
     "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
   };
   Object.entries(headers).forEach(([key, value]) => {

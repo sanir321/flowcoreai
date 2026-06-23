@@ -4,7 +4,7 @@
 
 [![Next.js](https://img.shields.io/badge/Next.js-15.5-000000?logo=next.js)](https://nextjs.org)
 [![Supabase](https://img.shields.io/badge/Supabase-3FCF8E?logo=supabase&logoColor=white)](https://supabase.com)
-[![BluesMinds](https://img.shields.io/badge/BluesMinds-OpenAI--compatible-412991)](https://bluesminds.ai)
+[![OpenCode Zen](https://img.shields.io/badge/OpenCode%20Zen-Free%20AI%20Models-412991)](https://opencode.ai/zen)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-38B2AC?logo=tailwind-css)](https://tailwindcss.com)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql)](https://postgresql.org)
 

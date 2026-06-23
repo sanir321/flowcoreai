@@ -40,6 +40,8 @@
   "exclude": [
     "node_modules",
     "supabase/functions",
-    "scripts"
+    "scripts",
+    "flowcore-premium-video",
+    "flowcore-promo"
   ]
 }

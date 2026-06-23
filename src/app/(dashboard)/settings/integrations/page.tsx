@@ -143,7 +143,6 @@ export default function IntegrationsPage() {
       setIsActionLoading(null)
     } else {
       // Store nonce in cookie for CSRF binding verification in callback
-      // eslint-disable-next-line react-hooks/immutability
       document.cookie = `google_oauth_nonce=${result.data.nonce}; path=/api/auth/google/callback; maxAge=600; SameSite=Lax; Secure`
       window.location.assign(result.data.url)
     }

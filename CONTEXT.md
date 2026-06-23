@@ -276,7 +276,7 @@ Dispatch: Store in DB + send via GoWA/Widget
 
 ### Supabase Edge Function Secrets
 - `OPENCODE_ZEN_API_KEY` / `OPENCODE_ZEN_BASE_URL` — Free AI models (OpenCode Zen)
-- `BLUESMINDS_API_KEY` — BluesMinds AI gateway
+- `OPENCODE_ZEN_API_KEY` + `OPENCODE_ZEN_BASE_URL` — OpenCode Zen (free AI models, replaced BluesMinds)
 - `INTERNAL_CRON_SECRET` — Internal cron job auth
 
 ### Key URLs

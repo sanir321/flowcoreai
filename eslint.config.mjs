@@ -1,8 +1,10 @@
-import { defineConfig } from "eslint/config";
-import nextVitals from "eslint-config-next/core-web-vitals";
-import nextTs from "eslint-config-next/typescript";
+import tsPlugin from "@typescript-eslint/eslint-plugin";
+import nextPlugin from "@next/eslint-plugin-next";
+import reactHooksPlugin from "eslint-plugin-react-hooks";
 
-const eslintConfig = defineConfig([
+const tsFlat = tsPlugin.configs["flat/recommended"];
+
+export default [
   {
     ignores: [
       "**/.next/**",
@@ -15,20 +17,23 @@ const eslintConfig = defineConfig([
       "**/dist/**",
       "**/docs/**",
       "**/public/widget/**",
+      "**/flowcore-premium-video/**",
+      "**/flowcore-promo/**",
     ],
   },
-  ...nextVitals,
-  ...nextTs,
+  ...tsFlat,
   {
+    files: ["**/*.ts", "**/*.tsx", "**/*.mts"],
+    plugins: {
+      "@next/next": nextPlugin,
+      "react-hooks": reactHooksPlugin,
+    },
     rules: {
+      ...nextPlugin.configs.recommended.rules,
+      ...nextPlugin.configs["core-web-vitals"].rules,
+      "react-hooks/exhaustive-deps": "warn",
       "@typescript-eslint/no-explicit-any": "warn",
-      "react-hooks/set-state-in-effect": "off",
-      "@typescript-eslint/no-unused-vars": "warn",
-      "react/no-unescaped-entities": "warn",
       "prefer-const": "warn",
-      "@next/next/no-img-element": "warn"
-    }
+    },
   },
-]);
-
-export default eslintConfig;
+];

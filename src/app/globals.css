@@ -54,7 +54,7 @@
 }
 
 :root {
-  /* Conduit AI Base - Light Mode with brand accents */
+  /* FlowCore Base - Light Mode with brand accents */
   --background: #FFFFFF;
   --foreground: #000000;
   
@@ -64,10 +64,10 @@
   --popover: #FFFFFF;
   --popover-foreground: #000000;
   
-  --primary: #c65f39; /* Conduit Burnt Orange */
+  --primary: #c65f39; /* FlowCore Brand Orange */
   --primary-foreground: #FFFFFF;
   
-  --secondary: #dd6b00; /* Conduit Secondary Orange */
+  --secondary: #dd6b00; /* FlowCore Secondary Orange */
   --secondary-foreground: #FFFFFF;
   
   --muted: #f5f5f5;
@@ -84,7 +84,7 @@
 }
 
 .dark {
-  --background: #050505; /* Conduit Pure Dark */
+  --background: #050505; /* FlowCore Pure Dark */
   --foreground: #FFFFFF;
   
   --card: #11100f;

@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react"
 import { Send, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-interface WidgetConfig {
+export interface WidgetConfig {
   header_text: string
   agent_name: string
   greeting: string

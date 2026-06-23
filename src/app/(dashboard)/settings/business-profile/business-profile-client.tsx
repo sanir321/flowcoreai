@@ -11,7 +11,6 @@ import { Textarea } from "@/components/ui/textarea"
 import {
   Loader2, MapPin, Phone, Mail, Globe, Clock, Plus,
   Sparkles, Building2, AtSign, Link2, Lightbulb, Check,
-  CheckCircle2, X,
 } from "lucide-react"
 import { toast } from "sonner"
 import { updateBusinessProfile } from "@/app/actions/business-profile"

@@ -32,7 +32,10 @@ function hasNonEmptyValue(obj: Record<string, unknown>): boolean {
 }
 
 function resolveNestedValue(obj: Record<string, unknown>, path: string): unknown {
-  return path.split(".").reduce((acc: any, key) => (acc != null ? acc[key] : undefined), obj)
+  return path.split(".").reduce<unknown>((acc, key) => {
+    const record = acc as Record<string, unknown> | null
+    return record != null ? record[key] : undefined
+  }, obj)
 }
 
 export function OverviewTab({ businessProfile, sources, templates, usedTags, onNavigate }: OverviewTabProps) {
