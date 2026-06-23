@@ -92,6 +92,7 @@ export interface PipelineContext {
   _appointmentCreated?: boolean;
   _transferAgentCalled?: boolean;
   _escalationHandled?: boolean;
+  _orderPlaced?: boolean;
 }
 
 export interface AgentPlan {
@@ -122,7 +123,7 @@ export const AGENT_DESCRIPTIONS: Record<string, { label: string; description: st
   },
   sales: {
     label: "Sales Assistant",
-    description: "Handles pricing inquiries, lead capture, qualification, menu browsing, order taking, and payment.",
-    skills: "lead capture, pipeline management, follow-ups, quotes, menu, ordering, UPI payments"
+    description: "Handles pricing inquiries, lead capture, menu browsing, and order taking. Does not process payments — the owner handles payment off-platform.",
+    skills: "lead capture, pipeline management, follow-ups, menu browsing, order taking"
   }
 };

@@ -57,6 +57,31 @@ export const ALL_TOOLS: Record<string, ToolDefinition> = {
       additionalProperties: false
     }
   },
+  place_order: {
+    name: "place_order",
+    description: "Place a confirmed customer order. Only call AFTER the customer has explicitly confirmed the cart you read back to them. Saves the order, sends a bill to the customer via WhatsApp, and notifies the owner.",
+    parameters: {
+      type: "object",
+      properties: {
+        items: {
+          type: "array",
+          description: "The confirmed cart items.",
+          items: {
+            type: "object",
+            properties: {
+              name: { type: "string", description: "Item name as it appears in the menu." },
+              qty: { type: "number", description: "Quantity (positive integer)." }
+            },
+            required: ["name", "qty"],
+            additionalProperties: false
+          }
+        },
+        notes: { type: "string", description: "Optional notes from the customer (e.g. 'no onion', 'deliver after 7pm')." }
+      },
+      required: ["items"],
+      additionalProperties: false
+    }
+  },
   search_kb: {
     name: "search_kb",
     description: "Search the business knowledge base for answers about services, policies, and general info.",
@@ -77,29 +102,6 @@ export const ALL_TOOLS: Record<string, ToolDefinition> = {
       properties: {
         sections: { type: "array", items: { type: "string" }, description: "Optional: specific sections to retrieve (e.g. ['contact', 'hours', 'policies']). Omit for full profile." }
       },
-      additionalProperties: false
-    }
-  },
-  generate_quote: {
-    name: "generate_quote",
-    description: "Generate a formal price quote with items, quantities, prices, tax, and 30-day validity.",
-    parameters: {
-      type: "object",
-      properties: {
-        items: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              name: { type: "string" }, qty: { type: "number" }, price: { type: "number" }
-            },
-            required: ["name", "qty", "price"],
-            additionalProperties: false
-          }
-        },
-        notes: { type: "string" }
-      },
-      required: ["items"],
       additionalProperties: false
     }
   },
@@ -172,7 +174,7 @@ export const AGENT_TOOLS: Record<string, string[]> = {
   ],
   sales: [
     "manage_catalog", "manage_contact", "get_business_info",
-    "generate_quote", "search_kb", "transfer_agent"
+    "place_order", "search_kb", "transfer_agent"
   ]
 };
 

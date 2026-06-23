@@ -220,3 +220,125 @@ function formatPhoneForGoWA(phone: string): string {
   if (cleaned.length === 10 && /^[6-9]/.test(cleaned)) cleaned = "91" + cleaned;
   return cleaned;
 }
+
+async function sendGowaMessage(deviceId: string, phone: string, message: string): Promise<boolean> {
+  const gowaBase = Deno.env.get("GOWA_BASE_URL")?.replace(/\/$/, "");
+  const gowaKey = Deno.env.get("GOWA_API_KEY");
+  if (!gowaBase || !gowaKey || !deviceId || !phone) return false;
+  try {
+    const resp = await fetch(`${gowaBase}/send/message`, {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${btoa(gowaKey)}`,
+        "Content-Type": "application/json",
+        "X-Device-Id": deviceId
+      },
+      body: JSON.stringify({ phone: formatPhoneForGoWA(phone), message })
+    });
+    return resp.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function placeOrder(
+  params: { items?: { name: string; qty?: number }[]; notes?: string },
+  ctx: PipelineContext
+) {
+  const items = params.items || [];
+  if (items.length === 0) {
+    return { success: false, error: "No items in the order. Ask the customer what they'd like to order." };
+  }
+
+  // Resolve each item against menu_items
+  const resolved: { name: string; qty: number; price: number }[] = [];
+  const unknown: string[] = [];
+  for (const it of items) {
+    const name = (it.name || "").trim();
+    const qty = Math.max(1, Math.floor(Number(it.qty) || 1));
+    if (!name) continue;
+    const safe = name.replace(/\\/g, "\\\\").replace(/[%_().,]/g, "\\$&");
+    const { data: matches } = await ctx.supabase
+      .from("menu_items")
+      .select("name, price, is_available")
+      .eq("workspace_id", ctx.payload.workspace_id)
+      .eq("is_available", true)
+      .ilike("name", `%${safe}%`)
+      .order("name")
+      .limit(1);
+    const match = matches && matches.length > 0 ? matches[0] : null;
+    if (!match || !match.price) {
+      unknown.push(name);
+      continue;
+    }
+    resolved.push({ name: match.name, qty, price: Number(match.price) });
+  }
+
+  if (unknown.length > 0) {
+    return {
+      success: false,
+      error: `These items aren't on the menu: ${unknown.join(", ")}. Ask the customer to pick from the menu.`,
+      unknown_items: unknown
+    };
+  }
+
+  const subtotal = resolved.reduce((sum, it) => sum + it.qty * it.price, 0);
+  const total = subtotal;
+  const orderNumber = `ORD-${Date.now().toString(36).toUpperCase()}`;
+
+  const { data: session } = await ctx.supabase
+    .from("conversation_sessions")
+    .select("contact_id, customer_jid, gowa_session:gowa_sessions!workspace_id(gowa_session_id)")
+    .eq("id", ctx.session.id)
+    .eq("workspace_id", ctx.payload.workspace_id)
+    .single();
+
+  const customerPhone = (session?.customer_jid || ctx.payload.customer_jid || "").split("@")[0];
+
+  const { data: order, error: insertError } = await ctx.supabase
+    .from("orders")
+    .insert({
+      workspace_id: ctx.payload.workspace_id,
+      contact_id: session?.contact_id || null,
+      session_id: ctx.session.id,
+      order_number: orderNumber,
+      items: resolved,
+      subtotal,
+      total,
+      customer_phone: customerPhone || null,
+      status: "pending",
+      notes: params.notes || null
+    })
+    .select()
+    .single();
+
+  if (insertError || !order) {
+    return { success: false, error: "Failed to save the order. Please try again." };
+  }
+
+  const itemLines = resolved.map(i => `• ${i.name} × ${i.qty} = ₹${(i.qty * i.price).toLocaleString()}`).join("\n");
+  const businessName = ctx.workspace?.name || "us";
+
+  const customerBill = `*Order ${orderNumber}*\n\n${itemLines}\n\n*Total: ₹${total.toLocaleString()}*\n\nThank you for your order! The team at ${businessName} will contact you shortly for payment and delivery details.`;
+
+  const ownerNotice = `*New Order ${orderNumber}*\n\nFrom: ${customerPhone || "unknown"}\n\n${itemLines}\n\n*Total: ₹${total.toLocaleString()}*${params.notes ? `\n\nNotes: ${params.notes}` : ""}\n\nOpen the dashboard to verify payment.`;
+
+  const deviceId = session?.gowa_session?.gowa_session_id;
+  const ownerPhone = ctx.workspace?.owner_personal_phone;
+
+  // Fire both notifications in parallel, non-blocking — order succeeds even if delivery fails
+  const [billSent, ownerNotified] = await Promise.all([
+    deviceId && customerPhone ? sendGowaMessage(deviceId, customerPhone, customerBill) : Promise.resolve(false),
+    deviceId && ownerPhone ? sendGowaMessage(deviceId, ownerPhone, ownerNotice) : Promise.resolve(false)
+  ]);
+
+  return {
+    success: true,
+    order_id: order.id,
+    order_number: orderNumber,
+    total,
+    items: resolved,
+    bill_sent: billSent,
+    owner_notified: ownerNotified
+  };
+}

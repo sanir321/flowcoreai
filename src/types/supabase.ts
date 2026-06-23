@@ -1313,6 +1313,7 @@ export type Database = {
           contact_id: string | null
           created_at: string | null
           currency: string | null
+          customer_phone: string | null
           deleted_at: string | null
           id: string
           items: Json | null
@@ -1320,6 +1321,7 @@ export type Database = {
           order_number: string | null
           payment_method: string | null
           payment_ref: string | null
+          payment_verified_at: string | null
           session_id: string | null
           status: string | null
           subtotal: number | null
@@ -1333,6 +1335,7 @@ export type Database = {
           contact_id?: string | null
           created_at?: string | null
           currency?: string | null
+          customer_phone?: string | null
           deleted_at?: string | null
           id?: string
           items?: Json | null
@@ -1340,6 +1343,7 @@ export type Database = {
           order_number?: string | null
           payment_method?: string | null
           payment_ref?: string | null
+          payment_verified_at?: string | null
           session_id?: string | null
           status?: string | null
           subtotal?: number | null
@@ -1353,6 +1357,7 @@ export type Database = {
           contact_id?: string | null
           created_at?: string | null
           currency?: string | null
+          customer_phone?: string | null
           deleted_at?: string | null
           id?: string
           items?: Json | null
@@ -1360,6 +1365,7 @@ export type Database = {
           order_number?: string | null
           payment_method?: string | null
           payment_ref?: string | null
+          payment_verified_at?: string | null
           session_id?: string | null
           status?: string | null
           subtotal?: number | null

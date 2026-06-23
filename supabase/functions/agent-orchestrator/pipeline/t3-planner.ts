@@ -503,9 +503,13 @@ function enrichResponseWithToolResults(
         }
         break;
       }
-      case "generate_quote": {
-        if (data.quote_text) {
-          appended.push(`\n\n${data.quote_text}`);
+      case "place_order": {
+        if (data.success && data.order_number) {
+          const itemLines = (data.items || []).map((i: any) => `• ${i.name} × ${i.qty} = ₹${(i.qty * i.price).toLocaleString()}`).join("\n");
+          appended.push(`\n\n*Order ${data.order_number}*\n${itemLines}\n*Total: ₹${Number(data.total || 0).toLocaleString()}*\n\nWe'll contact you shortly for payment and delivery.`);
+        }
+        if (data.unknown_items?.length) {
+          appended.push(`\n\nThese items aren't on our menu: ${data.unknown_items.join(", ")}. Could you pick from the menu?`);
         }
         break;
       }

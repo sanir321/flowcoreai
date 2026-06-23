@@ -5,41 +5,41 @@ import { useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { motion, AnimatePresence } from "framer-motion"
-import { CheckCircle, XCircle, Clock, Loader2, ExternalLink, Copy, ChevronDown, ChevronUp } from "lucide-react"
+import { CheckCircle, XCircle, Clock, Loader2, ChevronDown, ChevronUp, Phone } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
+
+type OrderStatus = "pending" | "paid" | "fulfilled" | "cancelled"
 
 interface Order {
   id: string
   order_number: string
-  status: "pending" | "confirmed" | "paid" | "delivered" | "cancelled"
+  status: OrderStatus
   items: any[]
   subtotal: number
-  tax: number
   total: number
-  upi_link: string | null
+  customer_phone: string | null
   notes: string | null
   created_at: string
   contact_id: string | null
+  payment_verified_at: string | null
 }
 
 interface OrdersClientProps {
   initialOrders: Order[]
 }
 
-const statusColors: Record<string, string> = {
+const statusColors: Record<OrderStatus, string> = {
   pending: "text-yellow-600 bg-yellow-50 border-yellow-200",
-  confirmed: "text-blue-600 bg-blue-50 border-blue-200",
   paid: "text-green-600 bg-green-50 border-green-200",
-  delivered: "text-gray-500 bg-gray-50 border-gray-200",
+  fulfilled: "text-gray-500 bg-gray-50 border-gray-200",
   cancelled: "text-red-600 bg-red-50 border-red-200",
 }
 
-const statusIcons: Record<string, any> = {
+const statusIcons: Record<OrderStatus, any> = {
   pending: Clock,
-  confirmed: Clock,
   paid: CheckCircle,
-  delivered: CheckCircle,
+  fulfilled: CheckCircle,
   cancelled: XCircle,
 }
 
@@ -49,7 +49,7 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const router = useRouter()
 
-  const updateStatus = async (id: string, status: string) => {
+  const updateStatus = async (id: string, status: OrderStatus) => {
     setUpdatingId(id)
     const res = await fetch("/api/orders", {
       method: "PUT",
@@ -58,8 +58,10 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
     })
     const data = await res.json()
     if (res.ok) {
-      setOrders(prev => prev.map(o => (o.id === id ? { ...o, status: status as any } : o)))
-      toast.success(`Order marked as ${status}`)
+      setOrders(prev => prev.map(o => (o.id === id ? { ...o, status } : o)))
+      if (status === "paid") toast.success("Payment verified — customer notified")
+      else if (status === "fulfilled") toast.success("Order marked fulfilled")
+      else if (status === "cancelled") toast.success("Order cancelled")
       router.refresh()
     } else {
       toast.error(data.error || "Failed to update order")
@@ -67,16 +69,11 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
     setUpdatingId(null)
   }
 
-  const copyUpi = (link: string) => {
-    navigator.clipboard.writeText(link)
-    toast.success("UPI link copied")
-  }
-
   const summary = {
     total: orders.length,
     pending: orders.filter(o => o.status === "pending").length,
     paid: orders.filter(o => o.status === "paid").length,
-    delivered: orders.filter(o => o.status === "delivered").length,
+    fulfilled: orders.filter(o => o.status === "fulfilled").length,
   }
 
   return (
@@ -95,7 +92,7 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
           { label: "Total Orders", value: summary.total },
           { label: "Pending", value: summary.pending },
           { label: "Paid", value: summary.paid },
-          { label: "Delivered", value: summary.delivered },
+          { label: "Fulfilled", value: summary.fulfilled },
         ].map(s => (
           <Card key={s.label} className="p-5 bg-white border-gray-100 shadow-sm">
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{s.label}</p>
@@ -111,6 +108,7 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
           orders.map(order => {
             const StatusIcon = statusIcons[order.status] || Clock
             const expanded = expandedId === order.id
+            const isUpdating = updatingId === order.id
 
             return (
               <Card key={order.id} className="bg-white border-gray-100 shadow-sm overflow-hidden">
@@ -127,15 +125,23 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
                     </span>
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-gray-900">{order.order_number}</p>
-                      <p className="text-[10px] text-gray-400">
-                        {new Date(order.created_at).toLocaleDateString("en-IN", {
-                          day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
-                        })}
+                      <p className="text-[10px] text-gray-400 flex items-center gap-2">
+                        <span>
+                          {new Date(order.created_at).toLocaleDateString("en-IN", {
+                            day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
+                          })}
+                        </span>
+                        {order.customer_phone && (
+                          <span className="flex items-center gap-1">
+                            <Phone className="h-2.5 w-2.5" />
+                            {order.customer_phone}
+                          </span>
+                        )}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    <span className="text-sm font-bold text-gray-900">₹{order.total.toLocaleString()}</span>
+                    <span className="text-sm font-bold text-gray-900">₹{Number(order.total ?? 0).toLocaleString()}</span>
                     {expanded ? <ChevronUp className="h-4 w-4 text-gray-300" /> : <ChevronDown className="h-4 w-4 text-gray-300" />}
                   </div>
                 </button>
@@ -164,30 +170,10 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
 
                         <hr className="border-gray-50" />
 
-                        <div className="space-y-1 text-sm">
-                          <div className="flex justify-between text-gray-500">
-                            <span>Subtotal</span>
-                            <span>₹{order.subtotal.toLocaleString()}</span>
-                          </div>
-                          <div className="flex justify-between text-gray-500">
-                            <span>Tax (18%)</span>
-                            <span>₹{order.tax.toLocaleString()}</span>
-                          </div>
-                          <div className="flex justify-between text-base font-bold text-gray-900 pt-1 border-t border-gray-100">
-                            <span>Total</span>
-                            <span>₹{order.total.toLocaleString()}</span>
-                          </div>
+                        <div className="flex justify-between text-base font-bold text-gray-900">
+                          <span>Total</span>
+                          <span>₹{Number(order.total ?? 0).toLocaleString()}</span>
                         </div>
-
-                        {order.upi_link && (
-                          <div className="flex items-center gap-2 bg-gray-50 rounded-xl p-3">
-                            <ExternalLink className="h-3.5 w-3.5 text-gray-400 shrink-0" />
-                            <span className="text-xs text-gray-600 truncate flex-1">{order.upi_link}</span>
-                            <button onClick={() => copyUpi(order.upi_link!)} className="text-gray-400 hover:text-gray-700 shrink-0">
-                              <Copy className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
-                        )}
 
                         {order.notes && (
                           <div className="text-xs text-gray-500 italic">
@@ -195,34 +181,45 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
                           </div>
                         )}
 
-                        <div className="flex gap-2 pt-2">
+                        {order.payment_verified_at && (
+                          <p className="text-[10px] text-green-600 font-medium">
+                            Payment verified on {new Date(order.payment_verified_at).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                          </p>
+                        )}
+
+                        <div className="flex flex-wrap gap-3 pt-2 items-center">
                           {order.status === "pending" && (
-                            <>
-                              <Button
-                                onClick={() => updateStatus(order.id, "confirmed")}
-                                disabled={updatingId === order.id}
-                                className="bg-blue-600 text-white hover:bg-blue-700 rounded-xl h-9 px-4 text-xs font-bold"
-                              >
-                                {updatingId === order.id ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
-                                Confirm
-                              </Button>
-                              <Button
-                                onClick={() => updateStatus(order.id, "cancelled")}
-                                disabled={updatingId === order.id}
-                                className="bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 rounded-xl h-9 px-4 text-xs font-bold"
-                              >
-                                Cancel
-                              </Button>
-                            </>
+                            <label className="flex items-center gap-2 cursor-pointer select-none">
+                              <input
+                                type="checkbox"
+                                checked={false}
+                                disabled={isUpdating}
+                                onChange={() => updateStatus(order.id, "paid")}
+                                className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                              />
+                              <span className="text-xs font-bold text-gray-700">Payment verified</span>
+                              {isUpdating && <Loader2 className="h-3 w-3 animate-spin text-gray-400" />}
+                            </label>
                           )}
+
                           {order.status === "paid" && (
                             <Button
-                              onClick={() => updateStatus(order.id, "delivered")}
-                              disabled={updatingId === order.id}
+                              onClick={() => updateStatus(order.id, "fulfilled")}
+                              disabled={isUpdating}
                               className="bg-green-600 text-white hover:bg-green-700 rounded-xl h-9 px-4 text-xs font-bold"
                             >
-                              {updatingId === order.id ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
-                              Mark Delivered
+                              {isUpdating ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
+                              Mark Fulfilled
+                            </Button>
+                          )}
+
+                          {(order.status === "pending" || order.status === "paid") && (
+                            <Button
+                              onClick={() => updateStatus(order.id, "cancelled")}
+                              disabled={isUpdating}
+                              className="bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 rounded-xl h-9 px-4 text-xs font-bold"
+                            >
+                              Cancel
                             </Button>
                           )}
                         </div>

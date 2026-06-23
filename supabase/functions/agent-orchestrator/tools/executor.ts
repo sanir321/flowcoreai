@@ -2,8 +2,8 @@ import { PipelineContext } from "../lib/types.ts";
 import { matchChunks } from "./impl/kb.ts";
 import { checkAvailability, createAppointment, updateAppointment, cancelAppointment } from "./impl/calendar.ts";
 import { getHistory, update } from "./impl/contact.ts";
-import { captureLead, updateLeadStage, getPipeline, scheduleFollowUp, generateQuote } from "./impl/crm.ts";
-import { searchMenu, sendMenuMedia, checkStock, sendCatalog } from "./impl/order.ts";
+import { captureLead, updateLeadStage, getPipeline, scheduleFollowUp } from "./impl/crm.ts";
+import { searchMenu, sendMenuMedia, checkStock, sendCatalog, placeOrder } from "./impl/order.ts";
 import { requestHandoff } from "./impl/handoff.ts";
 import { createTicket, getTicketStatus } from "./impl/support-ticket.ts";
 import { getBusinessProfile } from "./impl/business-profile.ts";
@@ -14,7 +14,7 @@ const PER_TOOL_TIMEOUTS: Record<string, number> = {
   get_business_info: 5000,
   manage_appointment: 10000,
   manage_catalog: 8000,
-  generate_quote: 10000,
+  place_order: 12000,
   transfer_agent: 5000,
   escalate: 10000,
   end_conversation: 5000,
@@ -27,7 +27,7 @@ const TOOL_RATE_LIMITS: Record<string, number> = {
   manage_catalog: 10,
   manage_contact: 10,
   get_business_info: 10,
-  generate_quote: 3,
+  place_order: 5,
   escalate: 3,
   create_support_ticket: 3,
   transfer_agent: 1,
@@ -59,12 +59,24 @@ export const toolExecutor = {
         ctx._appointmentCreated = true;
       } else {
         // Already created an appointment in this request cycle
-        return { 
-          success: true, 
-          already_booked: true, 
-          note: "Appointment already created in this session." 
+        return {
+          success: true,
+          already_booked: true,
+          note: "Appointment already created in this session."
         };
       }
+    }
+
+    // Session-level idempotency guard for place_order
+    if (toolName === "place_order") {
+      if (ctx._orderPlaced) {
+        return {
+          success: true,
+          already_placed: true,
+          note: "Order already placed in this session."
+        };
+      }
+      ctx._orderPlaced = true;
     }
 
     // Session-level guard for transfer_agent - prevent duplicate escalations
@@ -210,8 +222,8 @@ async function routeToImpl(toolName: string, params: any, ctx: PipelineContext):
     case "get_business_info":
       return getBusinessProfile({ sections: params.sections }, ctx);
 
-    case "generate_quote":
-      return generateQuote(params, ctx);
+    case "place_order":
+      return placeOrder(params, ctx);
 
     case "transfer_agent":
       return requestHandoff(params, ctx);
