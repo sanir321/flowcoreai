@@ -143,15 +143,15 @@ export function NotificationBell() {
         {open && (
           <motion.div
             ref={panelRef}
-            initial={{ opacity: 0, y: -8, scale: 0.96 }}
+            initial={{ opacity: 0, y: -6, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -8, scale: 0.96 }}
+            exit={{ opacity: 0, y: -6, scale: 0.96 }}
             transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-            style={{ transformOrigin: "top center" }}
-            className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-80 bg-white rounded-2xl border border-gray-100 shadow-2xl shadow-black/10 z-[200] overflow-hidden"
+            style={{ transformOrigin: "top left" }}
+            className="absolute left-full ml-2.5 top-0 w-80 bg-white rounded-2xl border border-gray-100 shadow-2xl shadow-black/10 z-[200] overflow-hidden"
           >
             {}
-            <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 h-3 w-3 rotate-45 bg-white border-l border-t border-gray-100" />
+            <div className="absolute -left-1.5 top-5 h-3 w-3 rotate-45 bg-white border-l border-b border-gray-100" />
 
             {}
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-50">
