@@ -5,12 +5,13 @@ const OPENCODE_ZEN_BASE_URL = (Deno.env.get("OPENCODE_ZEN_BASE_URL") || "https:/
 
 export const DEFAULT_FALLBACK_MESSAGE = "I'm not sure about that. Please contact us directly for more information.";
 
+export const FALLBACK_MODEL = "mimo-v2.5-free";
+const DEFAULT_PRIMARY = "nemotron-3-ultra-free";
+
 export async function callLLM(payload: AgentPayload & { agentType?: string }) {
-  const FALLBACK_1 = "mimo-v2.5-free";
-  const DEFAULT_PRIMARY = "nemotron-3-ultra-free";
   const modelChain = payload.model
-    ? [payload.model, FALLBACK_1]
-    : [DEFAULT_PRIMARY, FALLBACK_1];
+    ? [payload.model, FALLBACK_MODEL]
+    : [DEFAULT_PRIMARY, FALLBACK_MODEL];
 
   let lastError: any;
   for (const model of modelChain) {

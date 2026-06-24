@@ -8,15 +8,6 @@ const DEFAULT_KB_CONFIG = {
   noise_stripping: true,
 };
 
-async function getWorkspaceKbConfig(supabase: any, workspaceId: string) {
-  const { data } = await supabase
-    .from("workspaces")
-    .select("kb_config")
-    .eq("id", workspaceId)
-    .maybeSingle();
-  return data?.kb_config || DEFAULT_KB_CONFIG;
-}
-
 export async function matchChunks(params: { query: string }, ctx: PipelineContext) {
   // Reuse the speculative search started in T2 when the query is the raw message.
   if (ctx.kbSearchPromise && params.query.trim().toLowerCase() === ctx.payload.message.trim().toLowerCase()) {
@@ -35,8 +26,7 @@ export async function matchChunks(params: { query: string }, ctx: PipelineContex
     return { success: true, chunks: [], kb_chunks: [] };
   }
 
-  // Fetch workspace-specific KB config
-  const kbConfig = await getWorkspaceKbConfig(ctx.supabase, ctx.payload.workspace_id);
+  const kbConfig = ctx.workspace?.kb_config || DEFAULT_KB_CONFIG;
 
   // Hybrid search: vector + keyword fallback (p_query_text overload).
   const { data: kb, error } = await ctx.supabase.rpc("match_kb_chunks", {

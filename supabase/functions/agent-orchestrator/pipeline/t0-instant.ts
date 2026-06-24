@@ -33,18 +33,14 @@ export async function runT0(ctx: PipelineContext): Promise<TierResult> {
         });
         /* message stored */
       } catch (e: any) {
-        console.error("[T0] Message store failed:", e.message)
+        console.error("[T0] Message store failed:", e.message);
+        // Non-fatal — pipeline continues, message dedup handled at webhook layer
       }
     }
   }
 
   // 1b. If session was already escalated, tell customer it's still being handled
-  const { data: currentSession } = await supabase
-    .from("conversation_sessions")
-    .select("status")
-    .eq("id", ctx.session.id)
-    .single();
-  if (currentSession?.status === "escalated") {
+  if (ctx.session?.status === "escalated") {
     return {
       handled: true,
       response: ctx.workspace?.guardrail_config?.handoff_message

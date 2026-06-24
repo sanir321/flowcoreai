@@ -4,12 +4,14 @@ export async function getOrCreateSession(supabase: any, {
   workspace_id, 
   customer_jid, 
   channel, 
-  agent_type 
+  agent_type,
+  customer_name,
 }: { 
   workspace_id: string; 
   customer_jid: string; 
   channel: string;
   agent_type: string;
+  customer_name?: string;
 }) {
   const VALID_AGENT_TYPES = ["customer_support", "appointment_booking", "sales"];
   const AGENT_TYPE_ALIASES: Record<string, string> = {
@@ -62,12 +64,14 @@ export async function getOrCreateSession(supabase: any, {
 
     if (!contact_id) {
        const { data: newContact } = await supabase
-         .from('contacts')
-          .insert({
-            workspace_id,
-            [channel === 'whatsapp' ? 'whatsapp_jid' : 'session_token']: customer_jid,
-            channel: dbChannel
-          })
+          .from('contacts')
+           .insert({
+             workspace_id,
+             [channel === 'whatsapp' ? 'whatsapp_jid' : 'session_token']: customer_jid,
+             channel: dbChannel,
+             name: customer_name || null,
+             phone: channel === 'whatsapp' ? customer_jid.split('@')[0] : null,
+           })
          .select('id')
          .single();
        contact_id = newContact.id;

@@ -258,10 +258,14 @@ export default function OnboardingPage() {
     const selectedAgent = AGENTS[selectedAgentIndex]
     if (!selectedAgent) return
 
+    const agentTypes = selectedAgent.id === "customer_support"
+      ? ["customer_support"]
+      : [selectedAgent.id, "customer_support"];
+
     setIsLoading(true)
     const result = await finalizeOnboarding({
        workspace_id: workspaceId,
-       agent_types: [selectedAgent.id],
+       agent_types: agentTypes,
     })
     if (result.error) {
        toast.error(result.error)
@@ -473,14 +477,6 @@ export default function OnboardingPage() {
               </div>
 
                <div className="w-full max-w-xs space-y-3">
-                {AGENTS[selectedAgentIndex]?.id !== "customer_support" && (
-                  <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
-                    <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
-                    <p className="text-[11px] text-amber-300/80 leading-relaxed">
-                      Without a <span className="font-semibold text-amber-200">Support Hero</span> agent, messages that don&apos;t match this specialist will not be handled. You can add more agents later in settings.
-                    </p>
-                  </div>
-                )}
                 <Button 
                   onClick={handleFinalize}
                   className="w-full h-12 rounded-xl bg-[#D95E46] hover:bg-[#E2735D] text-white font-bold text-sm transition-all active:scale-95 shadow-xl shadow-[#D95E46]/20"

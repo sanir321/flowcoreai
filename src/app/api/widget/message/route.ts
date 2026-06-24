@@ -204,7 +204,7 @@ export async function POST(req: NextRequest) {
         message,
         channel: "widget",
         agent_type: "customer_support",
-        is_test: true,
+        is_test: false,
       },
     });
 

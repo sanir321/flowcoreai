@@ -230,7 +230,7 @@ export async function updateAgentConfig(input: unknown): Promise<ActionResponse<
       })
     }
 
-    revalidatePath(`/agents/${agent_id}`)
+    revalidatePath(`/agent-hub/${agent_id}`)
     return { data: { success: true }, error: null }
 
   } catch (err) {

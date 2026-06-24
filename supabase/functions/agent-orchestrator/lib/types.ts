@@ -30,6 +30,7 @@ export interface WebhookPayload {
   workspace_id: string;
   customer_jid: string;
   customer_phone: string;
+  customer_name?: string;
   message: string;
   message_type: "text" | "image" | "audio" | "document" | "sticker" | "reaction";
   gowa_message_id: string;
@@ -54,6 +55,7 @@ export interface PipelineContext {
   supabase: any;
   session: any;
   payload: WebhookPayload;
+  _cacheKeyHex?: string;
   workspace?: {
     name?: string;
     description?: string;

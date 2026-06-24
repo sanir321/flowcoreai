@@ -6,6 +6,7 @@ export async function runT1(ctx: PipelineContext): Promise<TierResult> {
   const msgBytes = new TextEncoder().encode(ctx.payload.message.toLowerCase().trim().slice(0, 500));
   const hashBuf = await crypto.subtle.digest("SHA-256", msgBytes);
   const cacheKeyHex = Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, "0")).join("");
+  ctx._cacheKeyHex = cacheKeyHex;
 
   const { data: cached } = await ctx.supabase
     .from("kb_response_cache")
@@ -34,7 +35,7 @@ export async function runT1(ctx: PipelineContext): Promise<TierResult> {
     });
 
     if (similar && similar.length > 0 && similar[0].similarity > 0.80) {
-      return { handled: true, response: similar[0].content || similar[0].response_text, reason: "cache_hit_embedding" };
+      return { handled: true, response: similar[0].content, reason: "cache_hit_embedding" };
     }
   } catch (_) {}
 

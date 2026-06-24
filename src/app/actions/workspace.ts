@@ -63,7 +63,8 @@ export async function createWorkspace(input: unknown): Promise<ActionResponse<{ 
         contact_phone: result.data.contact_phone || null,
         employee_count: result.data.employee_count,
         owner_id: user.id,
-        status: 'active'
+        status: 'active',
+        credits_balance: 500
       })
       .select("id")
       .single()

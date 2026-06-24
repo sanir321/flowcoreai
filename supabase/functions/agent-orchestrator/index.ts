@@ -99,7 +99,8 @@ async function processMessage(payload: WebhookPayload): Promise<[TierResult, Pip
       workspace_id: payload.workspace_id,
       customer_jid: payload.customer_jid,
       channel: payload.source,
-      agent_type: payload.agent_type || "customer_support"
+      agent_type: payload.agent_type || "customer_support",
+      customer_name: payload.customer_name,
     })
 
     const ctx: PipelineContext = { supabase, session, payload }
@@ -133,6 +134,20 @@ async function processMessage(payload: WebhookPayload): Promise<[TierResult, Pip
     const t3 = await runT3(ctx)
     t3.response = sanitizeLlmOutput(t3.response || "")
     await dispatch(ctx, t3.response)
+
+    // Write-back to T1 cache so future identical questions skip LLM
+    if (ctx._cacheKeyHex && t3.response && t3.response.length < 2000) {
+      try {
+        await supabase.from("kb_response_cache").upsert({
+          workspace_id: payload.workspace_id,
+          cache_key: ctx._cacheKeyHex,
+          response_text: t3.response,
+          access_count: 1,
+          accessed_at: new Date().toISOString(),
+        }, { onConflict: "workspace_id, cache_key" });
+      } catch (_) {}
+    }
+
     return [{ ...t3, agent_type: ctx.agentType }, ctx]
   } catch (e: any) {
     console.error("[ORCHESTRATOR] CRASH in processMessage:", e.message)
@@ -186,6 +201,7 @@ async function parseWebhook(req: Request): Promise<WebhookPayload | null> {
     workspace_id: body.workspace_id,
     customer_jid: stableJid,
     customer_phone: body.customer_jid?.split("@")[0] || "",
+    customer_name: body.customer_name || null,
     message: body.message,
     message_type: body.message_type || "text",
     gowa_message_id: body.gowa_message_id || null,
@@ -210,9 +226,22 @@ async function dispatchFallback(supabase: any, payload: WebhookPayload) {
   const { data: ws } = await supabase.from("workspaces").select("guardrail_config").eq("id", payload.workspace_id).maybeSingle()
   const fallbackMsg = ws?.guardrail_config?.fallback_message || DEFAULT_FALLBACK_MESSAGE
 
-  await fetch(`${gowaBase}/send/message`, {
-    method: "POST",
-    headers: { Authorization: `Basic ${btoa(gowaKey)}`, "Content-Type": "application/json", "X-Device-Id": gs.gowa_session_id },
-    body: JSON.stringify({ phone, message: fallbackMsg })
-  }).catch(() => {})
+  try {
+    await fetch(`${gowaBase}/send/message`, {
+      method: "POST",
+      headers: { Authorization: `Basic ${btoa(gowaKey)}`, "Content-Type": "application/json", "X-Device-Id": gs.gowa_session_id },
+      body: JSON.stringify({ phone, message: fallbackMsg })
+    });
+  } catch (e: any) {
+    console.error("[DISPATCH_FALLBACK] GoWA send failed:", e?.message || e);
+    try {
+      await supabase.from("failed_messages").insert({
+        workspace_id: payload.workspace_id,
+        session_id: payload.session_id || null,
+        content: fallbackMsg,
+        error: e?.message || "dispatch_fallback_failed",
+        failed_at: new Date().toISOString()
+      });
+    } catch (_) {}
+  }
 }

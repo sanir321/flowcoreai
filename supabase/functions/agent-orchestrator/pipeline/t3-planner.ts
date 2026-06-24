@@ -1,5 +1,5 @@
 import { PipelineContext, TierResult, AgentPlan } from "../lib/types.ts";
-import { callLLM } from "../lib/llm.ts";
+import { callLLM, FALLBACK_MODEL } from "../lib/llm.ts";
 import { toolExecutor } from "../tools/executor.ts";
 import { SUBMIT_PLAN_TOOL, ALL_TOOLS, AGENT_TOOLS } from "../tools/registry.ts";
 import { buildBookingSystemPrompt } from "../agents/booking.ts";
@@ -25,17 +25,12 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
     .eq("workspace_id", ctx.session.workspace_id)
     .eq("agent_type", agentType)
     .maybeSingle();
-  
+
   if (agent) {
     ctx.session.workspace_agents = agent;
   }
 
-  const { data: sessionStatus } = await ctx.supabase
-    .from("conversation_sessions")
-    .select("status")
-    .eq("id", ctx.session.id)
-    .single();
-  if (sessionStatus?.status === "escalated") {
+  if (ctx.session?.status === "escalated") {
     const handoffResult = await toolExecutor.run("transfer_agent", {
       target_agent: "customer_support",
       reason: "escalation"
@@ -73,17 +68,12 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
   let systemPrompt = buildPrompt(ctx);
 
   try {
-    const { data: agentRow } = await ctx.supabase
-      .from("workspace_agents")
-      .select("id")
-      .eq("workspace_id", ctx.payload.workspace_id)
-      .eq("agent_type", agentType)
-      .maybeSingle();
-    if (agentRow) {
+    const agentId = agent?.id;
+    if (agentId) {
       const { data: assignments } = await ctx.supabase
         .from("agent_skill_assignments")
         .select("skill_id")
-        .eq("agent_id", agentRow.id);
+        .eq("agent_id", agentId);
       if (assignments && assignments.length > 0) {
         const skillIds = assignments.map((a: any) => a.skill_id);
         const { data: skills } = await ctx.supabase
@@ -171,13 +161,8 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
       ctx.kbHadResults = Array.isArray(chunks) && chunks.length > 0;
 
       if (ctx.kbHadResults) {
-        const { data: ws } = await ctx.supabase
-          .from("workspaces")
-          .select("kb_config")
-          .eq("id", ctx.payload.workspace_id)
-          .maybeSingle();
-        const kbConfig = ws?.kb_config || { match_count: 3, match_threshold: 0.35, chunk_truncation: 800, noise_stripping: true, message_history_count: 8 };
-        const truncation = kbConfig.chunk_truncation ?? 800;
+        const kbConfig = ctx.workspace?.kb_config || { match_count: 3, match_threshold: 0.35, chunk_truncation: 600, noise_stripping: true, message_history_count: 6 };
+        const truncation = kbConfig.chunk_truncation ?? 600;
         const noiseStripping = kbConfig.noise_stripping ?? true;
 
         const context = chunks
@@ -324,7 +309,7 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
       const ZEN_KEY = Deno.env.get("OPENCODE_ZEN_API_KEY");
       const ZEN_BASE = (Deno.env.get("OPENCODE_ZEN_BASE_URL") || "https://opencode.ai/zen/v1").replace(/\/+$/, "");
       const fallbackBody = {
-        model: "mimo-v2.5-free",
+        model: FALLBACK_MODEL,
         messages: [
           { role: "system", content: `You are a helpful assistant for ${ctx.workspace?.name || "this business"}. Be brief, natural, and helpful.` },
           { role: "user", content: ctx.payload.message },
@@ -368,7 +353,7 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
       session_id: ctx.session.id,
       workspace_id: ctx.payload.workspace_id,
       trace_id: crypto.randomUUID(),
-      model_used: "gpt-4o",
+      model_used: llmResponse?.model || FALLBACK_MODEL,
       tokens_used: llmResponse?.usage?.total_tokens || 0,
       intent_detected: ctx.agentType || agentType,
       message_length: ctx.payload.message.length,
@@ -491,10 +476,10 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
 }
 
 async function buildMessages(ctx: PipelineContext) {
-  const historyCount = (ctx.workspace as any)?.kb_config?.message_history_count ?? 8;
+  const historyCount = (ctx.workspace as any)?.kb_config?.message_history_count ?? 6;
   const { data: msgHistory } = await ctx.supabase
     .from("messages")
-    .select("*")
+    .select("role, content, created_at")
     .eq("session_id", ctx.session.id)
     .order("created_at", { ascending: false })
     .limit(historyCount);
@@ -765,10 +750,11 @@ async function postProcess(
     try {
       await ctx.supabase.rpc("decrement_credits", {
         p_workspace_id: ctx.payload.workspace_id,
-        p_credits: 1,
-        p_session_id: ctx.session.id
+        p_credits: 1
       });
-    } catch (_) {}
+    } catch (e: any) {
+      console.error("[CREDITS] decrement_credits RPC failed:", e?.message || e);
+    }
   }
 
   await toolExecutor.flushToolCalls(ctx);
@@ -799,17 +785,7 @@ async function postProcess(
 function buildToolDescriptions(agentType: string, source?: string): string {
   const allowed = AGENT_TOOLS[agentType] || AGENT_TOOLS.customer_support;
   const filtered = source === "widget" ? allowed.filter(n => n !== "transfer_agent") : allowed;
-  const lines: string[] = ["\n\n## Available Tools"];
-  lines.push("You can invoke any of these tools by including them in the submit_plan actions array.");
-  lines.push("");
-  for (const name of filtered) {
-    const tool = ALL_TOOLS[name];
-    if (!tool) continue;
-    lines.push(`- ${name}: ${tool.description}`);
-  }
-  lines.push("");
-  lines.push("IMPORTANT: When including a tool in actions, set the 'tool' field to the tool name only (e.g. 'manage_catalog'), not 'functions.manage_catalog'.");
-  return lines.join("\n");
+  return `\n\n## Allowed Tools\n${filtered.map(n => `- ${n}`).join("\n")}`;
 }
 
 function normalizeToolName(name: string): string {
