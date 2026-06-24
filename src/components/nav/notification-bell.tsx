@@ -148,7 +148,7 @@ export function NotificationBell() {
             exit={{ opacity: 0, y: 6, scale: 0.96 }}
             transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
             style={{ transformOrigin: "bottom left" }}
-            className="fixed left-[66px] bottom-24 w-[400px] bg-white rounded-2xl border border-gray-100 shadow-2xl shadow-black/10 z-[200] overflow-hidden"
+            className="fixed left-[66px] bottom-24 w-[400px] bg-white rounded-3xl border border-gray-100/80 shadow-2xl shadow-black/10 z-[200] overflow-hidden"
           >
             <div className="absolute -left-1.5 bottom-6 h-3 w-3 rotate-45 bg-white border-l border-b border-gray-100" />
 
