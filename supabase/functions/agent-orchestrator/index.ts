@@ -119,6 +119,12 @@ async function processMessage(payload: WebhookPayload): Promise<[TierResult, Pip
     if (t1.handled) {
       t1.response = sanitizeLlmOutput(t1.response || "")
       await touchSession(ctx, "customer_support", t1.response)
+      await supabase.from("debug_logs").insert({
+        level: "info",
+        scope: "t1-cache",
+        message: `T1 ${t1.reason}`,
+        metadata: { workspace_id: payload.workspace_id, session_id: ctx.session.id, reason: t1.reason }
+      }).catch(() => {})
       await dispatch(ctx, t1.response)
       return [t1, ctx]
     }
@@ -131,9 +137,17 @@ async function processMessage(payload: WebhookPayload): Promise<[TierResult, Pip
       return [t2, ctx]
     }
 
+    const t3Start = Date.now()
     const t3 = await runT3(ctx)
+    const t3Latency = Date.now() - t3Start
     t3.response = sanitizeLlmOutput(t3.response || "")
     await dispatch(ctx, t3.response)
+    await supabase.from("debug_logs").insert({
+      level: "info",
+      scope: "t3-latency",
+      message: `T3 ${t3.reason}`,
+      metadata: { workspace_id: payload.workspace_id, session_id: ctx.session.id, reason: t3.reason, t3_latency_ms: t3Latency, tool_count: (ctx._toolCalls || []).length }
+    }).catch(() => {})
 
     // Write-back to T1 cache so future identical questions skip LLM
     if (ctx._cacheKeyHex && t3.response && t3.response.length < 2000) {
