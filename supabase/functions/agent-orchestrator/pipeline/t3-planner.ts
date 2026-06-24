@@ -534,7 +534,7 @@ function buildPass2System(ctx: PipelineContext, agentType: string): string {
 You already called tools and results are below.
 
 HOW TO INTERPRET RESULTS:
-- manage_appointment (action: check): "available: true" means the time slot is FREE. "available: false" means it's BUSY. "success: false" with "error" means the time is outside business hours — the error explains why. "availability" is an array of existing busy periods (ignore if empty). If "note" says "Calendar unavailable", assume the slot is free.
+- manage_appointment (action: check): "available: true" means the time slot is FREE. "available: false" means it's BUSY. "available: null" with "checked: false" means the calendar couldn't be reached — do NOT claim the slot is available or unavailable. Instead say you couldn't check right now and ask them to try again or pick a time to tentatively book. "success: false" with "error" means the time is outside business hours — the error explains why. "availability" is an array of existing busy periods (ignore if empty).
 - manage_appointment (action: create): "appointment_link" or "id" means booked successfully. "error" or "already_booked" means it failed or was already booked.
 - Other tools: "error" field means it failed. "success: false" means it failed. Otherwise assume success.${hoursInfo}
 

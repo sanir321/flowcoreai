@@ -122,7 +122,7 @@ export async function checkAvailability(
       return { success: true, available, availability: busyPeriods, requested_time: startAt };
     }
   } catch (_) {}
-  return { success: true, available: true, availability: [], requested_time: startAt, note: "Calendar unavailable — assuming slot is free" };
+  return { success: true, available: null, checked: false, requested_time: startAt, note: "Calendar unavailable — could not verify availability" };
 }
 
 export async function createAppointment(
