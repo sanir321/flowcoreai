@@ -18,40 +18,16 @@ export async function GET(req: NextRequest) {
     );
 
     // 1. Refresh GoWA Statuses
-    const connectedStates = ["connected", "logged_in", "logged-in"];
     const devices = await getDevices();
     for (const device of devices) {
-      const state = connectedStates.includes(device.state) ? "connected" : device.state;
-      const jid = device.jid || device.phone || "";
-      // Try matching by gowa_session_id first
-      const { data: updated, error: updateErr } = await supabaseAdmin
+      await supabaseAdmin
         .from("gowa_sessions")
-        .update({
-          status: state,
-          phone_jid: jid,
-          display_name: device.display_name || "",
-          last_seen_at: new Date().toISOString(),
-          deleted_at: null,
+        .update({ 
+          status: device.state,
+          phone_jid: device.phone,
+          last_seen_at: new Date().toISOString()
         })
-        .eq("gowa_session_id", device.id)
-        .select("id");
-      // If no row matched by device ID, try matching by phone JID on soft-deleted rows
-      // only (this handles reconnection where the GoWA device ID changed, without
-      // risking cross-workspace contamination)
-      if (!updateErr && (!updated || updated.length === 0) && jid) {
-        await supabaseAdmin
-          .from("gowa_sessions")
-          .update({
-            gowa_session_id: device.id,
-            status: state,
-            phone_jid: jid,
-            display_name: device.display_name || "",
-            last_seen_at: new Date().toISOString(),
-            deleted_at: null,
-          })
-          .eq("phone_jid", jid)
-          .not("deleted_at", "is", null);
-      }
+        .eq("gowa_session_id", device.id);
     }
 
     // 2. Escalation Nudges
