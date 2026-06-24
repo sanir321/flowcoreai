@@ -92,7 +92,7 @@ export async function runT2(ctx: PipelineContext): Promise<TierResult> {
   ctx._ventVsSolve = patterns.ventVsSolve;
   ctx._escalationLevel = detectEscalationLevel(msg);
 
-  const businessInfoKeywords = ["business hours", "working hours", "office hours", "open hours", "what are your hours", "what is your address", "your location", "where are you located", "your phone number", "your email address", "how to contact", "contact number", "phone number", "email address"];
+  const businessInfoKeywords = ["business hours", "working hours", "office hours", "open hours", "what are your hours", "what is your address", "your location", "where are you located", "your phone number", "your email address", "how to contact", "contact number", "phone number", "email address", "about your business", "about your company", "tell me about your", "what do you do", "what does your", "what kind of business", "what is your business", "can you tell me about", "your services", "your offerings", "what you offer"];
   const isBusinessInfo = businessInfoKeywords.some(kw => msgLower.includes(kw));
 
   const { data: activeAgentRows } = await ctx.supabase
