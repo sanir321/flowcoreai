@@ -13,6 +13,13 @@ const gowaHeaders = {
   'Authorization': GOWA_AUTH ? `Basic ${GOWA_AUTH}` : ""
 };
 
+const MAX_RETRIES = 3;
+const RETRY_DELAYS = [1000, 2000, 4000];
+
+function isRetryable(error: Error): boolean {
+  return ['GOWA_RATE_LIMITED', 'GOWA_SERVER_ERROR', 'GOWA_TIMEOUT'].includes(error.message);
+}
+
 /**
  * All GoWA API calls must use this wrapper
  */
@@ -21,26 +28,40 @@ async function gowaApiCall<T>(
   deviceId: string,
   payload: object
 ): Promise<T> {
-  try {
-    const response = await fetch(`${GOWA_BASE_URL}${endpoint}`, {
-      method: 'POST',
-      headers: {
-        ...gowaHeaders,
-        'X-Device-Id': deviceId
-      },
-      body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(8000)
-    });
+  let lastError: Error = new Error('GOWA_FAILED');
 
-    if (response.status === 429) throw new Error('GOWA_RATE_LIMITED');
-    if (response.status === 500) throw new Error('GOWA_SERVER_ERROR');
-    if (!response.ok) throw new Error(`GOWA_HTTP_${response.status}`);
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const response = await fetch(`${GOWA_BASE_URL}${endpoint}`, {
+        method: 'POST',
+        headers: {
+          ...gowaHeaders,
+          'X-Device-Id': deviceId
+        },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(8000)
+      });
 
-    return response.json();
-  } catch (error: any) {
-    if (error.name === 'TimeoutError') throw new Error('GOWA_TIMEOUT');
-    throw error;
+      if (response.status === 429) throw new Error('GOWA_RATE_LIMITED');
+      if (response.status === 500) throw new Error('GOWA_SERVER_ERROR');
+      if (!response.ok) throw new Error(`GOWA_HTTP_${response.status}`);
+
+      return response.json();
+    } catch (error: any) {
+      const err = error.name === 'TimeoutError' ? new Error('GOWA_TIMEOUT') : error;
+      lastError = err;
+
+      if (!isRetryable(err)) throw err;
+
+      if (attempt < MAX_RETRIES) {
+        const delay = (RETRY_DELAYS[attempt] ?? 1000) + Math.random() * 500;
+        console.warn(`[GOWA] Retry ${attempt + 1}/${MAX_RETRIES} for ${endpoint} after ${Math.round(delay)}ms: ${err.message}`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
   }
+
+  throw lastError;
 }
 
 async function formatPhoneForGoWA(phone: string): Promise<string> {

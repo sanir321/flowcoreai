@@ -332,6 +332,33 @@ export async function placeOrder(
     deviceId && ownerPhone ? sendGowaMessage(deviceId, ownerPhone, ownerNotice) : Promise.resolve(false)
   ]);
 
+  // Email fallback when GoWA owner notification fails
+  if (!ownerNotified && ownerPhone && ctx.workspace?.owner_id) {
+    try {
+      const APP_URL = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://7flowcore.vercel.app";
+      const CRON_SECRET = Deno.env.get("INTERNAL_CRON_SECRET") || "";
+      const { data: ownerEmail } = await ctx.supabase.rpc("get_user_email", { user_id: ctx.workspace.owner_id });
+      if (ownerEmail) {
+        await fetch(`${APP_URL}/api/emails/send`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${CRON_SECRET}` },
+          body: JSON.stringify({
+            to: ownerEmail,
+            subject: `New Order ${orderNumber} — ${businessName}`,
+            template: "welcome",
+            data: {
+              workspaceName: businessName,
+              customerName: ctx.session?.customer_name || customerPhone || "A Customer",
+              customerEmail: `New order ₹${total.toLocaleString()}. ${params.notes ? `Notes: ${params.notes}` : "Open the dashboard to view details."}`
+            }
+          }),
+        });
+      }
+    } catch (e: any) {
+      console.error("[ORDER] Email fallback notification error:", e.message);
+    }
+  }
+
   return {
     success: true,
     order_id: order.id,

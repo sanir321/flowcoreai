@@ -86,13 +86,20 @@ export async function createCalendarEvent(workspace_id: string, event: any) {
   const accessToken = await getValidAccessToken(workspace_id);
   const { data: tokens } = await supabaseAdmin.from("google_oauth_tokens").select("calendar_id").eq("workspace_id", workspace_id).single();
 
-  const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${tokens?.calendar_id || 'primary'}/events`, {
+  const eventWithMeet = {
+    ...event,
+    conferenceData: event.conferenceData || {
+      createRequest: { requestId: `fc-${Date.now()}-${Math.random().toString(36).slice(2, 10)}` }
+    }
+  };
+
+  const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${tokens?.calendar_id || 'primary'}/events?conferenceDataVersion=1`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(event),
+    body: JSON.stringify(eventWithMeet),
   });
 
   if (!response.ok) throw new Error("Failed to create calendar event");

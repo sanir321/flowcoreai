@@ -105,7 +105,10 @@ export async function runT2(ctx: PipelineContext): Promise<TierResult> {
 
   const channel = ctx.payload.source || ctx.payload.channel;
 
-  if (channel === "widget") {
+  if (ctx.payload.agent_type && ctx.payload.is_test) {
+    ctx.agentType = ctx.payload.agent_type;
+    ctx.routingReason = `explicit_test_agent`;
+  } else if (channel === "widget") {
     ctx.agentType = "customer_support";
     ctx.routingReason = "widget_channel";
   } else {
