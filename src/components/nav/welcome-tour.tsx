@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Heart, Inbox, Bot, ShoppingCart, Calendar, TrendingUp, BookOpen, Users, Sparkles, ArrowRight, X, ChevronLeft, ChevronRight, Zap } from "lucide-react"
+import { Heart, Inbox, Bot, ShoppingCart, Calendar, TrendingUp, BookOpen, Users, Sparkles, ArrowRight, X, ChevronLeft, ChevronRight } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
 
@@ -19,49 +19,49 @@ const TOUR_STEPS: TourStep[] = [
   {
     icon: Heart,
     title: "Welcome to FlowCore",
-    description: "Your AI-powered customer service platform. Let's take a quick tour of what you can do.",
+    description: "AI agents handle your customer conversations — bookings, support, and sales — automatically.",
     color: "text-[#c65f39]",
     bg: "bg-gradient-to-br from-[#c65f39]/5 to-amber-50",
   },
   {
     icon: Inbox,
     title: "Inbox",
-    description: "All your customer conversations in one place. WhatsApp and webchat messages unified into a single timeline.",
+    description: "All WhatsApp and webchat conversations in one unified timeline.",
     color: "text-blue-600",
     bg: "bg-blue-50",
   },
   {
     icon: Bot,
     title: "AI Agents",
-    description: "Three specialized agents — Booking, Support, and Sales — that handle conversations end-to-end automatically.",
+    description: "Three agents — Booking, Support, Sales — handle conversations end-to-end on autopilot.",
     color: "text-purple-600",
     bg: "bg-purple-50",
   },
   {
     icon: ShoppingCart,
     title: "Orders",
-    description: "Track and manage customer orders. View status, verify payments, and fulfill orders from one dashboard.",
+    description: "View orders, verify payments, and update status from a single dashboard.",
     color: "text-emerald-600",
     bg: "bg-emerald-50",
   },
   {
     icon: Calendar,
     title: "Appointments",
-    description: "Booking agent schedules appointments and syncs them to your Google Calendar automatically.",
+    description: "Bookings auto-sync to your Google Calendar with no manual work.",
     color: "text-amber-600",
     bg: "bg-amber-50",
   },
   {
     icon: TrendingUp,
     title: "Insights",
-    description: "Analytics dashboard showing conversation volume, agent performance, and customer trends.",
+    description: "Track conversation volume, agent performance, and customer trends.",
     color: "text-rose-600",
     bg: "bg-rose-50",
   },
   {
     icon: BookOpen,
     title: "Knowledge Base",
-    description: "Upload documents, URLs, and PDFs to train your Support agent with your business information.",
+    description: "Upload docs, PDFs, or URLs to train your Support agent on your business.",
     color: "text-indigo-600",
     bg: "bg-indigo-50",
   },
@@ -70,7 +70,6 @@ const TOUR_STEPS: TourStep[] = [
 export function WelcomeTour() {
   const [show, setShow] = useState(false)
   const [step, setStep] = useState(0)
-  const [started, setStarted] = useState(false)
 
   useEffect(() => {
     const done = localStorage.getItem(TOUR_KEY)
@@ -88,7 +87,6 @@ export function WelcomeTour() {
   const next = () => {
     if (step < TOUR_STEPS.length - 1) {
       setStep((s) => s + 1)
-      setStarted(true)
     } else {
       dismiss()
     }
@@ -159,38 +157,43 @@ export function WelcomeTour() {
               </div>
 
               <div className="flex items-center justify-between gap-3">
-                {isFirst ? (
+                <div className="flex items-center gap-1">
+                  {!isFirst && (
+                    <button
+                      onClick={prev}
+                      className="flex items-center gap-1 text-xs font-semibold text-gray-400 hover:text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-50 transition-all"
+                    >
+                      <ChevronLeft className="h-3.5 w-3.5" />
+                      Back
+                    </button>
+                  )}
+                  {isFirst && <div />}
+                </div>
+
+                <div className="flex items-center gap-2">
                   <button
                     onClick={dismiss}
-                    className="text-xs font-semibold text-gray-400 hover:text-gray-600 transition-colors"
+                    className="text-xs font-semibold text-gray-400 hover:text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-50 transition-all"
                   >
-                    Skip tour
+                    Skip
                   </button>
-                ) : (
-                  <button
-                    onClick={prev}
-                    className="flex items-center gap-1 text-xs font-semibold text-gray-400 hover:text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-50 transition-all"
-                  >
-                    <ChevronLeft className="h-3.5 w-3.5" />
-                    Back
-                  </button>
-                )}
 
-                <button
-                  onClick={next}
-                  className={cn(
-                    "flex items-center gap-1.5 px-4 h-9 rounded-xl text-xs font-bold text-white transition-all shadow-sm",
-                    isLast ? "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20" : "bg-[#c65f39] hover:bg-[#a84d2e] shadow-[#c65f39]/20"
-                  )}
-                >
-                  {isLast ? (
-                    <>Get Started <Sparkles className="h-3.5 w-3.5" /></>
-                  ) : isFirst ? (
-                    <>Take a Tour <ArrowRight className="h-3.5 w-3.5" /></>
-                  ) : (
-                    <>Next <ChevronRight className="h-3.5 w-3.5" /></>
-                  )}
-                </button>
+                  <button
+                    onClick={next}
+                    className={cn(
+                      "flex items-center gap-1.5 px-4 h-9 rounded-xl text-xs font-bold text-white transition-all shadow-sm",
+                      isLast ? "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20" : "bg-[#c65f39] hover:bg-[#a84d2e] shadow-[#c65f39]/20"
+                    )}
+                  >
+                    {isLast ? (
+                      <>Get Started <Sparkles className="h-3.5 w-3.5" /></>
+                    ) : isFirst ? (
+                      <>Take a Tour <ArrowRight className="h-3.5 w-3.5" /></>
+                    ) : (
+                      <>Next <ChevronRight className="h-3.5 w-3.5" /></>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           </motion.div>
