@@ -34,13 +34,14 @@ export async function GET(req: NextRequest) {
       throw new Error("QR code not returned by the initialization function.");
     }
 
-    // Save GoWA device session to DB
+    // Save GoWA device session to DB (clear deleted_at to recover soft-deleted rows)
     await supabase
       .from("gowa_sessions")
       .upsert({
         workspace_id: workspaceId,
         gowa_session_id: qrData.device_id,
         status: "qr_pending",
+        deleted_at: null,
         updated_at: new Date().toISOString(),
       }, { onConflict: "workspace_id" })
 
