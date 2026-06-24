@@ -27,12 +27,13 @@ export async function GET(req: NextRequest) {
     const workspaceId = user.app_metadata?.workspace_id as string | undefined
     if (!workspaceId) return new NextResponse("No workspace found for user", { status: 404 })
 
-    // Check DB session
+    // Check DB session (include soft-deleted rows so we can auto-recover after reconnect)
     const { data: session } = await (supabase
         .from("gowa_sessions")
         .select("status, phone_jid, display_name, error_message, gowa_session_id")
         .eq("workspace_id", workspaceId)
-        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+        .limit(1)
         .maybeSingle() as any) // eslint-disable-line @typescript-eslint/no-explicit-any
 
     // Check GoWA devices — match by device name or stored session ID only
@@ -83,10 +84,10 @@ export async function GET(req: NextRequest) {
           phone_jid: gowaJid,
           display_name: gowaDisplay,
           status: "connected",
+          deleted_at: null,
           updated_at: new Date().toISOString(),
         })
         .eq("workspace_id", workspaceId)
-        .is("deleted_at", null)
       return NextResponse.json({
         status: "connected",
         phone: gowaJid,
@@ -105,7 +106,6 @@ export async function GET(req: NextRequest) {
           updated_at: new Date().toISOString(),
         })
         .eq("workspace_id", workspaceId)
-        .is("deleted_at", null)
       if (updateErr) console.error("[STATUS_SYNC_DISCONNECT_FAILED]", updateErr)
       return NextResponse.json({
         status: "disconnected",
