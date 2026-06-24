@@ -88,7 +88,7 @@ export function InboxClient({
   const [inputText, setInputText] = useState("")
   const [isSending, setIsSending] = useState(false)
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
-  const [activeTab, setActiveTab] = useState<"todo" | "handling" | "done">("todo")
+  const [activeTab, setActiveTab] = useState<"todo" | "handling" | "done">("handling")
   const [search, setSearch] = useState("")
   const [isComposeOpen, setIsComposeOpen] = useState(false)
   const [isSettingsOpen, setIsComposeSettingsOpen] = useState(false)
@@ -120,26 +120,24 @@ export function InboxClient({
     setMessages((data as Message[]) || [])
   }, [supabase])
 
-  // Polling fallback as a safety net
+  // Polling safety net — always runs every 30s regardless of realtime status
   useEffect(() => {
     const interval = setInterval(() => {
-      if (realtimeStatus !== 'connected') {
-        const fetchAll = async () => {
-          const { data } = await supabase
-            .from("conversation_sessions")
-            .select("*, contacts(*)")
-            .eq("workspace_id", workspaceId)
-            .is("deleted_at", null)
-            .order("last_message_at", { ascending: false })
-          if (data) setSessions(data as unknown as Session[])
-        }
-        void fetchAll()
-        if (selectedSessionId) void fetchMessages(selectedSessionId)
+      const fetchAll = async () => {
+        const { data } = await supabase
+          .from("conversation_sessions")
+          .select("*, contacts(*)")
+          .eq("workspace_id", workspaceId)
+          .is("deleted_at", null)
+          .order("last_message_at", { ascending: false })
+        if (data) setSessions(data as unknown as Session[])
       }
-    }, 10000) // Poll every 10s if not connected
+      void fetchAll()
+      if (selectedSessionId) void fetchMessages(selectedSessionId)
+    }, 30000)
 
     return () => clearInterval(interval)
-  }, [workspaceId, supabase, realtimeStatus, selectedSessionId, fetchMessages])
+  }, [workspaceId, supabase, selectedSessionId, fetchMessages])
 
   // Real-time for sessions
   useEffect(() => {
