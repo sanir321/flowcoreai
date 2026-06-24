@@ -152,11 +152,11 @@ export function NotificationBell() {
           >
             <div className="absolute -left-1.5 bottom-6 h-3 w-3 rotate-45 bg-white border-l border-b border-gray-100" />
 
-            <div className="bg-[#E1F0FF] px-5 py-3.5 border-b border-blue-100/50">
+            <div className="bg-gradient-to-r from-[#c65f39]/5 to-[#c65f39]/10 px-5 py-3.5 border-b border-[#c65f39]/10">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <div className="h-7 w-7 rounded-lg bg-white/80 flex items-center justify-center shadow-sm">
-                    <BellRing className="h-3.5 w-3.5 text-[#0066CC]" />
+                  <div className="h-7 w-7 rounded-lg bg-white/80 flex items-center justify-center shadow-sm shadow-[#c65f39]/5">
+                    <BellRing className="h-3.5 w-3.5 text-[#c65f39]" />
                   </div>
                   <div>
                     <h3 className="text-sm font-bold text-gray-900 -mt-0.5">Notifications</h3>
