@@ -113,6 +113,8 @@ export function WelcomeTour() {
   const [direction, setDirection] = useState(0)
   const [confetti, setConfetti] = useState<{ id: number; x: number; delay: number; emoji: string }[]>([])
 
+  const current = TOUR_STEPS[step]!
+
   useEffect(() => {
     const done = localStorage.getItem(TOUR_KEY)
     if (!done) {
@@ -127,7 +129,7 @@ export function WelcomeTour() {
         id: i,
         x: Math.random() * 100,
         delay: Math.random() * 0.8,
-        emoji: FLOWERS[i % FLOWERS.length],
+        emoji: FLOWERS[i % FLOWERS.length]!,
       }))
       setConfetti(items)
     }
@@ -154,7 +156,6 @@ export function WelcomeTour() {
     }
   }
 
-  const current = TOUR_STEPS[step]
   const Icon = current.icon
   const isFirst = step === 0
   const isLast = step === TOUR_STEPS.length - 1
