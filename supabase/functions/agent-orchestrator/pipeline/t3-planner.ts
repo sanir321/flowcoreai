@@ -257,7 +257,7 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
     try {
       const llmOpts: any = {
         agentType,
-        max_tokens: 1000,
+        max_tokens: 600,
         temperature: 0.3,
         system: systemPrompt,
         messages,
@@ -298,7 +298,7 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
       lastError = e;
       console.error(`[T3] Plan attempt ${attempt + 1} error:`, e.message);
       if (attempt < 1) {
-        await new Promise(res => setTimeout(res, 2000 + Math.random() * 3000));
+        await new Promise(res => setTimeout(res, 1000 + Math.random() * 1000));
       }
     }
   }
@@ -319,7 +319,7 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
         stream: false,
       };
       const fc = new AbortController();
-      const ft = setTimeout(() => fc.abort(), 30000);
+      const ft = setTimeout(() => fc.abort(), 20000);
       try {
         const fb = await fetch(ZEN_BASE + "/chat/completions", {
           method: "POST",
@@ -420,7 +420,7 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
       
       const secondPassResponse = await callLLM({
         agentType,
-        max_tokens: 800,
+        max_tokens: 600,
         temperature: 0.3,
         system: pass2System,
         messages: [

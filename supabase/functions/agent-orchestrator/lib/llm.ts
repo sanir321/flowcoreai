@@ -41,7 +41,7 @@ async function callZen(payload: AgentPayload & { model: string }) {
   if (payload.tool_choice) body.tool_choice = payload.tool_choice;
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 60000);
+  const timeout = setTimeout(() => controller.abort(), 45000);
 
   try {
     const res = await fetch(`${OPENCODE_ZEN_BASE_URL}/chat/completions`, {
