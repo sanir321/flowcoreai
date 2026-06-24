@@ -59,7 +59,7 @@ const INTEGRATIONS = [
   { 
     id: 'salesforce', 
     name: "Salesforce", 
-    desc: "Direct CRM synchronization for Agent-level identity tracking.", 
+    desc: "Coming soon — CRM sync for the Sales Assistant agent.", 
     logo: SalesforceLogo,
     requirements: [
         { agent: "Sales Assistant", desc: "Required for CRM Sync", type: "sales" }

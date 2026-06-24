@@ -190,10 +190,10 @@ export function LandingPage() {
 
         <motion.section {...sectionAnim} className="py-16 px-6 flex flex-col items-center" style={{ background: "#ffffff", borderTop: "1px solid #e5e5e5" }}>
           <div className="text-sm font-normal" style={{ color: "#a3a3a3", letterSpacing: "0.05em" }}>
-            Used by teams worldwide
+            Trusted by growing businesses
           </div>
           <div className="flex flex-wrap justify-center items-center gap-x-12 gap-y-6 max-w-4xl px-6 mt-8" style={{ opacity: 0.5 }}>
-            {["Haus", "Hallson", "Capitalia", "HostGenius", "Renjoy", "Bocobay", "Casioa", "MerchFarm"].map((brand, i) => (
+            {["Webuild LLP", "Tasty Bistro"].map((brand, i) => (
               <motion.span key={i} custom={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: i * 0.05, ease: [0.16, 1, 0.3, 1] }} className="text-base tracking-tight select-none cursor-default" style={{ color: "#171717", fontWeight: 400 }}>
                 {brand}
               </motion.span>
