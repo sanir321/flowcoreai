@@ -25,3 +25,7 @@ verify_jwt = false
 [functions.sales-cron]
 # Auth: Manual Bearer token check against INTERNAL_CRON_SECRET
 verify_jwt = false
+
+[functions.google-token-refresh]
+# Auth: Manual Bearer token check against INTERNAL_CRON_SECRET
+verify_jwt = false

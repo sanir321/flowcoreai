@@ -519,9 +519,26 @@ async function buildMessages(ctx: PipelineContext) {
 
 function buildPass2System(ctx: PipelineContext, agentType: string): string {
   const workspace = ctx.workspace || {};
+  const profile = (workspace as any)?.business_profile || {};
+  const hours = profile.hours?.daily;
+  let hoursInfo = "";
+  if (hours) {
+    const openDays = Object.entries(hours)
+      .filter(([, d]: [string, any]) => !d.closed)
+      .map(([day, d]: [string, any]) => `${day.charAt(0).toUpperCase() + day.slice(1)} ${d.open}-${d.close}`)
+      .join(', ');
+    if (openDays) hoursInfo = `\nBusiness hours: ${openDays}.`;
+  }
+
   return `You are a ${agentType.replace("_", " ")} assistant for ${workspace.name || "a business"}.
-You already decided what tools to call. Tool results are provided below.
-Write ONLY the customer-facing message. Keep it under 150 words. Plain text only, no markdown.`;
+You already called tools and results are below.
+
+HOW TO INTERPRET RESULTS:
+- manage_appointment (action: check): "available: true" means the time slot is FREE. "available: false" means it's BUSY. "success: false" with "error" means the time is outside business hours — the error explains why. "availability" is an array of existing busy periods (ignore if empty). If "note" says "Calendar unavailable", assume the slot is free.
+- manage_appointment (action: create): "appointment_link" or "id" means booked successfully. "error" or "already_booked" means it failed or was already booked.
+- Other tools: "error" field means it failed. "success: false" means it failed. Otherwise assume success.${hoursInfo}
+
+Write ONLY the customer-facing message. Under 150 words. Plain text only, no markdown.`;
 }
 
 function enrichResponseWithToolResults(

@@ -87,13 +87,23 @@ function validateBusinessHours(dateStr: string, ctx: PipelineContext): string | 
   return errors.length ? errors.join(' ') : null;
 }
 
+function isTimeSlotBusy(startAt: string, durationMinutes: number, busyPeriods: { start: string; end: string }[]): boolean {
+  const startMs = new Date(startAt).getTime();
+  const endMs = startMs + durationMinutes * 60 * 1000;
+  return busyPeriods.some(bp => {
+    const bpStart = new Date(bp.start).getTime();
+    const bpEnd = new Date(bp.end).getTime();
+    return startMs < bpEnd && endMs > bpStart;
+  });
+}
+
 export async function checkAvailability(
   params: { date: string; time?: string },
   ctx: PipelineContext
 ) {
   const startAt = parseDT(params.date, params.time);
   const hoursError = validateBusinessHours(startAt, ctx);
-  if (hoursError) return { error: hoursError, requested_time: startAt };
+  if (hoursError) return { success: false, error: hoursError, requested_time: startAt };
   try {
     const gConfig = await getGoogleConfig(ctx.supabase, ctx.payload.workspace_id);
     const gRes = await fetch("https://www.googleapis.com/calendar/v3/freeBusy", {
@@ -107,10 +117,12 @@ export async function checkAvailability(
     });
     if (gRes.ok) {
       const data = await gRes.json();
-      return { availability: data.calendars[gConfig.calendar_id || "primary"]?.busy || [], requested_time: startAt };
+      const busyPeriods = data.calendars[gConfig.calendar_id || "primary"]?.busy || [];
+      const available = !isTimeSlotBusy(startAt, 30, busyPeriods);
+      return { success: true, available, availability: busyPeriods, requested_time: startAt };
     }
   } catch (_) {}
-  return { availability: [], requested_time: startAt, note: "Calendar unavailable — assuming slot is free" };
+  return { success: true, available: true, availability: [], requested_time: startAt, note: "Calendar unavailable — assuming slot is free" };
 }
 
 export async function createAppointment(
