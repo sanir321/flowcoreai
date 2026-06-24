@@ -143,40 +143,40 @@ export function NotificationBell() {
         {open && (
           <motion.div
             ref={panelRef}
-            initial={{ opacity: 0, y: -6, scale: 0.96 }}
+            initial={{ opacity: 0, y: 6, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -6, scale: 0.96 }}
+            exit={{ opacity: 0, y: 6, scale: 0.96 }}
             transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-            style={{ transformOrigin: "top left" }}
-            className="absolute left-full ml-2.5 top-0 w-80 bg-white rounded-2xl border border-gray-100 shadow-2xl shadow-black/10 z-[200] overflow-hidden"
+            style={{ transformOrigin: "bottom left" }}
+            className="fixed left-[66px] bottom-24 w-[400px] bg-white rounded-2xl border border-gray-100 shadow-2xl shadow-black/10 z-[200] overflow-hidden"
           >
-            {}
-            <div className="absolute -left-1.5 top-5 h-3 w-3 rotate-45 bg-white border-l border-b border-gray-100" />
+            <div className="absolute -left-1.5 bottom-6 h-3 w-3 rotate-45 bg-white border-l border-b border-gray-100" />
 
-            {}
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-50">
-              <div className="flex items-center gap-2.5">
-                <div className="h-7 w-7 rounded-lg bg-[#c65f39]/10 flex items-center justify-center">
-                  <BellRing className="h-3.5 w-3.5 text-[#c65f39]" />
+            <div className="bg-[#E1F0FF] px-5 py-3.5 border-b border-blue-100/50">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-7 w-7 rounded-lg bg-white/80 flex items-center justify-center shadow-sm">
+                    <BellRing className="h-3.5 w-3.5 text-[#0066CC]" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-gray-900 -mt-0.5">Notifications</h3>
+                    <p className="text-[9px] text-gray-400 font-medium -mt-0.5">
+                      {unreadCount > 0
+                        ? `${unreadCount} unread · ${notifications.length} total`
+                        : "You're all caught up"}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-sm font-bold text-gray-900 -mt-0.5">Notifications</h3>
-                  <p className="text-[9px] text-gray-400 font-medium -mt-0.5">
-                    {unreadCount > 0
-                      ? `${unreadCount} unread · ${notifications.length} total`
-                      : "You're all caught up"}
-                  </p>
-                </div>
+                {unreadCount > 0 && (
+                  <button
+                    onClick={markAllAsRead}
+                    className="flex items-center gap-1 h-7 px-2.5 rounded-lg text-[10px] font-bold text-gray-500 hover:text-gray-700 hover:bg-white/60 transition-all"
+                  >
+                    <CheckCheck className="h-3 w-3" />
+                    Mark read
+                  </button>
+                )}
               </div>
-              {unreadCount > 0 && (
-                <button
-                  onClick={markAllAsRead}
-                  className="flex items-center gap-1 h-7 px-2.5 rounded-lg text-[10px] font-bold text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-all"
-                >
-                  <CheckCheck className="h-3 w-3" />
-                  Mark read
-                </button>
-              )}
             </div>
 
             {}
@@ -191,7 +191,7 @@ export function NotificationBell() {
                 </p>
               </div>
             ) : (
-              <ScrollArea className="max-h-[380px]">
+              <ScrollArea className="max-h-[500px]">
                 <div className="py-1.5">
                   {notifications.map((n, idx) => {
                     const cfg = typeConfig[n.type]
