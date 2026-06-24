@@ -807,15 +807,10 @@ export function AppointmentsClient({ initialAppointments, workspaceId, isModuleA
                          </div>
                          <div>
                             <p className="text-sm font-semibold">{selectedAppt?.customer_name}</p>
-                            <p className="text-[11px] text-gray-500 font-medium mt-0.5">Verified Identity</p>
+                            {selectedAppt?.customer_phone && (
+                              <p className="text-[11px] text-gray-500 font-medium mt-0.5">Phone: {selectedAppt.customer_phone}</p>
+                            )}
                          </div>
-                      </div>
-                      <div className="pt-6 border-t border-gray-50 flex items-center justify-between">
-                         <div className="flex items-center gap-3">
-                            <Phone className="h-4 w-4 text-gray-400" />
-                            <span className="text-xs font-semibold">{selectedAppt?.customer_phone || 'WhatsApp Verified'}</span>
-                         </div>
-                         <Button variant="ghost" size="sm" className="h-8 text-[10px] font-bold text-[#c65f39]">Sync</Button>
                       </div>
                    </div>
                 </section>
@@ -827,10 +822,14 @@ export function AppointmentsClient({ initialAppointments, workspaceId, isModuleA
                          <p className="text-[9px] font-bold text-gray-400 mb-1">Service Type</p>
                          <p className="text-xs font-semibold capitalize">{selectedAppt?.service || 'General'}</p>
                       </div>
-                      <div className="p-4 rounded-xl border border-gray-100 bg-gray-50/50 text-gray-900">
-                         <p className="text-[9px] font-bold text-gray-400 mb-1">Duration</p>
-                         <p className="text-xs font-semibold">30 Minutes</p>
-                      </div>
+                       <div className="p-4 rounded-xl border border-gray-100 bg-gray-50/50 text-gray-900">
+                          <p className="text-[9px] font-bold text-gray-400 mb-1">Duration</p>
+                          <p className="text-xs font-semibold">
+                            {selectedAppt?.start_at && selectedAppt?.end_at
+                              ? `${Math.round((new Date(selectedAppt.end_at).getTime() - new Date(selectedAppt.start_at).getTime()) / 60000)} Minutes`
+                              : '—'}
+                          </p>
+                       </div>
                    </div>
                 </section>
              </div>

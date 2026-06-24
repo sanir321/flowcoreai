@@ -10,9 +10,9 @@ import {
   Plus, 
   History, 
   ExternalLink,
-  ShieldCheck,
+  Wallet,
   Zap,
-  HelpCircle,
+  MessageSquare,
   ArrowUpRight,
   ArrowDownLeft
 } from "lucide-react"
@@ -139,12 +139,16 @@ export default function BillingPage() {
     <div className="max-w-4xl mx-auto font-sans pb-32">
       <motion.div {...fadeUp} className="flex items-center justify-between mb-2 text-gray-900">
         <h1 className="text-3xl font-semibold tracking-tight text-gray-900">Billing & Credits</h1>
-        <button className="flex items-center gap-2 px-4 py-2 text-xs font-semibold border border-gray-200 rounded-xl text-gray-500 hover:bg-gray-50 transition-all shadow-sm">
-          <HelpCircle className="h-4 w-4" /> Help Center
-        </button>
+        <a 
+          href="https://wa.me/917904721312?text=I%20need%20help%20with%20billing" 
+          target="_blank"
+          className="flex items-center gap-2 px-4 py-2 text-xs font-semibold border border-gray-200 rounded-xl text-gray-500 hover:bg-gray-50 transition-all shadow-sm"
+        >
+          <MessageSquare className="h-4 w-4" /> WhatsApp Support
+        </a>
       </motion.div>
       <motion.div {...fadeUp} transition={{ ...ANIMATION_TRANSITION, delay: 0.05 }}>
-        <p className="text-sm font-medium text-gray-500">Manage your conversation credits and usage limits.</p>
+        <p className="text-sm font-medium text-gray-500">Monitor your credit balance and view recent transactions.</p>
       </motion.div>
 
       <hr className="border-gray-100 my-10" />
@@ -195,52 +199,50 @@ export default function BillingPage() {
           <Card className="h-full p-8 bg-gray-50/50 border-gray-100 rounded-2xl shadow-sm flex flex-col justify-between">
             <div className="space-y-4">
                <h3 className="text-sm font-semibold text-gray-600">Active Plan</h3>
-               <div className="space-y-1">
-                  <p className="text-xl font-bold text-gray-900 uppercase tracking-tight">{workspace?.plan || 'Pay As You Go'}</p>
-                  <p className="text-[11px] text-gray-500 font-medium">Indian Manual Billing Mode</p>
-               </div>
-            </div>
+                <div className="space-y-1">
+                   <p className="text-xl font-bold text-gray-900 uppercase tracking-tight">{workspace?.plan || 'Pay As You Go'}</p>
+                   <p className="text-[11px] text-gray-500 font-medium">Prepaid credit system</p>
+                </div>
+             </div>
 
-            <div className="pt-8 space-y-4">
-               <div className="flex items-center gap-2 text-[11px] font-medium text-gray-600">
-                  <ShieldCheck className="h-4 w-4 text-[#10B981]" />
-                  Secure Manual Recharge
-               </div>
-               <p className="text-[10px] text-gray-400 leading-relaxed italic">
-                 Contact support via WhatsApp to recharge your wallet. Credits are usually added within 15 minutes of payment verification.
-               </p>
-            </div>
+             <div className="pt-8 space-y-4">
+                <div className="flex items-center gap-2 text-[11px] font-medium text-gray-600">
+                   <Wallet className="h-4 w-4 text-[#10B981]" />
+                   Recharge via WhatsApp
+                </div>
+                <p className="text-[10px] text-gray-400 leading-relaxed italic">
+                  Send a WhatsApp message to request a recharge. Credits are added within 15 minutes of payment confirmation.
+                </p>
+             </div>
           </Card>
         </motion.div>
       </div>
 
-      {/* Pricing Info Section */}
+      {/* Credit Consumption */}
       <motion.div {...fadeUp} transition={{ ...ANIMATION_TRANSITION, delay: 0.3 }} className="space-y-6 mt-12">
          <div className="flex items-center gap-2">
             <CreditCard className="h-4 w-4 text-gray-400" />
-            <h3 className="text-sm font-semibold text-gray-600">Usage Rates</h3>
+            <h3 className="text-sm font-semibold text-gray-600">Credit Consumption</h3>
          </div>
 
          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card className="p-6 bg-gray-50/30 border-gray-100 rounded-2xl flex justify-between items-center group hover:bg-gray-50/50 transition-all duration-300">
                <div className="space-y-1">
-                  <p className="text-sm font-bold text-gray-900 tracking-tight">AI Generated Response</p>
-                  <p className="text-[11px] text-gray-500 font-medium leading-none">Per outbound message</p>
+                  <p className="text-sm font-bold text-gray-900 tracking-tight">Outbound Message</p>
+                  <p className="text-[11px] text-gray-500 font-medium leading-none">AI-generated reply sent to customer</p>
                </div>
                <div className="text-right space-y-0.5">
                   <p className="text-xl font-bold text-gray-900 tracking-tight">1 Credit</p>
-                  <p className="text-[10px] text-[#10B981] font-bold tracking-wide uppercase">~₹0.50</p>
                </div>
             </Card>
 
             <Card className="p-6 bg-gray-50/30 border-gray-100 rounded-2xl flex justify-between items-center group hover:bg-gray-50/50 transition-all duration-300">
                <div className="space-y-1">
-                  <p className="text-sm font-bold text-gray-900 tracking-tight">Media Handling</p>
-                  <p className="text-[11px] text-gray-500 font-medium leading-none">Images, PDF, Voice</p>
+                  <p className="text-sm font-bold text-gray-900 tracking-tight">Media Processing</p>
+                  <p className="text-[11px] text-gray-500 font-medium leading-none">Image, PDF, or voice analysis</p>
                </div>
                <div className="text-right space-y-0.5">
                   <p className="text-xl font-bold text-gray-900 tracking-tight">2 Credits</p>
-                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide">Premium</p>
                </div>
             </Card>
          </div>
