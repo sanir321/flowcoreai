@@ -260,7 +260,7 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
     console.error("[T3] Gap-filler failed:", e.message);
   }
 
-  systemPrompt += buildToolDescriptions(agentType);
+  systemPrompt += buildToolDescriptions(agentType, ctx.payload.source);
 
   const messages = await buildMessages(ctx);
 
@@ -459,8 +459,7 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
       finalResponse = fillTemplate(parsedPlan.response, parsedPlan.actions, toolResults);
     }
     
-    const enriched = enrichResponseWithToolResults(finalResponse, parsedPlan.actions, toolResults);
-    if (enriched) finalResponse = enriched;
+    
   }
 
   for (let i = 0; i < parsedPlan.actions.length; i++) {
@@ -471,7 +470,10 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
     }
   }
 
-  finalResponse = finalResponse.replace(/\{[^}]+\}/g, "");
+  finalResponse = finalResponse
+    .replace(/\{[^}]+\}/g, "")
+    .replace(/\[Correction:[^\]]*\]/gi, "")
+    .trim();
 
   if (!finalResponse || finalResponse.trim().length === 0) {
     finalResponse = parsedPlan.fallback || ctx.workspace?.guardrail_config?.fallback_message || "Thank you for your message. How else can I help you?";
@@ -700,6 +702,9 @@ function flattenObject(obj: any, prefix = ""): Record<string, string> {
 }
 
 async function handleHandoff(ctx: PipelineContext, targetAgent: string, context: string): Promise<TierResult> {
+  if (ctx.payload.source === "widget") {
+    return { handled: true, response: "I'm sorry, transfers are not available through the web widget. Please reach out via WhatsApp for specialized assistance.", reason: "widget_handoff_blocked" };
+  }
   const depth = (ctx.handoffDepth ?? 0) + 1;
   if (depth > 2) {
     const fallbackResponse = "I've reached the limit for transferring between specialists. A human agent will follow up with you shortly.";
@@ -774,12 +779,13 @@ async function postProcess(
     .eq("id", ctx.session.id);
 }
 
-function buildToolDescriptions(agentType: string): string {
+function buildToolDescriptions(agentType: string, source?: string): string {
   const allowed = AGENT_TOOLS[agentType] || AGENT_TOOLS.customer_support;
+  const filtered = source === "widget" ? allowed.filter(n => n !== "transfer_agent") : allowed;
   const lines: string[] = ["\n\n## Available Tools"];
   lines.push("You can invoke any of these tools by including them in the submit_plan actions array.");
   lines.push("");
-  for (const name of allowed) {
+  for (const name of filtered) {
     const tool = ALL_TOOLS[name];
     if (!tool) continue;
     lines.push(`- ${name}: ${tool.description}`);

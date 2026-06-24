@@ -66,7 +66,36 @@ export function OverviewTab({ businessProfile, sources, templates, usedTags, onN
           else status = "complete"
         }
       } else if (t.section === "knowledge_base") {
-        status = usedTagsSet.has(fkey) ? "complete" : "empty"
+        if (usedTagsSet.has(fkey)) {
+          status = "complete"
+        } else {
+          const kbToProfile: Record<string, string> = {
+            services: "extras.project_types",
+            faqs: "description",
+            policies: "policies",
+            contact: "contact",
+            location: "contact.address",
+            pricing: "pricing",
+            about: "description",
+            specials: "extras.specials",
+          }
+          const profilePath = kbToProfile[fkey]
+          if (profilePath) {
+            let val: unknown = null
+            if (profilePath.startsWith("extras.")) {
+              const extras = (mergedProfile?.extras || {}) as Record<string, unknown>
+              val = extras[profilePath.replace("extras.", "")]
+            } else {
+              val = resolveNestedValue(mergedProfile, profilePath)
+            }
+            if (val != null) {
+              if (Array.isArray(val)) status = val.length > 0 ? "complete" : "empty"
+              else if (typeof val === "object") status = hasNonEmptyValue(val as Record<string, unknown>) ? "complete" : "empty"
+              else if (typeof val === "string") status = val.trim().length > 0 ? "complete" : "empty"
+              else status = "complete"
+            }
+          }
+        }
       }
 
       return {

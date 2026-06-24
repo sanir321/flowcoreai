@@ -56,6 +56,8 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
   const [customAmenity, setCustomAmenity] = useState("")
   const [suggestionsOpen, setSuggestionsOpen] = useState(true)
   const [appliedSuggestions, setAppliedSuggestions] = useState<Set<string>>(new Set())
+  const [extraTemplates, setExtraTemplates] = useState<any[]>([])
+  const [extrasInputs, setExtrasInputs] = useState<Record<string, string>>({})
   
   const defaultDaily = { open: "09:00", close: "17:00", closed: false }
   const [profile, setProfile] = useState<BusinessProfile>(() => {
@@ -85,6 +87,21 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
       setServicesTags(initialServicesOffered.split(",").map(s => s.trim()).filter(Boolean))
     }
   }, [initialServicesOffered])
+
+  useEffect(() => {
+    const fetchExtras = async () => {
+      const supabase = createClient()
+      const { data } = await supabase
+        .from("required_info_templates")
+        .select("*")
+        .eq("business_type", businessType)
+        .order("priority", { ascending: true })
+      if (data) {
+        setExtraTemplates(data.filter((t: any) => t.field_key?.startsWith("extras.")))
+      }
+    }
+    fetchExtras()
+  }, [businessType])
 
   const setField = <K extends keyof BusinessProfile>(key: K, value: BusinessProfile[K]) => {
     setProfile(prev => ({ ...prev, [key]: value }))
@@ -503,6 +520,83 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
                 </div>
              </div>
           </Card>
+
+          {extraTemplates.length > 0 && (
+            <Card className="p-8 border-gray-100 rounded-[2rem] shadow-sm space-y-6">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-orange-50 flex items-center justify-center text-[#c65f39]">
+                  <Building2 className="h-5 w-5" />
+                </div>
+                <h2 className="text-lg font-semibold text-gray-900 tracking-tight">Industry Details</h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {extraTemplates.map((t: any) => {
+                  const extraKey = (t.field_key as string).replace("extras.", "")
+                  const safeExtras = (profile.extras || {}) as Record<string, unknown>
+                  const value = safeExtras[extraKey]
+
+                  if (t.field_type === "tags") {
+                    const tags = Array.isArray(value) ? value as string[] : []
+                    return (
+                      <div key={t.id} className="space-y-1.5">
+                        <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">{t.label}</Label>
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          {tags.map((tag, i) => (
+                            <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#c65f39]/10 border border-[#c65f39]/20 text-xs font-medium text-[#c65f39]">
+                              {tag}
+                              <button type="button" onClick={() => {
+                                const updated = tags.filter((_, j) => j !== i)
+                                setProfile(prev => ({
+                                  ...prev,
+                                  extras: { ...prev.extras, [extraKey]: updated }
+                                }))
+                              }} className="hover:text-[#b55533]">×</button>
+                            </span>
+                          ))}
+                        </div>
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder={`Add ${t.label.toLowerCase()}...`}
+                            className="h-10 text-sm rounded-xl bg-gray-50/50 border-gray-100 focus:bg-white focus:border-[#c65f39] focus:ring-1 focus:ring-[#c65f39]/10 transition-all"
+                            value={extrasInputs[t.id] || ""}
+                            onChange={e => setExtrasInputs(prev => ({ ...prev, [t.id]: e.target.value }))}
+                            onKeyDown={e => {
+                              if (e.key === "Enter") {
+                                e.preventDefault()
+                                const val = extrasInputs[t.id]?.trim()
+                                if (val && !tags.includes(val)) {
+                                  setProfile(prev => ({
+                                    ...prev,
+                                    extras: { ...prev.extras, [extraKey]: [...tags, val] }
+                                  }))
+                                  setExtrasInputs(prev => ({ ...prev, [t.id]: "" }))
+                                }
+                              }
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )
+                  }
+
+                  return (
+                    <div key={t.id} className="space-y-1.5">
+                      <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">{t.label}</Label>
+                      <Input
+                        placeholder={t.description || `Enter ${t.label.toLowerCase()}...`}
+                        className="h-11 rounded-xl bg-gray-50/50 border-gray-100 focus:bg-white focus:border-[#c65f39] focus:ring-1 focus:ring-[#c65f39]/10 transition-all"
+                        value={typeof value === "string" ? value : ""}
+                        onChange={e => setProfile(prev => ({
+                          ...prev,
+                          extras: { ...prev.extras, [extraKey]: e.target.value }
+                        }))}
+                      />
+                    </div>
+                  )
+                })}
+              </div>
+            </Card>
+          )}
 
           {/* Social Media */}
           <Card className="p-8 border-gray-100 rounded-[2rem] shadow-sm space-y-6">

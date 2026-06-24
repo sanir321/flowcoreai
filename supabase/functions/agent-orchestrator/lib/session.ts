@@ -11,6 +11,14 @@ export async function getOrCreateSession(supabase: any, {
   channel: string;
   agent_type: string;
 }) {
+  const VALID_AGENT_TYPES = ["customer_support", "appointment_booking", "sales"];
+  const AGENT_TYPE_ALIASES: Record<string, string> = {
+    "booking": "appointment_booking",
+    "book": "appointment_booking",
+  };
+  const dbAgentType = AGENT_TYPE_ALIASES[agent_type] || agent_type;
+  agent_type = VALID_AGENT_TYPES.includes(dbAgentType) ? dbAgentType : "customer_support";
+
   const ALLOWED_CHANNELS = ["whatsapp", "widget", "api", "test"];
   const dbChannel = ALLOWED_CHANNELS.includes(channel) ? channel : 'widget';
 

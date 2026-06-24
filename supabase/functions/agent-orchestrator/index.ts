@@ -146,6 +146,7 @@ async function processMessage(payload: WebhookPayload): Promise<[TierResult, Pip
         metadata: { 
           stack: e.stack, 
           workspace_id: payload.workspace_id,
+          agent_type: payload.agent_type,
         }
       })
     } catch (dbErr) {
@@ -153,6 +154,9 @@ async function processMessage(payload: WebhookPayload): Promise<[TierResult, Pip
     }
 
     await dispatchFallback(supabase, payload)
+    if (payload.is_test) {
+      return [{ handled: true, response: `[CRASH] ${e.message}`, reason: "crash" }, { supabase, session: {}, payload } as PipelineContext]
+    }
     return [{ handled: true, response: DEFAULT_FALLBACK_MESSAGE, reason: "crash" }, { supabase, session: {}, payload } as PipelineContext]
   }
 }

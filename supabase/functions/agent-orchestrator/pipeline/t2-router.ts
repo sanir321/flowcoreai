@@ -106,22 +106,8 @@ export async function runT2(ctx: PipelineContext): Promise<TierResult> {
   const channel = ctx.payload.source || ctx.payload.channel;
 
   if (channel === "widget") {
-    if (ctx.payload.agent_type && activeAgents.has(ctx.payload.agent_type)) {
-      ctx.agentType = ctx.payload.agent_type;
-      ctx.routingReason = "test_explicit";
-    } else if (ctx.session.agent_type && activeAgents.has(ctx.session.agent_type)) {
-      ctx.agentType = ctx.session.agent_type;
-      ctx.routingReason = "session_continuity";
-    } else if (activeAgents.has("customer_support")) {
-      ctx.agentType = "customer_support";
-      ctx.routingReason = "default_fallback";
-    } else {
-      return {
-        handled: true,
-        response: "I'm sorry, I'm not equipped to handle that type of request. Please contact the business directly for assistance.",
-        reason: "no_matching_agent"
-      };
-    }
+    ctx.agentType = "customer_support";
+    ctx.routingReason = "widget_channel";
   } else {
     if (isBusinessInfo && activeAgents.has("customer_support")) {
       ctx.agentType = "customer_support";

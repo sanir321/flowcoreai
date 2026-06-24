@@ -79,6 +79,11 @@ export const toolExecutor = {
       ctx._orderPlaced = true;
     }
 
+    // Widget is strictly customer support only - no transfers
+    if (toolName === "transfer_agent" && ctx.payload.source === "widget") {
+      return { error: "Transfers are not available through the web widget." };
+    }
+
     // Session-level guard for transfer_agent - prevent duplicate escalations
     if (toolName === "transfer_agent") {
       if (ctx._transferAgentCalled) {
