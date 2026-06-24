@@ -119,12 +119,6 @@ async function processMessage(payload: WebhookPayload): Promise<[TierResult, Pip
     if (t1.handled) {
       t1.response = sanitizeLlmOutput(t1.response || "")
       await touchSession(ctx, "customer_support", t1.response)
-      await supabase.from("debug_logs").insert({
-        level: "info",
-        scope: "t1-cache",
-        message: `T1 ${t1.reason}`,
-        metadata: { workspace_id: payload.workspace_id, session_id: ctx.session.id, reason: t1.reason }
-      }).catch(() => {})
       await dispatch(ctx, t1.response)
       return [t1, ctx]
     }
