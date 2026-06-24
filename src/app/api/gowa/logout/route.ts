@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
     }
 
     await (supabase.from("gowa_sessions") as any)
-      .update({ deleted_at: new Date().toISOString() })
+      .delete()
       .eq("workspace_id", workspaceId)
 
     return NextResponse.json({ status: 'ok', message: 'Session disconnected' })
