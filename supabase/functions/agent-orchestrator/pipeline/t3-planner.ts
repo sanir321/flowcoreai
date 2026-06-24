@@ -614,20 +614,22 @@ function enrichResponseWithToolResults(
       }
       case "get_business_info": {
         const profile = data?.data || data;
-        if (profile?.contact || profile?.hours) {
-          const parts: string[] = [];
-          if (profile.contact?.phone) parts.push(`Phone: ${profile.contact.phone}`);
-          if (profile.contact?.email) parts.push(`Email: ${profile.contact.email}`);
-          if (profile.contact?.address) parts.push(`Address: ${profile.contact.address}`);
-          if (profile.hours?.daily) {
-            const days = Object.entries(profile.hours.daily)
-              .filter(([_, d]: [string, any]) => !d.closed)
-              .map(([day, d]: [string, any]) => `${day.charAt(0).toUpperCase() + day.slice(1)}: ${d.open}-${d.close}`)
-              .join(', ');
-            if (days) parts.push(`Hours: ${days}`);
-          }
-          if (parts.length > 0) appended.push(`\n\n${parts.join('\n')}`);
+        const parts: string[] = [];
+        if (typeof profile.description === "string") parts.push(profile.description);
+        if (profile.contact?.phone) parts.push(`Phone: ${profile.contact.phone}`);
+        if (profile.contact?.email) parts.push(`Email: ${profile.contact.email}`);
+        if (profile.contact?.address) parts.push(`Address: ${profile.contact.address}`);
+        if (profile.hours?.daily) {
+          const days = Object.entries(profile.hours.daily)
+            .filter(([_, d]: [string, any]) => !d.closed)
+            .map(([day, d]: [string, any]) => `${day.charAt(0).toUpperCase() + day.slice(1)}: ${d.open}-${d.close}`)
+            .join(', ');
+          if (days) parts.push(`Hours: ${days}`);
         }
+        if (profile.pricing?.description) parts.push(`Pricing: ${profile.pricing.description}`);
+        if (profile.extras?.project_types?.length) parts.push(`Projects: ${profile.extras.project_types.join(', ')}`);
+        if (profile.amenities?.length) parts.push(`Amenities: ${profile.amenities.join(', ')}`);
+        if (parts.length > 0) appended.push(`\n\n${parts.join('\n')}`);
         break;
       }
     }
