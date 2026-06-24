@@ -4,7 +4,6 @@ import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { NavigationRail } from "@/components/nav/navigation-rail"
 import { CommandPalette } from "@/components/nav/command-palette"
-import { WelcomeTour } from "@/components/nav/welcome-tour"
 import { PageTransition } from "@/components/ui/page-transition"
 import { useMemo, useState } from "react"
 import { cn } from "@/lib/utils"
@@ -109,7 +108,6 @@ export function DashboardClientWrapper({
   return (
     <div className="flex h-dvh bg-white font-sans text-gray-900 selection:bg-[#c65f39]/10 selection:text-[#c65f39]">
       <CommandPalette />
-      <WelcomeTour />
 
       {isDashboardRoute && <NavigationRail />}
 
