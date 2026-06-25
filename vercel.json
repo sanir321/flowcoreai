@@ -13,7 +13,7 @@
   "crons": [
     {
       "path": "/api/internal/gowa-health",
-      "schedule": "*/30 * * * *"
+      "schedule": "0 6 * * *"
     },
     {
       "path": "/api/internal/refresh-business-profiles",
