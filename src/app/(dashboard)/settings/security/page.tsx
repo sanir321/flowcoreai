@@ -6,7 +6,7 @@ import { motion } from "framer-motion"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Loader2, ShieldCheck, ShieldOff, Copy, Check } from "lucide-react"
+import { Loader2, ShieldCheck, ShieldOff } from "lucide-react"
 import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
 
@@ -17,7 +17,6 @@ export default function SecurityPage() {
   const [totpUri, setTotpUri] = useState("")
   const [totpSecret, setTotpSecret] = useState("")
   const [verifyCode, setVerifyCode] = useState("")
-  const [copied, setCopied] = useState(false)
   const [unenrolling, setUnenrolling] = useState(false)
   const supabase = createClient()
 
@@ -114,12 +113,6 @@ export default function SecurityPage() {
     setUnenrolling(false)
   }
 
-  function copySecret() {
-    navigator.clipboard.writeText(totpSecret)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -179,18 +172,18 @@ export default function SecurityPage() {
                 Enable MFA
               </Button>
             ) : (
-              <div className="mt-4 p-4 bg-gray-50 rounded-lg space-y-4">
+                  <div className="mt-4 p-4 bg-gray-50 rounded-lg space-y-4">
                 <div>
                   <p className="text-sm font-medium text-gray-700 mb-2">
-                    1. Add this secret to your authenticator app:
+                    1. Scan this QR code with your authenticator app:
                   </p>
-                  <div className="flex items-center gap-2">
-                    <code className="flex-1 p-2 bg-white border rounded text-sm font-mono break-all">
-                      {totpSecret}
-                    </code>
-                    <Button onClick={copySecret} variant="outline" size="sm">
-                      {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                    </Button>
+                  <div className="flex justify-center">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={`https://chart.googleapis.com/chart?cht=qr&chs=200x200&chl=${encodeURIComponent(totpUri)}`}
+                      alt="Scan with authenticator app"
+                      className="rounded-lg border"
+                    />
                   </div>
                 </div>
                 <div>

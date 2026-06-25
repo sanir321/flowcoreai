@@ -8,7 +8,13 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const model = new Supabase.ai.Session('gte-small')
+let model: Supabase.ai.Session | null = null
+async function getEmbeddingModel(): Promise<Supabase.ai.Session> {
+  if (!model) {
+    model = new Supabase.ai.Session('gte-small')
+  }
+  return model
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
@@ -83,7 +89,13 @@ Deno.serve(async (req) => {
     for (let i = 0; i < chunks.length; i++) {
       await supabase.from('kb_sources').update({ error_message: `Embedding chunk ${i + 1}/${chunks.length}...` }).eq('id', source_id)
 
-      const embedding = await model.run(chunks[i], { mean_pool: true, normalize: true })
+      let embedding: any
+      try {
+        const embedModel = await getEmbeddingModel()
+        embedding = await embedModel.run(chunks[i], { mean_pool: true, normalize: true })
+      } catch (embedErr: any) {
+        throw new Error(`Embedding failed (chunk ${i + 1}/${chunks.length}): ${embedErr.message}`)
+      }
       chunksToInsert.push({
         workspace_id, source_id,
         content: chunks[i],

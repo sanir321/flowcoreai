@@ -38,3 +38,4 @@ docs/instruction.md
 supabase/functions/agent-orchestrator/dist/
 supabase/functions/agent-orchestrator/index.js
 .claude/
+test-results/

@@ -413,18 +413,18 @@ function fireAndForget(supabase: any, functionName: string, body: object) {
 }
 
 function triggerEmbedBatch(supabase: any, source_id: string, workspace_id?: string) {
-  const anonKey = Deno.env.get('SUPABASE_ANON_KEY')
+  const embedKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
   const baseUrl = Deno.env.get('SUPABASE_URL')
-  if (!anonKey || !baseUrl) {
-    console.error('[triggerEmbedBatch] missing SUPABASE_ANON_KEY or SUPABASE_URL')
+  if (!embedKey || !baseUrl) {
+    console.error('[triggerEmbedBatch] missing SUPABASE_SERVICE_ROLE_KEY or SUPABASE_URL')
     return
   }
   fetch(`${baseUrl}/functions/v1/embed-text`, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${anonKey}`,
+      'Authorization': `Bearer ${embedKey}`,
       'Content-Type': 'application/json',
-      'apikey': anonKey,
+      'apikey': embedKey,
     },
     body: JSON.stringify({ source_id, workspace_id, embed_batch: true }),
   })

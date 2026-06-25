@@ -57,10 +57,15 @@ Deno.serve(async (req) => {
       if (s.gowa_session_id) deviceMap[s.workspace_id] = s.gowa_session_id
     }
 
+    const sessionIds = followUps.filter(f => f.session_id).map(f => f.session_id!);
+    if (sessionIds.length === 0) {
+      console.log("[SALES-CRON] No follow-ups with valid session IDs, skipping");
+      return new Response(JSON.stringify({ sent: 0 }), { status: 200, headers: { "Content-Type": "application/json" } });
+    }
     const { data: conSessions } = await supabase
       .from('conversation_sessions')
       .select('id, customer_jid, workspace_id')
-      .in('id', followUps.filter(f => f.session_id).map(f => f.session_id!))
+      .in('id', sessionIds)
     const jidMap: Record<string, string> = {}
     for (const cs of conSessions || []) {
       if (cs.customer_jid) jidMap[cs.id] = cs.customer_jid

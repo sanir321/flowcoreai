@@ -17,6 +17,7 @@ const MAX_T3_ITERATIONS = 5;
 const MAX_CONSECUTIVE_TOOL_FAILURES = 3;
 
 export async function runT3(ctx: PipelineContext): Promise<TierResult> {
+  const t3Start = Date.now();
   let agentType = ctx.agentType || "customer_support";
 
   const { data: agent } = await ctx.supabase
@@ -358,7 +359,7 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
       intent_detected: ctx.agentType || agentType,
       message_length: ctx.payload.message.length,
       response_length: parsedPlan.response.length,
-      latency_ms: 0
+      latency_ms: Date.now() - t3Start
     });
   } catch (e: any) {
     console.error("[T3] Failed to insert agent_trace:", e.message);
@@ -417,28 +418,33 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
     try {
       const pass2System = buildPass2System(ctx, agentType);
       const toolContext = buildToolContext(parsedPlan.actions, toolResults);
-      
-      const secondPassResponse = await callLLM({
-        agentType,
-        max_tokens: 600,
-        temperature: 0.3,
-        system: pass2System,
-        messages: [
-          ...messages,
-          { 
-            role: "assistant", 
-            content: "", 
-            tool_calls: llmResponse.choices[0].message.tool_calls 
-          },
-          { 
-            role: "tool", 
-            tool_call_id: llmResponse.choices[0].message.tool_calls[0].id,
-            content: toolContext 
-          }
-        ]
-      });
-      
-      finalResponse = secondPassResponse.choices?.[0]?.message?.content || parsedPlan.fallback || "";
+
+      const toolCalls = llmResponse?.choices?.[0]?.message?.tool_calls;
+      if (!toolCalls || toolCalls.length === 0) {
+        finalResponse = fillTemplate(parsedPlan.response, parsedPlan.actions, toolResults);
+      } else {
+        const secondPassResponse = await callLLM({
+          agentType,
+          max_tokens: 600,
+          temperature: 0.3,
+          system: pass2System,
+          messages: [
+            ...messages,
+            { 
+              role: "assistant", 
+              content: "", 
+              tool_calls: toolCalls 
+            },
+            { 
+              role: "tool", 
+              tool_call_id: toolCalls[0].id,
+              content: toolContext 
+            }
+          ]
+        });
+        
+        finalResponse = secondPassResponse.choices?.[0]?.message?.content || parsedPlan.fallback || "";
+      }
     } catch (e: any) {
       console.error("[T3] Second pass error:", e.message);
       finalResponse = fillTemplate(parsedPlan.response, parsedPlan.actions, toolResults);

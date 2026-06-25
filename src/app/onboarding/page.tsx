@@ -23,8 +23,7 @@ import {
   ChevronLeft, 
   ChevronRight,
   MessageSquare,
-  CheckCircle2,
-  AlertTriangle
+  CheckCircle2
 } from "lucide-react"
 import { createWorkspace } from "@/app/actions/workspace"
 import { finalizeOnboarding } from "@/app/actions/agents"
