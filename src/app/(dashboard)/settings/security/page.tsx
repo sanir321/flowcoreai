@@ -15,7 +15,7 @@ export default function SecurityPage() {
   const [loading, setLoading] = useState(true)
   const [enrolling, setEnrolling] = useState(false)
   const [totpUri, setTotpUri] = useState("")
-  const [totpSecret, setTotpSecret] = useState("")
+  const setTotpSecret = useState("")[1]
   const [verifyCode, setVerifyCode] = useState("")
   const [unenrolling, setUnenrolling] = useState(false)
   const supabase = createClient()
