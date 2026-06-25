@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="/logo.svg" alt="FlowCore" width="400">
+  <img src="https://raw.githubusercontent.com/sanir321/flowcoreai/main/public/logo.svg" alt="FlowCore" width="400">
 </p>
 
 <h1 align="center">FlowCore</h1>
