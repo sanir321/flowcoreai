@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 100" fill="none">
+  <rect width="400" height="100" rx="12" fill="#0a0a0a"/>
+  <path d="M32 50C32 36.745 42.745 26 56 26H76V50H56V74H32V50Z" fill="#6366f1"/>
+  <path d="M56 26H80V50H56V26Z" fill="#818cf8"/>
+  <path d="M80 50H104V74H80V50Z" fill="#4f46e5"/>
+  <text x="120" y="62" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="42" font-weight="700" fill="#e0e0e0" letter-spacing="-1.5">Flow</text>
+  <text x="240" y="62" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="42" font-weight="300" fill="#888" letter-spacing="-0.5">Core</text>
+</svg>

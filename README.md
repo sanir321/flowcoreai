@@ -1,12 +1,17 @@
-# FlowCore
+<p align="center">
+  <img src="/logo.svg" alt="FlowCore" width="400">
+</p>
 
-**Multi-channel AI customer service orchestration for SMBs**
+<h1 align="center">FlowCore</h1>
+<p align="center"><strong>Multi-channel AI customer service orchestration for SMBs</strong></p>
 
-[![Next.js](https://img.shields.io/badge/Next.js-15.5-000000?logo=next.js)](https://nextjs.org)
-[![Supabase](https://img.shields.io/badge/Supabase-3FCF8E?logo=supabase&logoColor=white)](https://supabase.com)
-[![OpenCode Zen](https://img.shields.io/badge/OpenCode%20Zen-Free%20AI%20Models-412991)](https://opencode.ai/zen)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-38B2AC?logo=tailwind-css)](https://tailwindcss.com)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql)](https://postgresql.org)
+<p align="center">
+  <a href="https://nextjs.org"><img src="https://img.shields.io/badge/Next.js-15.5-000000?logo=next.js" alt="Next.js"></a>
+  <a href="https://supabase.com"><img src="https://img.shields.io/badge/Supabase-3FCF8E?logo=supabase&logoColor=white" alt="Supabase"></a>
+  <a href="https://opencode.ai/zen"><img src="https://img.shields.io/badge/OpenCode%20Zen-Free%20AI%20Models-412991" alt="OpenCode Zen"></a>
+  <a href="https://tailwindcss.com"><img src="https://img.shields.io/badge/Tailwind_CSS-4-38B2AC?logo=tailwind-css" alt="Tailwind CSS"></a>
+  <a href="https://postgresql.org"><img src="https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql" alt="PostgreSQL"></a>
+</p>
 
 FlowCore unifies WhatsApp and webchat into a single AI-powered inbox. Three specialized AI agents (booking, sales, support) handle customer conversations with 100% autonomy — verified across 217 test messages.
 
@@ -175,13 +180,7 @@ supabase/functions/
 ├── ingest-document/            # Single doc ingestion
 ├── ingest-url/                 # URL content ingestion
 └── crm-export/                 # CRM data export
-test-results/
-├── run-tests.ps1               # Support agent test runner
-├── run_booking_tests.ps1       # Booking agent test runner
-├── run_sales_test.ps1          # Sales agent test runner
-├── booking_results.json        # Booking test results (77/77)
-├── retest_sales.json           # Sales test results (69/69)
-└── support_results.json        # Support test results (71/71)
+
 ```
 
 ## License
