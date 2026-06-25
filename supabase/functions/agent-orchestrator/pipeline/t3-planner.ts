@@ -563,9 +563,6 @@ function enrichResponseWithToolResults(
           }).join("\n");
           appended.push(`\n\nAvailable slots:\n${formatted}`);
         }
-        if (data.meeting_link) {
-          appended.push(`\n\nGoogle Meet link: ${data.meeting_link}`);
-        }
         if (data.appointment_link) {
           appended.push(`\n\nAppointment details: ${data.appointment_link}`);
         }

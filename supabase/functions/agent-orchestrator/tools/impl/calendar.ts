@@ -306,9 +306,7 @@ async function sendAppointmentWhatsApp(ctx: PipelineContext, appt: any, meetLink
     const appUrl = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://7flowcore.vercel.app";
     const appointmentLink = `${appUrl}/appointment/${appt.id}`;
 
-    let message = `✅ Appointment Confirmed!\n\nHi ${appt.customer_name},\n\nYour appointment has been confirmed:\n• Service: ${appt.service}\n• Date: ${formattedDate}`;
-    if (meetLink) message += `\n• Google Meet: ${meetLink}`;
-    message += `\n\nView details: ${appointmentLink}\n\nThank you!`;
+    let message = `✅ Appointment Confirmed!\n\nHi ${appt.customer_name},\n\nYour appointment has been confirmed:\n• Service: ${appt.service}\n• Date: ${formattedDate}\n\nView details: ${appointmentLink}\n\nThank you!`;
     await fetch(`${gowaBase}/send/message`, {
       method: "POST",
       headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json", "X-Device-Id": deviceId },
