@@ -94,6 +94,7 @@ export default async function RootLayout({
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
         <link rel="icon" type="image/svg+xml" href="/icon.svg" />
         <link rel="manifest" href="/manifest.webmanifest" />
+        <meta name="msvalidate.01" content="C5EF23523AD2B0B7697B73B8836EDF96" />
       </head>
       <body className={`${inter.variable} ${lora.variable} font-sans antialiased`} nonce={nonce}>
         <PostHogProvider>

@@ -80,6 +80,7 @@ export function PublicFooter() {
             <Link href="/pricing" style={{ fontSize: "14px", color: "#888", textDecoration: "none" }}>Pricing</Link>
             <Link href="/faq" style={{ fontSize: "14px", color: "#888", textDecoration: "none" }}>FAQ</Link>
             <Link href="/changelog" style={{ fontSize: "14px", color: "#888", textDecoration: "none" }}>Changelog</Link>
+            <Link href="/sitemap" style={{ fontSize: "14px", color: "#888", textDecoration: "none" }}>Sitemap</Link>
           </nav>
         </div>
         <div>
