@@ -1,6 +1,12 @@
-<svg width="400" height="100" viewBox="0 0 400 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect x="8" y="24" width="52" height="52" rx="12" fill="#c65f39"/>
-  <path d="M22 34H46V39H29V44H40V49H29V58H34V62H22V34Z" fill="white"/>
-  <text x="78" y="62" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="40" font-weight="700" fill="#111" letter-spacing="-0.5">Flow</text>
-  <text x="200" y="62" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="40" font-weight="300" fill="#666" letter-spacing="0">Core</text>
+<svg width="400" height="100" viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="brand" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#c65f39"/>
+      <stop offset="100%" stop-color="#a84a2a"/>
+    </linearGradient>
+  </defs>
+  <rect x="10" y="22" width="56" height="56" rx="14" fill="url(#brand)"/>
+  <path d="M24 32h28v5H29v5h16v5H29v10h5v5H24V32z" fill="#fff"/>
+  <text x="80" y="62" font-family="sans-serif" font-size="38" font-weight="700" fill="#1a1a1a">Flow</text>
+  <text x="200" y="62" font-family="sans-serif" font-size="38" font-weight="300" fill="#555">Core</text>
 </svg>
