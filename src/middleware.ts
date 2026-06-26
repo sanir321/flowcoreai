@@ -1,9 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@supabase/ssr"
-import { randomBytes } from "crypto"
 
 export async function middleware(request: NextRequest) {
-  const nonce = randomBytes(16).toString("base64")
+  const nonce = crypto.randomUUID()
 
   const requestHeaders = new Headers(request.headers)
   const headerSize = JSON.stringify([...requestHeaders.entries()]).length
