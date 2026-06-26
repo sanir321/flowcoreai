@@ -115,12 +115,7 @@ export function LandingPage() {
               transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] as const }}
               className="space-y-5"
             >
-              <div className="flex justify-center">
-                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-normal" style={{ background: "rgba(198,95,57,0.1)", border: "1px solid rgba(198,95,57,0.25)", color: "#c65f39" }}>
-                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: "#c65f39" }} />
-                  217 tests — 100% autonomous
-                </span>
-              </div>
+
               <h1 className="font-normal leading-[1.05] tracking-tighter text-white" style={{ fontSize: "84px", lineHeight: "88px", letterSpacing: "-0.03em" }}>
                 Stop answering the<br/>
                 same question <span style={{ color: "#c65f39" }}>30 times a day</span>
@@ -347,7 +342,7 @@ export function LandingPage() {
                 Everything you need to automate support
               </h2>
               <p className="max-w-lg mx-auto mt-4 leading-relaxed font-normal" style={{ fontSize: "15.667px", color: "#737373" }}>
-                Three specialized AI agents, multiple channels, one unified platform. Every agent verified — 217 test messages, 100% handled.
+                Three specialized AI agents, multiple channels, one unified platform.
               </p>
             </div>
 
@@ -355,7 +350,7 @@ export function LandingPage() {
               {[
                 {
                   title: "Booking Agent",
-                  description: "Books appointments end-to-end. Checks availability, schedules slots, sends confirmations, handles rescheduling and cancellations. 77/77 tests passed.",
+                  description: "Books appointments end-to-end. Checks availability, schedules slots, sends confirmations, handles rescheduling and cancellations.",
                   icon: <Globe className="h-5 w-5" style={{ color: "#c65f39" }} />,
                   stat: "77/77",
                 },

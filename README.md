@@ -13,18 +13,7 @@
   <a href="https://postgresql.org"><img src="https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql" alt="PostgreSQL"></a>
 </p>
 
-FlowCore unifies WhatsApp and webchat into a single AI-powered inbox. Three specialized AI agents (booking, sales, support) handle customer conversations with 100% autonomy — verified across 217 test messages.
-
-## AI Agents — Verified Performance
-
-All three agents were tested end-to-end with 217 diverse customer messages. Every message was handled autonomously without human intervention.
-
-| Agent | Tests | Handled | Rate |
-|-------|-------|---------|------|
-| **Booking** | 77 | 77 | **100%** |
-| **Sales** | 69 | 69 | **100%** |
-| **Support** | 71 | 71 | **100%** |
-| **Total** | **217** | **217** | **100%** |
+FlowCore unifies WhatsApp and webchat into a single AI-powered inbox. Three specialized AI agents (booking, sales, support) handle customer conversations autonomously across both channels.
 
 ## Features
 
