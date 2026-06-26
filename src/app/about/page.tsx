@@ -14,13 +14,13 @@ export const metadata: Metadata = {
     "customer service AI startup",
   ],
   openGraph: {
-    title: "About — Flowcore AI",
+    title: "About — Our Story & Mission | Flowcore AI",
     description: "AI-powered customer service orchestration platform for WhatsApp and webchat.",
     url: `${siteUrl}/about`,
     siteName: "Flowcore AI",
     images: [
       {
-        url: `${siteUrl}/api/og?title=About%20Flowcore%20AI&subtitle=AI%20Customer%20Service%20Orchestration%20Platform`,
+        url: `${siteUrl}/api/og?title=About%20%26%20Mission&subtitle=AI%20Customer%20Service%20Orchestration%20Platform`,
         width: 1200,
         height: 630,
         alt: "About Flowcore AI",
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "About — Flowcore AI",
+    title: "About — Our Story & Mission | Flowcore AI",
     description: "AI-powered customer service orchestration platform for WhatsApp and webchat.",
     images: [`${siteUrl}/api/og?title=About%20Flowcore%20AI&subtitle=AI%20Customer%20Service%20Orchestration%20Platform`],
   },

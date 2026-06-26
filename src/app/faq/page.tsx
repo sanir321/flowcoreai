@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     "AI chatbot questions",
   ],
   openGraph: {
-    title: "FAQ - Flowcore AI",
+    title: "Frequently Asked Questions | Flowcore AI",
     description: "Answers to common questions about Flowcore AI's AI customer service platform.",
     url: `${siteUrl}/faq`,
     images: [
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "FAQ - Flowcore AI",
+    title: "Frequently Asked Questions | Flowcore AI",
     description: "Answers to common questions about Flowcore AI's AI customer service platform.",
     images: [`${siteUrl}/api/og?title=FAQ&subtitle=Questions%20about%20Flowcore%20AI`],
   },

@@ -14,13 +14,13 @@ export const metadata: Metadata = {
     "customer service AI plans",
   ],
   openGraph: {
-    title: "Pricing — Flowcore AI",
+    title: "AI Pricing & Plans | Flowcore AI",
     description: "Simple, transparent pricing for Flowcore AI. Start free, scale as you grow.",
     url: `${siteUrl}/pricing`,
     siteName: "Flowcore AI",
     images: [
       {
-        url: `${siteUrl}/api/og?title=Pricing&subtitle=Simple%2C%20Transparent%20Pricing%20for%20Flowcore%20AI`,
+        url: `${siteUrl}/api/og?title=AI%20Pricing%20%26%20Plans&subtitle=Simple%2C%20Transparent%20Pricing%20for%20Flowcore%20AI`,
         width: 1200,
         height: 630,
         alt: "Flowcore AI Pricing",
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Pricing — Flowcore AI",
+    title: "AI Pricing & Plans | Flowcore AI",
     description: "Simple, transparent pricing for Flowcore AI. Start free, scale as you grow.",
     images: [`${siteUrl}/api/og?title=Pricing&subtitle=Simple%2C%20Transparent%20Pricing%20for%20Flowcore%20AI`],
   },

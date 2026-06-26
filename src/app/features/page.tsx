@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     "AI agent orchestration",
   ],
   openGraph: {
-    title: "Features — Flowcore AI",
+    title: "Features — AI Customer Service Automation | Flowcore AI",
     description: "AI-powered customer service features: WhatsApp automation, unified inbox, knowledge base, analytics, and multi-channel orchestration.",
     url: `${siteUrl}/features`,
     siteName: "Flowcore AI",
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Features — Flowcore AI",
+    title: "Features — AI Customer Service Automation | Flowcore AI",
     description: "AI-powered customer service features: WhatsApp automation, unified inbox, knowledge base, analytics.",
     images: [`${siteUrl}/api/og?title=Features&subtitle=AI%20Customer%20Service%20Automation%20Capabilities`],
   },
