@@ -3,10 +3,8 @@ import { createServerClient } from "@supabase/ssr"
 import { randomBytes } from "crypto"
 
 export async function middleware(request: NextRequest) {
-  // Generate CSP nonce (base64-encoded random bytes)
   const nonce = randomBytes(16).toString("base64")
 
-  // EMERGENCY 431 GUARD: Clear non-auth cookies if header size exceeds 12KB
   const requestHeaders = new Headers(request.headers)
   const headerSize = JSON.stringify([...requestHeaders.entries()]).length
 
@@ -23,7 +21,6 @@ export async function middleware(request: NextRequest) {
 
   const url = request.nextUrl.clone()
 
-  // Mobile Detection
   const userAgent = request.headers.get("user-agent") || ""
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent)
 
@@ -40,7 +37,6 @@ export async function middleware(request: NextRequest) {
     url.pathname.startsWith(route)
   )
 
-  // Redirect mobile users trying to access dashboard routes
   if (isMobile && isDashboardRoute) {
     url.pathname = "/"
     return NextResponse.redirect(url)
@@ -103,15 +99,12 @@ export async function middleware(request: NextRequest) {
 
     const workspaceId = user.app_metadata?.workspace_id
 
-    // REDIRECTION LOGIC
     if (isDashboardRoute && !workspaceId) {
-      // No workspace found in metadata -> must onboard
       const onboardingUrl = new URL("/onboarding", request.url)
       return NextResponse.redirect(onboardingUrl)
     }
 
     if (isOnboardingRoute && workspaceId) {
-      // Already has a workspace -> skip onboarding
       const dashboardUrl = new URL("/inbox", request.url)
       return NextResponse.redirect(dashboardUrl)
     }
@@ -132,7 +125,6 @@ function applySecurityHeaders(response: NextResponse, nonce: string): NextRespon
   Object.entries(headers).forEach(([key, value]) => {
     response.headers.set(key, value);
   });
-  // Pass nonce to rendering layer via header
   response.headers.set("x-nonce", nonce);
   return response
 }
