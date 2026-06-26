@@ -1,14 +1,13 @@
 import type { Metadata } from "next"
 import { getSiteUrl } from "@/lib/site"
 import Link from "next/link"
-import Script from "next/script"
 import { PublicNav, PublicFooter } from "@/components/public-nav"
 
 const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
   title: "Features — AI Customer Service Automation",
-  description: "Explore Flowcore AI's features: AI-powered customer service agents, WhatsApp automation, unified inbox, knowledge base, analytics, and multi-channel orchestration.",
+  description: "Explore Flowcore AI's features: AI agents, WhatsApp automation, unified inbox, knowledge base, analytics, and multi-channel orchestration.",
   keywords: [
     "AI customer service features",
     "WhatsApp automation features",
@@ -146,38 +145,36 @@ export default function FeaturesPage() {
       color: "#fff",
       fontFamily: "'Söhne', 'Inter', ui-sans-serif, system-ui, sans-serif",
     }}>
-      <Script id="features-itemlist-schema" type="application/ld+json" strategy="afterInteractive"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "ItemList",
-            "name": "Flowcore AI Features",
-            "description": "AI-powered customer service automation features for WhatsApp and webchat.",
-            "itemListElement": features.flatMap((cat, ci) =>
-              cat.items.map((item, ii) => ({
-                "@type": "ListItem",
-                "position": ci * 10 + ii + 1,
-                "name": item.name,
-                "description": item.description,
-              }))
-            ),
-          })
-        }} />
-      <Script id="features-howto-schema" type="application/ld+json" strategy="afterInteractive"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "HowTo",
-            "name": "How to Set Up AI Customer Service with Flowcore",
-            "description": "Step-by-step guide to automating your customer service with AI-powered WhatsApp and webchat assistants.",
-            "step": howItWorks.map((s) => ({
-              "@type": "HowToStep",
-              "name": s.title,
-              "text": s.description,
-            })),
-            "totalTime": "PT30M",
-          })
-        }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{
+        __html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "ItemList",
+          "name": "Flowcore AI Features",
+          "description": "AI-powered customer service automation features for WhatsApp and webchat.",
+          "itemListElement": features.flatMap((cat, ci) =>
+            cat.items.map((item, ii) => ({
+              "@type": "ListItem",
+              "position": ci * 10 + ii + 1,
+              "name": item.name,
+              "description": item.description,
+            }))
+          ),
+        })
+      }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{
+        __html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "HowTo",
+          "name": "How to Set Up AI Customer Service with Flowcore",
+          "description": "Step-by-step guide to automating your customer service with AI-powered WhatsApp and webchat assistants.",
+          "step": howItWorks.map((s) => ({
+            "@type": "HowToStep",
+            "name": s.title,
+            "text": s.description,
+          })),
+          "totalTime": "PT30M",
+        })
+      }} />
       <PublicNav />
 
       <main>

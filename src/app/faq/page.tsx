@@ -1,6 +1,5 @@
 import type { Metadata } from "next"
 import { getSiteUrl } from "@/lib/site"
-import Script from "next/script"
 import { PublicNav, PublicFooter } from "@/components/public-nav"
 
 const siteUrl = getSiteUrl()
@@ -95,21 +94,17 @@ export default function FaqPage() {
       color: "#fff",
       fontFamily: "'Söhne', 'Inter', ui-sans-serif, system-ui, sans-serif",
     }}>
-      <Script id="faq-page-schema" type="application/ld+json" strategy="afterInteractive"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "FAQPage",
-            "mainEntity": faqs.map(faq => ({
-              "@type": "Question",
-              "name": faq.q,
-              "acceptedAnswer": {
-                "@type": "Answer",
-                "text": faq.a,
-              },
-            })),
-          })
-        }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{
+        __html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": faqs.map(faq => ({
+            "@type": "Question",
+            "name": faq.q,
+            "acceptedAnswer": { "@type": "Answer", "text": faq.a },
+          })),
+        })
+      }} />
       <PublicNav />
 
       <main style={{ maxWidth: "820px", margin: "0 auto", padding: "80px 24px 120px" }}>

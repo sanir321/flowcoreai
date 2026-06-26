@@ -1,13 +1,12 @@
 import type { Metadata } from "next"
 import { getSiteUrl } from "@/lib/site"
-import Script from "next/script"
 import { PublicNav, PublicFooter } from "@/components/public-nav"
 
 const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
-  title: "About — Flowcore AI",
-  description: "Flowcore AI is an AI-powered customer service orchestration platform for WhatsApp and webchat. Learn about our mission, team, and vision for automated customer communication.",
+  title: "About — Our Story & Mission",
+  description: "An AI-powered customer service platform for WhatsApp and webchat. Learn about Flowcore AI's mission, team, and vision for automated communication.",
   keywords: [
     "about Flowcore AI",
     "AI customer service company",
@@ -47,26 +46,22 @@ export default function AboutPage() {
       color: "#fff",
       fontFamily: "'Söhne', 'Inter', ui-sans-serif, system-ui, sans-serif",
     }}>
-      <Script id="about-org-schema" type="application/ld+json" strategy="afterInteractive"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "AboutPage",
-            "name": "About Flowcore AI",
-            "url": `${siteUrl}/about`,
-            "mainEntity": {
-              "@type": "Organization",
-              "name": "FlowCore Systems",
-              "url": siteUrl,
-              "description": "AI-powered customer service orchestration platform for WhatsApp and webchat.",
-              "foundingDate": "2025",
-              "address": {
-                "@type": "PostalAddress",
-                "addressCountry": "IN",
-              },
-            },
-          })
-        }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{
+        __html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "AboutPage",
+          "name": "About Flowcore AI",
+          "url": `${siteUrl}/about`,
+          "mainEntity": {
+            "@type": "Organization",
+            "name": "FlowCore Systems",
+            "url": siteUrl,
+            "description": "AI-powered customer service orchestration platform for WhatsApp and webchat.",
+            "foundingDate": "2025",
+            "address": { "@type": "PostalAddress", "addressCountry": "IN" },
+          },
+        })
+      }} />
       <PublicNav />
 
       <main style={{ maxWidth: "820px", margin: "0 auto", padding: "80px 24px 120px" }}>

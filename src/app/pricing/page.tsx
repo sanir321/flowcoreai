@@ -5,7 +5,7 @@ import { PricingPageClient } from "./pricing-client"
 const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
-  title: "Pricing",
+  title: "AI Pricing & Plans",
   description: "Simple, transparent pricing for Flowcore AI. Start free, scale as you grow. AI-powered customer service for WhatsApp and webchat.",
   keywords: [
     "Flowcore AI pricing",
