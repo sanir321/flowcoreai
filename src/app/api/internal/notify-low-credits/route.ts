@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
         `,
       });
       results.email = emailErr ? "failed" : "sent";
-      if (emailErr) console.error("[NOTIFY_LOW_CREDITS] Email failed:", emailErr.message);
+      if (emailErr) console.error("[NOTIFY_LOW_CREDITS] Email failed:", (emailErr as Error)?.message || emailErr);
     }
 
     if (owner_phone) {
