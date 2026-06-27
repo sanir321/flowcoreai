@@ -61,6 +61,7 @@ export interface PipelineContext {
     description?: string;
     is_ai_enabled?: boolean;
     credits_balance?: number;
+    low_credits_notified?: boolean;
     owner_personal_phone?: string;
     owner_id?: string;
     welcome_template?: string;
