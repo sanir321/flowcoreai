@@ -268,6 +268,10 @@ export async function placeOrder(
     };
   }
 
+  if (resolved.length === 0) {
+    return { success: false, error: "No valid items in the order. Ask the customer what they'd like to order." };
+  }
+
   const subtotal = resolved.reduce((sum, it) => sum + it.qty * it.price, 0);
   const total = subtotal;
   const orderNumber = `ORD-${Date.now().toString(36).toUpperCase()}`;
