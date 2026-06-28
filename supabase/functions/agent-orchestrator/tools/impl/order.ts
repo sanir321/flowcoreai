@@ -310,7 +310,7 @@ export async function placeOrder(
     .from("orders")
     .insert({
       workspace_id: ctx.payload.workspace_id,
-      contact_id: session?.contact_id || null,
+      contact_id: orderSession?.contact_id || null,
       session_id: ctx.session.id,
       order_number: orderNumber,
       items: resolved,

@@ -429,43 +429,35 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
     await toolExecutor.flushToolCalls(ctx);
   }
 
-  if (needsPass2 && toolResults.length > 0) {
-    try {
-      const pass2System = buildPass2System(ctx, agentType);
-      const toolContext = buildToolContext(parsedPlan.actions, toolResults);
+  if (toolResults.length > 0) {
+    const catalogHasItems = parsedPlan.actions.some(a => a.tool === "manage_catalog" && a.params?.action === "search")
+      && toolResults.some(r => r.status === "fulfilled" && r.value?.items?.length > 0);
 
-      const toolCalls = llmResponse?.choices?.[0]?.message?.tool_calls;
-      if (!toolCalls || toolCalls.length === 0) {
-        finalResponse = fillTemplate(parsedPlan.response, parsedPlan.actions, toolResults);
-      } else {
-        const secondPassResponse = await callLLM({
-          agentType,
-          max_tokens: 600,
-          temperature: 0.3,
-          system: pass2System,
-          messages: [
-            ...messages,
-            { 
-              role: "assistant", 
-              content: "", 
-              tool_calls: toolCalls 
-            },
-            { 
-              role: "tool", 
-              tool_call_id: toolCalls[0].id,
-              content: toolContext 
-            }
-          ]
-        });
-        
-        finalResponse = secondPassResponse.choices?.[0]?.message?.content || parsedPlan.fallback || "";
+    if (needsPass2 && !catalogHasItems) {
+      try {
+        const pass2System = buildPass2System(ctx, agentType);
+        const toolContext = buildToolContext(parsedPlan.actions, toolResults);
+        const toolCalls = llmResponse?.choices?.[0]?.message?.tool_calls;
+        if (toolCalls && toolCalls.length > 0) {
+          const secondPassResponse = await callLLM({
+            agentType, max_tokens: 600, temperature: 0.3,
+            system: pass2System,
+            messages: [
+              ...messages,
+              { role: "assistant", content: "", tool_calls: toolCalls },
+              { role: "tool", tool_call_id: toolCalls[0].id, content: toolContext }
+            ]
+          });
+          finalResponse = secondPassResponse.choices?.[0]?.message?.content || parsedPlan.fallback || "";
+        }
+      } catch (e: any) {
+        console.error("[T3] Second pass error:", e.message);
       }
-    } catch (e: any) {
-      console.error("[T3] Second pass error:", e.message);
-      finalResponse = fillTemplate(parsedPlan.response, parsedPlan.actions, toolResults);
     }
-    
-    
+
+    finalResponse = fillTemplate(finalResponse, parsedPlan.actions, toolResults);
+    const enriched = enrichResponseWithToolResults(finalResponse, parsedPlan.actions, toolResults);
+    if (enriched) finalResponse = enriched;
   }
 
   for (let i = 0; i < parsedPlan.actions.length; i++) {
@@ -542,6 +534,7 @@ You already called tools and results are below.
 HOW TO INTERPRET RESULTS:
 - manage_appointment (action: check): "available: true" means the time slot is FREE. "available: false" means it's BUSY. "available: null" with "checked: false" means the calendar couldn't be reached — ask the customer to leave their name, phone, email, and preferred date/time, then call escalate (action: create) to create a support ticket for manual follow-up. Do NOT claim the slot is available or unavailable. "success: false" with "error" means the time is outside business hours — the error explains why. "availability" is an array of existing busy periods (ignore if empty).
 - manage_appointment (action: create): "appointment_link" or "id" means booked successfully. "error" or "already_booked" means it failed or was already booked.
+- manage_catalog: If items are returned (non-empty array), LIST them in your response grouped by category with prices. Do NOT just say "let me show you" — actually show the items.
 - Other tools: "error" field means it failed. "success: false" means it failed. Otherwise assume success.${hoursInfo}
 
 Write ONLY the customer-facing message. Under 150 words. Use single *asterisks* for emphasis (not double).`;
