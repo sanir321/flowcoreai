@@ -228,10 +228,11 @@ async function sendGowaMessage(deviceId: string, phone: string, message: string)
 }
 
 export async function placeOrder(
-  params: { items?: { name: string; qty?: number }[]; notes?: string },
+  params: { items?: { name: string; qty?: number }[]; item_name?: string; notes?: string },
   ctx: PipelineContext
 ) {
-  const items = params.items || [];
+  let items = params.items || [];
+  if (items.length === 0 && params.item_name) items = [{ name: params.item_name, qty: 1 }];
   if (items.length === 0) {
     return { success: false, error: "No items in the order. Ask the customer what they'd like to order." };
   }

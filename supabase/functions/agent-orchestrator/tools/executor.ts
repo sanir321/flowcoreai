@@ -217,6 +217,7 @@ async function routeToImpl(toolName: string, params: any, ctx: PipelineContext):
       const catalogAction = action || (params.query ? "search" : params.caption ? "send-media" : "");
       switch (catalogAction) {
         case "search": return searchMenu(params, ctx);
+        case "list": return searchMenu({ query: "", category: undefined }, ctx);
         case "check-stock": return checkStock({ product_name: params.query || params.product_name || "" }, ctx);
         case "send-catalog": return sendCatalog(params, ctx);
         case "send-media": return sendMenuMedia(params, ctx);
