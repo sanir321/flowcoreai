@@ -115,7 +115,22 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
         .maybeSingle();
       
       if (existingAppt) {
-        systemPrompt += `\n\n## IMPORTANT: Existing Appointment Detected\nThis customer already has a confirmed appointment:\n- ID: ${existingAppt.id}\n- Service: ${existingAppt.service}\n- Date/Time: ${existingAppt.start_at}\n- Status: ${existingAppt.status}\n\nDo NOT attempt to create another appointment. Instead:\n1. Inform the customer they already have a booking\n2. Ask if they need to reschedule, cancel, or have questions about their existing appointment\n3. Use the appointment ID for any updates or cancellations`;
+        const apptDate = new Date(existingAppt.start_at);
+        const now = new Date();
+        const diffDays = Math.floor((apptDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        let temporalHint: string;
+        if (diffDays < -1) {
+          temporalHint = `This appointment was ${Math.abs(diffDays)} days ago (PAST).`;
+        } else if (diffDays === -1) {
+          temporalHint = "This appointment was yesterday (PAST).";
+        } else if (diffDays === 0) {
+          temporalHint = "This appointment is TODAY.";
+        } else if (diffDays === 1) {
+          temporalHint = "This appointment is TOMORROW.";
+        } else {
+          temporalHint = `This appointment is in ${diffDays} days (FUTURE).`;
+        }
+        systemPrompt += `\n\n## IMPORTANT: Existing Appointment Detected\nThis customer already has a confirmed appointment:\n- ID: ${existingAppt.id}\n- Service: ${existingAppt.service}\n- Date/Time: ${existingAppt.start_at}\n- Status: ${existingAppt.status}\n- Relative: ${temporalHint}\n\nCRITICAL: Use the RELATIVE timing above to decide what to say. If the appointment is PAST, do NOT say "tomorrow" or "coming up" — acknowledge it was scheduled and ask if they want to reschedule. If it's today/tomorrow, confirm the upcoming booking.\n\nDo NOT attempt to create another appointment. Instead:\n1. Inform the customer about their existing booking\n2. Ask if they need to reschedule, cancel, or have questions\n3. Use the appointment ID for any updates or cancellations`;
       }
     } catch (e: any) {
       console.error("[T3] Failed to check existing appointment:", e.message);
@@ -529,7 +544,7 @@ HOW TO INTERPRET RESULTS:
 - manage_appointment (action: create): "appointment_link" or "id" means booked successfully. "error" or "already_booked" means it failed or was already booked.
 - Other tools: "error" field means it failed. "success: false" means it failed. Otherwise assume success.${hoursInfo}
 
-Write ONLY the customer-facing message. Under 150 words. Plain text only, no markdown.`;
+Write ONLY the customer-facing message. Under 150 words. Use single *asterisks* for emphasis (not double).`;
 }
 
 function enrichResponseWithToolResults(

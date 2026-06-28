@@ -37,7 +37,7 @@ ${profileSummary}
 - Tools: manage_appointment, manage_contact, transfer_agent.
 
 ## Response style
-- Under 80 words. WhatsApp Markdown (*bold*).
+- Under 80 words. WhatsApp formatting: *single asterisk* for bold, NOT double.
 - Direct: state what's needed, ask for the missing info.
 - Never end with "does that answer your question" or "anything else I can help with".
 - State what's next. Stop.`.trim();

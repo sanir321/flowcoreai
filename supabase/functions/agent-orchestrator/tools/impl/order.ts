@@ -49,18 +49,22 @@ export async function sendMenuMedia(
     const gowaKey = Deno.env.get("GOWA_API_KEY");
     if (!gowaBase || !gowaKey) return { success: false, error: "WhatsApp not configured" };
 
-    const { data: sessionData } = await ctx.supabase
+    const { data: sessionRow } = await ctx.supabase
       .from("conversation_sessions")
-      .select("customer_jid, contact:contacts(phone), gowa_session:gowa_sessions!workspace_id(gowa_session_id)")
+      .select("customer_jid")
       .eq("id", ctx.session.id)
       .eq("workspace_id", ctx.payload.workspace_id)
       .single();
-    if (!sessionData) return { success: false, error: "Session not found" };
-    const deviceId = sessionData.gowa_session?.gowa_session_id;
-    if (!deviceId) return { success: false, error: "WhatsApp device not connected" };
-
-    let phone = sessionData.customer_jid?.split("@")[0] || sessionData.contact?.phone;
+    let phone = sessionRow?.customer_jid?.split("@")[0];
     if (!phone) return { success: false, error: "Customer phone not found" };
+
+    const { data: gs } = await ctx.supabase
+      .from("gowa_sessions")
+      .select("gowa_session_id")
+      .eq("workspace_id", ctx.payload.workspace_id)
+      .maybeSingle();
+    const deviceId = gs?.gowa_session_id;
+    if (!deviceId) return { success: false, error: "WhatsApp device not connected" };
 
     const fileUrl = `${Deno.env.get("SUPABASE_URL")}/storage/v1/object/public/menu-media/${media.file_path}`;
     const auth = btoa(gowaKey);
@@ -182,34 +186,39 @@ export async function sendCatalog(
       return { success: true, catalog_text: catalogText, item_count: items.length };
     }
 
-    // Send via WhatsApp
+    // Send via WhatsApp (return catalog_text so LLM can reply even if WhatsApp send fails)
     const gowaBase = Deno.env.get("GOWA_BASE_URL")?.replace(/\/$/, "");
     const gowaKey = Deno.env.get("GOWA_API_KEY");
-    if (!gowaBase || !gowaKey) return { success: false, error: "WhatsApp not configured" };
-
-    const { data: sessionData } = await ctx.supabase
-      .from("conversation_sessions")
-      .select("customer_jid, contact:contacts(phone), gowa_session:gowa_sessions!workspace_id(gowa_session_id)")
-      .eq("id", ctx.session.id)
-      .eq("workspace_id", ctx.payload.workspace_id)
-      .single();
-    if (!sessionData) return { success: false, error: "Session not found" };
-    const deviceId = sessionData.gowa_session?.gowa_session_id;
-    if (!deviceId) return { success: false, error: "WhatsApp device not connected" };
-
-    let phone = sessionData.customer_jid?.split("@")[0] || sessionData.contact?.phone;
-    if (!phone) return { success: false, error: "Customer phone not found" };
-
-    const auth = btoa(gowaKey);
-    const formattedPhone = formatPhoneForGoWA(phone);
-    const resp = await fetch(`${gowaBase}/send/message`, {
-      method: "POST",
-      headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json", "X-Device-Id": deviceId },
-      body: JSON.stringify({ phone: formattedPhone, message: catalogText })
-    });
-
-    if (!resp.ok) return { success: false, error: "Failed to send catalog via WhatsApp" };
-    return { success: true, message: "Catalog sent to customer via WhatsApp.", item_count: items.length };
+    if (gowaBase && gowaKey) {
+      const { data: sessionRow } = await ctx.supabase
+        .from("conversation_sessions")
+        .select("customer_jid")
+        .eq("id", ctx.session.id)
+        .eq("workspace_id", ctx.payload.workspace_id)
+        .single();
+      const phone = sessionRow?.customer_jid?.split("@")[0];
+      if (phone) {
+        const { data: gs } = await ctx.supabase
+          .from("gowa_sessions")
+          .select("gowa_session_id")
+          .eq("workspace_id", ctx.payload.workspace_id)
+          .maybeSingle();
+        const deviceId = gs?.gowa_session_id;
+        if (deviceId) {
+          const auth = btoa(gowaKey);
+          const formattedPhone = formatPhoneForGoWA(phone);
+          const resp = await fetch(`${gowaBase}/send/message`, {
+            method: "POST",
+            headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json", "X-Device-Id": deviceId },
+            body: JSON.stringify({ phone: formattedPhone, message: catalogText })
+          });
+          if (resp.ok) {
+            return { success: true, message: "Catalog sent to customer via WhatsApp.", item_count: items.length, catalog_text: catalogText };
+          }
+        }
+      }
+    }
+    return { success: true, catalog_text: catalogText, item_count: items.length };
   } catch (e: any) {
     return { success: false, error: e.message };
   }
@@ -286,14 +295,14 @@ export async function placeOrder(
   const total = subtotal;
   const orderNumber = `ORD-${Date.now().toString(36).toUpperCase()}`;
 
-  const { data: session } = await ctx.supabase
+  const { data: orderSession } = await ctx.supabase
     .from("conversation_sessions")
-    .select("contact_id, customer_jid, gowa_session:gowa_sessions!workspace_id(gowa_session_id)")
+    .select("contact_id, customer_jid")
     .eq("id", ctx.session.id)
     .eq("workspace_id", ctx.payload.workspace_id)
     .single();
 
-  const customerPhone = (session?.customer_jid || ctx.payload.customer_jid || "").split("@")[0];
+  const customerPhone = (orderSession?.customer_jid || ctx.payload.customer_jid || "").split("@")[0];
 
   const { data: order, error: insertError } = await ctx.supabase
     .from("orders")
@@ -323,7 +332,12 @@ export async function placeOrder(
 
   const ownerNotice = `*New Order ${orderNumber}*\n\nFrom: ${customerPhone || "unknown"}\n\n${itemLines}\n\n*Total: ₹${total.toLocaleString()}*${params.notes ? `\n\nNotes: ${params.notes}` : ""}\n\nOpen the dashboard to verify payment.`;
 
-  const deviceId = session?.gowa_session?.gowa_session_id;
+  const { data: gs } = await ctx.supabase
+    .from("gowa_sessions")
+    .select("gowa_session_id")
+    .eq("workspace_id", ctx.payload.workspace_id)
+    .maybeSingle();
+  const deviceId = gs?.gowa_session_id;
   const ownerPhone = ctx.workspace?.owner_personal_phone;
 
   // Fire both notifications in parallel, non-blocking — order succeeds even if delivery fails
