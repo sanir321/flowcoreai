@@ -6,6 +6,7 @@ import { buildBookingSystemPrompt } from "../agents/booking.ts";
 import { buildSupportSystemPrompt } from "../agents/support.ts";
 import { buildSalesSystemPrompt } from "../agents/sales.ts";
 import { matchChunks } from "../tools/impl/kb.ts";
+import { touchSession } from "../lib/session.ts";
 
 const AGENT_SYSTEM_PROMPTS: Record<string, (ctx: PipelineContext) => string> = {
   customer_support: buildSupportSystemPrompt,
@@ -221,46 +222,6 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
     }
   }
 
-  // Gap-filler: prompt agent to collect missing business profile info
-  try {
-    const { data: templates } = await ctx.supabase
-      .from("required_info_templates")
-      .select("label, field_key, priority, is_required")
-      .in("business_type", ["*", ctx.workspace?.business_type || ""])
-      .order("priority", { ascending: true })
-      .limit(10);
-
-    if (templates && templates.length > 0) {
-      const bp = (ctx.workspace?.business_profile || {}) as Record<string, unknown>;
-      const extras = (bp.extras || {}) as Record<string, unknown>;
-      const contact = (bp.contact || {}) as Record<string, unknown>;
-      const pricing = (bp.pricing || {}) as Record<string, unknown>;
-
-      const missing = templates
-        .filter((t: any) => {
-          const fk = t.field_key;
-          let val: unknown = null;
-          if (fk.startsWith("extras.")) val = extras[fk.replace("extras.", "")];
-          else if (fk.startsWith("contact.")) val = contact[fk.replace("contact.", "")];
-          else if (fk.startsWith("pricing.")) val = pricing[fk.replace("pricing.", "")];
-          else if (fk === "hours") val = bp.hours;
-          else if (fk === "amenities") val = bp.amenities;
-          else val = bp[fk];
-          if (val == null) return true;
-          if (typeof val === "string") return val.trim() === "";
-          if (Array.isArray(val)) return val.length === 0;
-          return false;
-        })
-        .slice(0, 2);
-
-      if (missing.length > 0) {
-        systemPrompt += `\n\n[PROFILE GAP] The business profile is missing: ${missing.map((t: any) => t.label).join(", ")}. Ask naturally for this information if relevant to the conversation. Do NOT ask if the customer's question is unrelated.`;
-      }
-    }
-  } catch (e: any) {
-    console.error("[T3] Gap-filler failed:", e.message);
-  }
-
   systemPrompt += buildToolDescriptions(agentType, ctx.payload.source);
 
   const messages = await buildMessages(ctx);
@@ -361,8 +322,6 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
       reason: "t3_plan_error"
     };
   }
-
-  await validatePlanActions(ctx, parsedPlan);
 
   try {
     await ctx.supabase.from("agent_traces").insert({
@@ -769,28 +728,8 @@ async function postProcess(
   }
 
   await toolExecutor.flushToolCalls(ctx);
-
   const usage = llmResponse?.usage?.total_tokens || 0;
-  const updateData: any = {
-    agent_type: agentType,
-    last_message_at: new Date().toISOString(),
-    last_message_preview: finalResponse.substring(0, 100),
-    message_count: (ctx.session.message_count || 0) + 1,
-    total_tokens_used: (ctx.session.total_tokens_used || 0) + usage,
-    updated_at: new Date().toISOString()
-  };
-
-  if (ctx._sentiment && ctx._sentiment !== (ctx.session.working_context?.sentiment || null)) {
-    updateData.working_context = {
-      ...(ctx.session.working_context || {}),
-      sentiment: ctx._sentiment,
-      agent_type: agentType
-    };
-  }
-
-  await ctx.supabase.from("conversation_sessions")
-    .update(updateData)
-    .eq("id", ctx.session.id);
+  await touchSession(ctx, agentType, finalResponse, usage);
 }
 
 function buildToolDescriptions(agentType: string, source?: string): string {
@@ -799,93 +738,4 @@ function buildToolDescriptions(agentType: string, source?: string): string {
   return `\n\n## Allowed Tools\n${filtered.map(n => `- ${n}`).join("\n")}`;
 }
 
-function normalizeToolName(name: string): string {
-  return name.replace(/^(functions\.|tool_calls\[|tools\.)/, "");
-}
 
-async function validatePlanActions(ctx: PipelineContext, plan: AgentPlan) {
-  plan.actions.forEach(a => { a.tool = normalizeToolName(a.tool); });
-  const actionTools = plan.actions.map(a => a.tool);
-
-  const { data: lastCustomerMsg } = await ctx.supabase
-    .from("messages")
-    .select("content")
-    .eq("session_id", ctx.session.id)
-    .eq("direction", "inbound")
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  const customerMsg = (lastCustomerMsg?.content || "").toLowerCase();
-
-  const capturePhrases = /(captured|saved your (details|info)|added you as a lead|i have saved your)/i;
-  if (capturePhrases.test(plan.response) && !actionTools.includes("manage_contact")) {
-    plan.response = plan.response.replace(/I have saved your (information|details|info)[^.]*\./gi, "");
-    plan.response += " [Correction: You claimed to save contact info without calling manage_contact. Apologize and ask again.]";
-    plan.needs_second_pass = true;
-  }
-
-  const stagePhrases = /(moved (you|to|the (lead|contact)) to |promoted to|advanced to|stage (change|update)|qualified|proposal|negotiation)/i;
-  if (stagePhrases.test(plan.response) && !actionTools.includes("manage_contact")) {
-    plan.response = plan.response.replace(/(I['"]?ve|I have) (moved|promoted|advanced)( you| the)?[^.]*\./gi, "");
-    plan.response += " [Correction: You claimed to update the pipeline stage without calling manage_contact. Apologize.]";
-    plan.needs_second_pass = true;
-  }
-
-  const bookingPhrases = /(booked|confirmed|appointment is (set|created|booked|scheduled|confirmed)|i have (booked|created|scheduled|confirmed) (your|the) appointment)/i;
-  if (bookingPhrases.test(plan.response) && !actionTools.includes("manage_appointment")) {
-    const wc = ctx.session.working_context || {};
-    const collected = wc.collected_data || {};
-    const hasRealDetails = collected.name || collected.service || collected.date || collected.time;
-    const availabilityAction = plan.actions.find(a => a.tool === "manage_appointment" && a.params?.action === "check");
-    if (availabilityAction && hasRealDetails) {
-      plan.actions.push({
-        tool: "manage_appointment",
-        params: { action: "create", name: collected.name || "", service: collected.service || "", date: availabilityAction.params?.date || collected.date || "", time: availabilityAction.params?.time || collected.time || "" },
-        required: true,
-        result_key: "appointment"
-      });
-      plan.needs_second_pass = true;
-      plan.response += " [Correction: manage_appointment was missing — auto-injected.]";
-    } else {
-      plan.response = plan.response
-        .replace(/Your[^.]+(booked|confirmed|scheduled)[^.]*\./gi, "")
-        .replace(/I['"]?ve (booked|created|scheduled|confirmed)[^.]*\./gi, "")
-        .replace(/i have (booked|created|scheduled|confirmed)[^.]*\./gi, "")
-        .trim();
-      plan.needs_second_pass = true;
-      if (!plan.response) {
-        plan.response = "I'd be happy to help you book! Could you tell me which service you're looking for?";
-      } else {
-        plan.response += " [Correction: You claimed the appointment was booked without required details. Ask for their name, service, date and time, then call manage_appointment.]";
-      }
-    }
-  }
-
-  const pricingPhrases = /(₹|rs\.?\s*\d+|price|cost|subscription|tier|plan|worth|value)/i;
-  const hasPricingClaim = pricingPhrases.test(plan.response);
-  const kbUsed = actionTools.includes("search_kb");
-  let kbCalledThisSession = false;
-  if (hasPricingClaim && !kbUsed) {
-    const { data: recentTraces } = await ctx.supabase
-      .from("agent_traces")
-      .select("tool_name")
-      .eq("session_id", ctx.session.id)
-      .eq("tool_name", "search_kb")
-      .gte("created_at", new Date(Date.now() - 5 * 60000).toISOString())
-      .limit(1)
-      .maybeSingle();
-    kbCalledThisSession = !!recentTraces;
-  }
-  if (hasPricingClaim && !kbUsed && !kbCalledThisSession) {
-    console.warn(`[T3] Hallucination detected: Pricing info provided without KB search.`);
-    try {
-      await ctx.supabase.from("debug_logs").insert({
-        level: "warning",
-        scope: "t3-planner",
-        message: "AI provided pricing info without KB search",
-        metadata: { session_id: ctx.session.id, response: plan.response }
-      });
-    } catch (_) {}
-    plan.actions.push({ tool: "search_kb", params: { query: "pricing and plans" }, required: false });
-  }
-}

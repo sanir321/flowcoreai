@@ -11,8 +11,7 @@ export async function searchMenu(
   let query = ctx.supabase.from("menu_items").select("id, name, description, price, category")
     .eq("workspace_id", ctx.payload.workspace_id).eq("is_available", true);
   if (!isGeneric && params.query) {
-    // Escape backslashes first, then LIKE wildcards and PostgREST filter metacharacters
-    const safe = String(params.query).replace(/\\/g, '\\\\').replace(/[%_().,]/g, '\\$&');
+    const safe = escapeLike(String(params.query));
     query = query.or(`name.ilike.%${safe}%,category.ilike.%${safe}%,description.ilike.%${safe}%`);
   }
   if (params.category) query = query.eq("category", params.category);
@@ -47,29 +46,16 @@ export async function sendMenuMedia(
       return { success: true, message: "Menu sent.", media_info: { file_name: media.file_name, file_type: media.file_type, url: fileUrl, type: media.file_type.startsWith("image/") ? "image" : "document" } };
     }
 
-    const gowaBase = Deno.env.get("GOWA_BASE_URL")?.replace(/\/$/, "");
+    const pd = await getPhoneAndDevice(ctx);
+    if (!pd) return { success: false, error: "Customer phone or WhatsApp device not found" };
+    const { phone, deviceId } = pd;
+
     const gowaKey = Deno.env.get("GOWA_API_KEY");
-    if (!gowaBase || !gowaKey) return { success: false, error: "WhatsApp not configured" };
+    if (!gowaKey) return { success: false, error: "WhatsApp not configured" };
 
-    const { data: sessionRow } = await ctx.supabase
-      .from("conversation_sessions")
-      .select("customer_jid")
-      .eq("id", ctx.session.id)
-      .eq("workspace_id", ctx.payload.workspace_id)
-      .single();
-    let phone = sessionRow?.customer_jid?.split("@")[0];
-    if (!phone) return { success: false, error: "Customer phone not found" };
-
-    const { data: gs } = await ctx.supabase
-      .from("gowa_sessions")
-      .select("gowa_session_id")
-      .eq("workspace_id", ctx.payload.workspace_id)
-      .maybeSingle();
-    const deviceId = gs?.gowa_session_id;
-    if (!deviceId) return { success: false, error: "WhatsApp device not connected" };
-
-    const fileUrl = `${Deno.env.get("SUPABASE_URL")}/storage/v1/object/public/menu-media/${media.file_path}`;
+    const gowaBase = Deno.env.get("GOWA_BASE_URL")?.replace(/\/$/, "");
     const auth = btoa(gowaKey);
+    const fileUrl = `${Deno.env.get("SUPABASE_URL")}/storage/v1/object/public/menu-media/${media.file_path}`;
     const formattedPhone = formatPhoneForGoWA(phone);
     const caption = params.caption || "Here is our menu — take a look!";
     const isImage = media.file_type.startsWith("image/");
@@ -103,7 +89,7 @@ export async function checkStock(
   if (!name) return { success: false, error: "product_name is required" };
 
   // Escape backslashes first, then LIKE wildcards and PostgREST filter metacharacters
-  const safeName = name.replace(/\\/g, '\\\\').replace(/[%_().,]/g, '\\$&');
+  const safeName = escapeLike(name);
 
   const { data: items } = await ctx.supabase
     .from("menu_items")
@@ -184,40 +170,10 @@ export async function sendCatalog(
     lines.push(`_Total: ${items.length} products_`);
     const catalogText = lines.join("\n").trim();
 
-    if (ctx.payload.is_test) {
-      return { success: true, catalog_text: catalogText, item_count: items.length };
-    }
-
-    // Send via WhatsApp (return catalog_text so LLM can reply even if WhatsApp send fails)
-    const gowaBase = Deno.env.get("GOWA_BASE_URL")?.replace(/\/$/, "");
-    const gowaKey = Deno.env.get("GOWA_API_KEY");
-    if (gowaBase && gowaKey) {
-      const { data: sessionRow } = await ctx.supabase
-        .from("conversation_sessions")
-        .select("customer_jid")
-        .eq("id", ctx.session.id)
-        .eq("workspace_id", ctx.payload.workspace_id)
-        .single();
-      const phone = sessionRow?.customer_jid?.split("@")[0];
-      if (phone) {
-        const { data: gs } = await ctx.supabase
-          .from("gowa_sessions")
-          .select("gowa_session_id")
-          .eq("workspace_id", ctx.payload.workspace_id)
-          .maybeSingle();
-        const deviceId = gs?.gowa_session_id;
-        if (deviceId) {
-          const auth = btoa(gowaKey);
-          const formattedPhone = formatPhoneForGoWA(phone);
-          const resp = await fetch(`${gowaBase}/send/message`, {
-            method: "POST",
-            headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json", "X-Device-Id": deviceId },
-            body: JSON.stringify({ phone: formattedPhone, message: catalogText })
-          });
-          if (resp.ok) {
-            return { success: true, message: "Catalog sent to customer via WhatsApp.", item_count: items.length, catalog_text: catalogText };
-          }
-        }
+    if (!ctx.payload.is_test) {
+      const pd = await getPhoneAndDevice(ctx);
+      if (pd && await sendGowaMessage(pd.deviceId, pd.phone, catalogText)) {
+        return { success: true, message: "Catalog sent to customer via WhatsApp.", item_count: items.length, catalog_text: catalogText };
       }
     }
     return { success: true, catalog_text: catalogText, item_count: items.length };
@@ -226,10 +182,29 @@ export async function sendCatalog(
   }
 }
 
+function escapeLike(s: string): string { return s.replace(/\\/g, '\\\\').replace(/[%_().,]/g, '\\$&'); }
+
 function formatPhoneForGoWA(phone: string): string {
   let cleaned = phone.replace(/\D/g, "");
   if (cleaned.length === 10 && /^[6-9]/.test(cleaned)) cleaned = "91" + cleaned;
   return cleaned;
+}
+
+async function getPhoneAndDevice(ctx: PipelineContext): Promise<{ phone: string; deviceId: string } | null> {
+  const { data: sessionRow } = await ctx.supabase
+    .from("conversation_sessions")
+    .select("customer_jid")
+    .eq("id", ctx.session.id)
+    .eq("workspace_id", ctx.payload.workspace_id)
+    .single();
+  const phone = sessionRow?.customer_jid?.split("@")[0];
+  if (!phone) return null;
+  const { data: gs } = await ctx.supabase
+    .from("gowa_sessions")
+    .select("gowa_session_id")
+    .eq("workspace_id", ctx.payload.workspace_id)
+    .maybeSingle();
+  return gs?.gowa_session_id ? { phone, deviceId: gs.gowa_session_id } : null;
 }
 
 async function sendGowaMessage(deviceId: string, phone: string, message: string): Promise<boolean> {
@@ -268,7 +243,7 @@ export async function placeOrder(
     const name = (it.name || "").trim();
     const qty = Math.max(1, Math.floor(Number(it.qty) || 1));
     if (!name) continue;
-    const safe = name.replace(/\\/g, "\\\\").replace(/[%_().,]/g, "\\$&");
+    const safe = escapeLike(name);
     const { data: matches } = await ctx.supabase
       .from("menu_items")
       .select("name, price, is_available")
@@ -334,17 +309,12 @@ export async function placeOrder(
 
   const ownerNotice = `*New Order ${orderNumber}*\n\nFrom: ${customerPhone || "unknown"}\n\n${itemLines}\n\n*Total: ₹${total.toLocaleString()}*${params.notes ? `\n\nNotes: ${params.notes}` : ""}\n\nOpen the dashboard to verify payment.`;
 
-  const { data: gs } = await ctx.supabase
-    .from("gowa_sessions")
-    .select("gowa_session_id")
-    .eq("workspace_id", ctx.payload.workspace_id)
-    .maybeSingle();
-  const deviceId = gs?.gowa_session_id;
+  const pd = await getPhoneAndDevice(ctx);
+  const deviceId = pd?.deviceId;
   const ownerPhone = ctx.workspace?.owner_personal_phone;
 
-  // Fire both notifications in parallel, non-blocking — order succeeds even if delivery fails
   const [billSent, ownerNotified] = await Promise.all([
-    deviceId && customerPhone ? sendGowaMessage(deviceId, customerPhone, customerBill) : Promise.resolve(false),
+    pd && customerPhone ? sendGowaMessage(pd.deviceId, customerPhone, customerBill) : Promise.resolve(false),
     deviceId && ownerPhone ? sendGowaMessage(deviceId, ownerPhone, ownerNotice) : Promise.resolve(false)
   ]);
 
