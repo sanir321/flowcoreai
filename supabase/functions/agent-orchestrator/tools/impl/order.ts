@@ -4,8 +4,10 @@ export async function searchMenu(
   params: { query?: string; category?: string },
   ctx: PipelineContext
 ) {
-  const generic = ["menu", "services", "list", "all", "everything", "show", "available", ""];
-  const isGeneric = !params.query || generic.includes(params.query?.toString().toLowerCase().trim());
+  const generic = ["menu", "services", "list", "all", "everything", "show", "available", "catalog", "offer", "have", "product", "item", "option", ""];
+  const q = params.query?.toString().toLowerCase().trim() || "";
+  const words = q.split(/\s+/).filter(Boolean);
+  const isGeneric = !q || words.length === 0 || words.every(w => generic.includes(w));
   let query = ctx.supabase.from("menu_items").select("id, name, description, price, category")
     .eq("workspace_id", ctx.payload.workspace_id).eq("is_available", true);
   if (!isGeneric && params.query) {
