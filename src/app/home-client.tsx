@@ -99,10 +99,9 @@ function AnimatedCount({ value, suffix = "" }: { value: number; suffix?: string 
     const el = ref.current
     if (!el) return
     const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) {
-        animate(0, value, { duration: 1.5, ease: [0.16, 1, 0.3, 1], onUpdate: (v) => setDisplayed(Math.round(v)) })
-        observer.disconnect()
-      }
+      if (!entry?.isIntersecting) return
+      animate(0, value, { duration: 1.5, ease: [0.16, 1, 0.3, 1], onUpdate: (v) => setDisplayed(Math.round(v)) })
+      observer.disconnect()
     }, { threshold: 0.5 })
     observer.observe(el)
     return () => observer.disconnect()
