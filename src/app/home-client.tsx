@@ -483,7 +483,7 @@ export function LandingPage() {
                   <h3 className="text-base font-normal mb-2" style={{ color: "#171717" }}>{feature.title}</h3>
                   <p className="text-sm leading-relaxed font-normal" style={{ color: "#737373" }}>{feature.description}</p>
                   <div className="mt-3 text-xs font-medium" style={{ color: "#c65f39" }}>
-                    Verified: <AnimatedCount value={parseInt(feature.stat.split("/")[0])} suffix={"/" + feature.stat.split("/")[1]} />
+                    Verified: <AnimatedCount value={parseInt(feature.stat.split("/")[0]!)} suffix={"/" + (feature.stat.split("/")[1] || "")} />
                   </div>
                 </motion.div>
                 </TiltCard>
