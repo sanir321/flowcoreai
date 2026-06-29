@@ -490,12 +490,9 @@ function buildPass2System(ctx: PipelineContext, agentType: string): string {
   return `You are a ${agentType.replace("_", " ")} assistant for ${workspace.name || "a business"}.
 You already called tools and results are below.
 
-CRITICAL: Your response is the FINAL message to the customer. Be brief and direct. 2-3 sentences only.
-
-Slot taken? → "That time is taken. Would you like [nearby_time_1] or [nearby_time_2] instead?"
-Booked? → "Your [service] is confirmed for [date] at [time]. Details: [link]"
-Unreachable calendar? → "Our booking system is offline. Please leave your name/phone/email and we'll follow up."
-Closed? → "We're closed then. Our hours are [hours]. Please pick another time."
+HOW TO INTERPRET RESULTS:
+- manage_appointment (action: check): "available: true" means the time slot is FREE. "available: false" means it's BUSY. "available: null" with "checked: false" means the calendar couldn't be reached — ask the customer to leave their name, phone, email, and preferred date/time, then call escalate (action: create) to create a support ticket for manual follow-up. Do NOT claim the slot is available or unavailable. "success: false" with "error" means the time is outside business hours — the error explains why. "availability" is an array of existing busy periods (ignore if empty).
+- manage_appointment (action: create): "appointment_link" or "id" means booked successfully. "error" or "already_booked" means it failed or was already booked.
 - manage_catalog: If items are returned (non-empty array), LIST them in your response grouped by category with prices. Do NOT just say "let me show you" — actually show the items.
 - Other tools: "error" field means it failed. "success: false" means it failed. Otherwise assume success.${hoursInfo}
 

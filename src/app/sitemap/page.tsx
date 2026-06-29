@@ -38,7 +38,7 @@ const links = [
   { href: "/faq", label: "FAQ" },
   { href: "/about", label: "About" },
   { href: "/changelog", label: "Changelog" },
-
+  { href: "/login", label: "Login / Sign Up" },
   { href: "/legal/privacy-policy", label: "Privacy Policy" },
   { href: "/legal/terms", label: "Terms of Service" },
   { href: "/legal/cookie-policy", label: "Cookie Policy" },

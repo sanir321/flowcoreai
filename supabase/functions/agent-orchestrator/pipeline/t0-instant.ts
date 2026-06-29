@@ -14,7 +14,7 @@ export async function runT0(ctx: PipelineContext): Promise<TierResult> {
   }
 
   // 1. Store inbound message if not already stored by gowa-webhook or widget route
-  if (payload.source !== "widget" || payload.is_test) {
+  if (payload.source !== "widget") {
     const { data: existing } = await supabase
       .from("messages")
       .select("id")
@@ -29,8 +29,7 @@ export async function runT0(ctx: PipelineContext): Promise<TierResult> {
           content: payload.message || payload.message_type || "[non-text]",
           direction: "inbound",
           role: "customer",
-          gowa_message_id: payload.gowa_message_id,
-          is_test: payload.is_test || false
+          gowa_message_id: payload.gowa_message_id
         });
         /* message stored */
       } catch (e: any) {
