@@ -256,13 +256,13 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">Google Maps Link</Label>
+              <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">Google Maps / Review Link</Label>
               <div className="relative">
                 <Link2 className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
                 <Input 
                   value={safeContact.google_maps_link || ""} 
                   onChange={e => setNestedField("contact", "google_maps_link", e.target.value)}
-                  placeholder="https://maps.google.com/..."
+                  placeholder="https://maps.google.com/place/... or your Google review link"
                   className="h-11 pl-10 rounded-xl bg-gray-50/50 border-gray-100 focus:bg-white focus:border-[#c65f39] focus:ring-1 focus:ring-[#c65f39]/10 transition-all"
                 />
               </div>
