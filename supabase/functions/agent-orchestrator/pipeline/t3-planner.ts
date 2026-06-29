@@ -298,7 +298,7 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
         stream: false,
       };
       const fc = new AbortController();
-      const ft = setTimeout(() => fc.abort(), 20000);
+      const ft = setTimeout(() => fc.abort(), 12000);
       try {
         const fb = await fetch(ZEN_BASE + "/chat/completions", {
           method: "POST",
