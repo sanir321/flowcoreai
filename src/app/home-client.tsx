@@ -2,8 +2,8 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { motion, useScroll, useTransform } from "framer-motion"
-import { useState, useRef } from "react"
+import { motion, useScroll, useTransform, useMotionValue, useSpring, animate } from "framer-motion"
+import React, { useState, useRef, useCallback, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
   ArrowUpRight,
@@ -66,6 +66,80 @@ const scaleIn = {
   transition: { duration: 0.9, ease: [0.16, 1, 0.3, 1] as const }
 }
 
+function TiltCard({ children, className }: { children: React.ReactNode; className?: string }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [tilt, setTilt] = useState({ x: 0, y: 0 })
+  const onMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!ref.current) return
+    const rect = ref.current.getBoundingClientRect()
+    const x = (e.clientX - rect.left) / rect.width - 0.5
+    const y = (e.clientY - rect.top) / rect.height - 0.5
+    setTilt({ x: x * 12, y: y * -12 })
+  }, [])
+  const onMouseLeave = useCallback(() => setTilt({ x: 0, y: 0 }), [])
+  return (
+    <motion.div
+      ref={ref}
+      onMouseMove={onMouseMove}
+      onMouseLeave={onMouseLeave}
+      className={className}
+      style={{ transformPerspective: 800 }}
+      animate={{ rotateX: tilt.y, rotateY: tilt.x }}
+      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+    >
+      {children}
+    </motion.div>
+  )
+}
+
+function AnimatedCount({ value, suffix = "" }: { value: number; suffix?: string }) {
+  const ref = useRef<HTMLSpanElement>(null)
+  const [displayed, setDisplayed] = useState(0)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        animate(0, value, { duration: 1.5, ease: [0.16, 1, 0.3, 1], onUpdate: (v) => setDisplayed(Math.round(v)) })
+        observer.disconnect()
+      }
+    }, { threshold: 0.5 })
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [value])
+  return <span ref={ref}>{displayed}{suffix}</span>
+}
+
+function FloatingParticles({ count = 12 }: { count?: number }) {
+  return (
+    <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+      {Array.from({ length: count }).map((_, i) => (
+        <motion.div
+          key={i}
+          className="absolute rounded-full"
+          style={{
+            width: Math.random() * 3 + 1,
+            height: Math.random() * 3 + 1,
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+            background: "rgba(198, 95, 57, 0.4)",
+          }}
+          animate={{
+            y: [0, -30 - Math.random() * 40, 0],
+            opacity: [0.2, 0.8, 0.2],
+          }}
+          transition={{
+            duration: 4 + Math.random() * 6,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: Math.random() * 5,
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
 export function LandingPage() {
   const [email, setEmail] = useState("")
   const router = useRouter()
@@ -82,31 +156,57 @@ export function LandingPage() {
       <header className="h-14 flex items-center justify-between px-6 lg:px-12 fixed top-0 left-0 right-0 z-[100]" style={{ background: "linear-gradient(180deg, rgba(5,5,5,0.95) 0%, rgba(5,5,5,0.7) 100%)", backdropFilter: "blur(12px)" }}>
         <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg, transparent 0%, rgba(198,95,57,0.4) 20%, rgba(198,95,57,0.6) 50%, rgba(198,95,57,0.4) 80%, transparent 100%)" }} />
         <div className="absolute inset-0 rounded-b-3xl pointer-events-none" style={{ background: "radial-gradient(ellipse at 50% 100%, rgba(198,95,57,0.08) 0%, transparent 70%)" }} />
-        <div className="flex items-center gap-2 relative z-10">
+        <motion.div className="flex items-center gap-2 relative z-10"
+          initial={{ opacity: 0, x: -12 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        >
           <Link href="/" className="text-base font-medium tracking-tight" style={{ color: "#e5e5e5", letterSpacing: "-0.01em" }}>
             FlowCore
           </Link>
-        </div>
+        </motion.div>
 
         <nav className="hidden md:flex items-center gap-1 relative z-10">
-          <Link href="/features" className="px-4 py-2 text-sm font-normal transition-colors" style={{ color: "#a3a3a3" }} onMouseEnter={(e) => e.currentTarget.style.color = "#e5e5e5"} onMouseLeave={(e) => e.currentTarget.style.color = "#a3a3a3"}>Features</Link>
-          <Link href="/pricing" className="px-4 py-2 text-sm font-normal transition-colors" style={{ color: "#a3a3a3" }} onMouseEnter={(e) => e.currentTarget.style.color = "#e5e5e5"} onMouseLeave={(e) => e.currentTarget.style.color = "#a3a3a3"}>Pricing</Link>
-          <Link href="/faq" className="px-4 py-2 text-sm font-normal transition-colors" style={{ color: "#a3a3a3" }} onMouseEnter={(e) => e.currentTarget.style.color = "#e5e5e5"} onMouseLeave={(e) => e.currentTarget.style.color = "#a3a3a3"}>FAQ</Link>
-          <Link href="/changelog" className="px-4 py-2 text-sm font-normal transition-colors" style={{ color: "#a3a3a3" }} onMouseEnter={(e) => e.currentTarget.style.color = "#e5e5e5"} onMouseLeave={(e) => e.currentTarget.style.color = "#a3a3a3"}>Changelog</Link>
+          {[["Features", "/features"], ["Pricing", "/pricing"], ["FAQ", "/faq"], ["Changelog", "/changelog"]].map(([label, href], i) => (
+            <motion.div
+              key={label}
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 + i * 0.05, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <Link href={href} className="px-4 py-2 text-sm font-normal transition-colors" style={{ color: "#a3a3a3" }} onMouseEnter={(e) => e.currentTarget.style.color = "#e5e5e5"} onMouseLeave={(e) => e.currentTarget.style.color = "#a3a3a3"}>{label}</Link>
+            </motion.div>
+          ))}
         </nav>
 
-        <div className="flex items-center gap-3 relative z-10">
+        <motion.div className="flex items-center gap-3 relative z-10"
+          initial={{ opacity: 0, x: 12 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        >
           <Link href="/login" className="hidden sm:inline text-sm font-normal transition-colors" style={{ color: "#a3a3a3" }} onMouseEnter={(e) => e.currentTarget.style.color = "#e5e5e5"} onMouseLeave={(e) => e.currentTarget.style.color = "#a3a3a3"}>Sign In</Link>
-          <Button asChild className="h-8 px-4 rounded-[100px] text-sm font-normal flex items-center gap-1" style={{ background: "#c65f39", color: "#fff" }}>
-            <Link href="/login">Get Started <ArrowUpRight className="h-3 w-3" /></Link>
+          <Button asChild className="h-8 px-4 rounded-[100px] text-sm font-normal flex items-center gap-1 group" style={{ background: "#c65f39", color: "#fff" }}>
+            <Link href="/login">Get Started <ArrowUpRight className="h-3 w-3 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" /></Link>
           </Button>
-        </div>
+        </motion.div>
       </header>
 
       <main ref={heroRef}>
-        <section className="relative min-h-screen pt-32 pb-48 px-6 overflow-hidden flex flex-col items-center" style={{ background: "linear-gradient(180deg, #0d0705 0%, #080505 30%, #050505 60%)" }}>
+        <section
+          className="relative min-h-screen pt-32 pb-48 px-6 overflow-hidden flex flex-col items-center"
+          style={{ background: "linear-gradient(180deg, #0d0705 0%, #080505 30%, #050505 60%)" }}
+          onMouseMove={(e) => {
+            const rect = e.currentTarget.getBoundingClientRect()
+            const x = ((e.clientX - rect.left) / rect.width) * 100
+            const y = ((e.clientY - rect.top) / rect.height) * 100
+            e.currentTarget.style.setProperty("--mx", `${x}%`)
+            e.currentTarget.style.setProperty("--my", `${y}%`)
+          }}
+        >
+          <FloatingParticles count={15} />
           <motion.div className="absolute top-[2%] left-1/2 -translate-x-1/2 w-[1100px] h-[700px] rounded-full pointer-events-none z-0" style={{ scale: glowScale, opacity: glowOpacity, background: "radial-gradient(ellipse at center, rgba(198, 95, 57, 0.35) 0%, rgba(198, 95, 57, 0.12) 30%, rgba(198, 95, 57, 0.04) 60%, transparent 80%)" }} />
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 2 }} className="absolute top-[15%] left-1/2 -translate-x-1/2 w-[1400px] h-[500px] rounded-full pointer-events-none z-0" style={{ background: "radial-gradient(ellipse at center, rgba(198, 95, 57, 0.06) 0%, transparent 60%)" }} />
+          <motion.div className="absolute inset-0 pointer-events-none z-0 transition-opacity duration-500" style={{ background: "radial-gradient(800px circle at var(--mx, 50%) var(--my, 50%), rgba(198, 95, 57, 0.08) 0%, transparent 60%)" }} />
 
           <motion.div className="max-w-[1040px] mx-auto text-center relative z-10 space-y-12" style={{ opacity: heroOpacity, scale: heroScale }}>
             <motion.div
@@ -146,8 +246,8 @@ export function LandingPage() {
                   required
                   className="bg-transparent border-none h-11 px-4 focus-visible:ring-0 text-sm font-normal" style={{ color: "#fff" }}
                 />
-                <Button type="submit" className="h-11 px-5 rounded-lg text-sm font-normal flex items-center gap-1" style={{ background: "#c65f39", color: "#fff" }}>
-                  Get Started <ArrowUpRight className="h-4 w-4" />
+                <Button type="submit" className="h-11 px-5 rounded-lg text-sm font-normal flex items-center gap-1 group" style={{ background: "#c65f39", color: "#fff" }}>
+                  Get Started <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                 </Button>
               </form>
               <p className="text-center mt-3 text-xs font-normal" style={{ color: "#737373" }}>
@@ -219,7 +319,7 @@ export function LandingPage() {
                 AI insights to help monitor, evaluate, and continuously optimize your conversations.
               </p>
               <Button asChild className="h-11 px-5 rounded-[100px] text-sm font-normal flex items-center gap-1" style={{ background: "#c65f39", color: "#fff" }}>
-                <Link href="/login">Get Started <ArrowUpRight className="h-4 w-4" /></Link>
+                <Link href="/login">Get Started <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" /></Link>
               </Button>
             </motion.div>
 
@@ -296,8 +396,8 @@ export function LandingPage() {
             <p className="max-w-lg mx-auto mt-4 leading-relaxed font-normal" style={{ fontSize: "15.667px", color: "#737373" }}>
               When automation ends, your control begins — streamline every conversation your AI can&apos;t handle in one place.
             </p>
-            <Button asChild className="h-11 px-5 rounded-[100px] text-sm font-normal flex items-center gap-1 mt-6" style={{ background: "#c65f39", color: "#fff" }}>
-              <Link href="/login">Get Started <ArrowUpRight className="h-4 w-4" /></Link>
+            <Button asChild className="h-11 px-5 rounded-[100px] text-sm font-normal flex items-center gap-1 mt-6 group" style={{ background: "#c65f39", color: "#fff" }}>
+              <Link href="/login">Get Started <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" /></Link>
             </Button>
           </div>
         </motion.section>
@@ -321,7 +421,8 @@ export function LandingPage() {
                 { logo: GoogleCalendarLogo, label: "Google Calendar" },
                 { logo: () => <Globe className="h-full w-full" style={{ color: "#a3a3a3" }} />, label: "Webchat" }
               ].map((node, i) => (
-                <motion.div key={i} {...scaleIn} transition={{ duration: 0.9, delay: i * 0.15, ease: [0.16, 1, 0.3, 1] as const }} className="p-6 rounded-xl flex flex-col items-center gap-4 transition-all duration-300 hover:scale-105" style={{ background: "#fafafa", border: "1px solid #e5e5e5" }}>
+                <TiltCard key={i}>
+                <motion.div {...scaleIn} transition={{ duration: 0.9, delay: i * 0.15, ease: [0.16, 1, 0.3, 1] as const }} className="p-6 rounded-xl flex flex-col items-center gap-4 transition-all duration-300 hover:scale-105" style={{ background: "#fafafa", border: "1px solid #e5e5e5" }}>
                   <div className="h-12 w-12 rounded-lg flex items-center justify-center p-2.5" style={{ background: "#ffffff", border: "1px solid #e5e5e5" }}>
                     <node.logo className="h-full w-full" />
                   </div>
@@ -329,6 +430,7 @@ export function LandingPage() {
                     <h4 className="text-sm font-normal" style={{ color: "#525252" }}>{node.label}</h4>
                   </div>
                 </motion.div>
+                </TiltCard>
               ))}
             </div>
           </div>
@@ -367,8 +469,8 @@ export function LandingPage() {
                   stat: "71/71",
                 },
               ].map((feature, i) => (
+                <TiltCard key={feature.title}>
                 <motion.div
-                  key={feature.title}
                   initial={{ opacity: 0, y: 30 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
@@ -382,15 +484,16 @@ export function LandingPage() {
                   <h3 className="text-base font-normal mb-2" style={{ color: "#171717" }}>{feature.title}</h3>
                   <p className="text-sm leading-relaxed font-normal" style={{ color: "#737373" }}>{feature.description}</p>
                   <div className="mt-3 text-xs font-medium" style={{ color: "#c65f39" }}>
-                    Verified: {feature.stat}
+                    Verified: <AnimatedCount value={parseInt(feature.stat.split("/")[0])} suffix={"/" + feature.stat.split("/")[1]} />
                   </div>
                 </motion.div>
+                </TiltCard>
               ))}
             </div>
 
             <div className="text-center mt-12">
-              <Button asChild className="h-11 px-5 rounded-[100px] text-sm font-normal flex items-center gap-1 mx-auto" style={{ background: "#c65f39", color: "#fff" }}>
-                <Link href="/features">See All Features <ArrowUpRight className="h-4 w-4" /></Link>
+              <Button asChild className="h-11 px-5 rounded-[100px] text-sm font-normal flex items-center gap-1 mx-auto group" style={{ background: "#c65f39", color: "#fff" }}>
+                <Link href="/features">See All Features <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" /></Link>
               </Button>
             </div>
           </div>
@@ -415,8 +518,8 @@ export function LandingPage() {
                 { title: "Your data, your control", text: "We don't train on your data. We don't sell your data. You own everything, and you can export or delete it anytime." },
                 { title: "Transparency matters", text: "Clear pricing. No hidden fees. Open about what our AI can and can't do. Honest about limitations." },
               ].map((belief, i) => (
+                <TiltCard key={belief.title}>
                 <motion.div
-                  key={belief.title}
                   initial={{ opacity: 0, y: 30 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
@@ -427,6 +530,7 @@ export function LandingPage() {
                   <h3 className="text-base font-normal mb-2" style={{ color: "#171717" }}>{belief.title}</h3>
                   <p className="text-sm leading-relaxed font-normal" style={{ color: "#737373" }}>{belief.text}</p>
                 </motion.div>
+                </TiltCard>
               ))}
             </div>
           </div>
@@ -448,8 +552,8 @@ export function LandingPage() {
                 Built for Enterprise Security and Privacy
               </h2>
               <div className="flex flex-wrap gap-4">
-                <Button asChild className="h-11 px-5 rounded-[100px] text-sm font-normal flex items-center gap-1" style={{ background: "#c65f39", color: "#fff" }}>
-                  <Link href="/pricing">Talk to Sales <ArrowUpRight className="h-4 w-4" /></Link>
+                <Button asChild className="h-11 px-5 rounded-[100px] text-sm font-normal flex items-center gap-1 group" style={{ background: "#c65f39", color: "#fff" }}>
+                  <Link href="/pricing">Talk to Sales <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" /></Link>
                 </Button>
               </div>
             </motion.div>
