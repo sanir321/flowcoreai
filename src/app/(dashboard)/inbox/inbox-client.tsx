@@ -362,17 +362,17 @@ export function InboxClient({
                          <Settings className="h-3.5 w-3.5" />
                      </button>
                  </h2>
-                 <div className="flex items-center gap-2">
-                     <div className={cn(
-                         "flex items-center gap-1 px-1.5 py-0.5 rounded-full border text-[8px] font-semibold",
-                         realtimeStatus === 'connected' ? "border-emerald-100 bg-emerald-50 text-emerald-600" :
-                         realtimeStatus === 'error' ? "border-rose-100 bg-rose-50 text-rose-600" :
-                         "border-gray-200 bg-gray-50 text-gray-500"
-                     )}>
-                         {realtimeStatus === 'connected' ? <><Wifi className="h-2 w-2" /> Live</> :
-                          realtimeStatus === 'error' ? <><WifiOff className="h-2 w-2" /> Polling</> :
-                          "Syncing"}
-                     </div>
+              <div className="flex items-center gap-2">
+                      <div className={cn(
+                          "flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-medium",
+                          realtimeStatus === 'connected' ? "border-emerald-100 bg-emerald-50 text-emerald-600" :
+                          realtimeStatus === 'error' ? "border-rose-100 bg-rose-50 text-rose-600" :
+                          "border-gray-200 bg-gray-50 text-gray-500"
+                      )}>
+                          {realtimeStatus === 'connected' ? <><Wifi className="h-3 w-3" /> Live</> :
+                           realtimeStatus === 'error' ? <><WifiOff className="h-3 w-3" /> Polling</> :
+                           <><Loader2 className="h-3 w-3 animate-spin" /> Syncing</>}
+                      </div>
                      <Badge className="bg-[#c65f39] text-white border-none text-[9px] px-1.5 h-4 font-semibold">{filteredSessions.length}</Badge>
                  </div>
               </div>
