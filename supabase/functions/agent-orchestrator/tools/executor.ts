@@ -17,8 +17,6 @@ const PER_TOOL_TIMEOUTS: Record<string, number> = {
   place_order: 12000,
   transfer_agent: 5000,
   escalate: 10000,
-  end_conversation: 5000,
-  create_support_ticket: 10000,
 };
 
 const TOOL_RATE_LIMITS: Record<string, number> = {
@@ -29,9 +27,7 @@ const TOOL_RATE_LIMITS: Record<string, number> = {
   get_business_info: 10,
   place_order: 5,
   escalate: 3,
-  create_support_ticket: 3,
-  transfer_agent: 1,
-  end_conversation: 1,
+  transfer_agent: 5,
 };
 
 const countCache = new WeakMap<PipelineContext, Record<string, number>>();
@@ -241,12 +237,6 @@ async function routeToImpl(toolName: string, params: any, ctx: PipelineContext):
         default: return { success: false, error: `Unknown escalate action: ${action}` };
       }
     }
-
-    case "end_conversation":
-      return { success: true, data: { summary: params.summary, ended: true } };
-
-    case "create_support_ticket":
-      return createTicket(params, ctx);
 
     default:
       return { success: false, error: `Unknown tool: ${toolName}` };

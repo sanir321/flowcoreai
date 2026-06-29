@@ -8,9 +8,8 @@ export async function getHistory(params: Record<string, unknown>, ctx: PipelineC
     const { data: found } = await ctx.supabase.from("contacts").select("id").eq("workspace_id", ctx.payload.workspace_id).or(`whatsapp_jid.eq.${jid},session_token.eq.${jid}`).maybeSingle();
     if (found) contactId = found.id;
   }
-  if (!contactId) return { error: "Contact not found" };
+  if (!contactId) return { success: false, error: "Contact not found" };
   const { data: contact } = await ctx.supabase.from("contacts").select("*").eq("id", contactId).single();
-  // Fetch appointments by both contact_id and session_id (OR logic) - values are DB UUIDs, safe
   const { data: byContact } = await ctx.supabase.from("appointments").select("*")
     .eq("contact_id", contactId)
     .order("created_at", { ascending: false });
@@ -20,7 +19,7 @@ export async function getHistory(params: Record<string, unknown>, ctx: PipelineC
   const merged = [...(byContact || []), ...(bySession || [])];
   const seen = new Set<string>();
   const appointments = merged.filter(a => { const k = a.id; return seen.has(k) ? false : (seen.add(k), true); });
-  return { ...contact, appointments: appointments || [] };
+  return { success: true, data: { ...contact, appointments: appointments || [] } };
 }
 
 export async function update(
@@ -31,18 +30,18 @@ export async function update(
   if (!session?.contact_id) {
     const jid = ctx.payload.customer_jid || ctx.session.customer_jid;
     const { data: found } = await ctx.supabase.from("contacts").select("id").eq("workspace_id", ctx.payload.workspace_id).or(`whatsapp_jid.eq.${jid},session_token.eq.${jid}`).maybeSingle();
-    if (!found) return { error: "Contact not found" };
+    if (!found) return { success: false, error: "Contact not found" };
     const { data: updated } = await ctx.supabase.from("contacts").update({
       name: params.name, email: params.email, phone: params.phone,
       notes: params.notes ? `[Update] ${params.notes}` : undefined,
       updated_at: new Date().toISOString()
     }).eq("id", found.id).select().single();
-    return updated;
+    return { success: true, data: updated };
   }
   const { data: updated } = await ctx.supabase.from("contacts").update({
     name: params.name, email: params.email, phone: params.phone,
     notes: params.notes ? `[Update] ${params.notes}` : undefined,
     updated_at: new Date().toISOString()
   }).eq("id", session.contact_id).select().single();
-  return updated;
+  return { success: true, data: updated };
 }

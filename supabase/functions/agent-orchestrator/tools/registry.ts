@@ -8,7 +8,7 @@ export const ALL_TOOLS: Record<string, ToolDefinition> = {
       type: "object",
       properties: {
         action: { type: "string", enum: ["check", "create", "update", "cancel"], description: "What to do." },
-        appointment_id: { type: "string", description: "Required for update/cancel. Use get_contact_history to find it." },
+        appointment_id: { type: "string", description: "Required for update/cancel. Use manage_contact with action 'get' to find it." },
         service: { type: "string", description: "For create: the service being booked." },
         date: { type: "string", description: "For check/create/update: date (e.g. '2026-06-20' or 'tomorrow')." },
         time: { type: "string", description: "For create/update: time (e.g. '10:00' or '2pm')." },
@@ -136,38 +136,11 @@ export const ALL_TOOLS: Record<string, ToolDefinition> = {
       additionalProperties: false
     }
   },
-  end_conversation: {
-    name: "end_conversation",
-    description: "Gracefully end the conversation when the user indicates they're done. Marks the session complete and sends a closing message.",
-    parameters: {
-      type: "object",
-      properties: {
-        reason: { type: "string", description: "Why the conversation is ending." },
-        summary: { type: "string", description: "Brief summary of what was accomplished." }
-      },
-      required: ["reason"],
-      additionalProperties: false
-    }
-  },
-  create_support_ticket: {
-    name: "create_support_ticket",
-    description: "Proactively create a support ticket for issues that need tracking and follow-up by human agents.",
-    parameters: {
-      type: "object",
-      properties: {
-        subject: { type: "string", description: "Brief summary of the issue." },
-        description: { type: "string", description: "Detailed description of the issue." },
-        priority: { type: "string", enum: ["low", "normal", "high", "urgent"], description: "Priority level (default: normal)." }
-      },
-      required: ["subject"],
-      additionalProperties: false
-    }
-  }
 };
 
 export const AGENT_TOOLS: Record<string, string[]> = {
   customer_support: [
-    "search_kb", "manage_contact", "get_business_info", "transfer_agent", "escalate", "create_support_ticket"
+    "search_kb", "manage_contact", "get_business_info", "transfer_agent", "escalate"
   ],
   appointment_booking: [
     "manage_appointment", "manage_contact", "transfer_agent", "escalate"
