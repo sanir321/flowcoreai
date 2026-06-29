@@ -5,7 +5,6 @@ import { SUBMIT_PLAN_TOOL, ALL_TOOLS, AGENT_TOOLS } from "../tools/registry.ts";
 import { buildBookingSystemPrompt } from "../agents/booking.ts";
 import { buildSupportSystemPrompt } from "../agents/support.ts";
 import { buildSalesSystemPrompt } from "../agents/sales.ts";
-import { matchChunks } from "../tools/impl/kb.ts";
 import { touchSession } from "../lib/session.ts";
 
 const AGENT_SYSTEM_PROMPTS: Record<string, (ctx: PipelineContext) => string> = {
@@ -167,18 +166,6 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
 
   if (ctx._ventVsSolve === "vent") {
     systemPrompt += "\n[VENT DETECTED] The customer may need to be heard before they want a solution. Let them finish. Acknowledge their experience fully before offering to help. Do not jump to troubleshooting.";
-  }
-
-  if (agentType === "customer_support") {
-    try {
-      const kbResult = ctx.kbSearchPromise
-        ? await ctx.kbSearchPromise
-        : await matchChunks({ query: ctx.payload.message }, ctx);
-      ctx.kbHadResults = Array.isArray(kbResult?.chunks || kbResult?.kb_chunks) &&
-        (kbResult?.chunks || kbResult?.kb_chunks || []).length > 0;
-    } catch (e: any) {
-      console.error("[T3] KB check failed:", e.message);
-    }
   }
 
   if (ctx.routingReason === "management_priority") {
