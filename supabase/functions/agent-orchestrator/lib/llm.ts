@@ -5,7 +5,7 @@ const OPENCODE_ZEN_BASE_URL = (Deno.env.get("OPENCODE_ZEN_BASE_URL") || "https:/
 
 export const DEFAULT_FALLBACK_MESSAGE = "I'm not sure about that. Please contact us directly for more information.";
 
-export const FALLBACK_MODEL = "mimo-v2.5-free";
+export const FALLBACK_MODEL = "gemini-2.0-flash";
 const DEFAULT_PRIMARY = "nemotron-3-ultra-free";
 
 export async function callLLM(payload: AgentPayload & { agentType?: string }) {
@@ -41,7 +41,7 @@ async function callZen(payload: AgentPayload & { model: string }) {
   if (payload.tool_choice) body.tool_choice = payload.tool_choice;
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 45000);
+  const timeout = setTimeout(() => controller.abort(), payload.max_tokens && payload.max_tokens <= 100 ? 10000 : 20000);
 
   try {
     const res = await fetch(`${OPENCODE_ZEN_BASE_URL}/chat/completions`, {
