@@ -14,14 +14,18 @@ function stripReasoning(text: string): string {
   if (!text || text.length < 20) return text;
   const lines = text.split("\n").map(l => l.trim());
   let start = 0;
-  for (let i = 0; i < Math.min(10, lines.length); i++) {
+  for (let i = 0; i < Math.min(15, lines.length); i++) {
     const line = lines[i];
     if (!line) continue;
-    if (/^(thinking|thought|let me (think|analyze|check|consider|start|break|look|search))/i.test(line))
+    if (/^(thinking|thought|let me (think|analyze|check|consider|start|break|look|search|figure|see))/i.test(line))
       { start = i + 1; continue; }
-    if (/^wait,? (let me|i should|i need|i can)/i.test(line))
+    if (/^wait,? (let me|i should|i need|i can|let's)/i.test(line))
       { start = i + 1; continue; }
     if (/^\d+\.\s*\*\*[A-Z]/.test(line))
+      { start = i + 1; continue; }
+    if (/^(today is|let me check|okay,? let|first,? let|so let)/i.test(line))
+      { start = i + 1; continue; }
+    if (/^(\*\*)?(monday|tuesday|wednesday|thursday|friday|saturday|sunday|january|february|march|april|may|june|july|august|september|october|november|december)/i.test(line) && line.length < 60)
       { start = i + 1; continue; }
     if (/^[\*\-]\s*\*?[A-Z][a-z]+[^a-z]*:/i.test(line) && line.length < 80)
       { start = i + 1; continue; }
@@ -124,5 +128,5 @@ async function callZen(payload: AgentPayload & { model: string }) {
 }
 
 export async function callRouterModel(payload: AgentPayload) {
-  return await callLLM({ ...payload, model: DEFAULT_PRIMARY, max_tokens: 100 });
+  return await callLLM({ ...payload, model: DEFAULT_PRIMARY, max_tokens: payload.max_tokens || 100 });
 }

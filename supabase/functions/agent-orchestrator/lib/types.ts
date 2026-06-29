@@ -1,10 +1,3 @@
-export interface RouterResult {
-  agent: "customer_support" | "sales" | "appointment_booking";
-  intent: string;
-  urgency: "low" | "medium" | "high";
-  entities: Record<string, any>;
-}
-
 export interface AgentPayload {
   model?: string;
   messages: { role: string; content: string }[];
@@ -86,15 +79,17 @@ export interface PipelineContext {
   _toolCallBuffer?: any[];
   _toolFailCounts?: Record<string, number>;
   _sentiment?: string;
-  _emotionalTone?: string;
-  _escalationLevel?: string;
-  _churnRisk?: boolean;
-  _maskedComplaint?: boolean;
-  _ventVsSolve?: string;
   _appointmentCreated?: boolean;
   _transferAgentCalled?: boolean;
   _escalationHandled?: boolean;
   _orderPlaced?: boolean;
+  _queryAnalysis?: QueryAnalysis;
+  _wantsHuman?: boolean;
+  _kbChunks?: any[];
+  _existingAppointment?: any;
+  _customerHistory?: any[];
+  _subTasks?: { agent: string; intent: string }[];
+  _retryHint?: string;
 }
 
 export interface AgentPlan {
@@ -111,6 +106,16 @@ export interface TierResult {
 }
 
 export type AgentType = "customer_support" | "appointment_booking" | "sales";
+
+export interface QueryAnalysis {
+  agent: AgentType;
+  intent: string;
+  entities: Record<string, string>;
+  urgency: "low" | "medium" | "high";
+  wants_human: boolean;
+  emotional_tone: string;
+  sub_tasks?: { agent: AgentType; intent: string }[];
+}
 
 export const AGENT_DESCRIPTIONS: Record<string, { label: string; description: string; skills: string }> = {
   customer_support: {

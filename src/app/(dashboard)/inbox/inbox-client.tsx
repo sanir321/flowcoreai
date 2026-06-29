@@ -377,8 +377,7 @@ export function InboxClient({
                          <Settings className="h-3.5 w-3.5" />
                      </button>
                  </h2>
-              <Badge className="bg-[#c65f39] text-white border-none text-[9px] px-1.5 h-4 font-semibold">{filteredSessions.length}</Badge>
-                 </div>
+                 <Badge className="bg-[#c65f39] text-white border-none text-[9px] px-1.5 h-4 font-semibold">{filteredSessions.length}</Badge>
               </div>
               <div className="relative group">
                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3 w-3 text-gray-500 group-focus-within:text-black transition-colors" />
@@ -615,6 +614,7 @@ export function InboxClient({
              </div>
             )}
          </div>
+      </div>
 
       {/* Compose Message Dialog */}
       <Dialog open={isComposeOpen} onOpenChange={setIsComposeOpen}>

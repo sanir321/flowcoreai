@@ -140,14 +140,4 @@ export async function touchSession(ctx: PipelineContext, agentType: string, fina
     .eq("id", ctx.session.id);
 }
 
-export async function updateSessionState(supabase: any, sessionId: string, updates: any) {
-  const { error } = await supabase
-    .from('conversation_sessions')
-    .update({
-        ...updates,
-        updated_at: new Date().toISOString()
-    })
-    .eq('id', sessionId);
-    
-  if (error) console.error("[SESSION] Update failed:", error.message);
-}
+

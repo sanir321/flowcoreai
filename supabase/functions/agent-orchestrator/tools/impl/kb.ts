@@ -8,7 +8,7 @@ const DEFAULT_KB_CONFIG = {
   noise_stripping: true,
 };
 
-export async function matchChunks(params: { query: string }, ctx: PipelineContext) {
+export async function matchChunks(params: { query: string; match_threshold?: number }, ctx: PipelineContext) {
   // Reuse the speculative search started in T2 when the query is the raw message.
   if (ctx.kbSearchPromise && params.query.trim().toLowerCase() === ctx.payload.message.trim().toLowerCase()) {
     return ctx.kbSearchPromise;
@@ -28,10 +28,13 @@ export async function matchChunks(params: { query: string }, ctx: PipelineContex
 
   const kbConfig = ctx.workspace?.kb_config || DEFAULT_KB_CONFIG;
 
+  // Support override match_threshold for re-query (lower threshold = more results)
+  const matchThreshold = params.match_threshold ?? kbConfig.match_threshold ?? DEFAULT_KB_CONFIG.match_threshold;
+
   // Hybrid search: vector + keyword fallback (p_query_text overload).
   const { data: kb, error } = await ctx.supabase.rpc("match_kb_chunks", {
     query_embedding: embedding,
-    match_threshold: kbConfig.match_threshold ?? DEFAULT_KB_CONFIG.match_threshold,
+    match_threshold: matchThreshold,
     match_count: kbConfig.match_count ?? DEFAULT_KB_CONFIG.match_count,
     p_workspace_id: ctx.payload.workspace_id,
     p_query_text: params.query,

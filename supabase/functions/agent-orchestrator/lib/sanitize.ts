@@ -26,32 +26,4 @@ export function sanitizeLlmOutput(output: string): string {
   return clean;
 }
 
-export async function checkTokenBudget(
-  supabase: any,
-  sessionId: string,
-  tokensUsed: number,
-  maxTokensPerSession = 100000
-): Promise<{ allowed: boolean; usage: number }> {
-  const { data: session } = await supabase
-    .from("conversation_sessions")
-    .select("total_tokens_used, message_count")
-    .eq("id", sessionId)
-    .single();
 
-  const totalSoFar = session?.total_tokens_used || 0;
-  const projectedUsage = totalSoFar + tokensUsed;
-  const allowed = projectedUsage <= maxTokensPerSession;
-
-  if (tokensUsed > 0) {
-    await supabase
-      .from("conversation_sessions")
-      .update({
-        total_tokens_used: projectedUsage,
-        message_count: (session?.message_count || 0) + 1,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", sessionId);
-  }
-
-  return { allowed, usage: totalSoFar };
-}

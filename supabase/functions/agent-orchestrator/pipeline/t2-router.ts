@@ -1,99 +1,81 @@
-import { PipelineContext, TierResult } from "../lib/types.ts";
-import { matchChunks } from "../tools/impl/kb.ts";
+import { PipelineContext, TierResult, QueryAnalysis } from "../lib/types.ts";
+import { callRouterModel } from "../lib/llm.ts";
 
-function diceCoefficient(a: string, b: string): number {
-  if (a === b) return 1;
-  if (a.length < 2 || b.length < 2) return 0;
-  const aBg = new Map<string, number>();
-  const bBg = new Map<string, number>();
-  for (let i = 0; i < a.length - 1; i++) {
-    const bg = a.substring(i, i + 2);
-    aBg.set(bg, (aBg.get(bg) || 0) + 1);
-  }
-  for (let i = 0; i < b.length - 1; i++) {
-    const bg = b.substring(i, i + 2);
-    bBg.set(bg, (bBg.get(bg) || 0) + 1);
-  }
-  let intersection = 0;
-  for (const [bg, count] of aBg) {
-    intersection += Math.min(count, bBg.get(bg) || 0);
-  }
-  return (2 * intersection) / (a.length - 1 + b.length - 1);
-}
+const QUERY_ANALYSIS_PROMPT = `You are a query classifier for a business AI assistant. Your job is to analyze the user's message and determine:
+1. Which agent should handle it
+2. What the user's intent is
+3. Key entities (names, dates, services, etc.)
+4. Urgency level
+5. Whether they want a human
+6. Whether the query has MULTIPLE requests that need different agents
 
-const AGENT_KEYWORDS: Record<string, { keywords: string[]; weights: number[] }> = {
-  appointment_booking: {
-    keywords: ["book", "appointment", "schedule", "reserve", "slot", "booking", "consultation", "checkup"],
-    weights: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.8, 0.7]
-  },
-  sales: {
-    keywords: ["order", "buy", "purchase", "price", "pricing", "cost", "menu", "how much", "rate", "quote", "payment", "pay", "offer", "discount", "deal", "product", "subscription", "tell me about", "what do you offer", "what can you", "do you provide", "features", "capabilities", "solutions", "about your", "how does", "can you help", "what do you do", "do you offer", "what is", "explain", "how it works", "demo", "show me", "packages", "plans", "services", "offerings", "what are your", "what kind of", "can you tell"],
-    weights: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.9, 0.9, 0.9, 1.0, 1.0, 1.0, 0.8, 0.8, 0.7, 0.8, 0.9, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.6, 0.6]
-  }
-};
+Available agents:
+- customer_support: General questions about the business, services, hours, policies, support issues
+- appointment_booking: Booking, rescheduling, checking availability, cancelling appointments
+- sales: Pricing inquiries, menu browsing, ordering products/services, lead capture
 
-function scoreAgentType(msgLower: string, agentKeywords: typeof AGENT_KEYWORDS.appointment_booking): number {
-  let maxScore = 0;
-  for (let i = 0; i < agentKeywords.keywords.length; i++) {
-    const kw = agentKeywords.keywords[i];
-    const weight = agentKeywords.weights[i] || 1.0;
-    if (msgLower.includes(kw)) {
-      maxScore = Math.max(maxScore, 1.0 * weight);
-    } else {
-      const dice = diceCoefficient(msgLower, kw);
-      if (dice >= 0.4) {
-        maxScore = Math.max(maxScore, dice * weight * 0.8);
-      }
+Rules:
+- If the user asks about the business (services, hours, locations, general info) -> customer_support
+- If the user wants to book/schedule/reschedule/cancel an appointment -> appointment_booking
+- If the user asks about pricing, menu, ordering, buying products -> sales
+- If the user is asking "what services do you offer" or "what do you do" -> customer_support (general business info)
+- If the user wants a human/manager/supervisor -> mark wants_human as true
+- **Task Decomposition**: If the message contains MULTIPLE distinct requests that would need different agents, list them in sub_tasks. Example: "I want to book an appointment and check pricing" -> agent: appointment_booking, sub_tasks: [{agent:"appointment_booking",intent:"book appointment"}, {agent:"sales",intent:"check pricing"}]
+
+Respond ONLY with valid JSON:
+{
+  "agent": "customer_support" | "appointment_booking" | "sales",
+  "intent": "short description of what user wants",
+  "entities": { "service": "", "date": "", "name": "", "phone": "", "product": "" },
+  "urgency": "low" | "medium" | "high",
+  "wants_human": false,
+  "emotional_tone": "calm" | "positive" | "frustrated" | "urgent" | "distressed",
+  "sub_tasks": []
+}`;
+
+async function llmClassify(ctx: PipelineContext, activeAgents: string[]): Promise<QueryAnalysis> {
+  const msg = ctx.payload.message;
+  const agentList = activeAgents.map(a => a.replace("_", " ")).join(", ");
+
+  try {
+    const llmPayload = {
+      system: QUERY_ANALYSIS_PROMPT + `\n\nActive agents for this workspace: ${agentList}`,
+      messages: [
+        { role: "user", content: msg }
+      ],
+      response_format: { type: "json_object" },
+      max_tokens: 200,
+      temperature: 0.1,
+    };
+
+    const llmResponse = await callRouterModel(llmPayload);
+    const raw = llmResponse.choices?.[0]?.message?.content || "{}";
+    const analysis = JSON.parse(raw) as QueryAnalysis;
+
+    if (!["customer_support", "appointment_booking", "sales"].includes(analysis.agent)) {
+      analysis.agent = "customer_support";
     }
+    if (!activeAgents.includes(analysis.agent)) {
+      analysis.agent = "customer_support";
+      analysis.intent = "fallback_unavailable_agent";
+    }
+
+    return analysis;
+  } catch (e: any) {
+    console.error("[T2] LLM query analysis failed:", e.message);
+    return {
+      agent: activeAgents.includes("customer_support") ? "customer_support" : "appointment_booking",
+      intent: "fallback_classification_error",
+      entities: {},
+      urgency: "low",
+      wants_human: false,
+      emotional_tone: "calm",
+    };
   }
-  return maxScore;
-}
-
-function detectEmotionalTone(msgLower: string, msg: string): string {
-  const distressSignals = /\b(helpless|desperate|urgent|emergency|asap|immediately|can't take|lost|scared|worried|anxious)\b/i;
-  const frustrationSignals = /\b(annoying|frustrated|frustrating|useless|terrible|horrible|awful|worst|waste|useless|unacceptable|ridiculous|fed up|sick of|tired of|this is not|still not)\b/i;
-  const urgencySignals = /\b(hurry|quick|fast|need.*now|important|critical|deadline|due|expiring|limited time|today|right now|immediately)\b/i;
-  if (distressSignals.test(msg)) return "distressed";
-  if (frustrationSignals.test(msg)) return "frustrated";
-  if (urgencySignals.test(msg)) return "urgent";
-  if (msgLower.match(/\b(thanks|great|perfect|awesome|good|nice|wonderful|excellent|amazing|appreciate)\b/i)) return "positive";
-  return "calm";
-}
-
-function detectPatternSignals(msgLower: string, msg: string): { churnRisk: boolean; maskedComplaint: boolean; ventVsSolve: string } {
-  const churnSignals = /\b(cancel.*account|switch.*provider|competitor|moving to|better option|other.*option|exploring|considering.*leaving|thought about|not worth|too expensive|cancel.*subscription|delete.*account)\b/i;
-  const complaintMaskers = /\b(how.*work|what.*policy|do you.*offer|is there.*way|can I.*but)\b/i;
-  const ventSignals = /\b(story|always|never|every time|every single|all the time|just like|same thing|exactly)\b/i;
-  return {
-    churnRisk: churnSignals.test(msg),
-    maskedComplaint: complaintMaskers.test(msgLower) && (/\b(issue|problem|wrong|broken|not work|error|didn't|hasn't)\b/i.test(msg)),
-    ventVsSolve: ventSignals.test(msg) && msg.length > 100 ? "vent" : "solve"
-  };
-}
-
-function detectEscalationLevel(msg: string): string {
-  const immediateSignals = /\b(legal|attorney|lawsuit|sue|police|safety|unsafe|danger|emergency|fire|injured|injury|threat)\b/i;
-  const urgentSignals = /\b(furious|refund.*now|cancel.*immediately|speak.*manager|supervisor|owner|complaint.*formal|social.*media.*post|chargeback|dispute)\b/i;
-  const standardSignals = /\b(complicated|confus|not working|broken|wrong|incorrect|bill.*issue|payment.*problem|technical)\b/i;
-  if (immediateSignals.test(msg)) return "immediate";
-  if (urgentSignals.test(msg)) return "urgent";
-  if (standardSignals.test(msg)) return "standard";
-  return "normal";
 }
 
 export async function runT2(ctx: PipelineContext): Promise<TierResult> {
   const msg = ctx.payload.message;
-  const msgLower = msg.toLowerCase();
-
-  ctx._emotionalTone = detectEmotionalTone(msgLower, msg);
-  const patterns = detectPatternSignals(msgLower, msg);
-  ctx._churnRisk = patterns.churnRisk;
-  ctx._maskedComplaint = patterns.maskedComplaint;
-  ctx._ventVsSolve = patterns.ventVsSolve;
-  ctx._escalationLevel = detectEscalationLevel(msg);
-
-  const businessInfoKeywords = ["business hours", "working hours", "office hours", "open hours", "what are your hours", "what is your address", "your location", "where are you located", "your phone number", "your email address", "how to contact", "contact number", "phone number", "email address", "about your business", "about your company", "tell me about your", "what do you do", "what does your", "what kind of business", "what is your business", "can you tell me about", "your services", "your offerings", "what you offer"];
-  const isBusinessInfo = businessInfoKeywords.some(kw => msgLower.includes(kw));
 
   const { data: activeAgentRows } = await ctx.supabase
     .from("workspace_agents")
@@ -103,66 +85,52 @@ export async function runT2(ctx: PipelineContext): Promise<TierResult> {
     .is("deleted_at", null);
   const activeAgents = new Set(activeAgentRows?.map(a => a.agent_type) || []);
 
-  const channel = ctx.payload.source || ctx.payload.channel;
-
   if (ctx.payload.agent_type && ctx.payload.is_test) {
     ctx.agentType = ctx.payload.agent_type;
-    ctx.routingReason = `explicit_test_agent`;
-  } else if (channel === "widget") {
-    ctx.agentType = "customer_support";
-    ctx.routingReason = "widget_channel";
-  } else {
-    if (isBusinessInfo && activeAgents.has("customer_support")) {
-      ctx.agentType = "customer_support";
-      ctx.routingReason = "business_info_query";
-      ctx.kbSearchPromise = matchChunks({ query: ctx.payload.message }, ctx);
-      return { handled: false };
-    }
-    const scores: { agent: string; score: number }[] = [];
-    if (activeAgents.has("appointment_booking")) {
-      scores.push({ agent: "appointment_booking", score: scoreAgentType(msgLower, AGENT_KEYWORDS.appointment_booking) });
-    }
-    if (activeAgents.has("sales")) {
-      scores.push({ agent: "sales", score: scoreAgentType(msgLower, AGENT_KEYWORDS.sales) });
-    }
-
-    const greetingPattern = /^(hey|hi|hello|howdy|hola|good\s*(morning|afternoon|evening|day)|greetings|sup|yo|namaste|hiya|heya|what'?s\s*up|hii+|hell+o+|hi there|hey there)[\s!.,;:?\-~\p{Extended_Pictographic}]*$/iu;
-    const isPureGreeting = greetingPattern.test(msg.trim());
-
-    scores.sort((a, b) => b.score - a.score);
-    const top = scores[0];
-
-    if (isPureGreeting) {
-      ctx.agentType = "customer_support";
-      ctx.routingReason = "greeting_detected";
-    } else if (top && top.score >= 0.3) {
-      ctx.agentType = top.agent;
-      ctx.routingReason = `keyword_match_${top.score.toFixed(2)}`;
-    } else if (ctx.session.agent_type && activeAgents.has(ctx.session.agent_type) && ctx.session.message_count >= 1) {
-      ctx.agentType = ctx.session.agent_type;
-      ctx.routingReason = "session_continuity";
-    } else if (activeAgents.has("customer_support")) {
-      ctx.agentType = "customer_support";
-      ctx.routingReason = "default_fallback";
-    } else {
-      return {
-        handled: true,
-        response: "I'm sorry, I'm not equipped to handle that type of request. Please contact the business directly for assistance.",
-        reason: "no_matching_agent"
-      };
-    }
-
-    if (top && top.score < 0.3 && ctx.session.message_count >= 3) {
-      const managementKeywords = ["reschedule", "cancel", "change", "modify", "update my"];
-      const hasManagement = managementKeywords.some(kw => msgLower.includes(kw));
-      if (hasManagement && ctx.session.agent_type === "appointment_booking") {
-        ctx.routingReason = "management_priority";
-      }
-    }
+    ctx.routingReason = "explicit_test_agent";
+    ctx._queryAnalysis = {
+      agent: ctx.payload.agent_type as any,
+      intent: "test_message",
+      entities: {},
+      urgency: "low",
+      wants_human: false,
+      emotional_tone: "calm",
+    };
+    return { handled: false };
   }
 
-  if (ctx.agentType === "customer_support") {
-    ctx.kbSearchPromise = matchChunks({ query: ctx.payload.message }, ctx);
+  if (ctx.payload.source === "widget") {
+    ctx.agentType = "customer_support";
+    ctx.routingReason = "widget_channel";
+    ctx._queryAnalysis = {
+      agent: "customer_support",
+      intent: "widget_message",
+      entities: {},
+      urgency: "low",
+      wants_human: false,
+      emotional_tone: "calm",
+    };
+    return { handled: false };
+  }
+
+  const analysis = await llmClassify(ctx, [...activeAgents]);
+
+  if (!activeAgents.has(analysis.agent)) {
+    ctx.agentType = activeAgents.has("customer_support") ? "customer_support" : [...activeAgents][0] || "customer_support";
+    ctx.routingReason = `requested_agent_unavailable_${analysis.agent}`;
+  } else {
+    ctx.agentType = analysis.agent;
+    ctx.routingReason = `llm_classified_${analysis.intent}`;
+  }
+
+  ctx._queryAnalysis = analysis;
+
+  if (analysis.sub_tasks && analysis.sub_tasks.length > 0) {
+    ctx._subTasks = analysis.sub_tasks;
+  }
+
+  if (analysis.wants_human) {
+    ctx._wantsHuman = true;
   }
 
   return { handled: false };

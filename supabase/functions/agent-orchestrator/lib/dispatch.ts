@@ -1,5 +1,18 @@
 import { PipelineContext } from "./types.ts";
 
+async function sendPresence(gowaBase: string, auth: string, deviceId: string, phone: string, type: string): Promise<void> {
+  try {
+    const ac = new AbortController();
+    setTimeout(() => ac.abort(), 5000);
+    await fetch(`${gowaBase}/send/presence`, {
+      method: "POST",
+      headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json", "X-Device-Id": deviceId },
+      body: JSON.stringify({ phone, type }),
+      signal: ac.signal
+    });
+  } catch (_) {}
+}
+
 export async function dispatch(ctx: PipelineContext, response: string | null): Promise<void> {
   if (!response) return;
   const phone = ctx.payload.customer_phone;
@@ -39,30 +52,10 @@ export async function dispatch(ctx: PipelineContext, response: string | null): P
     await storeOutboundMessage(ctx, part);
     
     if (source === "whatsapp" && deviceId && phone) {
-      try {
-        const ac = new AbortController();
-        setTimeout(() => ac.abort(), 5000);
-        await fetch(`${gowaBase}/send/presence`, {
-          method: "POST",
-          headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json", "X-Device-Id": deviceId },
-          body: JSON.stringify({ phone, type: "available" }),
-          signal: ac.signal
-        });
-      } catch (_) {}
-
+      await sendPresence(gowaBase, auth, deviceId, phone, "available");
       const delayMs = Math.min(part.length * 12, 1500);
       await new Promise(resolve => setTimeout(resolve, delayMs));
-
-      try {
-        const ac2 = new AbortController();
-        setTimeout(() => ac2.abort(), 5000);
-        await fetch(`${gowaBase}/send/presence`, {
-          method: "POST",
-          headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json", "X-Device-Id": deviceId },
-          body: JSON.stringify({ phone, type: "unavailable" }),
-          signal: ac2.signal
-        });
-      } catch (_) {}
+      await sendPresence(gowaBase, auth, deviceId, phone, "unavailable");
     }
 
     if (source === "whatsapp" && deviceId && phone) {

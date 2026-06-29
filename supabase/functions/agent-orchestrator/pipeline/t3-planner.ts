@@ -1,5 +1,5 @@
 import { PipelineContext, TierResult, AgentPlan } from "../lib/types.ts";
-import { callLLM, FALLBACK_MODEL } from "../lib/llm.ts";
+import { callLLM, FALLBACK_MODEL, DEFAULT_FALLBACK_MESSAGE } from "../lib/llm.ts";
 import { toolExecutor } from "../tools/executor.ts";
 import { SUBMIT_PLAN_TOOL, ALL_TOOLS, AGENT_TOOLS } from "../tools/registry.ts";
 import { buildBookingSystemPrompt } from "../agents/booking.ts";
@@ -104,80 +104,54 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
 
   systemPrompt += `\n\n## Current Date/Time\nToday is ${new Date().toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", weekday: "long", year: "numeric", month: "long", day: "numeric" })}. Current time in India is ${new Date().toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit" })} IST. Use this to calculate relative dates like "tomorrow", "next week", "today" correctly.`;
 
-  // For booking agent, inject existing appointment info
-  if (agentType === "appointment_booking") {
-    try {
-      const { data: existingAppt } = await ctx.supabase
-        .from("appointments")
-        .select("id, start_at, service, status")
-        .eq("session_id", ctx.session.id)
-        .not("status", "eq", "cancelled")
-        .maybeSingle();
-      
-      if (existingAppt) {
-        const apptDate = new Date(existingAppt.start_at);
-        const now = new Date();
-        const diffDays = Math.floor((apptDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-        let temporalHint: string;
-        if (diffDays < -1) {
-          temporalHint = `This appointment was ${Math.abs(diffDays)} days ago (PAST).`;
-        } else if (diffDays === -1) {
-          temporalHint = "This appointment was yesterday (PAST).";
-        } else if (diffDays === 0) {
-          temporalHint = "This appointment is TODAY.";
-        } else if (diffDays === 1) {
-          temporalHint = "This appointment is TOMORROW.";
-        } else {
-          temporalHint = `This appointment is in ${diffDays} days (FUTURE).`;
-        }
-        systemPrompt += `\n\n## IMPORTANT: Existing Appointment Detected\nThis customer already has a confirmed appointment:\n- ID: ${existingAppt.id}\n- Service: ${existingAppt.service}\n- Date/Time: ${existingAppt.start_at}\n- Status: ${existingAppt.status}\n- Relative: ${temporalHint}\n\nCRITICAL: Use the RELATIVE timing above to decide what to say. If the appointment is PAST, do NOT say "tomorrow" or "coming up" — acknowledge it was scheduled and ask if they want to reschedule. If it's today/tomorrow, confirm the upcoming booking.\n\nDo NOT attempt to create another appointment. Instead:\n1. Inform the customer about their existing booking\n2. Ask if they need to reschedule, cancel, or have questions\n3. Use the appointment ID for any updates or cancellations`;
-      }
-    } catch (e: any) {
-      console.error("[T3] Failed to check existing appointment:", e.message);
+  // Use existing appointment info gathered by T3
+  if (agentType === "appointment_booking" && ctx._existingAppointment) {
+    const existingAppt = ctx._existingAppointment;
+    const apptDate = new Date(existingAppt.start_at);
+    const now = new Date();
+    const diffDays = Math.floor((apptDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    let temporalHint: string;
+    if (diffDays < -1) {
+      temporalHint = `This appointment was ${Math.abs(diffDays)} days ago (PAST).`;
+    } else if (diffDays === -1) {
+      temporalHint = "This appointment was yesterday (PAST).";
+    } else if (diffDays === 0) {
+      temporalHint = "This appointment is TODAY.";
+    } else if (diffDays === 1) {
+      temporalHint = "This appointment is TOMORROW.";
+    } else {
+      temporalHint = `This appointment is in ${diffDays} days (FUTURE).`;
+    }
+    systemPrompt += `\n\n## IMPORTANT: Existing Appointment Detected\nThis customer already has a confirmed appointment:\n- ID: ${existingAppt.id}\n- Service: ${existingAppt.service}\n- Date/Time: ${existingAppt.start_at}\n- Status: ${existingAppt.status}\n- Relative: ${temporalHint}\n\nCRITICAL: Use the RELATIVE timing above to decide what to say. If the appointment is PAST, do NOT say "tomorrow" or "coming up" — acknowledge it was scheduled and ask if they want to reschedule. If it's today/tomorrow, confirm the upcoming booking.\n\nDo NOT attempt to create another appointment. Instead:\n1. Inform the customer about their existing booking\n2. Ask if they need to reschedule, cancel, or have questions\n3. Use the appointment ID for any updates or cancellations`;
+  }
+
+  if (ctx.routingReason === "management_priority" && ctx._customerHistory?.length) {
+    systemPrompt += `\n\n[SMART CONTEXT] Existing Appointments for this user:\n${JSON.stringify(ctx._customerHistory.slice(0, 3))}\nUse these IDs for manage_appointment update/cancel actions.`;
+  }
+
+  // Inject KB chunks gathered by T3 (reduces tool round-trips)
+  if (ctx._kbChunks && ctx._kbChunks.length > 0) {
+    const kbText = ctx._kbChunks
+      .map((c: any) => c.content || c.text || "")
+      .filter(Boolean)
+      .join("\n\n")
+      .slice(0, 1500);
+    if (kbText) {
+      systemPrompt += `\n\n## Knowledge Base Context\nThe following information was found in your knowledge base. Use it to answer the customer if relevant:\n${kbText}`;
     }
   }
 
-  const tone = ctx._emotionalTone;
-  if (tone && tone !== "calm" && tone !== "positive") {
-    const toneInstructions: Record<string, string> = {
-      frustrated: "Calibrate: speak calmly and briefly. Do not match their agitation. Acknowledge their feelings before moving to solutions. Use short, clean sentences. If frustration persists past 2 exchanges, escalate using transfer_agent.",
-      urgent: "Calibrate: prioritize speed and clarity. Give clear timelines. Avoid extra information — focus on what matters now. If you cannot resolve immediately, warm-transfer to a human with full context.",
-      distressed: "Calibrate: slow down your responses. Use a warmer, more patient tone. Let them know you understand. Do not overwhelm with options. If safety is involved, escalate immediately."
-    };
-    systemPrompt += `\n\n## Emotional Calibration\nDetected customer tone: ${tone}. ${toneInstructions[tone] || "Respond with extra care."}`;
-  }
-
-  if (ctx._churnRisk) {
-    systemPrompt += "\n\n[CHURN WARNING] The customer is showing signals they may leave. Handle with care — probe gently, never pressure. If this is a cancellation request, follow the retention protocol: first understand the reason, then address the root cause, then present an alternative before processing.";
-  }
-
-  if (ctx._maskedComplaint) {
-    systemPrompt += "\n[COMPLAINT PROBE] The customer may be framing a complaint behind a question. After answering their surface question, gently ask if they've had a specific issue: e.g., 'Have you run into something specific?'";
-  }
-
-  if (ctx._escalationLevel && ctx._escalationLevel !== "normal") {
-    const escalationRules: Record<string, string> = {
-      immediate: "IMMEDIATE ESCALATION REQUIRED: safety, legal threat, or authority limit reached. Do not delay — call transfer_agent with full context.",
-      urgent: "URGENT: customer is nearing escalation threshold (furious, requesting manager, or threatening social media/chargeback). Offer warm transfer proactively.",
-      standard: "STANDARD: issue may require specialist or management attention. Resolve what you can, warm-transfer the rest with full context."
-    };
-    systemPrompt += `\n\n## Escalation Severity\n${escalationRules[ctx._escalationLevel]}`;
-  }
-
-  if (ctx._ventVsSolve === "vent") {
-    systemPrompt += "\n[VENT DETECTED] The customer may need to be heard before they want a solution. Let them finish. Acknowledge their experience fully before offering to help. Do not jump to troubleshooting.";
-  }
-
-  if (ctx.routingReason === "management_priority") {
-    try {
-      const { getHistory } = await import("../tools/impl/contact.ts");
-      const history = await getHistory({}, ctx);
-      if (history && !history.error) {
-        systemPrompt += `\n\n[SMART CONTEXT] Existing Appointments for this user:\n${JSON.stringify(history.appointments || [])}\nUse these IDs for manage_appointment update/cancel actions.`;
-      }
-    } catch (e: any) {
-      console.error("[T3] Smart Context failed:", e.message);
+  // Inject sub-tasks from T2 decomposition (multi-request awareness)
+  if (ctx._subTasks && ctx._subTasks.length > 0) {
+    const otherTasks = ctx._subTasks.filter(s => s.agent !== agentType);
+    if (otherTasks.length > 0) {
+      systemPrompt += `\n\n## Other Requests to Handle\nThis customer also asked about:\n${otherTasks.map(t => `- ${t.intent} (handled by ${t.agent})`).join("\n")}\nAddress their primary request first. If relevant, briefly acknowledge you've noted the other requests too.`;
     }
+  }
+
+  // Inject retry hint from T5 reflection
+  if (ctx._retryHint) {
+    systemPrompt += `\n\n## Quality Note\n${ctx._retryHint}`;
   }
 
   systemPrompt += buildToolDescriptions(agentType, ctx.payload.source);
@@ -192,7 +166,7 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
     try {
       const llmOpts: any = {
         agentType,
-        max_tokens: 600,
+        max_tokens: 800,
         temperature: 0.3,
         system: systemPrompt,
         messages,
@@ -243,43 +217,24 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
   if (lastError) {
     console.error("[T3] All plan attempts failed. Attempting bare-text fallback LLM call.");
     try {
-      const ZEN_KEY = Deno.env.get("OPENCODE_ZEN_API_KEY");
-      const ZEN_BASE = (Deno.env.get("OPENCODE_ZEN_BASE_URL") || "https://opencode.ai/zen/v1").replace(/\/+$/, "");
-      const fallbackBody = {
+      const fallbackResponse = await callLLM({
         model: FALLBACK_MODEL,
-        messages: [
-          { role: "system", content: `You are a helpful assistant for ${ctx.workspace?.name || "this business"}. Be brief, natural, and helpful.` },
-          { role: "user", content: ctx.payload.message },
-        ],
+        system: `You are a helpful assistant for ${ctx.workspace?.name || "this business"}. Be brief, natural, and helpful.`,
+        messages: [{ role: "user", content: ctx.payload.message }],
         max_tokens: 200,
         temperature: 0.5,
-        stream: false,
-      };
-      const fc = new AbortController();
-      const ft = setTimeout(() => fc.abort(), 12000);
-      try {
-        const fb = await fetch(ZEN_BASE + "/chat/completions", {
-          method: "POST",
-          headers: { Authorization: "Bearer " + ZEN_KEY, "Content-Type": "application/json" },
-          body: JSON.stringify(fallbackBody),
-          signal: fc.signal,
-        });
-        if (fb.ok) {
-          const fj = await fb.json();
-          const msg = fj?.choices?.[0]?.message;
-          const text = (msg?.content || msg?.reasoning_content || "").trim();
-          if (text && text.length > 0) {
-            return { handled: true, response: text, reason: "t3_plan_execute" };
-          }
-        }
-      } finally { clearTimeout(ft); }
+      });
+      const text = (fallbackResponse?.choices?.[0]?.message?.content || "").trim();
+      if (text) {
+        return { handled: true, response: text, reason: "t3_plan_execute" };
+      }
     } catch (e2: any) {
       console.error("[T3] Bare-text fallback also failed:", e2.message);
     }
 
     return {
       handled: true,
-      response: ctx.workspace?.guardrail_config?.fallback_message ?? "I'm not sure about that. Please contact us directly for more information.",
+      response: ctx.workspace?.guardrail_config?.fallback_message ?? DEFAULT_FALLBACK_MESSAGE,
       reason: "t3_plan_error"
     };
   }

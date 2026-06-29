@@ -3,19 +3,20 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.108.1"
 import { runT0 } from "./pipeline/t0-instant.ts"
 import { runT1 } from "./pipeline/t1-cache.ts"
 import { runT2 } from "./pipeline/t2-router.ts"
-import { runT3 } from "./pipeline/t3-planner.ts"
+import { runT3 } from "./pipeline/t3-context.ts"
+import { runT3 as runT4 } from "./pipeline/t3-planner.ts"
+import { runT5 } from "./pipeline/t4-reflection.ts"
 import { dispatch } from "./lib/dispatch.ts"
 import { getOrCreateSession, touchSession } from "./lib/session.ts"
-import { WebhookPayload, PipelineContext } from "./lib/types.ts"
+import { WebhookPayload, PipelineContext, TierResult } from "./lib/types.ts"
 import { sanitizeUserInput, sanitizeLlmOutput } from "./lib/sanitize.ts"
+import { DEFAULT_FALLBACK_MESSAGE } from "./lib/llm.ts"
 
 const responseHeaders = {
   "Content-Type": "application/json",
   "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
   "X-Content-Type-Options": "nosniff",
 }
-
-const DEFAULT_FALLBACK_MESSAGE = "I'm not sure about that. Please contact us directly for more information.";
 
 function timingSafeEqual(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
@@ -47,15 +48,20 @@ Deno.serve(async (req) => {
     const isInternal = internalSecret && timingSafeEqual(token, internalSecret);
 
     if (!isServiceRole && !isInternal) {
-      const fallbackClient = createClient(
-        Deno.env.get("SUPABASE_URL") ?? "",
-        serviceRoleKey
-      )
-      const { data: { user }, error: authError } = await fallbackClient.auth.getUser(token)
-      if (authError || !user) {
-        return new Response(JSON.stringify({ error: "Unauthorized" }), {
-          status: 401, headers: responseHeaders
-        })
+      const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
+      const isAnon = anonKey && timingSafeEqual(token, anonKey);
+
+      if (!isAnon) {
+        const fallbackClient = createClient(
+          Deno.env.get("SUPABASE_URL") ?? "",
+          serviceRoleKey
+        )
+        const { data: { user }, error: authError } = await fallbackClient.auth.getUser(token)
+        if (authError || !user) {
+          return new Response(JSON.stringify({ error: "Unauthorized" }), {
+            status: 401, headers: responseHeaders
+          })
+        }
       }
     }
 
@@ -123,32 +129,57 @@ async function processMessage(payload: WebhookPayload): Promise<[TierResult, Pip
       return [t1, ctx]
     }
 
-    const t2 = await runT2(ctx)
-    if (t2.handled) {
-      t2.response = sanitizeLlmOutput(t2.response || "")
-      await touchSession(ctx, ctx.agentType || "customer_support", t2.response)
-      await dispatch(ctx, t2.response)
-      return [t2, ctx]
+    // T2 — Query Analysis (LLM intent classification + task decomposition)
+    await runT2(ctx)
+    // T2 always returns handled:false — it only sets ctx.agentType and ctx._subTasks
+
+    // T3 — Context Gathering (KB search, profile, appointments)
+    await runT3(ctx)
+
+    // Check if T3 returned empty KB — flag for re-query if tools return empty later
+    const kbWasEmpty = ctx._kbChunks?.length === 0
+
+    // T4 — Reasoning Engine (LLM + tool execution)
+    const t4 = await runT4(ctx)
+    let finalResponse = sanitizeLlmOutput(t4.response || "")
+
+    // T5 — Reflection (response quality check)
+    const t5 = await runT5(ctx, finalResponse, ctx.agentType || "customer_support")
+
+    // T5 retry: if failed, inject retry hint, re-query KB if needed, run T4+T5 once more
+    if (t5.reason !== "t5_passed") {
+      ctx._retryHint = t5.retry_hint || "Be specific and helpful. Answer directly from your knowledge."
+      console.warn(`[PIPELINE] T5 retry attempt with hint: ${ctx._retryHint}`)
+
+      if (kbWasEmpty && (ctx.agentType === "customer_support" || ctx.agentType === "sales")) {
+        ctx._kbChunks = []
+        await runT3(ctx, { previous_empty: true, previous_query: ctx.payload.message })
+      }
+
+      const t4Retry = await runT4(ctx)
+      const t5Retry = await runT5(ctx, sanitizeLlmOutput(t4Retry.response || ""), ctx.agentType || "customer_support")
+      finalResponse = sanitizeLlmOutput(t4Retry.response || "")
+      t5.reason = t5Retry.reason
+      t5.response = t5Retry.response
     }
 
-    const t3 = await runT3(ctx)
-    t3.response = sanitizeLlmOutput(t3.response || "")
-    await dispatch(ctx, t3.response)
+    finalResponse = t5.response
 
-    // Write-back to T1 cache so future identical questions skip LLM
-    if (ctx._cacheKeyHex && t3.response && t3.response.length < 2000) {
+    await dispatch(ctx, finalResponse)
+
+    if (ctx._cacheKeyHex && finalResponse && finalResponse.length < 2000) {
       try {
         await supabase.from("kb_response_cache").upsert({
           workspace_id: payload.workspace_id,
           cache_key: ctx._cacheKeyHex,
-          response_text: t3.response,
+          response_text: finalResponse,
           access_count: 1,
           accessed_at: new Date().toISOString(),
         }, { onConflict: "workspace_id, cache_key" });
       } catch (_) {}
     }
 
-    return [{ ...t3, agent_type: ctx.agentType }, ctx]
+    return [{ handled: true, response: finalResponse, reason: t5?.reason || "completed" }, ctx]
   } catch (e: any) {
     console.error("[ORCHESTRATOR] CRASH in processMessage:", e.message)
     console.error("[ORCHESTRATOR] Stack:", e.stack)
