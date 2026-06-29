@@ -13,9 +13,7 @@ import {
   Info,
   Edit3,
   Settings,
-  Search as SearchIcon,
-  Wifi,
-  WifiOff
+  Search as SearchIcon
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -97,9 +95,7 @@ export function InboxClient({
   const [welcomeTemplate, setWelcomeTemplate] = useState(initialWelcomeTemplate)
   const [isSavingTemplate, setIsSavingTemplate] = useState(false)
   const [contactSearch, setContactSearch] = useState("")
-  const [realtimeStatus, setRealtimeStatus] = useState<'connecting' | 'connected' | 'error'>('connecting')
   const scrollRef = useRef<HTMLDivElement>(null)
-  const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const selectedSession = sessions.find(s => s.id === selectedSessionId)
 
@@ -142,8 +138,9 @@ export function InboxClient({
 
   // Real-time for sessions with auto-retry
   useEffect(() => {
-    let cancelled = false
     let channel: ReturnType<typeof supabase.channel> | null = null
+    let retryTimeout: ReturnType<typeof setTimeout> | null = null
+    let cancelled = false
 
     const subscribe = () => {
       channel = supabase
@@ -178,11 +175,8 @@ export function InboxClient({
         })
         .subscribe((status) => {
           if (cancelled) return
-          if (status === 'SUBSCRIBED') {
-            setRealtimeStatus('connected')
-          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-            setRealtimeStatus('error')
-            retryTimeoutRef.current = setTimeout(() => {
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            retryTimeout = setTimeout(() => {
               if (!cancelled) {
                 if (channel) { void supabase.removeChannel(channel); channel = null }
                 subscribe()
@@ -196,7 +190,7 @@ export function InboxClient({
 
     return () => {
       cancelled = true
-      if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current)
+      if (retryTimeout) clearTimeout(retryTimeout)
       if (channel) void supabase.removeChannel(channel)
     }
   }, [workspaceId, supabase])
@@ -383,18 +377,7 @@ export function InboxClient({
                          <Settings className="h-3.5 w-3.5" />
                      </button>
                  </h2>
-              <div className="flex items-center gap-2">
-                      <div className={cn(
-                          "flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-medium",
-                          realtimeStatus === 'connected' ? "border-emerald-100 bg-emerald-50 text-emerald-600" :
-                          realtimeStatus === 'error' ? "border-rose-100 bg-rose-50 text-rose-600" :
-                          "border-gray-200 bg-gray-50 text-gray-500"
-                      )}>
-                          {realtimeStatus === 'connected' ? <><Wifi className="h-3 w-3" /> Live</> :
-                           realtimeStatus === 'error' ? <><WifiOff className="h-3 w-3" /> Polling</> :
-                           <><Loader2 className="h-3 w-3 animate-spin" /> Syncing</>}
-                      </div>
-                     <Badge className="bg-[#c65f39] text-white border-none text-[9px] px-1.5 h-4 font-semibold">{filteredSessions.length}</Badge>
+              <Badge className="bg-[#c65f39] text-white border-none text-[9px] px-1.5 h-4 font-semibold">{filteredSessions.length}</Badge>
                  </div>
               </div>
               <div className="relative group">
