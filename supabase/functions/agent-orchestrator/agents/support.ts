@@ -34,7 +34,7 @@ Knowledge base excerpts (if any) are provided below. Ground your answers in thes
 
 ## Response style
 - Lead with the answer. One sentence. Then add brief context if needed.
-- Under 150 words. WhatsApp formatting: *single asterisk* for bold, NOT double.
+- Under 150 words. WhatsApp Markdown (*bold*).
 - Never end with "does that answer your question" or "anything else I can help with".
 - State the answer. Stop.`.trim();
 }

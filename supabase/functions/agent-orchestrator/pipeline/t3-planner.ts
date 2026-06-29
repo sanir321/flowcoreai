@@ -6,7 +6,6 @@ import { buildBookingSystemPrompt } from "../agents/booking.ts";
 import { buildSupportSystemPrompt } from "../agents/support.ts";
 import { buildSalesSystemPrompt } from "../agents/sales.ts";
 import { matchChunks } from "../tools/impl/kb.ts";
-import { touchSession } from "../lib/session.ts";
 
 const AGENT_SYSTEM_PROMPTS: Record<string, (ctx: PipelineContext) => string> = {
   customer_support: buildSupportSystemPrompt,
@@ -116,22 +115,7 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
         .maybeSingle();
       
       if (existingAppt) {
-        const apptDate = new Date(existingAppt.start_at);
-        const now = new Date();
-        const diffDays = Math.floor((apptDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-        let temporalHint: string;
-        if (diffDays < -1) {
-          temporalHint = `This appointment was ${Math.abs(diffDays)} days ago (PAST).`;
-        } else if (diffDays === -1) {
-          temporalHint = "This appointment was yesterday (PAST).";
-        } else if (diffDays === 0) {
-          temporalHint = "This appointment is TODAY.";
-        } else if (diffDays === 1) {
-          temporalHint = "This appointment is TOMORROW.";
-        } else {
-          temporalHint = `This appointment is in ${diffDays} days (FUTURE).`;
-        }
-        systemPrompt += `\n\n## IMPORTANT: Existing Appointment Detected\nThis customer already has a confirmed appointment:\n- ID: ${existingAppt.id}\n- Service: ${existingAppt.service}\n- Date/Time: ${existingAppt.start_at}\n- Status: ${existingAppt.status}\n- Relative: ${temporalHint}\n\nCRITICAL: Use the RELATIVE timing above to decide what to say. If the appointment is PAST, do NOT say "tomorrow" or "coming up" — acknowledge it was scheduled and ask if they want to reschedule. If it's today/tomorrow, confirm the upcoming booking.\n\nDo NOT attempt to create another appointment. Instead:\n1. Inform the customer about their existing booking\n2. Ask if they need to reschedule, cancel, or have questions\n3. Use the appointment ID for any updates or cancellations`;
+        systemPrompt += `\n\n## IMPORTANT: Existing Appointment Detected\nThis customer already has a confirmed appointment:\n- ID: ${existingAppt.id}\n- Service: ${existingAppt.service}\n- Date/Time: ${existingAppt.start_at}\n- Status: ${existingAppt.status}\n\nDo NOT attempt to create another appointment. Instead:\n1. Inform the customer they already have a booking\n2. Ask if they need to reschedule, cancel, or have questions about their existing appointment\n3. Use the appointment ID for any updates or cancellations`;
       }
     } catch (e: any) {
       console.error("[T3] Failed to check existing appointment:", e.message);
@@ -220,6 +204,46 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
     } catch (e: any) {
       console.error("[T3] Smart Context failed:", e.message);
     }
+  }
+
+  // Gap-filler: prompt agent to collect missing business profile info
+  try {
+    const { data: templates } = await ctx.supabase
+      .from("required_info_templates")
+      .select("label, field_key, priority, is_required")
+      .in("business_type", ["*", ctx.workspace?.business_type || ""])
+      .order("priority", { ascending: true })
+      .limit(10);
+
+    if (templates && templates.length > 0) {
+      const bp = (ctx.workspace?.business_profile || {}) as Record<string, unknown>;
+      const extras = (bp.extras || {}) as Record<string, unknown>;
+      const contact = (bp.contact || {}) as Record<string, unknown>;
+      const pricing = (bp.pricing || {}) as Record<string, unknown>;
+
+      const missing = templates
+        .filter((t: any) => {
+          const fk = t.field_key;
+          let val: unknown = null;
+          if (fk.startsWith("extras.")) val = extras[fk.replace("extras.", "")];
+          else if (fk.startsWith("contact.")) val = contact[fk.replace("contact.", "")];
+          else if (fk.startsWith("pricing.")) val = pricing[fk.replace("pricing.", "")];
+          else if (fk === "hours") val = bp.hours;
+          else if (fk === "amenities") val = bp.amenities;
+          else val = bp[fk];
+          if (val == null) return true;
+          if (typeof val === "string") return val.trim() === "";
+          if (Array.isArray(val)) return val.length === 0;
+          return false;
+        })
+        .slice(0, 2);
+
+      if (missing.length > 0) {
+        systemPrompt += `\n\n[PROFILE GAP] The business profile is missing: ${missing.map((t: any) => t.label).join(", ")}. Ask naturally for this information if relevant to the conversation. Do NOT ask if the customer's question is unrelated.`;
+      }
+    }
+  } catch (e: any) {
+    console.error("[T3] Gap-filler failed:", e.message);
   }
 
   systemPrompt += buildToolDescriptions(agentType, ctx.payload.source);
@@ -323,6 +347,8 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
     };
   }
 
+  await validatePlanActions(ctx, parsedPlan);
+
   try {
     await ctx.supabase.from("agent_traces").insert({
       session_id: ctx.session.id,
@@ -388,35 +414,43 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
     await toolExecutor.flushToolCalls(ctx);
   }
 
-  if (toolResults.length > 0) {
-    const catalogHasItems = parsedPlan.actions.some(a => a.tool === "manage_catalog" && a.params?.action === "search")
-      && toolResults.some(r => r.status === "fulfilled" && r.value?.items?.length > 0);
+  if (needsPass2 && toolResults.length > 0) {
+    try {
+      const pass2System = buildPass2System(ctx, agentType);
+      const toolContext = buildToolContext(parsedPlan.actions, toolResults);
 
-    if (needsPass2 && !catalogHasItems) {
-      try {
-        const pass2System = buildPass2System(ctx, agentType);
-        const toolContext = buildToolContext(parsedPlan.actions, toolResults);
-        const toolCalls = llmResponse?.choices?.[0]?.message?.tool_calls;
-        if (toolCalls && toolCalls.length > 0) {
-          const secondPassResponse = await callLLM({
-            agentType, max_tokens: 600, temperature: 0.3,
-            system: pass2System,
-            messages: [
-              ...messages,
-              { role: "assistant", content: "", tool_calls: toolCalls },
-              { role: "tool", tool_call_id: toolCalls[0].id, content: toolContext }
-            ]
-          });
-          finalResponse = secondPassResponse.choices?.[0]?.message?.content || parsedPlan.fallback || "";
-        }
-      } catch (e: any) {
-        console.error("[T3] Second pass error:", e.message);
+      const toolCalls = llmResponse?.choices?.[0]?.message?.tool_calls;
+      if (!toolCalls || toolCalls.length === 0) {
+        finalResponse = fillTemplate(parsedPlan.response, parsedPlan.actions, toolResults);
+      } else {
+        const secondPassResponse = await callLLM({
+          agentType,
+          max_tokens: 600,
+          temperature: 0.3,
+          system: pass2System,
+          messages: [
+            ...messages,
+            { 
+              role: "assistant", 
+              content: "", 
+              tool_calls: toolCalls 
+            },
+            { 
+              role: "tool", 
+              tool_call_id: toolCalls[0].id,
+              content: toolContext 
+            }
+          ]
+        });
+        
+        finalResponse = secondPassResponse.choices?.[0]?.message?.content || parsedPlan.fallback || "";
       }
+    } catch (e: any) {
+      console.error("[T3] Second pass error:", e.message);
+      finalResponse = fillTemplate(parsedPlan.response, parsedPlan.actions, toolResults);
     }
-
-    finalResponse = fillTemplate(finalResponse, parsedPlan.actions, toolResults);
-    const enriched = enrichResponseWithToolResults(finalResponse, parsedPlan.actions, toolResults);
-    if (enriched) finalResponse = enriched;
+    
+    
   }
 
   for (let i = 0; i < parsedPlan.actions.length; i++) {
@@ -490,16 +524,12 @@ function buildPass2System(ctx: PipelineContext, agentType: string): string {
   return `You are a ${agentType.replace("_", " ")} assistant for ${workspace.name || "a business"}.
 You already called tools and results are below.
 
-CRITICAL: Your response is the FINAL message to the customer. Be brief and direct. 2-3 sentences only.
-
-Slot taken? → "That time is taken. Would you like [nearby_time_1] or [nearby_time_2] instead?"
-Booked? → "Your [service] is confirmed for [date] at [time]. Details: [link]"
-Unreachable calendar? → "Our booking system is offline. Please leave your name/phone/email and we'll follow up."
-Closed? → "We're closed then. Our hours are [hours]. Please pick another time."
-- manage_catalog: If items are returned (non-empty array), LIST them in your response grouped by category with prices. Do NOT just say "let me show you" — actually show the items.
+HOW TO INTERPRET RESULTS:
+- manage_appointment (action: check): "available: true" means the time slot is FREE. "available: false" means it's BUSY. "available: null" with "checked: false" means the calendar couldn't be reached — ask the customer to leave their name, phone, email, and preferred date/time, then call escalate (action: create) to create a support ticket for manual follow-up. Do NOT claim the slot is available or unavailable. "success: false" with "error" means the time is outside business hours — the error explains why. "availability" is an array of existing busy periods (ignore if empty).
+- manage_appointment (action: create): "appointment_link" or "id" means booked successfully. "error" or "already_booked" means it failed or was already booked.
 - Other tools: "error" field means it failed. "success: false" means it failed. Otherwise assume success.${hoursInfo}
 
-Write ONLY the customer-facing message. Under 150 words. Use single *asterisks* for emphasis (not double).`;
+Write ONLY the customer-facing message. Under 150 words. Plain text only, no markdown.`;
 }
 
 function enrichResponseWithToolResults(
@@ -731,8 +761,28 @@ async function postProcess(
   }
 
   await toolExecutor.flushToolCalls(ctx);
+
   const usage = llmResponse?.usage?.total_tokens || 0;
-  await touchSession(ctx, agentType, finalResponse, usage);
+  const updateData: any = {
+    agent_type: agentType,
+    last_message_at: new Date().toISOString(),
+    last_message_preview: finalResponse.substring(0, 100),
+    message_count: (ctx.session.message_count || 0) + 1,
+    total_tokens_used: (ctx.session.total_tokens_used || 0) + usage,
+    updated_at: new Date().toISOString()
+  };
+
+  if (ctx._sentiment && ctx._sentiment !== (ctx.session.working_context?.sentiment || null)) {
+    updateData.working_context = {
+      ...(ctx.session.working_context || {}),
+      sentiment: ctx._sentiment,
+      agent_type: agentType
+    };
+  }
+
+  await ctx.supabase.from("conversation_sessions")
+    .update(updateData)
+    .eq("id", ctx.session.id);
 }
 
 function buildToolDescriptions(agentType: string, source?: string): string {
@@ -741,4 +791,93 @@ function buildToolDescriptions(agentType: string, source?: string): string {
   return `\n\n## Allowed Tools\n${filtered.map(n => `- ${n}`).join("\n")}`;
 }
 
+function normalizeToolName(name: string): string {
+  return name.replace(/^(functions\.|tool_calls\[|tools\.)/, "");
+}
 
+async function validatePlanActions(ctx: PipelineContext, plan: AgentPlan) {
+  plan.actions.forEach(a => { a.tool = normalizeToolName(a.tool); });
+  const actionTools = plan.actions.map(a => a.tool);
+
+  const { data: lastCustomerMsg } = await ctx.supabase
+    .from("messages")
+    .select("content")
+    .eq("session_id", ctx.session.id)
+    .eq("direction", "inbound")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const customerMsg = (lastCustomerMsg?.content || "").toLowerCase();
+
+  const capturePhrases = /(captured|saved your (details|info)|added you as a lead|i have saved your)/i;
+  if (capturePhrases.test(plan.response) && !actionTools.includes("manage_contact")) {
+    plan.response = plan.response.replace(/I have saved your (information|details|info)[^.]*\./gi, "");
+    plan.response += " [Correction: You claimed to save contact info without calling manage_contact. Apologize and ask again.]";
+    plan.needs_second_pass = true;
+  }
+
+  const stagePhrases = /(moved (you|to|the (lead|contact)) to |promoted to|advanced to|stage (change|update)|qualified|proposal|negotiation)/i;
+  if (stagePhrases.test(plan.response) && !actionTools.includes("manage_contact")) {
+    plan.response = plan.response.replace(/(I['"]?ve|I have) (moved|promoted|advanced)( you| the)?[^.]*\./gi, "");
+    plan.response += " [Correction: You claimed to update the pipeline stage without calling manage_contact. Apologize.]";
+    plan.needs_second_pass = true;
+  }
+
+  const bookingPhrases = /(booked|confirmed|appointment is (set|created|booked|scheduled|confirmed)|i have (booked|created|scheduled|confirmed) (your|the) appointment)/i;
+  if (bookingPhrases.test(plan.response) && !actionTools.includes("manage_appointment")) {
+    const wc = ctx.session.working_context || {};
+    const collected = wc.collected_data || {};
+    const hasRealDetails = collected.name || collected.service || collected.date || collected.time;
+    const availabilityAction = plan.actions.find(a => a.tool === "manage_appointment" && a.params?.action === "check");
+    if (availabilityAction && hasRealDetails) {
+      plan.actions.push({
+        tool: "manage_appointment",
+        params: { action: "create", name: collected.name || "", service: collected.service || "", date: availabilityAction.params?.date || collected.date || "", time: availabilityAction.params?.time || collected.time || "" },
+        required: true,
+        result_key: "appointment"
+      });
+      plan.needs_second_pass = true;
+      plan.response += " [Correction: manage_appointment was missing — auto-injected.]";
+    } else {
+      plan.response = plan.response
+        .replace(/Your[^.]+(booked|confirmed|scheduled)[^.]*\./gi, "")
+        .replace(/I['"]?ve (booked|created|scheduled|confirmed)[^.]*\./gi, "")
+        .replace(/i have (booked|created|scheduled|confirmed)[^.]*\./gi, "")
+        .trim();
+      plan.needs_second_pass = true;
+      if (!plan.response) {
+        plan.response = "I'd be happy to help you book! Could you tell me which service you're looking for?";
+      } else {
+        plan.response += " [Correction: You claimed the appointment was booked without required details. Ask for their name, service, date and time, then call manage_appointment.]";
+      }
+    }
+  }
+
+  const pricingPhrases = /(₹|rs\.?\s*\d+|price|cost|subscription|tier|plan|worth|value)/i;
+  const hasPricingClaim = pricingPhrases.test(plan.response);
+  const kbUsed = actionTools.includes("search_kb");
+  let kbCalledThisSession = false;
+  if (hasPricingClaim && !kbUsed) {
+    const { data: recentTraces } = await ctx.supabase
+      .from("agent_traces")
+      .select("tool_name")
+      .eq("session_id", ctx.session.id)
+      .eq("tool_name", "search_kb")
+      .gte("created_at", new Date(Date.now() - 5 * 60000).toISOString())
+      .limit(1)
+      .maybeSingle();
+    kbCalledThisSession = !!recentTraces;
+  }
+  if (hasPricingClaim && !kbUsed && !kbCalledThisSession) {
+    console.warn(`[T3] Hallucination detected: Pricing info provided without KB search.`);
+    try {
+      await ctx.supabase.from("debug_logs").insert({
+        level: "warning",
+        scope: "t3-planner",
+        message: "AI provided pricing info without KB search",
+        metadata: { session_id: ctx.session.id, response: plan.response }
+      });
+    } catch (_) {}
+    plan.actions.push({ tool: "search_kb", params: { query: "pricing and plans" }, required: false });
+  }
+}

@@ -126,16 +126,10 @@ export async function runT2(ctx: PipelineContext): Promise<TierResult> {
       scores.push({ agent: "sales", score: scoreAgentType(msgLower, AGENT_KEYWORDS.sales) });
     }
 
-    const greetingPattern = /^(hey|hi|hello|howdy|hola|good\s*(morning|afternoon|evening|day)|greetings|sup|yo|namaste|hiya|heya|what'?s\s*up|hii+|hell+o+|hi there|hey there)[\s!.,;:?\-~\p{Extended_Pictographic}]*$/iu;
-    const isPureGreeting = greetingPattern.test(msg.trim());
-
     scores.sort((a, b) => b.score - a.score);
     const top = scores[0];
 
-    if (isPureGreeting) {
-      ctx.agentType = "customer_support";
-      ctx.routingReason = "greeting_detected";
-    } else if (top && top.score >= 0.3) {
+    if (top && top.score >= 0.3) {
       ctx.agentType = top.agent;
       ctx.routingReason = `keyword_match_${top.score.toFixed(2)}`;
     } else if (ctx.session.agent_type && activeAgents.has(ctx.session.agent_type) && ctx.session.message_count >= 1) {

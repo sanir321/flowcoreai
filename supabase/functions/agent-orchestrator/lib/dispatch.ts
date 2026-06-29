@@ -66,7 +66,6 @@ export async function dispatch(ctx: PipelineContext, response: string | null): P
     }
 
     if (source === "whatsapp" && deviceId && phone) {
-      part = part.replace(/\*\*(.+?)\*\*/g, "*$1*");
       await sendWithRetry(ctx, gowaBase!, phone, part, auth, deviceId);
       if (parts.length > 1) await new Promise(res => setTimeout(res, 500));
     }

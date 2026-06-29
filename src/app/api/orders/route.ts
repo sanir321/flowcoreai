@@ -45,8 +45,6 @@ export async function PUT(req: NextRequest) {
 
     const nextStatus = parsed.data.status;
     const isPaidTransition = existing.status === "pending" && nextStatus === "paid";
-    const isFulfilledTransition = existing.status === "paid" && nextStatus === "fulfilled";
-    const isCancelledTransition = nextStatus === "cancelled";
 
     const now = new Date().toISOString();
 
@@ -64,21 +62,12 @@ export async function PUT(req: NextRequest) {
 
     if (error) throw error;
 
-    // Fire customer WhatsApp notifications on status transitions (non-blocking)
-    if (existing.customer_phone) {
-      let message = "";
-      if (isPaidTransition) {
-        message = `Payment of ₹${Number(existing.total ?? 0).toLocaleString()} received for Order ${existing.order_number}. Thank you for your purchase! We'll begin processing your order shortly.`;
-      } else if (isFulfilledTransition) {
-        message = `Great news! Your Order ${existing.order_number} has been fulfilled. If you have any questions, feel free to reach out. Thank you for choosing us!`;
-      } else if (isCancelledTransition) {
-        message = `Your Order ${existing.order_number} has been cancelled. If you believe this is a mistake, please contact us for assistance.`;
-      }
-      if (message) {
-        sendWhatsAppText(workspaceId, existing.customer_phone, message).catch((e) => {
-          console.error("Failed to send order notification WhatsApp:", e);
-        });
-      }
+    // Fire customer thank-you WhatsApp on pending → paid (non-blocking)
+    if (isPaidTransition && existing.customer_phone) {
+      const message = `Payment of ₹${Number(existing.total ?? 0).toLocaleString()} received for Order ${existing.order_number}. Thank you!`;
+      sendWhatsAppText(workspaceId, existing.customer_phone, message).catch((e) => {
+        console.error("Failed to send thank-you WhatsApp:", e);
+      });
     }
 
     return NextResponse.json({ order: data });
