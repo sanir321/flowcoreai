@@ -174,39 +174,10 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
       const kbResult = ctx.kbSearchPromise
         ? await ctx.kbSearchPromise
         : await matchChunks({ query: ctx.payload.message }, ctx);
-      const chunks = kbResult?.chunks || kbResult?.kb_chunks || [];
-      ctx.kbHadResults = Array.isArray(chunks) && chunks.length > 0;
-
-      if (ctx.kbHadResults) {
-        const kbConfig = ctx.workspace?.kb_config || { match_count: 3, match_threshold: 0.35, chunk_truncation: 600, noise_stripping: true, message_history_count: 6 };
-        const truncation = kbConfig.chunk_truncation ?? 600;
-        const noiseStripping = kbConfig.noise_stripping ?? true;
-
-        const context = chunks
-          .map((c: any, i: number) => {
-            const raw = (c.content || c.text || "").trim();
-            let text = raw;
-            if (noiseStripping) {
-              text = text
-                .replace(/###\s*\n/g, '')
-                .replace(/#####\s*/g, '')
-                .replace(/######\s*/g, '')
-                .replace(/<[^>]+>/g, '')
-                .replace(/\n{3,}/g, '\n\n')
-                .trim();
-              text = text.replace(/!\[.*?\]\([^)]*\)/gi, '');
-              text = text.replace(/\[read more\]\([^)]*\)/gi, '');
-            }
-            return `[${i + 1}] ${text.slice(0, truncation)}`;
-          })
-          .filter((t: string) => t.length > 10)
-          .join("\n\n");
-        systemPrompt += `\n\n## Knowledge Base Context\nThe following excerpts were retrieved from the business knowledge base for this question. Answer using ONLY these excerpts and the business profile above. Do not invent details not present here.\n\n${context}`;
-      } else {
-        systemPrompt += `\n\n## Knowledge Base Context\nNo relevant knowledge base entries were found for this question. Do NOT guess or invent an answer. Tell the customer you don't have that information on hand, and offer to create a support ticket or connect them with a human.`;
-      }
+      ctx.kbHadResults = Array.isArray(kbResult?.chunks || kbResult?.kb_chunks) &&
+        (kbResult?.chunks || kbResult?.kb_chunks || []).length > 0;
     } catch (e: any) {
-      console.error("[T3] KB injection failed:", e.message);
+      console.error("[T3] KB check failed:", e.message);
     }
   }
 
