@@ -90,6 +90,7 @@ export interface PipelineContext {
   _customerHistory?: any[];
   _subTasks?: { agent: string; intent: string }[];
   _retryHint?: string;
+  _reviewSent?: boolean;
 }
 
 export interface AgentPlan {

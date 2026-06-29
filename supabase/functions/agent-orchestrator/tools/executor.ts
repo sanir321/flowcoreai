@@ -51,10 +51,7 @@ export const toolExecutor = {
 
     // Session-level idempotency guard for manage_appointment create
     if (toolName === "manage_appointment" && params.action === "create") {
-      if (!ctx._appointmentCreated) {
-        ctx._appointmentCreated = true;
-      } else {
-        // Already created an appointment in this request cycle
+      if (ctx._appointmentCreated) {
         return {
           success: true,
           already_booked: true,
@@ -164,6 +161,10 @@ export const toolExecutor = {
 
     if (!ctx._toolFailCounts) ctx._toolFailCounts = {};
     ctx._toolFailCounts[toolName] = (ctx._toolFailCounts[toolName] || 0) + (result?.error ? 1 : 0);
+
+    if (toolName === "manage_appointment" && params.action === "create" && !result?.error) {
+      ctx._appointmentCreated = true;
+    }
 
     return result;
   },

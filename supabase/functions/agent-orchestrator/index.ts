@@ -167,6 +167,12 @@ async function processMessage(payload: WebhookPayload): Promise<[TierResult, Pip
 
     await dispatch(ctx, finalResponse)
 
+    if (ctx._appointmentCreated && !ctx._reviewSent && ctx.workspace?.review_url) {
+      ctx._reviewSent = true;
+      const reviewMsg = `We'd love your feedback! Please leave us a quick review: ${ctx.workspace.review_url}`;
+      await dispatch(ctx, reviewMsg);
+    }
+
     if (ctx._cacheKeyHex && finalResponse && finalResponse.length < 2000) {
       try {
         await supabase.from("kb_response_cache").upsert({
