@@ -44,17 +44,22 @@ export async function GET(req: NextRequest) {
             try {
                 const { data: workspace } = await supabaseAdmin
                     .from("workspaces")
-                    .select("name, owner_id")
+                    .select("name, owner_id, owner_personal_phone")
                     .eq("id", esc.workspace_id)
                     .single();
 
-                // Check email_on_escalation preference
+                // Check notification preferences
                 const { data: notifPref } = await supabaseAdmin
                     .from("workspace_notifications")
-                    .select("email_on_escalation")
+                    .select("notification_mode, email_on_escalation, whatsapp_alert_number")
                     .eq("workspace_id", esc.workspace_id)
                     .maybeSingle();
-                if (notifPref && notifPref.email_on_escalation === false) {
+
+                const notificationMode = notifPref?.notification_mode || "instant";
+                const emailEnabled = notifPref?.email_on_escalation !== false;
+                const whatsappNumber = notifPref?.whatsapp_alert_number || workspace?.owner_personal_phone || null;
+
+                if (notificationMode === "off" || (!emailEnabled && !whatsappNumber)) {
                     await supabaseAdmin.from("escalation_logs").update({ notification_sent: true }).eq("id", esc.id);
                     continue;
                 }
@@ -75,7 +80,8 @@ export async function GET(req: NextRequest) {
                     if (contact?.name) customerName = contact.name;
                 }
 
-                if (workspace?.owner_id) {
+                // Send email notification to workspace owner
+                if (emailEnabled && workspace?.owner_id) {
                     const { data: owner } = await supabaseAdmin.auth.admin.getUserById(workspace.owner_id);
                     const ownerEmail = owner?.user?.email;
                     if (ownerEmail) {
@@ -95,6 +101,35 @@ export async function GET(req: NextRequest) {
                                 }
                             }),
                         }).catch(e => console.error(`[GOWA_HEALTH] Email notification failed: ${e.message}`));
+                    }
+                }
+
+                // Send WhatsApp alert if number is configured and notifications are not off
+                if (whatsappNumber && notificationMode !== "off") {
+                    try {
+                        const { data: device } = await supabaseAdmin
+                            .from("gowa_sessions")
+                            .select("gowa_session_id")
+                            .eq("workspace_id", esc.workspace_id)
+                            .eq("status", "connected")
+                            .maybeSingle();
+
+                        if (device?.gowa_session_id) {
+                            const gowaKey = process.env.GOWA_API_KEY || "";
+                            const alertMsg = `🚨 *Escalation Alert*\n\nWorkspace: ${workspace?.name || 'Unknown'}\nCustomer: ${customerName || 'A Customer'}\nReason: ${esc.trigger_message || esc.trigger_type || "Customer requested human assistance"}\n\nView inbox: ${process.env.NEXT_PUBLIC_APP_URL || 'https://7flowcore.vercel.app'}/inbox`;
+                            const gowaBase = process.env.GOWA_BASE_URL?.replace(/\/$/, "");
+                            await fetch(`${gowaBase}/send/message`, {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                    Authorization: `Basic ${btoa(gowaKey)}`,
+                                    "X-Device-Id": device.gowa_session_id
+                                },
+                                body: JSON.stringify({ phone: whatsappNumber, message: alertMsg }),
+                            }).catch(e => console.error(`[GOWA_HEALTH] WhatsApp notification failed: ${e.message}`));
+                        }
+                    } catch (e: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
+                        console.error("[GOWA_HEALTH] WhatsApp notification error:", e.message);
                     }
                 }
                 await supabaseAdmin

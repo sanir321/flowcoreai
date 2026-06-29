@@ -109,7 +109,8 @@ export async function checkEscalation(ctx: PipelineContext, workspace: any): Pro
   }
 
   // Send WhatsApp alert if number is configured
-  if (notifPref?.whatsapp_alert_number) {
+  const alertPhone = notifPref?.whatsapp_alert_number || workspace.owner_personal_phone || null;
+  if (alertPhone) {
     try {
       const { data: device } = await ctx.supabase
         .from("gowa_sessions")
@@ -128,7 +129,7 @@ export async function checkEscalation(ctx: PipelineContext, workspace: any): Pro
             Authorization: `Basic ${btoa(gowaKey)}`,
             "X-Device-Id": device.gowa_session_id
           },
-          body: JSON.stringify({ phone: notifPref.whatsapp_alert_number, message: alertMsg }),
+          body: JSON.stringify({ phone: alertPhone, message: alertMsg }),
         });
       }
     } catch (e: any) {

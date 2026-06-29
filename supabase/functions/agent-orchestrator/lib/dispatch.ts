@@ -40,6 +40,7 @@ export async function dispatch(ctx: PipelineContext, response: string | null): P
       .from("gowa_sessions")
       .select("gowa_session_id")
       .eq("workspace_id", ctx.payload.workspace_id)
+      .eq("status", "connected")
       .maybeSingle();
     deviceId = gowaSession?.gowa_session_id || "";
   }
