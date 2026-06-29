@@ -166,7 +166,7 @@ export function LandingPage() {
         </motion.div>
 
         <nav className="hidden md:flex items-center gap-1 relative z-10">
-          {[["Features", "/features"], ["Pricing", "/pricing"], ["FAQ", "/faq"], ["Changelog", "/changelog"]].map(([label, href], i) => (
+          {([["Features", "/features"], ["Pricing", "/pricing"], ["FAQ", "/faq"], ["Changelog", "/changelog"]] as const).map(([label, href], i) => (
             <motion.div
               key={label}
               initial={{ opacity: 0, y: -8 }}
