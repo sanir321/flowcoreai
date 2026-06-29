@@ -99,6 +99,7 @@ export function InboxClient({
   const [contactSearch, setContactSearch] = useState("")
   const [realtimeStatus, setRealtimeStatus] = useState<'connecting' | 'connected' | 'error'>('connecting')
   const scrollRef = useRef<HTMLDivElement>(null)
+  const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const selectedSession = sessions.find(s => s.id === selectedSessionId)
 
@@ -139,45 +140,65 @@ export function InboxClient({
     return () => clearInterval(interval)
   }, [workspaceId, supabase, selectedSessionId, fetchMessages])
 
-  // Real-time for sessions
+  // Real-time for sessions with auto-retry
   useEffect(() => {
-    const sessionChannel = supabase
-      .channel("inbox-sessions")
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .on("postgres_changes" as any, { 
-        event: "*", 
-        schema: "public", 
-        table: "conversation_sessions",
-        filter: `workspace_id=eq.${workspaceId}`
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      }, (payload: any) => {
-        if (payload.eventType === 'UPDATE') {
-          setSessions(prev => {
-            const updated = prev.map(s => s.id === payload.new.id ? { ...s, ...payload.new } : s)
-            return [...updated].sort((a, b) => 
-              new Date(b.last_message_at || 0).getTime() - new Date(a.last_message_at || 0).getTime()
-            )
-          })
-        } else {
-          // Re-fetch everything if a new session is created or deleted
-          const fetchAll = async () => {
-            const { data } = await supabase
-              .from("conversation_sessions")
-              .select("*, contacts(*)")
-              .eq("workspace_id", workspaceId)
-              .is("deleted_at", null)
-              .order("last_message_at", { ascending: false })
-            setSessions((data as unknown as Session[]) || [])
-          }
-          void fetchAll()
-        }
-      })
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') setRealtimeStatus('connected')
-        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') setRealtimeStatus('error')
-      })
+    let cancelled = false
+    let channel: ReturnType<typeof supabase.channel> | null = null
 
-    return () => { void supabase.removeChannel(sessionChannel) }
+    const subscribe = () => {
+      channel = supabase
+        .channel("inbox-sessions")
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .on("postgres_changes" as any, { 
+          event: "*", 
+          schema: "public", 
+          table: "conversation_sessions",
+          filter: `workspace_id=eq.${workspaceId}`
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        }, (payload: any) => {
+          if (payload.eventType === 'UPDATE') {
+            setSessions(prev => {
+              const updated = prev.map(s => s.id === payload.new.id ? { ...s, ...payload.new } : s)
+              return [...updated].sort((a, b) => 
+                new Date(b.last_message_at || 0).getTime() - new Date(a.last_message_at || 0).getTime()
+              )
+            })
+          } else {
+            const fetchAll = async () => {
+              const { data } = await supabase
+                .from("conversation_sessions")
+                .select("*, contacts(*)")
+                .eq("workspace_id", workspaceId)
+                .is("deleted_at", null)
+                .order("last_message_at", { ascending: false })
+              setSessions((data as unknown as Session[]) || [])
+            }
+            void fetchAll()
+          }
+        })
+        .subscribe((status) => {
+          if (cancelled) return
+          if (status === 'SUBSCRIBED') {
+            setRealtimeStatus('connected')
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            setRealtimeStatus('error')
+            retryTimeoutRef.current = setTimeout(() => {
+              if (!cancelled) {
+                if (channel) { void supabase.removeChannel(channel); channel = null }
+                subscribe()
+              }
+            }, 3000)
+          }
+        })
+    }
+
+    subscribe()
+
+    return () => {
+      cancelled = true
+      if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current)
+      if (channel) void supabase.removeChannel(channel)
+    }
   }, [workspaceId, supabase])
 
   // Real-time for messages
