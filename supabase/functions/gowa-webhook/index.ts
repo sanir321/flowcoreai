@@ -40,36 +40,55 @@ async function verifySignature(payload: string, signature: string | null, secret
   }
 }
 
-async function resolveWorkspace(supabase: any, rootPayload: any, sessionIdentifier: string | undefined): Promise<string | null> {
-  // Lookup by stored session ID or phone JID
-  if (sessionIdentifier) {
-    // SECURITY: Use parameterized eq filters instead of string interpolation in .or()
-    let query = supabase.from('gowa_sessions').select('workspace_id, gowa_session_id, phone_jid')
-    // Try both filters separately (safer than string interpolation)
-    const { data: bySession } = await query.eq('gowa_session_id', sessionIdentifier).maybeSingle()
-    if (bySession) return bySession.workspace_id
-    const { data: byPhone } = await supabase.from('gowa_sessions').select('workspace_id, gowa_session_id, phone_jid').eq('phone_jid', sessionIdentifier).maybeSingle()
-    if (byPhone) return byPhone.workspace_id
-  }
+async function resolveWorkspace(supabase: any, rootPayload: any, sessionIdentifier: string | undefined, eventData?: any): Promise<string | null> {
+  // Check all possible locations for device_id / session identifier
+  const candidates = [
+    sessionIdentifier,
+    rootPayload.device_id, rootPayload.session, rootPayload.deviceId, rootPayload.jid,
+    eventData?.device_id, eventData?.session, eventData?.deviceId, eventData?.jid,
+    eventData?.from?.split('@')[0],
+  ].filter(Boolean)
 
-  // Auto-recover from incoming device_id — filter by the actual device ID
-  const rawDeviceId = rootPayload.device_id || rootPayload.session || rootPayload.deviceId
-  if (rawDeviceId) {
-    const isJid = rawDeviceId.includes('@')
-    const { data: existing } = await supabase
+  for (const candidate of candidates) {
+    if (!candidate || typeof candidate !== 'string') continue
+    const normalized = candidate.replace(/:\d+@/, '@')
+
+    const { data: bySession } = await supabase
       .from('gowa_sessions')
       .select('workspace_id')
-      .eq(isJid ? 'phone_jid' : 'gowa_session_id', rawDeviceId)
+      .eq('gowa_session_id', normalized)
       .maybeSingle()
-    if (existing) {
-      await supabase.from('gowa_sessions').update({
-        gowa_session_id: isJid ? null : rawDeviceId,
-        phone_jid: isJid ? rawDeviceId : null,
-        status: 'connected',
-        updated_at: new Date().toISOString()
-      }).eq('workspace_id', existing.workspace_id)
-      return existing.workspace_id
+    if (bySession) return bySession.workspace_id
+
+    const { data: byPhone } = await supabase
+      .from('gowa_sessions')
+      .select('workspace_id')
+      .eq('phone_jid', normalized)
+      .maybeSingle()
+    if (byPhone) return byPhone.workspace_id
+
+    // Also try as raw phone number (with @s.whatsapp.net suffix)
+    const asJid = normalized.includes('@') ? normalized : `${normalized}@s.whatsapp.net`
+    if (asJid !== normalized) {
+      const { data: byJid } = await supabase
+        .from('gowa_sessions')
+        .select('workspace_id')
+        .eq('phone_jid', asJid)
+        .maybeSingle()
+      if (byJid) return byJid.workspace_id
     }
+  }
+
+  // Auto-recover: if we find a matching JID from the incoming message sender,
+  // update the gowa_session_id to what GoWA is now sending
+  const fromJid = eventData?.from ? normalizeJID(eventData.from) : null
+  if (fromJid) {
+    const { data: byPhone } = await supabase
+      .from('gowa_sessions')
+      .select('workspace_id')
+      .eq('phone_jid', fromJid)
+      .maybeSingle()
+    if (byPhone) return byPhone.workspace_id
   }
 
   return null
@@ -130,7 +149,7 @@ Deno.serve(async (req) => {
     if (sessionIdentifier && typeof sessionIdentifier === 'string') {
       sessionIdentifier = sessionIdentifier.replace(/:\d+@/, '@')
     }
-    const workspaceId = await resolveWorkspace(supabase, rootPayload, sessionIdentifier)
+    const workspaceId = await resolveWorkspace(supabase, rootPayload, sessionIdentifier, eventData)
     if (!workspaceId) {
       return new Response(JSON.stringify({ success: false, error: 'Workspace not found' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
@@ -159,7 +178,7 @@ Deno.serve(async (req) => {
 
     // Fire AI processing
     const sessionId = result.session_id
-    const deviceId = rootPayload.device_id || rootPayload.session || rootPayload.deviceId || ''
+    const deviceId = rootPayload.device_id || rootPayload.session || rootPayload.deviceId || eventData?.device_id || eventData?.session || eventData?.deviceId || ''
     EdgeRuntime.waitUntil((async () => {
       try {
         // If pushname is weak, try to fetch the saved contact name from WhatsApp
