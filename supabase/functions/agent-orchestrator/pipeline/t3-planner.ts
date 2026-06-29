@@ -255,15 +255,17 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
       // Accept any other tool call as an action wrap
       if (toolCall) {
         parsedPlan = {
-          response: "Let me help you with that.",
+          response: "",
           actions: [{ tool: toolCall.function.name, params: JSON.parse(toolCall.function.arguments || "{}") }]
         };
+        needsPass2 = true;
         lastError = null;
         break;
       }
 
       // Accept content-only response
-      const content = llmResponse.choices?.[0]?.message?.content?.trim();
+      const msg0 = llmResponse.choices?.[0]?.message;
+      const content = (msg0?.content || msg0?.reasoning_content || "").trim();
       if (content && content.length > 0) {
         parsedPlan = { response: content, actions: [] };
         lastError = null;
@@ -306,7 +308,8 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
         });
         if (fb.ok) {
           const fj = await fb.json();
-          const text = fj?.choices?.[0]?.message?.content?.trim();
+          const msg = fj?.choices?.[0]?.message;
+          const text = (msg?.content || msg?.reasoning_content || "").trim();
           if (text && text.length > 0) {
             return { handled: true, response: text, reason: "t3_plan_execute" };
           }

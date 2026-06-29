@@ -5,7 +5,7 @@ const OPENCODE_ZEN_BASE_URL = (Deno.env.get("OPENCODE_ZEN_BASE_URL") || "https:/
 
 export const DEFAULT_FALLBACK_MESSAGE = "I'm not sure about that. Please contact us directly for more information.";
 
-export const FALLBACK_MODEL = "gemini-2.0-flash";
+export const FALLBACK_MODEL = "deepseek-v4-flash-free";
 const DEFAULT_PRIMARY = "nemotron-3-ultra-free";
 
 export async function callLLM(payload: AgentPayload & { agentType?: string }) {
@@ -61,12 +61,17 @@ async function callZen(payload: AgentPayload & { model: string }) {
       throw e;
     }
 
-    return await res.json();
+    const json = await res.json();
+    const msg = json?.choices?.[0]?.message;
+    if (msg && (!msg.content || msg.content === "") && msg.reasoning_content) {
+      msg.content = msg.reasoning_content;
+    }
+    return json;
   } finally {
     clearTimeout(timeout);
   }
 }
 
 export async function callRouterModel(payload: AgentPayload) {
-  return await callLLM({ ...payload, model: "nemotron-3-ultra-free", max_tokens: 100 });
+  return await callLLM({ ...payload, model: DEFAULT_PRIMARY, max_tokens: 100 });
 }
