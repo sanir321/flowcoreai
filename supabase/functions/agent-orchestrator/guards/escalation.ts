@@ -21,6 +21,23 @@ const DEFAULT_KEYWORDS = [
   "social media complaint", "posting on social", "chargeback",
 ];
 
+// Turn short/ambiguous custom keywords into intent-bearing phrases so
+// informational questions like "what is your refund policy" don't trigger escalation
+function expandEscalationKeywords(keywords: string[]): string[] {
+  const out: string[] = [];
+  for (const kw of keywords) {
+    const t = kw.trim().toLowerCase();
+    if (!t) continue;
+    if (t.includes(" ") && t.length >= 4) { out.push(t); continue; }
+    const demand = [`i want a ${t}`, `give me a ${t}`, `i need a ${t}`, `demand a ${t}`];
+    out.push(...demand);
+    if (["refund","complaint","cancel"].includes(t)) out.push(`${t} my money`, `${t} immediately`, `i want my ${t}`, `i have a ${t}`, `filing a ${t}`, `lodging a ${t}`);
+    if (["manager","owner","boss","supervisor"].includes(t))
+      out.push(`talk to the ${t}`, `speak to the ${t}`, `call the ${t}`, `get me the ${t}`);
+    if (t === "legal") out.push(`take ${t} action`, `seek ${t} advice`);
+  }
+  return out;
+}
 export async function checkEscalation(ctx: PipelineContext, workspace: any): Promise<string | null> {
   // Don't re-escalate if already escalated
   if (ctx.session?.status === "escalated") return null;
@@ -30,7 +47,8 @@ export async function checkEscalation(ctx: PipelineContext, workspace: any): Pro
   ctx._escalationHandled = true;
 
   const customKeywords = workspace.guardrail_config?.escalation_keywords;
-  const keywords = customKeywords ? [...new Set([...DEFAULT_KEYWORDS, ...customKeywords])] : DEFAULT_KEYWORDS;
+  const expandedCustom = customKeywords ? expandEscalationKeywords(customKeywords) : [];
+  const keywords = [...new Set([...DEFAULT_KEYWORDS, ...expandedCustom])];
   const msgLower = ctx.payload.message.toLowerCase();
   if (!keywords.some((k: string) => msgLower.includes(k))) return null;
 
@@ -121,3 +139,4 @@ export async function checkEscalation(ctx: PipelineContext, workspace: any): Pro
   return workspace.guardrail_config?.handoff_message
     ?? "I've notified our team and a human will get back to you shortly.";
 }
+
