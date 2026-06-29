@@ -352,7 +352,7 @@ export function InboxClient({
   )
 
   return (
-    <div className="flex-1 flex flex-col bg-white min-h-0 text-gray-900">
+    <>
       <div className="flex-1 flex min-h-0 overflow-hidden">
         
         {/* Session List (Left Pane) */}
@@ -613,9 +613,8 @@ export function InboxClient({
                    <p className="text-xs text-gray-500 font-normal max-w-xs mx-auto">Choose a message from the list to begin.</p>
                 </div>
              </div>
-           )}
-        </div>
-      </div>
+            )}
+         </div>
 
       {/* Compose Message Dialog */}
       <Dialog open={isComposeOpen} onOpenChange={setIsComposeOpen}>
@@ -727,6 +726,6 @@ export function InboxClient({
             </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   )
 }
