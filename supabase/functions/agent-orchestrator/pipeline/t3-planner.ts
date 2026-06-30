@@ -6,6 +6,7 @@ import { buildBookingSystemPrompt } from "../agents/booking.ts";
 import { buildSupportSystemPrompt } from "../agents/support.ts";
 import { buildSalesSystemPrompt } from "../agents/sales.ts";
 import { touchSession } from "../lib/session.ts";
+import { cleanFinalResponse } from "../lib/sanitize.ts";
 
 const AGENT_SYSTEM_PROMPTS: Record<string, (ctx: PipelineContext) => string> = {
   customer_support: buildSupportSystemPrompt,
@@ -347,6 +348,8 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
     .replace(/\{[^}]+\}/g, "")
     .replace(/\[Correction:[^\]]*\]/gi, "")
     .trim();
+
+  finalResponse = cleanFinalResponse(finalResponse);
 
   if (!finalResponse || finalResponse.trim().length === 0) {
     finalResponse = parsedPlan.fallback || ctx.workspace?.guardrail_config?.fallback_message || "Thank you for your message. How else can I help you?";

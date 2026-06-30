@@ -9,6 +9,8 @@ const EMPTY_RESPONSE_PATTERNS = [
   /\bplease\s+contact\s+(us|the\s+business|them)\s+directly\b/i,
 ];
 
+const JSON_TOOL_CALL_PATTERN = /^\s*\{\s*"(?:tool|function|name|action|arguments|params)"\s*:/i;
+
 export async function runT5(
   ctx: PipelineContext,
   response: string,
@@ -20,10 +22,16 @@ export async function runT5(
 
   const isEmpty = !response || response.trim().length < 15;
   const isGeneric = EMPTY_RESPONSE_PATTERNS.some(p => p.test(response));
+  const isToolCallJson = JSON_TOOL_CALL_PATTERN.test(response.trim());
 
   if (isEmpty) {
     console.warn(`[T5] Empty response (len=${(response || "").length}) for agent ${agentType}`);
     return { response: fallbackMsg, reason: "t5_empty", retry_hint: "Generate a complete, direct response. Do not apologize or say you're not sure." };
+  }
+
+  if (isToolCallJson) {
+    console.warn(`[T5] Raw JSON tool call in response for agent ${agentType}: "${response.slice(0, 80)}..."`);
+    return { response: fallbackMsg, reason: "t5_json_tool_call", retry_hint: "Output a natural-language response to the customer, not a JSON tool call. Write conversationally." };
   }
 
   if (isGeneric && ctx._queryAnalysis) {

@@ -19,6 +19,8 @@ Rules:
 - If the user wants to book/schedule/reschedule/cancel an appointment -> appointment_booking
 - If the user asks about pricing, menu, ordering, buying products -> sales
 - If the user is asking "what services do you offer" or "what do you do" -> customer_support (general business info)
+- If the user mentions booking-related words like "book", "schedule", "appointment", "consultation", "slot", "available" with a date/time -> appointment_booking
+- If the user provides their email, phone number, or confirms details (e.g. "yes" / "sure" / email address) and the previous conversation was about booking an appointment -> appointment_booking
 - If the user wants a human/manager/supervisor -> mark wants_human as true
 - **Task Decomposition**: If the message contains MULTIPLE distinct requests that would need different agents, list them in sub_tasks. Example: "I want to book an appointment and check pricing" -> agent: appointment_booking, sub_tasks: [{agent:"appointment_booking",intent:"book appointment"}, {agent:"sales",intent:"check pricing"}]
 
@@ -33,16 +35,22 @@ Respond ONLY with valid JSON:
   "sub_tasks": []
 }`;
 
-async function llmClassify(ctx: PipelineContext, activeAgents: string[]): Promise<QueryAnalysis> {
+async function llmClassify(ctx: PipelineContext, activeAgents: string[], conversationContext: string): Promise<QueryAnalysis> {
   const msg = ctx.payload.message;
   const agentList = activeAgents.map(a => a.replace("_", " ")).join(", ");
 
   try {
+    const systemPrompt = QUERY_ANALYSIS_PROMPT + `\n\nActive agents for this workspace: ${agentList}`;
+    const messages: any[] = [];
+    if (conversationContext) {
+      messages.push({ role: "user", content: `Previous conversation:\n${conversationContext}\n\nNew message: ${msg}` });
+    } else {
+      messages.push({ role: "user", content: msg });
+    }
+
     const llmPayload = {
-      system: QUERY_ANALYSIS_PROMPT + `\n\nActive agents for this workspace: ${agentList}`,
-      messages: [
-        { role: "user", content: msg }
-      ],
+      system: systemPrompt,
+      messages,
       response_format: { type: "json_object" },
       max_tokens: 200,
       temperature: 0.1,
@@ -113,7 +121,43 @@ export async function runT2(ctx: PipelineContext): Promise<TierResult> {
     return { handled: false };
   }
 
-  const analysis = await llmClassify(ctx, [...activeAgents]);
+  // Context-aware routing for follow-up messages: if the session has an active flow
+  // and the message is short (likely a follow-up), keep routing to the same agent.
+  const wc = ctx.session?.working_context;
+  const currentAgentType = ctx.session?.agent_type;
+  const isShortFollowUp = msg.length < 60 && /^(?:ok|sure|yes|no|thanks|raksh|okay|my|please|id|email|@|https?)/i.test(msg.trim());
+  if (isShortFollowUp && wc?.pending_action && currentAgentType && activeAgents.has(currentAgentType)) {
+    ctx.agentType = currentAgentType;
+    ctx.routingReason = "context_short_followup";
+    ctx._queryAnalysis = {
+      agent: currentAgentType as any,
+      intent: wc.intent || "follow_up",
+      entities: {},
+      urgency: "low",
+      wants_human: false,
+      emotional_tone: "calm",
+    };
+    return { handled: false };
+  }
+
+  // Build conversation context from recent messages for better classification
+  let conversationContext = "";
+  try {
+    const { data: recent } = await ctx.supabase
+      .from("messages")
+      .select("role, content")
+      .eq("session_id", ctx.session.id)
+      .order("created_at", { ascending: false })
+      .limit(4);
+    if (recent && recent.length > 0) {
+      const lines = recent.reverse().map(m =>
+        `${m.role === "agent" ? "Assistant" : "Customer"}: ${m.content.slice(0, 200)}`
+      );
+      conversationContext = lines.join("\n");
+    }
+  } catch (_) {}
+
+  const analysis = await llmClassify(ctx, [...activeAgents], conversationContext);
 
   if (!activeAgents.has(analysis.agent)) {
     ctx.agentType = activeAgents.has("customer_support") ? "customer_support" : [...activeAgents][0] || "customer_support";

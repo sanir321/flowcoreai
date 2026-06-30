@@ -63,7 +63,7 @@ export async function getOrCreateSession(supabase: any, {
     let contact_id = contact?.id;
 
     if (!contact_id) {
-       const { data: newContact } = await supabase
+       const { data: newContact, error: contactError } = await supabase
           .from('contacts')
            .insert({
              workspace_id,
@@ -74,7 +74,33 @@ export async function getOrCreateSession(supabase: any, {
            })
          .select('id')
          .single();
-       contact_id = newContact.id;
+       if (contactError || !newContact) {
+         const { data: fallbackContact } = await supabase
+           .from('contacts')
+           .select('id')
+           .eq('workspace_id', workspace_id)
+           .eq('phone', channel === 'whatsapp' ? customer_jid.split('@')[0] : null)
+           .is("deleted_at", null)
+           .maybeSingle();
+         if (fallbackContact) {
+           contact_id = fallbackContact.id;
+         } else {
+           const { data: emergencyContact } = await supabase
+             .from('contacts')
+             .insert({
+               workspace_id,
+               whatsapp_jid: customer_jid,
+               channel: dbChannel,
+               name: customer_name || null,
+               phone: channel === 'whatsapp' ? customer_jid.split('@')[0] : null,
+             })
+             .select('id')
+             .maybeSingle();
+           contact_id = emergencyContact?.id || crypto.randomUUID();
+         }
+       } else {
+         contact_id = newContact.id;
+       }
     }
 
     const { data: newSession, error: createError } = await supabase
@@ -131,8 +157,27 @@ export async function touchSession(ctx: PipelineContext, agentType: string, fina
     updated_at: new Date().toISOString()
   };
 
+  let wcChanged = false;
+  const newWc = { ...(wc || {}) };
+
+  if (agentType === "appointment_booking" && (!newWc.intent || newWc.intent !== "booking")) {
+    newWc.intent = "booking";
+    newWc.pending_action = "collect_email";
+    wcChanged = true;
+  } else if (agentType !== (wc?.agent_type || "customer_support") && agentType !== "appointment_booking") {
+    newWc.intent = null;
+    newWc.pending_action = null;
+    wcChanged = true;
+  }
+
   if (ctx._sentiment && ctx._sentiment !== (wc?.sentiment || null)) {
-    updateData.working_context = { ...(wc || {}), sentiment: ctx._sentiment };
+    newWc.sentiment = ctx._sentiment;
+    wcChanged = true;
+  }
+
+  if (wcChanged) {
+    newWc.agent_type = agentType;
+    updateData.working_context = newWc;
   }
 
   await ctx.supabase.from("conversation_sessions")

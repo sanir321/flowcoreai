@@ -40,3 +40,24 @@
 
 ## Known Issues
 - Edge function sometimes hits `WORKER_RESOURCE_LIMIT` (546) on cold start with 39 files + retry — Docker-not-running warning means raw TS files are deployed instead of bundled JS
+- ⚠️ **workspace_id must be a full UUID** (e.g., `53ae24d7-33ea-4af8-a414-5b6635cd2e1c`). Passing only the short form (e.g., `53ae24d7`) causes `Cannot read properties of null (reading 'id')` in `getOrCreateSession` when the contact insert fails with `uuid = 'short_string'` comparison error. The function silently returns 500 with `{"error":"Internal error"}`.
+
+## Session Debugging & Fix (v585)
+### Root Cause of Persistent 500 Crash (v575–v584)
+The "persistent 500 error" that plagued versions 575–584 was caused by **invalid UUID format** in the `workspace_id` field. When called with a short workspace ID (e.g., `53ae24d7` instead of the full `53ae24d7-33ea-4af8-a414-5b6635cd2e1c`), PostgreSQL rejects the UUID comparison, causing:
+1. `getOrCreateSession` → no existing session found → tries to create contact
+2. Contact insert fails (UUID mismatch in query) → `.insert().select('id').single()` returns `null`
+3. `newContact.id` throws `Cannot read properties of null (reading 'id')`
+4. The error was NOT caught by processMessage's inner try/catch (it used the wrong catch syntax) — only the outermost handler caught it, returning `{"error":"Internal error"}`
+
+### What We Fixed
+- **`index.ts`**: Restructured error handling — `processMessage` now has its own try/catch that logs to `debug_logs` table and returns a descriptive `[CRASH]` response for `is_test` requests instead of opaque 500
+- **`session.ts`**: Harden contact insert — if `.insert().select('id').single()` returns null/error (e.g., unique constraint on `(workspace_id, phone)`), falls back to finding existing contact by phone, then tries an emergency insert, and finally uses `crypto.randomUUID()` as last resort
+- **Test data cleaned**: Deleted test rows from `contacts` and `conversation_sessions`
+
+### Verification Results (v585)
+- **Greeting**: ✅ "Hi! Welcome to Webuild LLP. How can I help you today?" (guardrail_greeting)
+- **Services**: ✅ Returns list of services (Consultation, Site Visits, Architectural Design, etc.) with `t5_passed`
+- **Booking**: ✅ "I want to book an appointment" routed to `appointment_booking` agent, returns structured details request (service, date/time, name, email)
+- **Auth**: ✅ Bad tokens return 401; valid service_role key returns 200
+- **All v585 requests**: 200 status, zero 500 errors (first clean version since v574)

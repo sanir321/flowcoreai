@@ -9,11 +9,11 @@ import { runT5 } from "./pipeline/t4-reflection.ts"
 import { dispatch } from "./lib/dispatch.ts"
 import { getOrCreateSession, touchSession } from "./lib/session.ts"
 import { WebhookPayload, PipelineContext, TierResult } from "./lib/types.ts"
-import { sanitizeUserInput, sanitizeLlmOutput } from "./lib/sanitize.ts"
+import { sanitizeUserInput, sanitizeLlmOutput, cleanFinalResponse } from "./lib/sanitize.ts"
 import { DEFAULT_FALLBACK_MESSAGE } from "./lib/llm.ts"
 
 const responseHeaders = {
-  "Content-Type": "application/json",
+  "Content-Type": "application/json; charset=utf-8",
   "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
   "X-Content-Type-Options": "nosniff",
 }
@@ -30,64 +30,59 @@ function timingSafeEqual(a: string, b: string): boolean {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { status: 204 })
 
-  try {
-    const authHeader = req.headers.get("Authorization") || ""
-    const token = authHeader.replace("Bearer ", "")
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
-    const serviceKey = Deno.env.get("SERVICE_KEY") || ""
-    const internalSecret = Deno.env.get("INTERNAL_CRON_SECRET") || ""
+  const authHeader = req.headers.get("Authorization") || ""
+  const token = authHeader.replace("Bearer ", "")
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
+  const serviceKey = Deno.env.get("SERVICE_KEY") || ""
+  const internalSecret = Deno.env.get("INTERNAL_CRON_SECRET") || ""
 
-    if (!token) {
-      console.error(`[ORCHESTRATOR] No auth token provided`)
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: responseHeaders
-      })
-    }
+  if (!token) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401, headers: responseHeaders
+    })
+  }
 
-    const isServiceRole = timingSafeEqual(token, serviceRoleKey) || (serviceKey && timingSafeEqual(token, serviceKey));
-    const isInternal = internalSecret && timingSafeEqual(token, internalSecret);
+  const isServiceRole = timingSafeEqual(token, serviceRoleKey) || (serviceKey && timingSafeEqual(token, serviceKey));
+  const isInternal = internalSecret && timingSafeEqual(token, internalSecret);
 
-    if (!isServiceRole && !isInternal) {
-      const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
-      const isAnon = anonKey && timingSafeEqual(token, anonKey);
-
-      if (!isAnon) {
-        const fallbackClient = createClient(
-          Deno.env.get("SUPABASE_URL") ?? "",
-          serviceRoleKey
-        )
-        const { data: { user }, error: authError } = await fallbackClient.auth.getUser(token)
-        if (authError || !user) {
-          return new Response(JSON.stringify({ error: "Unauthorized" }), {
-            status: 401, headers: responseHeaders
-          })
-        }
+  if (!isServiceRole && !isInternal) {
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
+    const isAnon = anonKey && timingSafeEqual(token, anonKey);
+    if (!isAnon) {
+      const fallbackClient = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        serviceRoleKey
+      )
+      const { data: { user }, error: authError } = await fallbackClient.auth.getUser(token)
+      if (authError || !user) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401, headers: responseHeaders
+        })
       }
     }
+  }
 
+  try {
     const payload = await parseWebhook(req)
     if (!payload) return new Response("ok", { status: 200 })
-
-    const [aiResult, ctx] = await processMessage(payload)
-    
+    const result = await processMessage(payload)
     if (payload.is_test) {
-      const toolCalls = (ctx._toolCalls || []).map((tc: any) => ({
-        tool: tc.tool,
-        params: tc.params,
-        success: tc.success,
-        result: tc.result,
-        duration_ms: tc.duration_ms,
+      const toolCalls = (result[1]._toolCalls || []).map((tc: any) => ({
+        tool: tc.tool, params: tc.params, success: tc.success,
+        result: tc.result, duration_ms: tc.duration_ms,
       }))
       return new Response(JSON.stringify({
-        ...aiResult,
-        agent_type: ctx.agentType || "customer_support",
+        ...result[0],
+        agent_type: result[1].agentType || "customer_support",
         tool_calls: toolCalls,
       }), { status: 200, headers: responseHeaders })
     }
-    
     return new Response("ok", { status: 200 })
   } catch (e: any) {
-    console.error("[ORCHESTRATOR] Request error:", e.message, e.stack)
+    console.error("[ORCHESTRATOR] Top-level error:", e.message, e?.stack)
+    if (payload?.is_test) {
+      return new Response(JSON.stringify({ error: e.message, stack: e.stack }), { status: 200, headers: responseHeaders })
+    }
     return new Response(JSON.stringify({ error: "Internal error" }), {
       status: 500, headers: responseHeaders
     })
@@ -129,33 +124,21 @@ async function processMessage(payload: WebhookPayload): Promise<[TierResult, Pip
       return [t1, ctx]
     }
 
-    // T2 — Query Analysis (LLM intent classification + task decomposition)
     await runT2(ctx)
-    // T2 always returns handled:false — it only sets ctx.agentType and ctx._subTasks
-
-    // T3 — Context Gathering (KB search, profile, appointments)
     await runT3(ctx)
 
-    // Check if T3 returned empty KB — flag for re-query if tools return empty later
     const kbWasEmpty = ctx._kbChunks?.length === 0
 
-    // T4 — Reasoning Engine (LLM + tool execution)
     const t4 = await runT4(ctx)
     let finalResponse = sanitizeLlmOutput(t4.response || "")
-
-    // T5 — Reflection (response quality check)
     const t5 = await runT5(ctx, finalResponse, ctx.agentType || "customer_support")
 
-    // T5 retry: if failed, inject retry hint, re-query KB if needed, run T4+T5 once more
     if (t5.reason !== "t5_passed") {
       ctx._retryHint = t5.retry_hint || "Be specific and helpful. Answer directly from your knowledge."
-      console.warn(`[PIPELINE] T5 retry attempt with hint: ${ctx._retryHint}`)
-
       if (kbWasEmpty && (ctx.agentType === "customer_support" || ctx.agentType === "sales")) {
         ctx._kbChunks = []
         await runT3(ctx, { previous_empty: true, previous_query: ctx.payload.message })
       }
-
       const t4Retry = await runT4(ctx)
       const t5Retry = await runT5(ctx, sanitizeLlmOutput(t4Retry.response || ""), ctx.agentType || "customer_support")
       finalResponse = sanitizeLlmOutput(t4Retry.response || "")
@@ -163,7 +146,8 @@ async function processMessage(payload: WebhookPayload): Promise<[TierResult, Pip
       t5.response = t5Retry.response
     }
 
-    finalResponse = t5.response
+    finalResponse = cleanFinalResponse(t5.response)
+    if (!finalResponse) finalResponse = DEFAULT_FALLBACK_MESSAGE
 
     await dispatch(ctx, finalResponse)
 
@@ -192,20 +176,13 @@ async function processMessage(payload: WebhookPayload): Promise<[TierResult, Pip
     
     try {
       await supabase.from("debug_logs").insert({
-        level: "error",
-        scope: "agent-orchestrator",
-        message: e.message,
-        metadata: { 
-          stack: e.stack, 
-          workspace_id: payload.workspace_id,
-          agent_type: payload.agent_type,
-        }
+        level: "error", scope: "agent-orchestrator", message: e.message,
+        metadata: { stack: e.stack, workspace_id: payload.workspace_id, agent_type: payload.agent_type }
       })
     } catch (dbErr) {
-      console.error("[ORCHESTRATOR] Failed to log crash to DB:", dbErr.message)
+      console.error("[ORCHESTRATOR] Failed to log crash to DB:", (dbErr as any)?.message || String(dbErr))
     }
 
-    await dispatchFallback(supabase, payload)
     if (payload.is_test) {
       return [{ handled: true, response: `[CRASH] ${e.message}`, reason: "crash" }, { supabase, session: {}, payload } as PipelineContext]
     }
@@ -216,15 +193,12 @@ async function processMessage(payload: WebhookPayload): Promise<[TierResult, Pip
 async function parseWebhook(req: Request): Promise<WebhookPayload | null> {
   const contentType = req.headers.get("content-type") || ""
   if (!contentType.includes("application/json")) return null
-
   const contentLength = parseInt(req.headers.get("content-length") || "0", 10)
   if (contentLength > 1_000_000) return null
-
   const body = await req.json()
   if (!body.workspace_id) return null
   body.message = body.message ?? ""
   body.message_type = body.message_type ?? "text"
-
   const isWhatsApp = body.channel === "whatsapp" || body.source === "whatsapp";
   const stableJid = isWhatsApp
     ? (body.customer_jid || `${body.customer_phone || ""}@s.whatsapp.net`)
@@ -233,7 +207,6 @@ async function parseWebhook(req: Request): Promise<WebhookPayload | null> {
         const sid = body.client_session_id || crypto.randomUUID();
         return `widget_${ws}_${sid}`;
       })();
-
   return {
     workspace_id: body.workspace_id,
     customer_jid: stableJid,
@@ -253,16 +226,12 @@ async function dispatchFallback(supabase: any, payload: WebhookPayload) {
   const gowaBase = Deno.env.get("GOWA_BASE_URL")?.replace(/\/$/, "")
   const gowaKey = Deno.env.get("GOWA_API_KEY")
   if (!gowaBase || !gowaKey || payload.source !== "whatsapp") return
-
   const phone = payload.customer_jid?.split("@")[0]
   if (!phone) return
-
   const { data: gs } = await supabase.from("gowa_sessions").select("gowa_session_id").eq("workspace_id", payload.workspace_id).maybeSingle()
   if (!gs?.gowa_session_id) return
-
   const { data: ws } = await supabase.from("workspaces").select("guardrail_config").eq("id", payload.workspace_id).maybeSingle()
   const fallbackMsg = ws?.guardrail_config?.fallback_message || DEFAULT_FALLBACK_MESSAGE
-
   try {
     await fetch(`${gowaBase}/send/message`, {
       method: "POST",
