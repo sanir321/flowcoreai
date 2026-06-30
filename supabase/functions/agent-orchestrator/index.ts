@@ -151,10 +151,14 @@ async function processMessage(payload: WebhookPayload): Promise<[TierResult, Pip
 
     await dispatch(ctx, finalResponse)
 
-    if (ctx._appointmentCreated && !ctx._reviewSent && ctx.workspace?.review_url) {
-      ctx._reviewSent = true;
-      const reviewMsg = `We'd love your feedback! Please leave us a quick review: ${ctx.workspace.review_url}`;
-      await dispatch(ctx, reviewMsg);
+    const userMsg = ctx.payload.message?.trim() || "";
+    const isFarewell = /^(?:thanks\b|thank you\b|bye\b|goodbye\b|see you\b|talk later\b|that'?s all\b|that is all\b|that'?s it\b|im done\b|i'?m done\b|all good\b|ok bye\b|okay bye\b|thanks bye\b|thanks a lot\b)/i.test(userMsg);
+    if (!ctx._reviewSent && ctx.workspace?.review_url && !ctx._wantsHuman) {
+      const hasMeaningfulWork = ctx._appointmentCreated || ctx._orderPlaced || (ctx.session.message_count ?? 0) > 2;
+      if (hasMeaningfulWork && isFarewell) {
+        ctx._reviewSent = true;
+        await dispatch(ctx, `We'd love your feedback! Please leave us a quick review: ${ctx.workspace.review_url}`);
+      }
     }
 
     if (ctx._cacheKeyHex && finalResponse && finalResponse.length < 2000) {
@@ -217,7 +221,7 @@ async function parseWebhook(req: Request): Promise<WebhookPayload | null> {
     gowa_message_id: body.gowa_message_id || null,
     timestamp: body.timestamp || Date.now(),
     source: body.channel || body.source || "whatsapp",
-    is_test: body.is_test || false,
+    is_test: body.is_test || req.headers.get("x-is-test") === "true" || false,
     agent_type: body.agent_type || undefined,
   }
 }

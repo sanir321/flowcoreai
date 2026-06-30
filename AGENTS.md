@@ -33,10 +33,29 @@
 ## Auth Change
 - Function now also accepts `SUPABASE_ANON_KEY` via Authorization header (in addition to service_role key and user JWTs)
 
+## Session Handover: T2 Routing Fix (v595)
+
+### Root Cause
+The follow-up check in `t2-router.ts` was running **before** the keyword pre-check and catching booking intents on the **first message** of a fresh session. Three factors combined:
+1. `working_context.agent_type` defaults to `"customer_support"` on new session creation (`session.ts:122`)
+2. The follow-up regex matched "book" / "appointment" in `/(cancel|reschedule|...|book|...|appointment|...)/i` — so "i wanna book a appointment" matched
+3. `conversationContext` was non-empty because T0 already stored the current message before T2 ran
+
+Result: "i wanna book a appointment" → follow-up check → kept `customer_support` → **never reached keyword pre-check**
+
+### Fix (v595)
+Two changes to `pipeline/t2-router.ts`:
+1. **Reordered**: keyword pre-check (booking/sales regex) now runs **before** the follow-up check
+2. **Added guard**: `(ctx.session.message_count ?? 0) > 0` to follow-up check — prevents it from firing on the first message of a session
+
+### Verification (v595)
+- **booking intent**: ✅ routes to `appointment_booking` (`agent_type: "appointment_booking"`)
+- **general inquiry**: ✅ routes to `customer_support`
+- **pricing** (`sales` soft-deleted): ✅ falls back to `customer_support` via LLM
+- **cancel**: ✅ routes to `appointment_booking`
+- **"yes" alone (no history)**: ✅ correctly goes to LLM → `customer_support` (follow-up blocked by message_count guard)
+
 ## Verification
-- **customer_support**: ✅ Returns services list (t5_passed)
-- **appointment_booking**: ✅ Recognizes Monday closure, suggests alternatives (t5_passed)
-- **sales**: Generic response caught by T5 (t5_generic), retry also generic — expected since LLM lacks pricing data
 
 ## Known Issues
 - Edge function sometimes hits `WORKER_RESOURCE_LIMIT` (546) on cold start with 39 files + retry — Docker-not-running warning means raw TS files are deployed instead of bundled JS
@@ -61,3 +80,51 @@ The "persistent 500 error" that plagued versions 575–584 was caused by **inval
 - **Booking**: ✅ "I want to book an appointment" routed to `appointment_booking` agent, returns structured details request (service, date/time, name, email)
 - **Auth**: ✅ Bad tokens return 401; valid service_role key returns 200
 - **All v585 requests**: 200 status, zero 500 errors (first clean version since v574)
+
+## Session Handover: T0–T3–Dispatch–Multi-Tenant Test Suite (v600)
+
+### What Was Done
+- **Audited** all 5 pipeline tiers, 9 DB objects, 8 tools, 9 guards, credit/embedding flow, and agent templates.
+- **Wrote** `tests/pipeline_test.ts` (66 new tests) covering previously uncovered areas:
+  - **T0 Guards** (25 tests): All 9 guards individually + `runAllGuards` + `runT0`
+  - **T1 Cache** (5 tests): Hash hit/miss, `_cacheKeyHex`, determinism, case-insensitivity
+  - **T3 Context** (8 tests): KB retrieval (support/sales), appointment lookup, empty KB, re-query at 0.25 threshold
+  - **Dispatch** (6 tests): Message storage, long-message splitting, empty/short responses, agent_type propagation, timestamp update
+  - **Multi-tenant** (6 tests): Workspace isolation for blocked topics, greetings, token budgets, T1 cache, T0 empty skip, T3 KB chunks
+  - **Edge Cases** (6 tests): Empty workspace config, null KB, RPC errors, long word dispatch, guard priority, malformed greeting config
+- **Fixed** `mocks.ts` — added missing chain methods (`.not()`, `.neq()`, `.in()`, `.range()`) to mock supabase
+- **Fixed** re-query test — set `ctx.embedding` to bypass embedding generation (Supabase AI not available in tests)
+- **238 tests pass total** (172 original + 66 new, 0 failures)
+
+### 6 Untestable Areas Identified (no API key / no Edge Runtime)
+1. T3 Planner full flow (system prompt + LLM + tool exec + credit decrement)
+2. Full `index.ts` pipeline integration
+3. Credits guard (needs DB)
+4. Escalation guard (needs DB)
+5. WhatsApp dispatch (needs GoWA)
+6. T3 Planner system prompt (already covered by template tests)
+
+### Files Modified
+- `tests/pipeline_test.ts` — New file (66 tests, 881 lines)
+- `tests/mocks.ts` — Added `.not()`, `.neq()`, `.in()`, `.range()` to mock supabase chain
+
+## Session Handover: Review Fix — In-Memory `message_count` Sync (v599)
+
+### Root Cause
+`touchSession` in `lib/session.ts` incremented `message_count` in the database but **never updated `ctx.session.message_count`** in memory. The review check at `index.ts:157` — `(ctx.session.message_count ?? 0) > 2` — always saw 0, so support chats with 3+ messages never triggered a review.
+
+Booking chats got reviews anyway via `_appointmentCreated` flag. Short chats (1–2 messages) correctly skipped reviews because the bug made `message_count` always 0.
+
+### Fix (v599)
+Added `ctx.session.message_count = newMessageCount;` at the end of `touchSession` (`lib/session.ts:187`), keeping the in-memory counter in sync after every DB write.
+
+### Verified
+- **Support chat (3 msgs + farewell)**: ✅ Review dispatched at `09:34:46`
+- **Short chat (greeting + farewell)**: ✅ No review (correct — only 4 total messages)
+- **Booking flow**: ✅ Still works (verified via `9199300033` earlier)
+
+### Current Review Logic (`index.ts:154-162`)
+- Fires on farewell match (thanks/bye at start of message)
+- Requires meaningful work: `_appointmentCreated || _orderPlaced || message_count > 2`
+- `_reviewSent` prevents double-send; `_wantsHuman` suppresses during handoff
+- Requires `review_url` on workspace (maps URL for `53ae24d7`)

@@ -7,6 +7,7 @@ import { buildSupportSystemPrompt } from "../agents/support.ts";
 import { buildSalesSystemPrompt } from "../agents/sales.ts";
 import { touchSession } from "../lib/session.ts";
 import { cleanFinalResponse } from "../lib/sanitize.ts";
+import { renderTemplate, type TemplateVars } from "../lib/template-engine.ts";
 
 const AGENT_SYSTEM_PROMPTS: Record<string, (ctx: PipelineContext) => string> = {
   customer_support: buildSupportSystemPrompt,
@@ -20,6 +21,7 @@ const MAX_CONSECUTIVE_TOOL_FAILURES = 3;
 export async function runT3(ctx: PipelineContext): Promise<TierResult> {
   const t3Start = Date.now();
   let agentType = ctx.agentType || "customer_support";
+  console.log(`[T3-PLANNER] agentType=${agentType} ctx.agentType=${ctx.agentType} routingReason=${ctx.routingReason}`)
 
   const { data: agent } = await ctx.supabase
     .from("workspace_agents")
@@ -393,6 +395,20 @@ async function buildMessages(ctx: PipelineContext) {
   return messages;
 }
 
+const PASS2_TEMPLATE = `You are a {{agentType}} assistant for {{workspaceName}}.
+You already called tools and results are below.
+
+CRITICAL: Your response is the FINAL message to the customer. Be brief and direct. 2-3 sentences only.
+
+Slot taken? → "That time is taken. Would you like [nearby_time_1] or [nearby_time_2] instead?"
+Booked? → "Your [service] is confirmed for [date] at [time]. Details: [link]"
+Unreachable calendar? → "Our booking system is offline. Please leave your name/phone/email and we'll follow up."
+Closed? → "We're closed then. Our hours are [hours]. Please pick another time."
+- manage_catalog: If items are returned (non-empty array), LIST them in your response grouped by category with prices. Do NOT just say "let me show you" — actually show the items.
+- Other tools: "error" field means it failed. "success: false" means it failed. Otherwise assume success.{{hoursInfo}}
+
+Write ONLY the customer-facing message. Under 150 words. Use single *asterisks* for emphasis (not double).`;
+
 function buildPass2System(ctx: PipelineContext, agentType: string): string {
   const workspace = ctx.workspace || {};
   const profile = (workspace as any)?.business_profile || {};
@@ -406,19 +422,13 @@ function buildPass2System(ctx: PipelineContext, agentType: string): string {
     if (openDays) hoursInfo = `\nBusiness hours: ${openDays}.`;
   }
 
-  return `You are a ${agentType.replace("_", " ")} assistant for ${workspace.name || "a business"}.
-You already called tools and results are below.
-
-CRITICAL: Your response is the FINAL message to the customer. Be brief and direct. 2-3 sentences only.
-
-Slot taken? → "That time is taken. Would you like [nearby_time_1] or [nearby_time_2] instead?"
-Booked? → "Your [service] is confirmed for [date] at [time]. Details: [link]"
-Unreachable calendar? → "Our booking system is offline. Please leave your name/phone/email and we'll follow up."
-Closed? → "We're closed then. Our hours are [hours]. Please pick another time."
-- manage_catalog: If items are returned (non-empty array), LIST them in your response grouped by category with prices. Do NOT just say "let me show you" — actually show the items.
-- Other tools: "error" field means it failed. "success: false" means it failed. Otherwise assume success.${hoursInfo}
-
-Write ONLY the customer-facing message. Under 150 words. Use single *asterisks* for emphasis (not double).`;
+  const vars: TemplateVars = {
+    agentType: agentType.replace("_", " "),
+    workspaceName: workspace.name || "a business",
+    hoursInfo,
+  };
+  return renderTemplate(PASS2_TEMPLATE, vars);
+}
 }
 
 function enrichResponseWithToolResults(

@@ -48,7 +48,7 @@ export const ALL_TOOLS: Record<string, ToolDefinition> = {
     parameters: {
       type: "object",
       properties: {
-        action: { type: "string", enum: ["search", "list", "check-stock", "send-catalog", "send-media"], description: "What to do." },
+        action: { type: "string", enum: ["search", "list", "get_all", "check-stock", "send-catalog", "send-media"], description: "What to do." },
         query: { type: "string", description: "For search/check-stock: search term or product name." },
         category: { type: "string", description: "For search/send-catalog: optional category filter." },
         caption: { type: "string", description: "For send-media: optional caption." }

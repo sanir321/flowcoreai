@@ -148,11 +148,12 @@ export async function getOrCreateSession(supabase: any, {
 
 export async function touchSession(ctx: PipelineContext, agentType: string, finalResponse: string, tokensUsed = 0) {
   const wc = ctx.session.working_context;
+  const newMessageCount = (ctx.session.message_count ?? 0) + 1;
   const updateData: any = {
     agent_type: agentType,
     last_message_at: new Date().toISOString(),
     last_message_preview: finalResponse.substring(0, 100),
-    message_count: (ctx.session.message_count || 0) + 1,
+    message_count: newMessageCount,
     total_tokens_used: (ctx.session.total_tokens_used || 0) + tokensUsed,
     updated_at: new Date().toISOString()
   };
@@ -183,6 +184,8 @@ export async function touchSession(ctx: PipelineContext, agentType: string, fina
   await ctx.supabase.from("conversation_sessions")
     .update(updateData)
     .eq("id", ctx.session.id);
+
+  ctx.session.message_count = newMessageCount;
 }
 
 
