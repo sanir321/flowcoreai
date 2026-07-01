@@ -39,3 +39,8 @@ supabase/functions/agent-orchestrator/dist/
 supabase/functions/agent-orchestrator/index.js
 .claude/
 test-results/
+
+# media files (keep local only)
+public/images/agents/*.png
+public/producthunt/
+docs/*.png
