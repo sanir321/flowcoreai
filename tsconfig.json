@@ -42,6 +42,7 @@
     "supabase/functions",
     "scripts",
     "flowcore-premium-video",
-    "flowcore-promo"
+    "flowcore-promo",
+    "agent-orchestrator-bundle*.ts"
   ]
 }

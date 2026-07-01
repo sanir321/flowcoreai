@@ -16,7 +16,7 @@ interface Notification {
   is_read: boolean
 }
 
-const typeConfig: Record<string, { icon: any; color: string; bg: string }> = {
+const typeConfig: Record<Notification['type'], { icon: any; color: string; bg: string }> = {
   update:       { icon: RefreshCw, color: "text-blue-600", bg: "bg-blue-50" },
   credit:       { icon: Zap,       color: "text-amber-600", bg: "bg-amber-50" },
   announcement: { icon: Megaphone, color: "text-purple-600", bg: "bg-purple-50" },
@@ -198,7 +198,7 @@ export function NotificationBell() {
               <ScrollArea className="max-h-[500px]">
                 <div className="py-1.5">
                   {notifications.map((n, idx) => {
-                    const cfg = typeConfig[n.type]
+                    const cfg = typeConfig[n.type]!
                     const Icon = cfg.icon
                     return (
                       <motion.div
