@@ -70,6 +70,21 @@ export async function checkEscalation(ctx: PipelineContext, workspace: any): Pro
     console.error("[ESCALATION] Failed to insert escalation_log:", e.message);
   }
 
+  // Fire dashboard notification
+  try {
+    await ctx.supabase.from("notifications").insert({
+      id: crypto.randomUUID(),
+      workspace_id: ctx.payload.workspace_id,
+      title: "Customer Escalation",
+      message: `A customer (${ctx.contact?.name || ctx.session?.customer_name || "Unknown"}) has requested human assistance.`,
+      type: "escalation",
+      link: "/inbox",
+      created_at: new Date().toISOString(),
+    });
+  } catch (e: any) {
+    console.error("[ESCALATION] Dashboard notification error:", e.message);
+  }
+
   // Fetch notification preferences
   const { data: notifPref } = await ctx.supabase
     .from("workspace_notifications")
@@ -77,11 +92,11 @@ export async function checkEscalation(ctx: PipelineContext, workspace: any): Pro
     .eq("workspace_id", ctx.payload.workspace_id)
     .maybeSingle();
 
-  // Skip notifications if mode is "off"
+  // Only send email/WhatsApp for "instant" mode; "digest" queues for daily summary
   const notificationMode = notifPref?.notification_mode || "instant";
 
   // Send immediate email notification to workspace owner
-  if (notificationMode !== "off" && notifPref?.email_on_escalation !== false) {
+  if (notificationMode === "instant" && notifPref?.email_on_escalation !== false) {
     try {
       const ownerEmail = workspace.owner_id
         ? await ctx.supabase.rpc("get_user_email", { user_id: workspace.owner_id })
@@ -108,9 +123,8 @@ export async function checkEscalation(ctx: PipelineContext, workspace: any): Pro
     }
   }
 
-  // Send WhatsApp alert if number is configured
   const alertPhone = notifPref?.whatsapp_alert_number || workspace.owner_personal_phone || null;
-  if (alertPhone) {
+  if (alertPhone && notificationMode === "instant") {
     try {
       const { data: device } = await ctx.supabase
         .from("gowa_sessions")

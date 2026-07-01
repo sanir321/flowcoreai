@@ -127,6 +127,3 @@ async function callZen(payload: AgentPayload & { model: string }) {
   }
 }
 
-export async function callRouterModel(payload: AgentPayload) {
-  return await callLLM({ ...payload, model: DEFAULT_PRIMARY, max_tokens: payload.max_tokens || 100 });
-}

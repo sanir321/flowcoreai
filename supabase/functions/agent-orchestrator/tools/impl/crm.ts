@@ -66,7 +66,20 @@ export async function captureLead(
     }
   } catch (_) {}
 
-  // Send lead notification if enabled
+  // Send lead dashboard notification
+  try {
+    await ctx.supabase.from("notifications").insert({
+      id: crypto.randomUUID(),
+      workspace_id: ctx.payload.workspace_id,
+      title: "New Lead Captured",
+      message: `${params.name || "A customer"} has been captured as a lead${params.potential ? ` (${params.potential} potential)` : ""}.`,
+      type: "lead",
+      link: "/contacts",
+      created_at: new Date().toISOString(),
+    });
+  } catch (_) {}
+
+  // Send lead email notification if enabled
   try {
     const { data: notifPref } = await ctx.supabase
       .from("workspace_notifications")
@@ -74,7 +87,7 @@ export async function captureLead(
       .eq("workspace_id", ctx.payload.workspace_id)
       .maybeSingle();
 
-    if (notifPref?.email_on_lead && notifPref?.notification_mode !== "off") {
+    if (notifPref?.email_on_lead && notifPref?.notification_mode === "instant") {
       const { data: workspace } = await ctx.supabase
         .from("workspaces")
         .select("owner_id, name")

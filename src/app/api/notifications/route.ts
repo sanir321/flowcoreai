@@ -19,6 +19,7 @@ export async function GET() {
         *,
         notification_reads!left(user_id)
       `)
+      .eq("workspace_id", workspaceId)
       .order("created_at", { ascending: false })
       .limit(50)
 

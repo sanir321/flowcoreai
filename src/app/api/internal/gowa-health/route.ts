@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
                 const emailEnabled = notifPref?.email_on_escalation !== false;
                 const whatsappNumber = notifPref?.whatsapp_alert_number || workspace?.owner_personal_phone || null;
 
-                if (notificationMode === "off" || (!emailEnabled && !whatsappNumber)) {
+                if (notificationMode !== "instant" || (!emailEnabled && !whatsappNumber)) {
                     await supabaseAdmin.from("escalation_logs").update({ notification_sent: true }).eq("id", esc.id);
                     continue;
                 }
@@ -104,8 +104,8 @@ export async function GET(req: NextRequest) {
                     }
                 }
 
-                // Send WhatsApp alert if number is configured and notifications are not off
-                if (whatsappNumber && notificationMode !== "off") {
+                // Send WhatsApp alert only in instant mode
+                if (whatsappNumber && notificationMode === "instant") {
                     try {
                         const { data: device } = await supabaseAdmin
                             .from("gowa_sessions")

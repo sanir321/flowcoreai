@@ -1,4 +1,14 @@
-﻿// deno:https://esm.sh/tslib@2.8.1/denonext/tslib.mjs
+﻿deno : ΓÜá∩╕Å  [0m[36mdeno bundle[0m is experimental and subject to changes
+At line:1 char:1
++ deno bundle --no-check index.ts > agent-orchestrator-bundle-deno.ts 2 ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (ΓÜá∩╕Å  [0m[3...ject to changes:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+// index.ts
+import __Process$ from "node:process";
+import { Buffer as __Buffer$ } from "node:buffer";
+import __Process$2 from "node:process";
 function S(e, t) {
   var r = {};
   for (var n3 in e) Object.prototype.hasOwnProperty.call(e, n3) && t.indexOf(n3) < 0 && (r[n3] = e[n3]);
@@ -32,8 +42,6 @@ function F(e, t, r, n3) {
     c3((n3 = n3.apply(e, t || [])).next());
   });
 }
-
-// deno:https://esm.sh/@supabase/auth-js@2.108.1/denonext/auth-js.mjs
 var de = "2.108.1";
 var q = 30 * 1e3;
 var ee = 3;
@@ -1823,7 +1831,7 @@ var Ee = class i2 {
     return e;
   }
   _logPrefix() {
-    return `GoTrueClient@${this.storageKey}:${this.instanceID} (${de}) ${(/* @__PURE__ */ new Date()).toISOString()}`;
+    return `GoTrueClient@${this.storageKey}:${this.instanceID} (${de}) ${/* @__PURE__ */ (/* @__PURE__ */ new Date()).toISOString()}`;
   }
   _debug(...e) {
     return this.logDebugMessages && this.logger(this._logPrefix(), ...e), this;
@@ -2172,7 +2180,7 @@ var Ee = class i2 {
       let j6 = new URL((t = g3?.url) !== null && t !== void 0 ? t : globalThis.location.href);
       if ("signIn" in R5 && R5.signIn) {
         let k3 = await R5.signIn(Object.assign(Object.assign(Object.assign({
-          issuedAt: (/* @__PURE__ */ new Date()).toISOString()
+          issuedAt: /* @__PURE__ */ (/* @__PURE__ */ new Date()).toISOString()
         }, g3?.signInWithSolana), {
           version: "1",
           domain: j6.host,
@@ -2199,7 +2207,7 @@ var Ee = class i2 {
           ],
           "Version: 1",
           `URI: ${j6.href}`,
-          `Issued At: ${(s = (r = g3?.signInWithSolana) === null || r === void 0 ? void 0 : r.issuedAt) !== null && s !== void 0 ? s : (/* @__PURE__ */ new Date()).toISOString()}`,
+          `Issued At: ${(s = (r = g3?.signInWithSolana) === null || r === void 0 ? void 0 : r.issuedAt) !== null && s !== void 0 ? s : /* @__PURE__ */ (/* @__PURE__ */ new Date()).toISOString()}`,
           ...!((n3 = g3?.signInWithSolana) === null || n3 === void 0) && n3.notBefore ? [
             `Not Before: ${g3.signInWithSolana.notBefore}`
           ] : [],
@@ -3491,7 +3499,7 @@ var Ee = class i2 {
         return u4 ? this._returnResult({
           data: null,
           error: u4
-        }) : (e.factorType === "totp" && l.type === "totp" && (!((s = l?.totp) === null || s === void 0) && s.qr_code) && (l.totp.qr_code = `data:image/svg+xml;utf-8,${l.totp.qr_code}`), this._returnResult({
+        }) : (e.factorType === "totp" && l.type === "totp" && !((s = l?.totp) === null || s === void 0) && s.qr_code && (l.totp.qr_code = `data:image/svg+xml;utf-8,${l.totp.qr_code}`), this._returnResult({
           data: l,
           error: null
         }));
@@ -4212,8 +4220,6 @@ Ee.nextInstanceID = {};
 var Me = Ee;
 var Jt = Me;
 var Ht = Jt;
-
-// deno:https://esm.sh/@supabase/functions-js@2.108.1/denonext/functions-js.mjs
 var O2 = (e) => e ? (...t) => e(...t) : (...t) => fetch(...t);
 var c = class extends Error {
   constructor(t, p4 = "FunctionsError", n3) {
@@ -4294,8 +4300,6 @@ var A2 = class {
     });
   }
 };
-
-// deno:https://esm.sh/@supabase/postgrest-js@2.108.1/denonext/postgrest-js.mjs
 var L2 = (t) => Math.min(1e3 * 2 ** t, 3e4);
 var D = [
   520,
@@ -4437,7 +4441,7 @@ ${n3.stack}`);
         var o3;
         let d2 = await t.text();
         if (d2 !== "") if (e.headers.get("Accept") === "text/csv") s = d2;
-        else if (e.headers.get("Accept") && (!((o3 = e.headers.get("Accept")) === null || o3 === void 0) && o3.includes("application/vnd.pgrst.plan+text"))) s = d2;
+        else if (e.headers.get("Accept") && !((o3 = e.headers.get("Accept")) === null || o3 === void 0) && o3.includes("application/vnd.pgrst.plan+text")) s = d2;
         else try {
           s = JSON.parse(d2);
         } catch {
@@ -4860,11 +4864,6 @@ var C2 = class x3 {
     });
   }
 };
-
-// deno:https://esm.sh/@supabase/realtime-js@2.108.1/denonext/realtime-js.mjs
-import __Process$ from "node:process";
-
-// deno:https://esm.sh/@supabase/phoenix@0.4.4/denonext/phoenix.mjs
 var k = (e) => typeof e == "function" ? e : function() {
   return e;
 };
@@ -5771,8 +5770,6 @@ var M2 = class {
     t && (this.hasLogger() && this.log("transport", `leaving duplicate topic "${e}"`), t.leave());
   }
 };
-
-// deno:https://esm.sh/@supabase/realtime-js@2.108.1/denonext/realtime-js.mjs
 var B3 = class {
   constructor() {
   }
@@ -5797,7 +5794,7 @@ var B3 = class {
       error: "Cloudflare Workers detected. WebSocket clients are not supported in Cloudflare Workers.",
       workaround: "Use Cloudflare Workers WebSocket API for server-side WebSocket handling, or deploy to a different runtime."
     };
-    if (typeof globalThis < "u" && t.EdgeRuntime || typeof navigator < "u" && (!((e = navigator.userAgent) === null || e === void 0) && e.includes("Vercel-Edge"))) return {
+    if (typeof globalThis < "u" && t.EdgeRuntime || typeof navigator < "u" && !((e = navigator.userAgent) === null || e === void 0) && e.includes("Vercel-Edge")) return {
       type: "unsupported",
       error: "Edge runtime detected (Vercel Edge/Netlify Edge). WebSockets are not supported in edge functions.",
       workaround: "Use serverless functions or a different deployment target for WebSocket functionality."
@@ -6297,7 +6294,7 @@ var w2 = class n2 {
       private: false
     }, t.config), this.channelAdapter = new N4(this.socket.socketAdapter, e, this.params), this.presence = new A4(this), this._onClose(() => {
       this.socket._remove(this);
-    }), this._updateFilterTransform(), this.broadcastEndpointURL = U2(this.socket.socketAdapter.endPointURL()), this.private = this.params.config.private || false, !this.private && (!((i4 = (s = this.params.config) === null || s === void 0 ? void 0 : s.broadcast) === null || i4 === void 0) && i4.replay)) throw new Error(`tried to use replay on public channel '${this.topic}'. It must be a private channel.`);
+    }), this._updateFilterTransform(), this.broadcastEndpointURL = U2(this.socket.socketAdapter.endPointURL()), this.private = this.params.config.private || false, !this.private && !((i4 = (s = this.params.config) === null || s === void 0 ? void 0 : s.broadcast) === null || i4 === void 0) && i4.replay) throw new Error(`tried to use replay on public channel '${this.topic}'. It must be a private channel.`);
   }
   subscribe(e, t = this.timeout) {
     var r, s, i4;
@@ -6938,11 +6935,6 @@ Option 2: Install and provide the "ws" package:
     await this._waitForAuthIfNeeded(), this.isConnected() || this.connect();
   }
 };
-
-// deno:https://esm.sh/@supabase/storage-js@2.108.1/denonext/storage-js.mjs
-import { Buffer as __Buffer$ } from "node:buffer";
-
-// deno:https://esm.sh/iceberg-js@0.8.1/denonext/iceberg-js.mjs
 var o = class extends Error {
   constructor(e, t) {
     super(e), this.name = "IcebergError", this.status = t.status, this.icebergType = t.icebergType, this.icebergCode = t.icebergCode, this.details = t.details, this.isCommitStateUnknown = t.icebergType === "CommitStateUnknownException" || [
@@ -7196,8 +7188,6 @@ var I2 = class {
     return this.tableOps.createTableIfNotExists(e, t);
   }
 };
-
-// deno:https://esm.sh/@supabase/storage-js@2.108.1/denonext/storage-js.mjs
 function g2(t) {
   "@babel/helpers - typeof";
   return g2 = typeof Symbol == "function" && typeof Symbol.iterator == "symbol" ? function(e) {
@@ -8066,9 +8056,6 @@ var fe3 = class extends Z3 {
     return new ee3(this.url + "/iceberg", this.headers, this.fetch);
   }
 };
-
-// deno:https://esm.sh/@supabase/supabase-js@2.108.1/denonext/supabase-js.mjs
-import __Process$2 from "node:process";
 var I4 = "2.108.1";
 var T6 = "";
 var w5;
@@ -8447,8 +8434,6 @@ function oe3() {
   return r ? parseInt(r[1], 10) <= 18 : false;
 }
 oe3() && console.warn("\u26A0\uFE0F  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217");
-
-// supabase/functions/agent-orchestrator/guards/non-text.ts
 var NON_TEXT_TYPES = [
   "image",
   "audio",
@@ -8463,8 +8448,6 @@ function checkNonText(ctx) {
   }
   return null;
 }
-
-// supabase/functions/agent-orchestrator/guards/credits.ts
 var GOWA_BASE_URL = Deno.env.get("GOWA_BASE_URL")?.replace(/\/$/, "");
 var GOWA_AUTH = Deno.env.get("GOWA_API_KEY") ? btoa(Deno.env.get("GOWA_API_KEY")) : "";
 var APP_URL = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://7flowcore.vercel.app";
@@ -8483,7 +8466,7 @@ async function checkCredits(ctx, workspace) {
         message: "Your workspace has run out of credits. Customer messages are being blocked. Upgrade your plan to continue serving customers.",
         type: "warning",
         link: "/settings/billing",
-        created_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ (/* @__PURE__ */ new Date()).toISOString()
       });
       const ownerId = workspace.owner_id;
       if (ownerId) {
@@ -8539,8 +8522,6 @@ async function checkCredits(ctx, workspace) {
   }
   return workspace.guardrail_config?.out_of_credits_message ?? "Our service is currently unavailable. Please contact the business directly.";
 }
-
-// supabase/functions/agent-orchestrator/guards/window.ts
 function checkWhatsAppWindow(ctx, workspace) {
   if (ctx.payload.source !== "whatsapp") return null;
   const lastUserMsgAt = ctx.session.last_customer_message_at;
@@ -8551,8 +8532,6 @@ function checkWhatsAppWindow(ctx, workspace) {
   }
   return null;
 }
-
-// supabase/functions/agent-orchestrator/guards/escalation.ts
 var APP_URL2 = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://7flowcore.vercel.app";
 var CRON_SECRET = Deno.env.get("INTERNAL_CRON_SECRET") || "";
 var DEFAULT_KEYWORDS = [
@@ -8642,7 +8621,7 @@ async function checkEscalation(ctx, workspace) {
   if (!keywords.some((k3) => msgLower.includes(k3))) return null;
   await ctx.supabase.from("conversation_sessions").update({
     status: "escalated",
-    updated_at: (/* @__PURE__ */ new Date()).toISOString()
+    updated_at: /* @__PURE__ */ (/* @__PURE__ */ new Date()).toISOString()
   }).eq("id", ctx.session.id);
   try {
     await ctx.supabase.from("escalation_logs").insert({
@@ -8733,8 +8712,6 @@ View inbox: ${APP_URL2}/inbox`;
   }
   return workspace.guardrail_config?.handoff_message ?? "I've notified our team and a human will get back to you shortly.";
 }
-
-// supabase/functions/agent-orchestrator/guards/blocked-topics.ts
 function checkBlockedTopics(ctx, workspace) {
   const blockedTopics = workspace.guardrail_config?.blocked_topics ?? [];
   if (blockedTopics.length === 0) return null;
@@ -8744,8 +8721,6 @@ function checkBlockedTopics(ctx, workspace) {
   }
   return null;
 }
-
-// supabase/functions/agent-orchestrator/guards/pricing.ts
 var PRICING_KEYWORDS = [
   "price",
   "cost",
@@ -8770,8 +8745,6 @@ function checkPricing(ctx, workspace) {
   }
   return null;
 }
-
-// supabase/functions/agent-orchestrator/guards/token-budget.ts
 function checkTokenBudget(ctx, workspace) {
   const sessionLimit = workspace.guardrail_config?.session_token_limit ?? workspace.guardrail_config?.daily_token_limit ?? 5e4;
   if ((ctx.session.total_tokens_used ?? 0) >= sessionLimit) {
@@ -8779,8 +8752,6 @@ function checkTokenBudget(ctx, workspace) {
   }
   return null;
 }
-
-// supabase/functions/agent-orchestrator/guards/greeting.ts
 var GREETING_PATTERNS = /^(hi|hello|hey|howdy|hola|good\s*(morning|afternoon|evening|day)|greetings|sup|yo|namaste|hiya|heya|what'?s\s*up|hii+|hell+o+)[\s!.,;:?\-~\p{Extended_Pictographic}]*(?:\s+(how|what|there|everyone)\s*.*)?$/iu;
 function checkGreeting(ctx, workspace) {
   if ((ctx.session.message_count ?? 0) > 0) return null;
@@ -8792,8 +8763,6 @@ function checkGreeting(ctx, workspace) {
   const businessName = workspace.name ?? "our business";
   return `Hi! Welcome to ${businessName}. How can I help you today? \u{1F44B}`;
 }
-
-// supabase/functions/agent-orchestrator/guards/sales.ts
 var SALES_GUARD_KEYWORDS = [
   "order",
   "buy",
@@ -8814,8 +8783,6 @@ function checkSales(ctx, workspace) {
   }
   return null;
 }
-
-// supabase/functions/agent-orchestrator/guards/index.ts
 async function runGuard(ctx, workspace, fn, reason) {
   const response = await fn(ctx, workspace);
   if (response !== null) {
@@ -8872,8 +8839,6 @@ async function runAllGuards(ctx, workspace) {
   }
   return null;
 }
-
-// supabase/functions/agent-orchestrator/pipeline/t0-instant.ts
 async function runT0(ctx) {
   const { payload, supabase } = ctx;
   if (!payload.message || payload.message.trim().length === 0) {
@@ -8916,8 +8881,6 @@ async function runT0(ctx) {
     handled: false
   };
 }
-
-// supabase/functions/agent-orchestrator/lib/hf-embeddings.ts
 var model = null;
 async function getModel() {
   if (!model) {
@@ -8938,8 +8901,6 @@ async function generateEmbedding(text) {
     throw new Error("Embedding generation failed");
   }
 }
-
-// supabase/functions/agent-orchestrator/pipeline/t1-cache.ts
 async function runT1(ctx) {
   const msgBytes = new TextEncoder().encode(ctx.payload.message.toLowerCase().trim().slice(0, 500));
   const hashBuf = await crypto.subtle.digest("SHA-256", msgBytes);
@@ -8948,7 +8909,7 @@ async function runT1(ctx) {
   const { data: cached } = await ctx.supabase.from("kb_response_cache").select("response_text, access_count, id").eq("workspace_id", ctx.payload.workspace_id).eq("cache_key", cacheKeyHex).maybeSingle();
   if (cached) {
     await ctx.supabase.from("kb_response_cache").update({
-      accessed_at: (/* @__PURE__ */ new Date()).toISOString(),
+      accessed_at: /* @__PURE__ */ (/* @__PURE__ */ new Date()).toISOString(),
       access_count: (cached.access_count || 0) + 1
     }).eq("id", cached.id);
     return {
@@ -8980,8 +8941,6 @@ async function runT1(ctx) {
     handled: false
   };
 }
-
-// supabase/functions/agent-orchestrator/lib/llm.ts
 var OPENCODE_ZEN_API_KEY = Deno.env.get("OPENCODE_ZEN_API_KEY");
 var OPENCODE_ZEN_BASE_URL = (Deno.env.get("OPENCODE_ZEN_BASE_URL") || "https://opencode.ai/zen/v1").replace(/\/+$/, "");
 var DEFAULT_FALLBACK_MESSAGE = "I'm not sure about that. Please contact us directly for more information.";
@@ -9122,8 +9081,6 @@ async function callZen(payload) {
     throw e;
   }
 }
-
-// supabase/functions/agent-orchestrator/lib/template-engine.ts
 function renderTemplate(template, vars) {
   return template.replace(/\{\{(\w+)\}\}/g, (_match, key) => {
     if (key in vars) return vars[key];
@@ -9143,13 +9100,13 @@ function collectTemplateVars(ctx) {
     personaInstructions: buildPersonaInstructions(traits),
     sentimentLine: working.sentiment ? `
 Customer sentiment: ${working.sentiment}${working.sentiment === "frustrated" ? " \u2014 escalate if they remain frustrated." : ""}` : "",
-    currentDateTime: `Today is ${(/* @__PURE__ */ new Date()).toLocaleDateString("en-IN", {
+    currentDateTime: `Today is ${/* @__PURE__ */ (/* @__PURE__ */ new Date()).toLocaleDateString("en-IN", {
       timeZone: "Asia/Kolkata",
       weekday: "long",
       year: "numeric",
       month: "long",
       day: "numeric"
-    })}. Current time in India is ${(/* @__PURE__ */ new Date()).toLocaleTimeString("en-IN", {
+    })}. Current time in India is ${/* @__PURE__ */ (/* @__PURE__ */ new Date()).toLocaleTimeString("en-IN", {
       timeZone: "Asia/Kolkata",
       hour: "2-digit",
       minute: "2-digit"
@@ -9327,8 +9284,6 @@ function resolveAgentPromptWithOverrides(agentType, ctx, overrides) {
   }
   return prompt;
 }
-
-// supabase/functions/agent-orchestrator/pipeline/t2-router.ts
 var QUERY_ANALYSIS_TEMPLATE = `You are an intent classifier for {{workspaceName}}. Read the user's message and determine what they need.
 
 Available agents:
@@ -9546,8 +9501,6 @@ async function runT2(ctx) {
     handled: false
   };
 }
-
-// supabase/functions/agent-orchestrator/tools/impl/kb.ts
 var DEFAULT_KB_CONFIG = {
   match_count: 3,
   match_threshold: 0.35,
@@ -9596,8 +9549,6 @@ async function matchChunks(params, ctx) {
     kb_chunks: chunks
   };
 }
-
-// supabase/functions/agent-orchestrator/pipeline/t3-context.ts
 async function runT3(ctx, requeryContext) {
   const agentType = ctx.agentType || "customer_support";
   const promises = [];
@@ -9636,8 +9587,6 @@ async function runT3(ctx, requeryContext) {
     handled: false
   };
 }
-
-// supabase/functions/agent-orchestrator/tools/impl/google.ts
 async function getGoogleConfig(supabase, workspace_id) {
   const { data: config } = await supabase.from("google_oauth_tokens").select("*").eq("workspace_id", workspace_id).is("deleted_at", null).order("created_at", {
     ascending: false
@@ -9662,7 +9611,7 @@ async function getGoogleConfig(supabase, workspace_id) {
     if (!response.ok) {
       if (newTokens?.error === "invalid_grant") {
         await supabase.from("google_oauth_tokens").update({
-          deleted_at: (/* @__PURE__ */ new Date()).toISOString()
+          deleted_at: /* @__PURE__ */ (/* @__PURE__ */ new Date()).toISOString()
         }).eq("workspace_id", workspace_id);
       }
       throw new Error("Failed to refresh Google token");
@@ -9679,8 +9628,6 @@ async function getGoogleConfig(supabase, workspace_id) {
   }
   return config;
 }
-
-// supabase/functions/agent-orchestrator/tools/impl/calendar.ts
 var IST_OFFSET = 5.5 * 60 * 60 * 1e3;
 function parseDT(dStr, tStr) {
   const months = {
@@ -10006,13 +9953,13 @@ Session: ${ctx.session.id}`,
   if (params.email && curSession?.contact_id) {
     await ctx.supabase.from("contacts").update({
       email: params.email,
-      updated_at: (/* @__PURE__ */ new Date()).toISOString()
+      updated_at: /* @__PURE__ */ (/* @__PURE__ */ new Date()).toISOString()
     }).eq("id", curSession.contact_id);
   }
   await ctx.supabase.from("booking_sessions").update({
     appointment_id: appt.id,
     state: "booked",
-    updated_at: (/* @__PURE__ */ new Date()).toISOString()
+    updated_at: /* @__PURE__ */ (/* @__PURE__ */ new Date()).toISOString()
   }).eq("session_id", ctx.session.id).is("deleted_at", null);
   EdgeRuntime.waitUntil(sendAppointmentNotifications(ctx, appt, meetLink));
   const updatedAppt = googleEventId ? {
@@ -10151,7 +10098,7 @@ async function updateAppointment(params, ctx) {
     service: params.service || existing.service,
     start_at: startAt,
     end_at: endAt,
-    updated_at: (/* @__PURE__ */ new Date()).toISOString()
+    updated_at: /* @__PURE__ */ (/* @__PURE__ */ new Date()).toISOString()
   }).eq("id", params.appointment_id).select().single();
   let syncStatus = null;
   if (existing.google_event_id) {
@@ -10199,7 +10146,7 @@ async function cancelAppointment(params, ctx) {
   }
   await ctx.supabase.from("appointments").update({
     status: "cancelled",
-    updated_at: (/* @__PURE__ */ new Date()).toISOString()
+    updated_at: /* @__PURE__ */ (/* @__PURE__ */ new Date()).toISOString()
   }).eq("id", params.appointment_id);
   if (appt.google_event_id) {
     try {
@@ -10221,8 +10168,6 @@ async function cancelAppointment(params, ctx) {
     success: true
   };
 }
-
-// supabase/functions/agent-orchestrator/tools/impl/contact.ts
 async function getHistory(params, ctx) {
   const { data: session } = await ctx.supabase.from("conversation_sessions").select("contact_id").eq("id", ctx.session.id).single();
   let contactId = session?.contact_id;
@@ -10273,7 +10218,7 @@ async function update(params, ctx) {
       email: params.email,
       phone: params.phone,
       notes: params.notes ? `[Update] ${params.notes}` : void 0,
-      updated_at: (/* @__PURE__ */ new Date()).toISOString()
+      updated_at: /* @__PURE__ */ (/* @__PURE__ */ new Date()).toISOString()
     }).eq("id", found.id).select().single();
     return {
       success: true,
@@ -10285,15 +10230,13 @@ async function update(params, ctx) {
     email: params.email,
     phone: params.phone,
     notes: params.notes ? `[Update] ${params.notes}` : void 0,
-    updated_at: (/* @__PURE__ */ new Date()).toISOString()
+    updated_at: /* @__PURE__ */ (/* @__PURE__ */ new Date()).toISOString()
   }).eq("id", session.contact_id).select().single();
   return {
     success: true,
     data: updated
   };
 }
-
-// supabase/functions/agent-orchestrator/tools/impl/crm.ts
 var APP_URL3 = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://7flowcore.vercel.app";
 var CRON_SECRET2 = Deno.env.get("INTERNAL_CRON_SECRET") || "";
 function potentialToScore(potential) {
@@ -10322,7 +10265,7 @@ async function captureLead(params, ctx) {
     email: params.email,
     phone: params.phone,
     notes: params.notes ? `[Lead] ${params.notes}` : void 0,
-    updated_at: (/* @__PURE__ */ new Date()).toISOString()
+    updated_at: /* @__PURE__ */ (/* @__PURE__ */ new Date()).toISOString()
   };
   if (params.potential) updateData.lead_score = potentialToScore(params.potential);
   const insertData = {
@@ -10339,7 +10282,7 @@ async function captureLead(params, ctx) {
   if (contact?.id) {
     const { error: linkError } = await ctx.supabase.from("conversation_sessions").update({
       contact_id: contact.id,
-      updated_at: (/* @__PURE__ */ new Date()).toISOString()
+      updated_at: /* @__PURE__ */ (/* @__PURE__ */ new Date()).toISOString()
     }).eq("id", ctx.session.id);
     sessionLinked = !linkError;
   }
@@ -10353,8 +10296,8 @@ async function captureLead(params, ctx) {
         params.phone ?? "",
         params.potential ?? "",
         "",
-        (/* @__PURE__ */ new Date()).toISOString(),
-        (/* @__PURE__ */ new Date()).toISOString()
+        /* @__PURE__ */ (/* @__PURE__ */ new Date()).toISOString(),
+        /* @__PURE__ */ (/* @__PURE__ */ new Date()).toISOString()
       ];
       await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${gConfig.sheet_id}/values/${sheetRange}:append?valueInputOption=USER_ENTERED`, {
         method: "POST",
@@ -10433,7 +10376,7 @@ async function updateLeadStage(params, ctx) {
   await ctx.supabase.from("contacts").update({
     pipeline_stage: params.stage,
     notes: params.notes ? `[Stage: ${params.stage}] ${params.notes}` : void 0,
-    updated_at: (/* @__PURE__ */ new Date()).toISOString()
+    updated_at: /* @__PURE__ */ (/* @__PURE__ */ new Date()).toISOString()
   }).eq("id", session.contact_id);
   return {
     success: true,
@@ -10490,8 +10433,6 @@ async function scheduleFollowUp(params, ctx) {
     scheduled_at: scheduledAt
   };
 }
-
-// supabase/functions/agent-orchestrator/tools/impl/order.ts
 async function searchMenu(params, ctx) {
   const generic = [
     "menu",
@@ -10894,8 +10835,6 @@ Open the dashboard to verify payment.`;
     owner_notified: ownerNotified
   };
 }
-
-// supabase/functions/agent-orchestrator/tools/impl/handoff.ts
 async function requestHandoff(params, ctx) {
   if (ctx.session.working_context?.transferred) {
     return {
@@ -10916,8 +10855,6 @@ async function requestHandoff(params, ctx) {
     handoff_context: params.context || ""
   };
 }
-
-// supabase/functions/agent-orchestrator/tools/impl/support-ticket.ts
 async function createTicket(params, ctx) {
   if (!params.subject) return {
     error: "Subject is required"
@@ -10968,8 +10905,6 @@ async function getTicketStatus(params, ctx) {
   }
   return ticket;
 }
-
-// supabase/functions/agent-orchestrator/tools/impl/business-profile.ts
 async function getBusinessProfile(params, ctx) {
   const { data: workspace, error } = await ctx.supabase.from("workspaces").select("business_profile").eq("id", ctx.payload.workspace_id).maybeSingle();
   if (error) {
@@ -11004,8 +10939,6 @@ async function getBusinessProfile(params, ctx) {
     success: true
   };
 }
-
-// supabase/functions/agent-orchestrator/tools/executor.ts
 var PER_TOOL_TIMEOUTS = {
   search_kb: 3e3,
   manage_contact: 5e3,
@@ -11262,8 +11195,6 @@ async function routeToImpl(toolName, params, ctx) {
       };
   }
 }
-
-// supabase/functions/agent-orchestrator/tools/registry.ts
 var AGENT_TOOLS = {
   customer_support: [
     "search_kb",
@@ -11344,26 +11275,18 @@ var SUBMIT_PLAN_TOOL = {
     }
   }
 };
-
-// supabase/functions/agent-orchestrator/agents/booking.ts
 function buildBookingSystemPrompt(ctx) {
   const overrides = ctx.workspace?.agent_templates;
   return resolveAgentPromptWithOverrides("appointment_booking", ctx, overrides);
 }
-
-// supabase/functions/agent-orchestrator/agents/support.ts
 function buildSupportSystemPrompt(ctx) {
   const overrides = ctx.workspace?.agent_templates;
   return resolveAgentPromptWithOverrides("customer_support", ctx, overrides);
 }
-
-// supabase/functions/agent-orchestrator/agents/sales.ts
 function buildSalesSystemPrompt(ctx) {
   const overrides = ctx.workspace?.agent_templates;
   return resolveAgentPromptWithOverrides("sales", ctx, overrides);
 }
-
-// supabase/functions/agent-orchestrator/lib/session.ts
 async function getOrCreateSession(supabase, { workspace_id, customer_jid, channel, agent_type, customer_name }) {
   const VALID_AGENT_TYPES = [
     "customer_support",
@@ -11463,11 +11386,11 @@ async function touchSession(ctx, agentType, finalResponse, tokensUsed = 0) {
   const newMessageCount = (ctx.session.message_count ?? 0) + 1;
   const updateData = {
     agent_type: agentType,
-    last_message_at: (/* @__PURE__ */ new Date()).toISOString(),
+    last_message_at: /* @__PURE__ */ (/* @__PURE__ */ new Date()).toISOString(),
     last_message_preview: finalResponse.substring(0, 100),
     message_count: newMessageCount,
     total_tokens_used: (ctx.session.total_tokens_used || 0) + tokensUsed,
-    updated_at: (/* @__PURE__ */ new Date()).toISOString()
+    updated_at: /* @__PURE__ */ (/* @__PURE__ */ new Date()).toISOString()
   };
   let wcChanged = false;
   const newWc = {
@@ -11493,8 +11416,6 @@ async function touchSession(ctx, agentType, finalResponse, tokensUsed = 0) {
   await ctx.supabase.from("conversation_sessions").update(updateData).eq("id", ctx.session.id);
   ctx.session.message_count = newMessageCount;
 }
-
-// supabase/functions/agent-orchestrator/lib/sanitize.ts
 var SYSTEM_PROMPT_PATTERNS = [
   /ignore\s+(all\s+)?(previous|prior|above)\s+(instructions|directions|rules|prompts)/gi,
   /you\s+are\s+(now|actually|really)\s+/gi,
@@ -11537,8 +11458,6 @@ function cleanFinalResponse(response) {
   }
   return response.trim();
 }
-
-// supabase/functions/agent-orchestrator/pipeline/t3-planner.ts
 var AGENT_SYSTEM_PROMPTS = {
   customer_support: buildSupportSystemPrompt,
   appointment_booking: buildBookingSystemPrompt,
@@ -11561,7 +11480,7 @@ async function runT32(ctx) {
     const response = handoffResult?.response ?? "I completely understand why this is frustrating. I am escalating your profile to our management team right now so they can resolve this.";
     await ctx.supabase.from("conversation_sessions").update({
       agent_type: "customer_support",
-      updated_at: (/* @__PURE__ */ new Date()).toISOString()
+      updated_at: /* @__PURE__ */ (/* @__PURE__ */ new Date()).toISOString()
     }).eq("id", ctx.session.id);
     ctx.agentType = "customer_support";
     await postProcess(ctx, null, null, response, "customer_support");
@@ -11616,13 +11535,13 @@ ${s.instructions}`;
   systemPrompt += `
 
 ## Current Date/Time
-Today is ${(/* @__PURE__ */ new Date()).toLocaleDateString("en-IN", {
+Today is ${/* @__PURE__ */ (/* @__PURE__ */ new Date()).toLocaleDateString("en-IN", {
     timeZone: "Asia/Kolkata",
     weekday: "long",
     year: "numeric",
     month: "long",
     day: "numeric"
-  })}. Current time in India is ${(/* @__PURE__ */ new Date()).toLocaleTimeString("en-IN", {
+  })}. Current time in India is ${/* @__PURE__ */ (/* @__PURE__ */ new Date()).toLocaleTimeString("en-IN", {
     timeZone: "Asia/Kolkata",
     hour: "2-digit",
     minute: "2-digit"
@@ -11968,7 +11887,7 @@ async function handleHandoff(ctx, targetAgent, context) {
   if (depth > 2) {
     const fallbackResponse = "I've reached the limit for transferring between specialists. A human agent will follow up with you shortly.";
     await ctx.supabase.from("conversation_sessions").update({
-      last_message_at: (/* @__PURE__ */ new Date()).toISOString(),
+      last_message_at: /* @__PURE__ */ (/* @__PURE__ */ new Date()).toISOString(),
       last_message_preview: fallbackResponse.substring(0, 100),
       message_count: (ctx.session.message_count || 0) + 1
     }).eq("id", ctx.session.id);
@@ -11984,7 +11903,7 @@ async function handleHandoff(ctx, targetAgent, context) {
       ...ctx.session.working_context || {},
       transferred: true
     },
-    updated_at: (/* @__PURE__ */ new Date()).toISOString()
+    updated_at: /* @__PURE__ */ (/* @__PURE__ */ new Date()).toISOString()
   }).eq("id", ctx.session.id);
   ctx.agentType = targetAgent;
   ctx.routingReason = "handoff_execution";
@@ -12014,8 +11933,6 @@ function buildToolDescriptions(agentType, source) {
 ## Allowed Tools
 ${filtered.map((n3) => `- ${n3}`).join("\n")}`;
 }
-
-// supabase/functions/agent-orchestrator/pipeline/t4-reflection.ts
 var EMPTY_RESPONSE_PATTERNS = [
   /\bI'?m\s+not\s+(sure|certain|confident|able)\b/i,
   /\bI\s+don'?t\s+(know|have|understand)\b/i,
@@ -12060,8 +11977,6 @@ async function runT5(ctx, response, agentType) {
     reason: "t5_passed"
   };
 }
-
-// supabase/functions/agent-orchestrator/lib/dispatch.ts
 async function sendPresence(gowaBase, auth, deviceId, phone, type) {
   try {
     const ac = new AbortController();
@@ -12094,7 +12009,7 @@ async function dispatch(ctx, response) {
       await storeOutboundMessage(ctx, part);
     }
     await ctx.supabase.from("conversation_sessions").update({
-      last_message_at: (/* @__PURE__ */ new Date()).toISOString()
+      last_message_at: /* @__PURE__ */ (/* @__PURE__ */ new Date()).toISOString()
     }).eq("id", ctx.session.id);
     return;
   }
@@ -12124,7 +12039,7 @@ async function dispatch(ctx, response) {
     }
   }
   await ctx.supabase.from("conversation_sessions").update({
-    last_message_at: (/* @__PURE__ */ new Date()).toISOString()
+    last_message_at: /* @__PURE__ */ (/* @__PURE__ */ new Date()).toISOString()
   }).eq("id", ctx.session.id);
 }
 async function sendWithRetry(ctx, gowaBase, phone, text, auth, deviceId, attempt = 1) {
@@ -12209,8 +12124,6 @@ async function saveFailedMessage(ctx, phone, text, reason) {
   } catch (_6) {
   }
 }
-
-// supabase/functions/agent-orchestrator/index.ts
 var responseHeaders = {
   "Content-Type": "application/json; charset=utf-8",
   "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
@@ -12382,7 +12295,7 @@ async function processMessage(payload) {
           cache_key: ctx._cacheKeyHex,
           response_text: finalResponse,
           access_count: 1,
-          accessed_at: (/* @__PURE__ */ new Date()).toISOString()
+          accessed_at: /* @__PURE__ */ (/* @__PURE__ */ new Date()).toISOString()
         }, {
           onConflict: "workspace_id, cache_key"
         });

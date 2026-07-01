@@ -6,6 +6,10 @@ import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import { logAudit } from "@/lib/audit"
 import { logoutSession, deleteDevice } from "@/lib/gowa"
+import { sendEmail } from "@/lib/mail"
+import { render } from "@react-email/components"
+import { WelcomeEmail } from "@/components/emails/welcome"
+import * as React from "react"
 
 export interface Workspace {
   id: string
@@ -94,6 +98,25 @@ export async function createWorkspace(input: unknown): Promise<ActionResponse<{ 
             website_url: result.data.website_url,
           }),
         }).catch(e => console.error("[WORKSPACE_SCRAPE_FAILED]", e))
+      }
+    }
+
+    // Send welcome email
+    if (user.email) {
+      try {
+        const emailHtml = await render(
+          React.createElement(WelcomeEmail, {
+            username: result.data.name || user.email?.split("@")[0] || "there",
+            loginUrl: `${process.env.NEXT_PUBLIC_APP_URL || "https://7flowcore.vercel.app"}/login`,
+          })
+        )
+        await sendEmail({
+          to: user.email,
+          subject: "Welcome to FlowCore!",
+          html: emailHtml,
+        })
+      } catch (e) {
+        console.error("[WORKSPACE_WELCOME_EMAIL_FAILED]", e)
       }
     }
 

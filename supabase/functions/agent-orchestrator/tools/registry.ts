@@ -176,10 +176,6 @@ export const SUBMIT_PLAN_TOOL = {
           }
         },
         fallback: { type: "string", description: "Fallback message if tools fail." },
-        needs_second_pass: {
-          type: "boolean",
-          description: "Set to true ONLY if a tool returned a non-final result or error that changes the response. Default false — most responses don't need a second LLM call."
-        }
       },
       required: ["response", "actions"],
       additionalProperties: false
@@ -187,14 +183,5 @@ export const SUBMIT_PLAN_TOOL = {
   }
 };
 
-export function getAgentToolDefinitions(agentType: string) {
-  const allowed = AGENT_TOOLS[agentType] || AGENT_TOOLS.customer_support;
-  return allowed.map(name => ({
-    type: "function",
-    function: {
-      name: ALL_TOOLS[name].name,
-      description: ALL_TOOLS[name].description,
-      parameters: ALL_TOOLS[name].parameters
-    }
-  }));
-}
+
+

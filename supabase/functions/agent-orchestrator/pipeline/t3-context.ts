@@ -47,13 +47,5 @@ export async function runT3(ctx: PipelineContext, requeryContext?: { previous_em
 
   await Promise.all(promises);
 
-  if (ctx.routingReason === "management_priority" && agentType === "appointment_booking") {
-    try {
-      const { getHistory } = await import("../tools/impl/contact.ts");
-      const history = await getHistory({}, ctx);
-      ctx._customerHistory = history?.appointments || [];
-    } catch (_) {}
-  }
-
   return { handled: false };
 }

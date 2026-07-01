@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
       .from("notifications")
       .insert({
         id: notificationId,
+        workspace_id,
         title: "Credits Exhausted",
         message: "Your workspace has run out of credits. Customer messages are being blocked. Upgrade your plan to continue serving customers.",
         type: "warning",

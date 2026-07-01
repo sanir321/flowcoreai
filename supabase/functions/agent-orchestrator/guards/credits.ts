@@ -20,6 +20,7 @@ export async function checkCredits(ctx: PipelineContext, workspace: any): Promis
         .from("notifications")
         .insert({
           id: notifId,
+          workspace_id: ctx.payload.workspace_id,
           title: "Credits Exhausted",
           message: "Your workspace has run out of credits. Customer messages are being blocked. Upgrade your plan to continue serving customers.",
           type: "warning",

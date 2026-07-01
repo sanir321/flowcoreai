@@ -1,7 +1,7 @@
 import { PipelineContext, TierResult, AgentPlan } from "../lib/types.ts";
 import { callLLM, FALLBACK_MODEL, DEFAULT_FALLBACK_MESSAGE } from "../lib/llm.ts";
 import { toolExecutor } from "../tools/executor.ts";
-import { SUBMIT_PLAN_TOOL, ALL_TOOLS, AGENT_TOOLS } from "../tools/registry.ts";
+import { SUBMIT_PLAN_TOOL, AGENT_TOOLS } from "../tools/registry.ts";
 import { buildBookingSystemPrompt } from "../agents/booking.ts";
 import { buildSupportSystemPrompt } from "../agents/support.ts";
 import { buildSalesSystemPrompt } from "../agents/sales.ts";
@@ -128,10 +128,6 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
     systemPrompt += `\n\n## IMPORTANT: Existing Appointment Detected\nThis customer already has a confirmed appointment:\n- ID: ${existingAppt.id}\n- Service: ${existingAppt.service}\n- Date/Time: ${existingAppt.start_at}\n- Status: ${existingAppt.status}\n- Relative: ${temporalHint}\n\nCRITICAL: Use the RELATIVE timing above to decide what to say. If the appointment is PAST, do NOT say "tomorrow" or "coming up" — acknowledge it was scheduled and ask if they want to reschedule. If it's today/tomorrow, confirm the upcoming booking.\n\nDo NOT attempt to create another appointment. Instead:\n1. Inform the customer about their existing booking\n2. Ask if they need to reschedule, cancel, or have questions\n3. Use the appointment ID for any updates or cancellations`;
   }
 
-  if (ctx.routingReason === "management_priority" && ctx._customerHistory?.length) {
-    systemPrompt += `\n\n[SMART CONTEXT] Existing Appointments for this user:\n${JSON.stringify(ctx._customerHistory.slice(0, 3))}\nUse these IDs for manage_appointment update/cancel actions.`;
-  }
-
   // Inject KB chunks gathered by T3 (reduces tool round-trips)
   if (ctx._kbChunks && ctx._kbChunks.length > 0) {
     const kbText = ctx._kbChunks
@@ -164,6 +160,7 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
   let parsedPlan: AgentPlan;
   let llmResponse: any;
   let lastError: any;
+  let needsPass2 = false;
 
   for (let attempt = 0; attempt <= 1; attempt++) {
     try {
@@ -260,7 +257,6 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
 
   let finalResponse = parsedPlan.response;
   let toolResults: PromiseSettledResult<any>[] = [];
-  let needsPass2 = parsedPlan.needs_second_pass;
 
   if (parsedPlan.actions.length > 0) {
     ctx._toolFailCounts = {};
@@ -333,9 +329,7 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
       }
     }
 
-    finalResponse = fillTemplate(finalResponse, parsedPlan.actions, toolResults);
-    const enriched = enrichResponseWithToolResults(finalResponse, parsedPlan.actions, toolResults);
-    if (enriched) finalResponse = enriched;
+
   }
 
   for (let i = 0; i < parsedPlan.actions.length; i++) {
@@ -429,129 +423,6 @@ function buildPass2System(ctx: PipelineContext, agentType: string): string {
   };
   return renderTemplate(PASS2_TEMPLATE, vars);
 }
-}
-
-function enrichResponseWithToolResults(
-  response: string,
-  actions: { tool: string }[],
-  results: PromiseSettledResult<any>[]
-): string | null {
-  let enriched = response;
-  let appended: string[] = [];
-
-  for (let i = 0; i < actions.length; i++) {
-    const action = actions[i];
-    const result = results[i];
-    if (result?.status !== "fulfilled") continue;
-    const data = result.value?.data || result.value;
-    if (!data?.success) continue;
-
-    switch (action.tool) {
-      case "manage_catalog": {
-        const items = data.items || data.data || [];
-        if (Array.isArray(items) && items.length > 0) {
-          const formatted = items.map((item: any) => {
-            const name = item.name || item.title || "";
-            const price = item.price ? ` - Rs.${item.price}` : "";
-            return `- ${name}${price}`;
-          }).join("\n");
-          appended.push(`\n\nHere are our available items:\n${formatted}`);
-        }
-        break;
-      }
-      case "manage_appointment": {
-        const slots = data.slots || data.available_slots || [];
-        if (Array.isArray(slots) && slots.length > 0) {
-          const formatted = slots.slice(0, 5).map((s: any) => {
-            const time = s.time || s.start_time || "";
-            return `- ${time}`;
-          }).join("\n");
-          appended.push(`\n\nAvailable slots:\n${formatted}`);
-        }
-        if (data.appointment_link) {
-          appended.push(`\n\nAppointment details: ${data.appointment_link}`);
-        }
-        if (data.already_booked) {
-          appended.push(`\n\nExisting appointment ID: ${data.id}. Service: ${data.service}. Date: ${data.start_at}`);
-        }
-        if (data.error) {
-          appended.push(`\n\n${data.error}`);
-        }
-        break;
-      }
-      case "search_kb": {
-        const chunks = data.chunks || data.kb_chunks || data.results || [];
-        if (Array.isArray(chunks) && chunks.length > 0) {
-          const text = chunks.map((c: any) => c.content || c.text || "").filter(Boolean).join("\n").slice(0, 500);
-          if (text) appended.push(`\n\n${text}`);
-        }
-        break;
-      }
-      case "place_order": {
-        if (data.success && data.order_number) {
-          const itemLines = (data.items || []).map((i: any) => `• ${i.name} × ${i.qty} = ₹${(i.qty * i.price).toLocaleString()}`).join("\n");
-          appended.push(`\n\n*Order ${data.order_number}*\n${itemLines}\n*Total: ₹${Number(data.total || 0).toLocaleString()}*\n\nWe'll contact you shortly for payment and delivery.`);
-        }
-        if (data.unknown_items?.length) {
-          appended.push(`\n\nThese items aren't on our menu: ${data.unknown_items.join(", ")}. Could you pick from the menu?`);
-        }
-        break;
-      }
-      case "manage_contact": {
-        if (data.stage) {
-          appended.push(`\n\n✅ Lead moved to "${data.stage}" stage.`);
-        }
-        if (data.summary) {
-          appended.push(`\n\n${data.summary}`);
-        } else if (data.pipeline) {
-          const lines = Object.entries(data.pipeline)
-            .filter(([_, c]) => (c as number) > 0)
-            .map(([stage, count]) => `- ${stage}: ${count}`)
-            .join("\n");
-          if (lines) appended.push(`\n\nPipeline overview:\n${lines}`);
-        }
-        if (data.id || data.lead_id || data.contact_id) {
-          appended.push(`\n\nI have saved your information. Our team will follow up with you.`);
-        }
-        if (data.follow_up_id) {
-          appended.push(`\n\n✅ Follow-up scheduled for ${new Date(data.scheduled_at).toLocaleString()}.`);
-        }
-        break;
-      }
-      case "get_business_info": {
-        const profile = data?.data || data;
-        const parts: string[] = [];
-        if (typeof profile.description === "string") parts.push(profile.description);
-        if (profile.contact?.phone) parts.push(`Phone: ${profile.contact.phone}`);
-        if (profile.contact?.email) parts.push(`Email: ${profile.contact.email}`);
-        if (profile.contact?.address) parts.push(`Address: ${profile.contact.address}`);
-        if (profile.hours?.daily) {
-          const days = Object.entries(profile.hours.daily)
-            .filter(([_, d]: [string, any]) => !d.closed)
-            .map(([day, d]: [string, any]) => `${day.charAt(0).toUpperCase() + day.slice(1)}: ${d.open}-${d.close}`)
-            .join(', ');
-          if (days) parts.push(`Hours: ${days}`);
-        }
-        if (profile.pricing?.description) parts.push(`Pricing: ${profile.pricing.description}`);
-        if (profile.extras?.project_types?.length) parts.push(`Projects: ${profile.extras.project_types.join(', ')}`);
-        if (profile.amenities?.length) parts.push(`Amenities: ${profile.amenities.join(', ')}`);
-        if (parts.length > 0) appended.push(`\n\n${parts.join('\n')}`);
-        break;
-      }
-    }
-  }
-
-  if (appended.length === 0) return null;
-
-  for (const a of appended) {
-    const short = a.replace(/\n/g, " ").slice(0, 40);
-    if (!enriched.includes(short)) {
-      enriched += a;
-    }
-  }
-
-  return enriched !== response ? enriched : null;
-}
 
 function buildToolContext(actions: any[], results: PromiseSettledResult<any>[]): string {
   return actions.map((a, i) => {
@@ -560,49 +431,6 @@ function buildToolContext(actions: any[], results: PromiseSettledResult<any>[]):
     const data = r.status === "fulfilled" ? JSON.stringify(r.value) : r.reason?.message;
     return `[${a.tool}] ${status}: ${data}`;
   }).join("\n");
-}
-
-function fillTemplate(
-  template: string,
-  actions: { tool: string; result_key?: string }[],
-  results: PromiseSettledResult<any>[]
-): string {
-  let filled = template.replace(/\s*\[Correction:[^\]]*\]/g, "");
-  actions.forEach((action, i) => {
-    if (results[i].status === "fulfilled") {
-      const resultKey = action.result_key || action.tool;
-      const data = results[i].value?.data || results[i].value;
-      if (data && typeof data === "object") {
-        Object.entries(flattenObject(data, resultKey)).forEach(([key, val]) => {
-          filled = filled.replace(new RegExp(`\\{${key}\\}`, "g"), String(val ?? ""));
-        });
-        filled = filled.replace(new RegExp(`\\{${resultKey}\\}`, "g"), JSON.stringify(data));
-      }
-    }
-  });
-  filled = filled.replace(/\{[^}]+\}/g, "");
-  return filled;
-}
-
-function flattenObject(obj: any, prefix = ""): Record<string, string> {
-  const result: Record<string, string> = {};
-  for (const [key, val] of Object.entries(obj)) {
-    const k = prefix ? `${prefix}.${key}` : key;
-    if (val && typeof val === "object" && !Array.isArray(val)) {
-      Object.assign(result, flattenObject(val, k));
-    } else if (Array.isArray(val)) {
-      const lines = val.slice(0, 10).map((v: any) => {
-        if (typeof v === "object" && v !== null) {
-          return (v.name || v.title || JSON.stringify(v)).slice(0, 100);
-        }
-        return String(v).slice(0, 100);
-      }).join("\n");
-      result[k] = lines;
-    } else {
-      result[k] = String(val ?? "");
-    }
-  }
-  return result;
 }
 
 async function handleHandoff(ctx: PipelineContext, targetAgent: string, context: string): Promise<TierResult> {

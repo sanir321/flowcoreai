@@ -97,7 +97,6 @@ export interface AgentPlan {
   response: string;
   actions: { tool: string; params: object; required: boolean; result_key?: string }[];
   fallback: string;
-  needs_second_pass: boolean;
 }
 
 export interface TierResult {
@@ -118,20 +117,4 @@ export interface QueryAnalysis {
   sub_tasks?: { agent: AgentType; intent: string }[];
 }
 
-export const AGENT_DESCRIPTIONS: Record<string, { label: string; description: string; skills: string }> = {
-  customer_support: {
-    label: "Customer Support",
-    description: "Answers general questions about the business, services, hours, or policies.",
-    skills: "knowledge base search, general Q&A, escalation to human"
-  },
-  appointment_booking: {
-    label: "Appointment Booker",
-    description: "Handles scheduling, changing, or cancelling appointments.",
-    skills: "Google Calendar availability check, appointment creation, rescheduling, cancellations"
-  },
-  sales: {
-    label: "Sales Assistant",
-    description: "Handles pricing inquiries, lead capture, menu browsing, and order taking. Does not process payments — the owner handles payment off-platform.",
-    skills: "lead capture, pipeline management, follow-ups, menu browsing, order taking"
-  }
-};
+

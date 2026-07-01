@@ -1,11 +1,11 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { motion } from "framer-motion"
 import { Switch } from "@/components/ui/switch"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Loader2, Volume2, AlertTriangle, Inbox, MessageSquare, Save } from "lucide-react"
+import { Loader2, Volume2, AlertTriangle, Inbox, MessageSquare, Save, Bell, Zap, ExternalLink, CheckCheck } from "lucide-react"
 import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
 import { updateNotifications } from "@/app/actions/settings"
@@ -30,6 +30,16 @@ const MODES = [
   { value: 'off' as const, label: "Off", desc: "Suppress all notifications" }
 ]
 
+interface HistoryNotification {
+  id: string
+  title: string
+  message: string
+  type: string
+  link: string | null
+  created_at: string
+  is_read: boolean
+}
+
 export default function NotificationsPage() {
   const { workspaceId, isLoading: wsLoading } = useWorkspace()
   const [isLoading, setIsLoading] = useState(true)
@@ -37,6 +47,7 @@ export default function NotificationsPage() {
   const [config, setConfig] = useState<any>(null)
   const [whatsappNumber, setWhatsappNumber] = useState("")
   const [savingWhatsapp, setSavingWhatsapp] = useState(false)
+  const [notifications, setNotifications] = useState<HistoryNotification[]>([])
   const supabase = createClient()
 
   useEffect(() => {
@@ -65,7 +76,17 @@ export default function NotificationsPage() {
     }
     
     fetchConfig()
+    fetchNotifications()
   }, [workspaceId, supabase])
+
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const res = await fetch("/api/notifications")
+      if (!res.ok) return
+      const data = await res.json()
+      if (data.notifications) setNotifications(data.notifications)
+    } catch {}
+  }, [])
 
   const handleToggle = async (key: string, value: string | boolean) => {
     if (!workspaceId) return
@@ -251,6 +272,53 @@ export default function NotificationsPage() {
           </div>
         </div>
       </motion.div>
+
+      {/* Notification History */}
+      {notifications.length > 0 && (
+        <motion.div {...fadeUp} transition={{ delay: 0.35 }} className="space-y-5">
+          <h4 className="text-[10px] font-bold text-[#c65f39]">History</h4>
+          <div className="space-y-1 border border-gray-100 rounded-xl bg-white divide-y divide-gray-50">
+            {notifications.slice(0, 20).map((n) => (
+              <a
+                key={n.id}
+                href={n.link || "#"}
+                className="flex items-start gap-3.5 px-5 py-3.5 hover:bg-gray-50 transition-colors rounded-lg"
+              >
+                <div className={cn(
+                  "h-8 w-8 rounded-lg flex items-center justify-center shrink-0",
+                  n.type === "warning" ? "bg-red-50" :
+                  n.type === "escalation" ? "bg-orange-50" :
+                  n.type === "booking" ? "bg-green-50" :
+                  n.type === "lead" ? "bg-blue-50" :
+                  "bg-gray-50"
+                )}>
+                  <Bell className={cn(
+                    "h-3.5 w-3.5",
+                    n.type === "warning" ? "text-red-500" :
+                    n.type === "escalation" ? "text-orange-500" :
+                    n.type === "booking" ? "text-green-500" :
+                    n.type === "lead" ? "text-blue-500" :
+                    "text-gray-400"
+                  )} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className={cn("text-xs", n.is_read ? "text-gray-600" : "text-gray-900 font-semibold")}>
+                      {n.title}
+                    </p>
+                    {!n.is_read && <span className="h-1.5 w-1.5 rounded-full bg-[#c65f39] shrink-0" />}
+                  </div>
+                  <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-2">{n.message}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-[9px] text-gray-400">{new Date(n.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
+                  </div>
+                </div>
+                {n.link && <ExternalLink className="h-3 w-3 text-gray-300 mt-1.5 shrink-0" />}
+              </a>
+            ))}
+          </div>
+        </motion.div>
+      )}
 
       {/* Info */}
       <motion.div {...fadeUp} transition={{ delay: 0.4 }}>

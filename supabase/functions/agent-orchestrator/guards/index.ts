@@ -9,15 +9,9 @@ import { checkTokenBudget } from "./token-budget.ts";
 import { checkGreeting } from "./greeting.ts";
 import { checkSales } from "./sales.ts";
 
-export interface GuardResult {
-  handled: boolean;
-  response?: string | null;
-  reason?: string;
-}
-
 type GuardFn = (ctx: PipelineContext, workspace: any) => string | null | Promise<string | null>;
 
-async function runGuard(ctx: PipelineContext, workspace: any, fn: GuardFn, reason: string): Promise<GuardResult | null> {
+async function runGuard(ctx: PipelineContext, workspace: any, fn: GuardFn, reason: string): Promise<TierResult | null> {
   const response = await fn(ctx, workspace);
   if (response !== null) {
     return { handled: true, response, reason: `guardrail_${reason}` };
@@ -25,7 +19,7 @@ async function runGuard(ctx: PipelineContext, workspace: any, fn: GuardFn, reaso
   return null;
 }
 
-export async function runAllGuards(ctx: PipelineContext, workspace: any): Promise<GuardResult | null> {
+export async function runAllGuards(ctx: PipelineContext, workspace: any): Promise<TierResult | null> {
   const guards: [GuardFn, string][] = [
     [checkNonText, "non_text"],
     [checkEscalation, "escalation"],

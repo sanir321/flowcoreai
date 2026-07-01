@@ -276,6 +276,17 @@ export async function createAppointment(
 }
 
 async function sendAppointmentNotifications(ctx: PipelineContext, appt: any, meetLink: string | null) {
+  try {
+    await ctx.supabase.from("notifications").insert({
+      id: crypto.randomUUID(),
+      workspace_id: ctx.payload.workspace_id,
+      title: "New Booking",
+      message: `${appt.customer_name || "A customer"} booked ${appt.service || "a service"} for ${formatIST(appt.start_at)}.`,
+      type: "booking",
+      link: `/appointment/${appt.id}`,
+      created_at: new Date().toISOString(),
+    });
+  } catch (_) {}
   await Promise.allSettled([
     sendAppointmentWhatsApp(ctx, appt, meetLink),
     sendAppointmentEmail(ctx, appt, meetLink)
@@ -319,10 +330,11 @@ async function sendAppointmentEmail(ctx: PipelineContext, appt: any, meetLink: s
   try {
     const { data: notifPref } = await ctx.supabase
       .from("workspace_notifications")
-      .select("email_on_booking")
+      .select("email_on_booking, notification_mode")
       .eq("workspace_id", ctx.payload.workspace_id)
       .maybeSingle();
     if (notifPref && notifPref.email_on_booking === false) return;
+    if (notifPref?.notification_mode && notifPref.notification_mode !== "instant") return;
     const { data: workspaceData } = await ctx.supabase
       .from("workspaces")
       .select("name, session:conversation_sessions!workspace_id(contact:contacts(email))")

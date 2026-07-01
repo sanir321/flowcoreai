@@ -10,17 +10,21 @@ interface Notification {
   id: string
   title: string
   message: string
-  type: "update" | "credit" | "announcement" | "tip"
+  type: "update" | "credit" | "announcement" | "tip" | "warning" | "booking" | "lead" | "escalation"
   link: string | null
   created_at: string
   is_read: boolean
 }
 
-const typeConfig = {
+const typeConfig: Record<string, { icon: any; color: string; bg: string }> = {
   update:       { icon: RefreshCw, color: "text-blue-600", bg: "bg-blue-50" },
   credit:       { icon: Zap,       color: "text-amber-600", bg: "bg-amber-50" },
   announcement: { icon: Megaphone, color: "text-purple-600", bg: "bg-purple-50" },
   tip:          { icon: Lightbulb, color: "text-emerald-600", bg: "bg-emerald-50" },
+  warning:      { icon: Zap,       color: "text-red-600",   bg: "bg-red-50" },
+  booking:      { icon: BellRing,  color: "text-green-600", bg: "bg-green-50" },
+  lead:         { icon: BellRing,  color: "text-blue-600",  bg: "bg-blue-50" },
+  escalation:   { icon: BellRing,  color: "text-orange-600",bg: "bg-orange-50" },
 }
 
 function timeAgo(date: string) {
@@ -249,11 +253,14 @@ export function NotificationBell() {
             )}
 
             {}
-            {notifications.length > 5 && (
-              <div className="px-5 py-2.5 border-t border-gray-50 bg-gradient-to-t from-white to-transparent">
-                <p className="text-[9px] text-gray-400 text-center font-medium">
-                  Showing {notifications.length} notifications
+            {notifications.length > 0 && (
+              <div className="px-5 py-2.5 border-t border-gray-50 bg-gradient-to-t from-white to-transparent flex items-center justify-between">
+                <p className="text-[9px] text-gray-400 font-medium">
+                  {notifications.length} total
                 </p>
+                <a href="/settings/notifications" onClick={() => setOpen(false)} className="text-[9px] font-semibold text-[#c65f39] hover:text-[#a84d2e] transition-colors">
+                  View all
+                </a>
               </div>
             )}
           </motion.div>
