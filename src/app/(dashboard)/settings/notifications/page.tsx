@@ -50,6 +50,15 @@ export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<HistoryNotification[]>([])
   const supabase = createClient()
 
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const res = await fetch("/api/notifications")
+      if (!res.ok) return
+      const data = await res.json()
+      if (data.notifications) setNotifications(data.notifications)
+    } catch {}
+  }, [])
+
   useEffect(() => {
     if (!workspaceId) return
     
@@ -78,15 +87,6 @@ export default function NotificationsPage() {
     fetchConfig()
     fetchNotifications()
   }, [workspaceId, supabase, fetchNotifications])
-
-  const fetchNotifications = useCallback(async () => {
-    try {
-      const res = await fetch("/api/notifications")
-      if (!res.ok) return
-      const data = await res.json()
-      if (data.notifications) setNotifications(data.notifications)
-    } catch {}
-  }, [])
 
   const handleToggle = async (key: string, value: string | boolean) => {
     if (!workspaceId) return
