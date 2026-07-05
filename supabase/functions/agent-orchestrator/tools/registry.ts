@@ -107,20 +107,6 @@ export const ALL_TOOLS: Record<string, ToolDefinition> = {
       additionalProperties: false
     }
   },
-  update_stock: {
-    name: "update_stock",
-    description: "Update stock count or availability for a menu item. Used for inventory management.",
-    parameters: {
-      type: "object",
-      properties: {
-        item_id: { type: "string", description: "The menu item UUID." },
-        stock_count: { type: "number", description: "New stock count value." },
-        is_available: { type: "boolean", description: "Set item availability." }
-      },
-      required: ["item_id"],
-      additionalProperties: false
-    }
-  },
   search_kb: {
     name: "search_kb",
     description: "Search the business knowledge base for answers about services, policies, and general info.",
@@ -186,7 +172,7 @@ export const AGENT_TOOLS: Record<string, string[]> = {
   ],
   sales: [
     "manage_catalog", "manage_contact", "get_business_info",
-    "place_order", "get_order", "track_order", "search_kb", "transfer_agent"
+    "place_order", "get_order", "track_order", "search_kb", "transfer_agent", "escalate"
   ],
   customer_support: [
     "search_kb", "manage_contact", "get_business_info", "transfer_agent", "escalate",

@@ -3,7 +3,7 @@ import { matchChunks } from "./impl/kb.ts";
 import { checkAvailability, createAppointment, updateAppointment, cancelAppointment } from "./impl/calendar.ts";
 import { getHistory, update } from "./impl/contact.ts";
 import { captureLead, updateLeadStage, getPipeline, scheduleFollowUp } from "./impl/crm.ts";
-import { searchMenu, sendMenuMedia, checkStock, sendCatalog, placeOrder, getOrder, trackOrder, updateStock } from "./impl/order.ts";
+import { searchMenu, sendMenuMedia, checkStock, sendCatalog, placeOrder, getOrder, trackOrder } from "./impl/order.ts";
 import { requestHandoff } from "./impl/handoff.ts";
 import { createTicket, getTicketStatus } from "./impl/support-ticket.ts";
 import { getBusinessProfile } from "./impl/business-profile.ts";
@@ -17,7 +17,6 @@ const PER_TOOL_TIMEOUTS: Record<string, number> = {
   place_order: 12000,
   get_order: 5000,
   track_order: 5000,
-  update_stock: 5000,
   transfer_agent: 5000,
   escalate: 10000,
 };
@@ -31,7 +30,6 @@ const TOOL_RATE_LIMITS: Record<string, number> = {
   place_order: 5,
   get_order: 15,
   track_order: 15,
-  update_stock: 10,
   escalate: 3,
   transfer_agent: 5,
 };
@@ -240,9 +238,6 @@ async function routeToImpl(toolName: string, params: any, ctx: PipelineContext):
 
     case "track_order":
       return trackOrder(params, ctx);
-
-    case "update_stock":
-      return updateStock(params, ctx);
 
     case "transfer_agent":
       return requestHandoff(params, ctx);

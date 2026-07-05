@@ -307,34 +307,6 @@ export async function trackOrder(
   };
 }
 
-export async function updateStock(
-  params: { item_id: string; stock_count?: number; is_available?: boolean },
-  ctx: PipelineContext
-) {
-  const { item_id, stock_count, is_available } = params;
-  if (!item_id) {
-    return { success: false, error: "item_id is required." };
-  }
-
-  const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() };
-  if (stock_count !== undefined) updateData.stock_count = stock_count;
-  if (is_available !== undefined) updateData.is_available = is_available;
-
-  const { data, error } = await ctx.supabase
-    .from("menu_items")
-    .update(updateData)
-    .eq("id", item_id)
-    .eq("workspace_id", ctx.payload.workspace_id)
-    .select("id, name, stock_count, is_available")
-    .maybeSingle();
-
-  if (error || !data) {
-    return { success: false, error: "Failed to update stock — item not found." };
-  }
-
-  return { success: true, item: data };
-}
-
 export async function placeOrder(
   params: { items?: { name: string; qty?: number }[]; item_name?: string; notes?: string },
   ctx: PipelineContext
