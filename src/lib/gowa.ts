@@ -137,7 +137,7 @@ export async function getDevices(): Promise<any[]> {
     const data = await response.json();
     return data.results || [];
   } catch (e) {
-    console.error("[GOWA] getDevices error:", e?.message || e);
+    console.error("[GOWA] getDevices error:", (e as Error)?.message || e);
     return [];
   }
 }

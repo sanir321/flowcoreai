@@ -21,8 +21,8 @@ export async function POST(req: NextRequest) {
 
     const notificationId = crypto.randomUUID();
 
-    const { error: notifError } = await (admin
-      .from("notifications") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    const { error: notifError } = await (admin as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+      .from("notifications")
       .insert({
         id: notificationId,
         workspace_id,

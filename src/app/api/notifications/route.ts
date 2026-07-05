@@ -13,8 +13,8 @@ export async function GET() {
 
     const admin = createAdminClient()
 
-    const { data: notifications, error } = await (admin
-      .from("notifications") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    const { data: notifications, error } = await (admin as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+      .from("notifications")
       .select("*, notification_reads!left(user_id)")
       .eq("workspace_id", workspaceId)
       .order("created_at", { ascending: false })
@@ -53,8 +53,8 @@ export async function POST(req: NextRequest) {
     }
 
     const admin = createAdminClient()
-    const { error } = await (admin
-      .from("notification_reads") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    const { error } = await (admin as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+      .from("notification_reads")
       .insert({ user_id: user.id, notification_id })
       .select()
       .single()
@@ -87,8 +87,8 @@ export async function DELETE(req: NextRequest) {
     }
 
     const admin = createAdminClient()
-    const { error } = await (admin
-      .from("notification_reads") as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    const { error } = await (admin as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+      .from("notification_reads")
       .delete()
       .eq("user_id", user.id)
       .eq("notification_id", notification_id)
