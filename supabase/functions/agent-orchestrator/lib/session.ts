@@ -1,6 +1,7 @@
 import { PipelineContext, WorkingContext } from "./types.ts";
+import { createClient } from "jsr:@supabase/supabase-js@2";
 
-export async function getOrCreateSession(supabase: any, { 
+export async function getOrCreateSession(supabase: ReturnType<typeof createClient>, {
   workspace_id, 
   customer_jid, 
   channel, 
@@ -149,7 +150,7 @@ export async function getOrCreateSession(supabase: any, {
 export async function touchSession(ctx: PipelineContext, agentType: string, finalResponse: string, tokensUsed = 0) {
   const wc = ctx.session.working_context;
   const newMessageCount = (ctx.session.message_count ?? 0) + 1;
-  const updateData: any = {
+  const updateData: Record<string, unknown> = {
     agent_type: agentType,
     last_message_at: new Date().toISOString(),
     last_message_preview: finalResponse.substring(0, 100),

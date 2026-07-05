@@ -37,7 +37,9 @@ export async function runT1(ctx: PipelineContext): Promise<TierResult> {
     if (similar && similar.length > 0 && similar[0].similarity > 0.80) {
       return { handled: true, response: similar[0].content, reason: "cache_hit_embedding" };
     }
-  } catch (_) {}
+  } catch (e) {
+    console.error("[T1] Embedding/cache error:", e?.message || e);
+  }
 
   return { handled: false };
 }

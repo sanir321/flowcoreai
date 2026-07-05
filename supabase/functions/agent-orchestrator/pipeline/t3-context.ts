@@ -12,7 +12,8 @@ export async function runT3(ctx: PipelineContext, requeryContext?: { previous_em
     promises.push(
       matchChunks({ query, match_threshold: matchThreshold }, ctx).then(result => {
         ctx._kbChunks = result?.chunks || result?.kb_chunks || result?.results || [];
-      }).catch(() => {
+      }).catch((e) => {
+        console.error("[T3] KB chunk fetch error:", e?.message || e);
         ctx._kbChunks = [];
       })
     );
@@ -39,7 +40,8 @@ export async function runT3(ctx: PipelineContext, requeryContext?: { previous_em
           } else {
             ctx._existingAppointment = data;
           }
-        }).catch(() => {
+        }).catch((e) => {
+          console.error("[T3] Appointment lookup error:", e?.message || e);
           ctx._existingAppointment = null;
         })
     );

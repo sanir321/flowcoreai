@@ -24,15 +24,17 @@ Deno.serve(async (req) => {
     const gowaKey = Deno.env.get("GOWA_API_KEY") || ""
     const gowaAuth = btoa(gowaKey)
 
-    await fetch(`${GOWA_BASE_URL}/devices/${device_id}/logout`, {
+    const logoutRes = await fetch(`${GOWA_BASE_URL}/devices/${device_id}/logout`, {
       method: "POST",
       headers: { "Authorization": `Basic ${gowaAuth}` },
-    }).catch(() => {})
+    });
+    if (!logoutRes.ok) console.error("[GOWA-CLEANUP] Logout failed:", logoutRes.status);
 
-    await fetch(`${GOWA_BASE_URL}/devices/${device_id}`, {
+    const deleteRes = await fetch(`${GOWA_BASE_URL}/devices/${device_id}`, {
       method: "DELETE",
       headers: { "Authorization": `Basic ${gowaAuth}` },
-    }).catch(() => {})
+    });
+    if (!deleteRes.ok) console.error("[GOWA-CLEANUP] Delete failed:", deleteRes.status);
 
     return new Response("ok", { status: 200 })
   } catch (err) {

@@ -1,6 +1,6 @@
-import { PipelineContext } from "../lib/types.ts";
+import { PipelineContext, WorkspaceRow } from "../lib/types.ts";
 
-export function checkTokenBudget(ctx: PipelineContext, workspace: any): string | null {
+export function checkTokenBudget(ctx: PipelineContext, workspace: WorkspaceRow): string | null {
   const sessionLimit = workspace.guardrail_config?.session_token_limit
     ?? workspace.guardrail_config?.daily_token_limit
     ?? 50000;

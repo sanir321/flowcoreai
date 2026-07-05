@@ -1,6 +1,6 @@
-import { PipelineContext } from "../lib/types.ts";
+import { PipelineContext, WorkspaceRow } from "../lib/types.ts";
 
-export function checkBlockedTopics(ctx: PipelineContext, workspace: any): string | null {
+export function checkBlockedTopics(ctx: PipelineContext, workspace: WorkspaceRow): string | null {
   const blockedTopics: string[] = workspace.guardrail_config?.blocked_topics ?? [];
   if (blockedTopics.length === 0) return null;
 

@@ -137,7 +137,9 @@ export async function runT2(ctx: PipelineContext): Promise<TierResult> {
       );
       conversationContext = lines.join("\n");
     }
-  } catch (_) {}
+  } catch (e) {
+    console.error("[T2] History fetch error:", e?.message || e);
+  }
 
   // Lightweight intent pre-check for clear booking/sales intents (LLM isn't reliable enough)
   // Runs BEFORE follow-up check so clear booking/sales intents always take priority

@@ -4,9 +4,11 @@ import { z } from "zod";
 import { rateLimit } from "@/lib/rate-limit";
 
 
-const supabaseAdmin = createClient(
+// Using anon key + RLS for public widget config reads
+// See supabase/migrations/20260705000001_widget_public_rls.sql for policies
+const supabasePublic = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
 const ConfigQuerySchema = z.object({
@@ -31,7 +33,7 @@ export async function GET(req: NextRequest) {
     const workspaceId = result.data.id;
 
     // 1. Fetch Widget Config
-    const { data: config } = await supabaseAdmin
+    const { data: config } = await supabasePublic
       .from("widget_config")
       .select("*")
       .eq("workspace_id", workspaceId)
@@ -67,7 +69,7 @@ export async function GET(req: NextRequest) {
     }
 
     // 2. Fetch primary agent for name/avatar
-    const { data: agent } = await supabaseAdmin
+    const { data: agent } = await supabasePublic
       .from("workspace_agents")
       .select("config")
       .eq("workspace_id", workspaceId)
@@ -100,3 +102,5 @@ export async function GET(req: NextRequest) {
     return new Response("Failed to load widget configuration", { status: 500 });
   }
 }
+
+export const runtime = "nodejs";

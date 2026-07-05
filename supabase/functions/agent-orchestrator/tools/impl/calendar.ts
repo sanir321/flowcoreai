@@ -121,7 +121,9 @@ export async function checkAvailability(
       const available = !isTimeSlotBusy(startAt, 30, busyPeriods);
       return { success: true, available, availability: busyPeriods, requested_time: startAt };
     }
-  } catch (_) {}
+  } catch (e) {
+    console.error("[CALENDAR] checkAvailability error:", e?.message || e);
+  }
   return { success: true, available: null, checked: false, requested_time: startAt, note: "Calendar unavailable — could not verify availability" };
 }
 
@@ -245,7 +247,9 @@ export async function createAppointment(
             });
           }
         }
-      } catch (_) {}
+      } catch (e) {
+        console.error("[CALENDAR] Email alert for calendar disconnect error:", e?.message || e);
+      }
     }
   }
 
@@ -286,7 +290,9 @@ async function sendAppointmentNotifications(ctx: PipelineContext, appt: any, mee
       link: `/appointment/${appt.id}`,
       created_at: new Date().toISOString(),
     });
-  } catch (_) {}
+  } catch (e) {
+    console.error("[CALENDAR] Notification insert error:", e?.message || e);
+  }
   await Promise.allSettled([
     sendAppointmentWhatsApp(ctx, appt, meetLink),
     sendAppointmentEmail(ctx, appt, meetLink)
@@ -323,7 +329,9 @@ async function sendAppointmentWhatsApp(ctx: PipelineContext, appt: any, meetLink
       headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json", "X-Device-Id": deviceId },
       body: JSON.stringify({ phone, message })
     });
-  } catch (_) {}
+  } catch (e) {
+    console.error("[CALENDAR] sendAppointmentWhatsApp error:", e?.message || e);
+  }
 }
 
 async function sendAppointmentEmail(ctx: PipelineContext, appt: any, meetLink: string | null) {
@@ -358,7 +366,9 @@ async function sendAppointmentEmail(ctx: PipelineContext, appt: any, meetLink: s
         data: { customerName: appt.customer_name, workspaceName, service: appt.service, date: formattedDate, meetLink, appointmentLink }
       })
     });
-  } catch (_) {}
+  } catch (e) {
+    console.error("[CALENDAR] sendAppointmentEmail error:", e?.message || e);
+  }
 }
 
 export async function updateAppointment(

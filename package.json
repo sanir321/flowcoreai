@@ -6,6 +6,8 @@
     "dev": "cross-env NODE_OPTIONS='--max-http-header-size=16384' next dev",
     "build": "next build",
     "start": "cross-env NODE_OPTIONS=--max-http-header-size=16384 next start",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "lint": "eslint",
     "type-check": "tsc --noEmit"
   },
@@ -52,6 +54,10 @@
     "eslint-config-next": "^15.5.15",
     "shadcn": "^4.4.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "@testing-library/jest-dom": "^6",
+    "@testing-library/react": "^16",
+    "jsdom": "^25",
+    "vitest": "^3"
   }
 }

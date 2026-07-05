@@ -3,8 +3,9 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.108.1"
 import mammoth from "npm:mammoth@1.8.0"
 import { Buffer } from "node:buffer"
 
+const APP_URL = Deno.env.get('NEXT_PUBLIC_APP_URL')
 const corsHeaders = {
-  'Access-Control-Allow-Origin': Deno.env.get('NEXT_PUBLIC_APP_URL') || '',
+  'Access-Control-Allow-Origin': APP_URL || '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
@@ -21,14 +22,11 @@ Deno.serve(async (req) => {
 
   try {
     const srk = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
-    const legacySrk = Deno.env.get('SERVICE_KEY') || Deno.env.get('LEGACY_SERVICE_ROLE_KEY') || ''
-    const secretKeysStr = Deno.env.get('SUPABASE_SECRET_KEYS')
-    let secretKeys: string[] = []
-    try { const parsed = JSON.parse(secretKeysStr || '{}'); secretKeys = Object.values(parsed) } catch {}
+    const serviceKey = Deno.env.get('SERVICE_KEY') || ''
     const internalSecret = Deno.env.get('INTERNAL_CRON_SECRET')
     const authHeader = req.headers.get('Authorization') || ''
     const token = authHeader.replace('Bearer ', '')
-    const validTokens = new Set([srk, legacySrk, internalSecret || '', ...secretKeys].filter(Boolean))
+    const validTokens = new Set([srk, serviceKey, internalSecret || ''].filter(Boolean))
     if (!token || !validTokens.has(token)) {
       const verifyClient = createClient(Deno.env.get('SUPABASE_URL') ?? '', srk || legacySrk)
       const { data: { user }, error: authError } = await verifyClient.auth.getUser(token)

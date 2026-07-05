@@ -10,7 +10,9 @@ async function sendPresence(gowaBase: string, auth: string, deviceId: string, ph
       body: JSON.stringify({ phone, type }),
       signal: ac.signal
     });
-  } catch (_) {}
+  } catch (e) {
+    console.error("[DISPATCH] Presence update failed:", e?.message || e);
+  }
 }
 
 export async function dispatch(ctx: PipelineContext, response: string | null): Promise<void> {
@@ -36,6 +38,17 @@ export async function dispatch(ctx: PipelineContext, response: string | null): P
   
   let deviceId = "";
   if (source === "whatsapp" && gowaBase && gowaKey) {
+    // Circuit breaker: health-check GoWA before attempting dispatch
+    const healthy = await checkGoWAHealth(gowaBase, gowaKey);
+    if (!healthy) {
+      console.error("[DISPATCH] GoWA circuit breaker open — skipping WhatsApp send, saving failed message");
+      for (const part of (response.length > 1000 ? splitAtSentence(response, 1000) : [response])) {
+        await storeOutboundMessage(ctx, part);
+        await saveFailedMessage(ctx, phone || "unknown", part, "GoWA circuit breaker — health check failed");
+      }
+      return;
+    }
+
     const { data: gowaSession } = await ctx.supabase
       .from("gowa_sessions")
       .select("gowa_session_id")
@@ -91,7 +104,8 @@ async function sendWithRetry(ctx: PipelineContext, gowaBase: string, phone: stri
     } else if (!res.ok) {
       await saveFailedMessage(ctx, phone, text, `GoWA ${res.status}`);
     }
-  } catch (_) {
+  } catch (e) {
+    console.error("[DISPATCH] GoWA send failed:", e?.message || e);
     if (attempt < 3) {
       return sendWithRetry(ctx, gowaBase, phone, text, auth, deviceId, attempt + 1);
     }
@@ -130,6 +144,21 @@ async function storeOutboundMessage(ctx: PipelineContext, response: string) {
   });
 }
 
+async function checkGoWAHealth(baseUrl: string, apiKey: string): Promise<boolean> {
+  try {
+    const ac = new AbortController();
+    const timeout = setTimeout(() => ac.abort(), 5000);
+    const res = await fetch(`${baseUrl}/devices`, {
+      headers: { Authorization: `Basic ${btoa(apiKey)}` },
+      signal: ac.signal
+    });
+    clearTimeout(timeout);
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 async function saveFailedMessage(ctx: PipelineContext, phone: string, text: string, reason: string) {
   try {
     await ctx.supabase.from("failed_messages").insert({
@@ -140,5 +169,7 @@ async function saveFailedMessage(ctx: PipelineContext, phone: string, text: stri
       retry_count: 3,
       resolved: false
     });
-  } catch (_) {}
+  } catch (e) {
+    console.error("[DISPATCH] Failed to save failed_message:", e?.message || e);
+  }
 }

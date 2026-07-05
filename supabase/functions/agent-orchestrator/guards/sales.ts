@@ -1,4 +1,4 @@
-import { PipelineContext } from "../lib/types.ts";
+import { PipelineContext, WorkspaceRow } from "../lib/types.ts";
 
 const SALES_GUARD_KEYWORDS = [
   "order", "buy", "purchase", "product", "menu",
@@ -6,7 +6,7 @@ const SALES_GUARD_KEYWORDS = [
   "quote", "deal", "discount"
 ];
 
-export function checkSales(ctx: PipelineContext, workspace: any): string | null {
+export function checkSales(ctx: PipelineContext, workspace: WorkspaceRow): string | null {
   if (workspace.guardrail_config?.allow_sales !== false) return null;
 
   const msgLower = ctx.payload.message.toLowerCase();

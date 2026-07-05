@@ -1,8 +1,9 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.108.1"
 
+const APP_URL = Deno.env.get("NEXT_PUBLIC_APP_URL")
 const corsHeaders = {
-  "Access-Control-Allow-Origin": Deno.env.get("NEXT_PUBLIC_APP_URL") || "",
+  "Access-Control-Allow-Origin": APP_URL || "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 }
 

@@ -12244,19 +12244,17 @@ Deno.serve(async (req) => {
   const isServiceRole = timingSafeEqual(token, serviceRoleKey) || serviceKey && timingSafeEqual(token, serviceKey);
   const isInternal = internalSecret && timingSafeEqual(token, internalSecret);
   if (!isServiceRole && !isInternal) {
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
-    const isAnon = anonKey && timingSafeEqual(token, anonKey);
-    if (!isAnon) {
-      const fallbackClient = ye2(Deno.env.get("SUPABASE_URL") ?? "", serviceRoleKey);
-      const { data: { user }, error: authError } = await fallbackClient.auth.getUser(token);
-      if (authError || !user) {
-        return new Response(JSON.stringify({
-          error: "Unauthorized"
-        }), {
-          status: 401,
-          headers: responseHeaders
-        });
-      }
+    // Tier 3 removed: anon key no longer accepted — only service_role, SERVICE_KEY,
+    // INTERNAL_CRON_SECRET, or a valid user JWT can invoke this function.
+    const fallbackClient = ye2(Deno.env.get("SUPABASE_URL") ?? "", serviceRoleKey);
+    const { data: { user }, error: authError } = await fallbackClient.auth.getUser(token);
+    if (authError || !user) {
+      return new Response(JSON.stringify({
+        error: "Unauthorized"
+      }), {
+        status: 401,
+        headers: responseHeaders
+      });
     }
   }
   let payload = null;
@@ -12350,18 +12348,33 @@ async function processMessage(payload) {
     const t5 = await runT5(ctx, finalResponse, ctx.agentType || "customer_support");
     if (t5.reason !== "t5_passed") {
       ctx._retryHint = t5.retry_hint || "Be specific and helpful. Answer directly from your knowledge.";
-      if (kbWasEmpty && (ctx.agentType === "customer_support" || ctx.agentType === "sales")) {
-        ctx._kbChunks = [];
-        await runT3(ctx, {
-          previous_empty: true,
-          previous_query: ctx.payload.message
-        });
+      const retryPromise = (async () => {
+        if (kbWasEmpty && (ctx.agentType === "customer_support" || ctx.agentType === "sales")) {
+          ctx._kbChunks = [];
+          await runT3(ctx, {
+            previous_empty: true,
+            previous_query: ctx.payload.message
+          });
+        }
+        const t4Retry = await runT32(ctx);
+        const t5Retry = await runT5(ctx, sanitizeLlmOutput(t4Retry.response || ""), ctx.agentType || "customer_support");
+        return { response: sanitizeLlmOutput(t4Retry.response || ""), reason: t5Retry.reason, responseRaw: t5Retry.response };
+      })();
+      const timeoutMs = ctx._timeoutPerMessage || 15000;
+      const result = await Promise.race([
+        retryPromise,
+        new Promise<{ response: string; reason: string; responseRaw: string }>((_, reject) =>
+          setTimeout(() => reject(new Error(`T5 retry timeout after ${timeoutMs}ms`)), timeoutMs)
+        )
+      ]).catch(e => {
+        console.error("[PIPELINE] T5 retry timed out — using initial response:", e?.message || e);
+        return null;
+      });
+      if (result) {
+        finalResponse = result.response;
+        t5.reason = result.reason;
+        t5.response = result.responseRaw;
       }
-      const t4Retry = await runT32(ctx);
-      const t5Retry = await runT5(ctx, sanitizeLlmOutput(t4Retry.response || ""), ctx.agentType || "customer_support");
-      finalResponse = sanitizeLlmOutput(t4Retry.response || "");
-      t5.reason = t5Retry.reason;
-      t5.response = t5Retry.response;
     }
     finalResponse = cleanFinalResponse(t5.response);
     if (!finalResponse) finalResponse = DEFAULT_FALLBACK_MESSAGE;

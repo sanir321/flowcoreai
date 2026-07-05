@@ -1,8 +1,8 @@
-import { PipelineContext } from "../lib/types.ts";
+import { PipelineContext, WorkspaceRow } from "../lib/types.ts";
 
 const GREETING_PATTERNS = /^(hi|hello|hey|howdy|hola|good\s*(morning|afternoon|evening|day)|greetings|sup|yo|namaste|hiya|heya|what'?s\s*up|hii+|hell+o+)[\s!.,;:?\-~\p{Extended_Pictographic}]*(?:\s+(how|what|there|everyone)\s*.*)?$/iu;
 
-export function checkGreeting(ctx: PipelineContext, workspace: any): string | null {
+export function checkGreeting(ctx: PipelineContext, workspace: WorkspaceRow): string | null {
   if ((ctx.session.message_count ?? 0) > 0) return null;
 
   const msg = (ctx.payload.message ?? "").trim();

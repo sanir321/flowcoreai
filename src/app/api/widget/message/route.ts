@@ -4,6 +4,10 @@ import { z } from "zod";
 import { rateLimit } from "@/lib/rate-limit";
 
 
+// Uses service_role (not anon) because this route must create sessions, contacts,
+// and messages for the widget flow — anon+RLS cannot safely isolate per-workspace
+// writes without exposing cross-tenant data. Security is enforced at the application
+// layer via domain allowlist validation + IP/session rate limiting.
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!

@@ -64,7 +64,9 @@ export async function captureLead(
         body: JSON.stringify({ values: [row] })
       });
     }
-  } catch (_) {}
+  } catch (e) {
+    console.error("[CRM] Google Sheets append error:", e?.message || e);
+  }
 
   // Send lead dashboard notification
   try {
@@ -77,7 +79,9 @@ export async function captureLead(
       link: "/contacts",
       created_at: new Date().toISOString(),
     });
-  } catch (_) {}
+  } catch (e) {
+    console.error("[CRM] Notification insert error:", e?.message || e);
+  }
 
   // Send lead email notification if enabled
   try {

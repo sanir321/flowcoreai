@@ -1,4 +1,4 @@
-import { PipelineContext, TierResult } from "../lib/types.ts";
+import { PipelineContext, TierResult, WorkspaceRow } from "../lib/types.ts";
 import { checkNonText } from "./non-text.ts";
 import { checkCredits } from "./credits.ts";
 import { checkWhatsAppWindow } from "./window.ts";
@@ -9,9 +9,9 @@ import { checkTokenBudget } from "./token-budget.ts";
 import { checkGreeting } from "./greeting.ts";
 import { checkSales } from "./sales.ts";
 
-type GuardFn = (ctx: PipelineContext, workspace: any) => string | null | Promise<string | null>;
+type GuardFn = (ctx: PipelineContext, workspace: WorkspaceRow) => string | null | Promise<string | null>;
 
-async function runGuard(ctx: PipelineContext, workspace: any, fn: GuardFn, reason: string): Promise<TierResult | null> {
+async function runGuard(ctx: PipelineContext, workspace: WorkspaceRow, fn: GuardFn, reason: string): Promise<TierResult | null> {
   const response = await fn(ctx, workspace);
   if (response !== null) {
     return { handled: true, response, reason: `guardrail_${reason}` };
@@ -19,7 +19,7 @@ async function runGuard(ctx: PipelineContext, workspace: any, fn: GuardFn, reaso
   return null;
 }
 
-export async function runAllGuards(ctx: PipelineContext, workspace: any): Promise<TierResult | null> {
+export async function runAllGuards(ctx: PipelineContext, workspace: WorkspaceRow): Promise<TierResult | null> {
   const guards: [GuardFn, string][] = [
     [checkNonText, "non_text"],
     [checkEscalation, "escalation"],
@@ -33,8 +33,12 @@ export async function runAllGuards(ctx: PipelineContext, workspace: any): Promis
   ];
 
   for (const [fn, reason] of guards) {
-    const result = await runGuard(ctx, workspace, fn, reason);
-    if (result) return result;
+    try {
+      const result = await runGuard(ctx, workspace, fn, reason);
+      if (result) return result;
+    } catch (e) {
+      console.error(`[GUARDS] Guard "${reason}" threw — isolating and continuing:`, e?.message || e);
+    }
   }
 
   return null;

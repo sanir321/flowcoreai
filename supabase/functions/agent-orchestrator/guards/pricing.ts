@@ -1,4 +1,4 @@
-import { PipelineContext } from "../lib/types.ts";
+import { PipelineContext, WorkspaceRow } from "../lib/types.ts";
 
 const PRICING_KEYWORDS = [
   "price", "cost", "how much", "rate", "pricing", "charge", "fee",
@@ -6,7 +6,7 @@ const PRICING_KEYWORDS = [
   "cost of", "price list", "rate card", "多少钱"
 ];
 
-export function checkPricing(ctx: PipelineContext, workspace: any): string | null {
+export function checkPricing(ctx: PipelineContext, workspace: WorkspaceRow): string | null {
   if (workspace.guardrail_config?.allow_pricing !== false) return null;
 
   const msgLower = ctx.payload.message.toLowerCase();

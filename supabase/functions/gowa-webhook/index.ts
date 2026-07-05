@@ -3,8 +3,9 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.108.1"
 
 declare const EdgeRuntime: { waitUntil: (promise: Promise<any>) => void }
 
+const GOWA_URL = Deno.env.get('GOWA_BASE_URL')
 const corsHeaders = {
-  'Access-Control-Allow-Origin': Deno.env.get('GOWA_BASE_URL') || '',
+  'Access-Control-Allow-Origin': GOWA_URL || '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
   'X-Content-Type-Options': 'nosniff',

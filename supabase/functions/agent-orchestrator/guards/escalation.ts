@@ -1,4 +1,4 @@
-import { PipelineContext } from "../lib/types.ts";
+import { PipelineContext, WorkspaceRow } from "../lib/types.ts";
 
 const APP_URL = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://7flowcore.vercel.app";
 const CRON_SECRET = Deno.env.get("INTERNAL_CRON_SECRET") || "";
@@ -38,7 +38,7 @@ function expandEscalationKeywords(keywords: string[]): string[] {
   }
   return out;
 }
-export async function checkEscalation(ctx: PipelineContext, workspace: any): Promise<string | null> {
+export async function checkEscalation(ctx: PipelineContext, workspace: WorkspaceRow): Promise<string | null> {
   // Don't re-escalate if already escalated
   if (ctx.session?.status === "escalated") return null;
 

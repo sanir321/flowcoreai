@@ -1,6 +1,6 @@
-import { PipelineContext } from "../lib/types.ts";
+import { PipelineContext, WorkspaceRow } from "../lib/types.ts";
 
-export function checkWhatsAppWindow(ctx: PipelineContext, workspace: any): string | null {
+export function checkWhatsAppWindow(ctx: PipelineContext, workspace: WorkspaceRow): string | null {
   if (ctx.payload.source !== "whatsapp") return null;
 
   const lastUserMsgAt = ctx.session.last_customer_message_at;
