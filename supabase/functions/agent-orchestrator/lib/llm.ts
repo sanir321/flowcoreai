@@ -8,31 +8,7 @@ export const DEFAULT_FALLBACK_MESSAGE = "I'm not sure about that. Please contact
 export const FALLBACK_MODEL = "nemotron-3-ultra-free";
 const DEFAULT_PRIMARY = "deepseek-v4-flash-free";
 
-const REASONING_MODELS = ["deepseek"];
-
-function stripReasoning(text: string): string {
-  if (!text || text.length < 20) return text;
-  const lines = text.split("\n").map(l => l.trim());
-  let start = 0;
-  for (let i = 0; i < Math.min(15, lines.length); i++) {
-    const line = lines[i];
-    if (!line) continue;
-    if (/^(thinking|thought|let me (think|analyze|check|consider|start|break|look|search|figure|see))/i.test(line))
-      { start = i + 1; continue; }
-    if (/^wait,? (let me|i should|i need|i can|let's)/i.test(line))
-      { start = i + 1; continue; }
-    if (/^\d+\.\s*\*\*[A-Z]/.test(line))
-      { start = i + 1; continue; }
-    if (/^(today is|let me check|okay,? let|first,? let|so let)/i.test(line))
-      { start = i + 1; continue; }
-    if (/^(\*\*)?(monday|tuesday|wednesday|thursday|friday|saturday|sunday|january|february|march|april|may|june|july|august|september|october|november|december)/i.test(line) && line.length < 60)
-      { start = i + 1; continue; }
-    if (/^[\*\-]\s*\*?[A-Z][a-z]+[^a-z]*:/i.test(line) && line.length < 80)
-      { start = i + 1; continue; }
-    break;
-  }
-  return lines.slice(start).join("\n").trim() || text;
-}
+const noToolChoiceModels = new Set<string>();
 
 export async function callLLM(payload: AgentPayload & { agentType?: string }) {
   const modelChain = payload.model
@@ -54,8 +30,7 @@ async function callZen(payload: AgentPayload & { model: string }) {
   if (!OPENCODE_ZEN_API_KEY) throw new Error("OPENCODE_ZEN_API_KEY is not set");
 
   let systemMsg = payload.system || "";
-  const isReasoningModel = REASONING_MODELS.some(m => payload.model.includes(m));
-  if (isReasoningModel && systemMsg) {
+  if (systemMsg) {
     systemMsg += "\n\nIMPORTANT: Output ONLY the final response. Do NOT include any reasoning, analysis, planning, or chain-of-thought. Respond directly and conversationally.";
   }
 
@@ -70,7 +45,7 @@ async function callZen(payload: AgentPayload & { model: string }) {
   };
   if (payload.response_format) body.response_format = payload.response_format;
   if (payload.tools) body.tools = payload.tools;
-  if (payload.tool_choice) body.tool_choice = payload.tool_choice;
+  if (payload.tool_choice && !noToolChoiceModels.has(payload.model)) body.tool_choice = payload.tool_choice;
 
   const doFetch = async (b: Record<string, unknown>): Promise<any> => {
     const controller = new AbortController();
@@ -102,24 +77,18 @@ async function callZen(payload: AgentPayload & { model: string }) {
   try {
     const json = await doFetch(body);
     const msg = json?.choices?.[0]?.message;
-    if (msg) {
-      const raw = msg.content || msg.reasoning_content || "";
-      if (isReasoningModel) {
-        msg.content = stripReasoning(raw);
-      } else if (!msg.content || msg.content === "") {
-        msg.content = msg.reasoning_content;
-      }
+    if (msg && (!msg.content || msg.content === "")) {
+      msg.content = msg.reasoning_content || "";
     }
     return json;
   } catch (e: any) {
     if (e._raw?.error?.message?.includes("tool_choice") && body.tool_choice) {
+      noToolChoiceModels.add(payload.model);
       delete body.tool_choice;
       const json = await doFetch(body);
       const msg = json?.choices?.[0]?.message;
-      if (msg) {
-        const raw = msg.content || msg.reasoning_content || "";
-        if (isReasoningModel) msg.content = stripReasoning(raw);
-        else if (!msg.content || msg.content === "") msg.content = msg.reasoning_content;
+      if (msg && (!msg.content || msg.content === "")) {
+        msg.content = msg.reasoning_content || "";
       }
       return json;
     }

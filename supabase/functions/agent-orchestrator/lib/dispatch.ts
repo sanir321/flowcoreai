@@ -2,13 +2,11 @@ import { PipelineContext } from "./types.ts";
 
 async function sendPresence(gowaBase: string, auth: string, deviceId: string, phone: string, type: string): Promise<void> {
   try {
-    const ac = new AbortController();
-    setTimeout(() => ac.abort(), 5000);
     await fetch(`${gowaBase}/send/presence`, {
       method: "POST",
       headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json", "X-Device-Id": deviceId },
       body: JSON.stringify({ phone, type }),
-      signal: ac.signal
+      signal: AbortSignal.timeout(5000)
     });
   } catch (e) {
     console.error("[DISPATCH] Presence update failed:", e?.message || e);
@@ -89,14 +87,12 @@ async function sendWithRetry(ctx: PipelineContext, gowaBase: string, phone: stri
   const backoffs = [0, 1000, 2000, 4000];
   if (attempt > 1) await new Promise(res => setTimeout(res, backoffs[attempt - 1]));
 
-  const ac = new AbortController();
-  const timeout = setTimeout(() => ac.abort(), 10000);
   try {
     const res = await fetch(`${gowaBase}/send/message`, {
       method: "POST",
       headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json", "X-Device-Id": deviceId },
       body: JSON.stringify({ phone, message: text }),
-      signal: ac.signal
+      signal: AbortSignal.timeout(10000)
     });
 
     if (!res.ok && attempt < 3) {
@@ -110,8 +106,6 @@ async function sendWithRetry(ctx: PipelineContext, gowaBase: string, phone: stri
       return sendWithRetry(ctx, gowaBase, phone, text, auth, deviceId, attempt + 1);
     }
     await saveFailedMessage(ctx, phone, text, "GoWA timeout");
-  } finally {
-    clearTimeout(timeout);
   }
 }
 
@@ -146,13 +140,10 @@ async function storeOutboundMessage(ctx: PipelineContext, response: string) {
 
 async function checkGoWAHealth(baseUrl: string, apiKey: string): Promise<boolean> {
   try {
-    const ac = new AbortController();
-    const timeout = setTimeout(() => ac.abort(), 5000);
     const res = await fetch(`${baseUrl}/devices`, {
       headers: { Authorization: `Basic ${btoa(apiKey)}` },
-      signal: ac.signal
+      signal: AbortSignal.timeout(5000)
     });
-    clearTimeout(timeout);
     return res.ok;
   } catch {
     return false;

@@ -30,6 +30,18 @@ Example cancel/rebook: User has existing booking and says "cancel it and book to
 Example providing booking details: "tomorrow 3pm in person name samir" after being asked for info -> agent: "appointment_booking"
 `;
 
+function mkAnalysis(agent: string, intent: string, overrides?: Partial<QueryAnalysis>): QueryAnalysis {
+  return {
+    agent: agent as any,
+    intent,
+    entities: {},
+    urgency: "low",
+    wants_human: false,
+    emotional_tone: "calm",
+    ...overrides,
+  };
+}
+
 function buildQueryAnalysisPrompt(vars: TemplateVars): string {
   return renderTemplate(QUERY_ANALYSIS_TEMPLATE, vars);
 }
@@ -97,28 +109,14 @@ export async function runT2(ctx: PipelineContext): Promise<TierResult> {
   if (ctx.payload.agent_type && ctx.payload.is_test) {
     ctx.agentType = ctx.payload.agent_type;
     ctx.routingReason = "explicit_test_agent";
-    ctx._queryAnalysis = {
-      agent: ctx.payload.agent_type as any,
-      intent: "test_message",
-      entities: {},
-      urgency: "low",
-      wants_human: false,
-      emotional_tone: "calm",
-    };
+    ctx._queryAnalysis = mkAnalysis(ctx.payload.agent_type, "test_message");
     return { handled: false };
   }
 
   if (ctx.payload.source === "widget") {
     ctx.agentType = "customer_support";
     ctx.routingReason = "widget_channel";
-    ctx._queryAnalysis = {
-      agent: "customer_support",
-      intent: "widget_message",
-      entities: {},
-      urgency: "low",
-      wants_human: false,
-      emotional_tone: "calm",
-    };
+    ctx._queryAnalysis = mkAnalysis("customer_support", "widget_message");
     return { handled: false };
   }
 
@@ -145,28 +143,22 @@ export async function runT2(ctx: PipelineContext): Promise<TierResult> {
   // Runs BEFORE follow-up check so clear booking/sales intents always take priority
   const workingAgent = ctx.session?.working_context?.agent_type;
   const msgLower = msg.toLowerCase();
-  const bookingKeywords = /\b(book|appointment|schedule|reschedule|cancel|rebook)\b/i.test(msgLower);
-  const priceKeywords = /\b(price|cost|quote|how much|buy|order|pricing|rates|prices)\b/i.test(msgLower);
-  console.log(`[T2] msg="${msgLower}" bookingMatch=${bookingKeywords} priceMatch=${priceKeywords} activeBooking=${activeAgents.has("appointment_booking")} workingAgent=${workingAgent}`)
+  const hasBookingIntent = /\b(book|appointment|schedule|reschedule|cancel|rebook)\b/i.test(msgLower);
+  const hasSalesIntent = /\b(price|cost|quote|how much|buy|order|pricing|rates|prices|menu)\b/i.test(msgLower);
+  console.log(`[T2] msg="${msgLower}" bookingMatch=${hasBookingIntent} priceMatch=${hasSalesIntent} activeBooking=${activeAgents.has("appointment_booking")} workingAgent=${workingAgent}`)
 
-  const hasBookingIntent = bookingKeywords;
   if (hasBookingIntent && activeAgents.has("appointment_booking")) {
     console.log("[T2] KEYWORD PRE-CHECK: routing to appointment_booking")
     ctx.agentType = "appointment_booking";
     ctx.routingReason = "keyword_pre_check_booking";
-    ctx._queryAnalysis = {
-      agent: "appointment_booking", intent: "booking_request", entities: {}, urgency: "low", wants_human: false, emotional_tone: "calm",
-    };
+    ctx._queryAnalysis = mkAnalysis("appointment_booking", "booking_request");
     return { handled: false };
   }
 
-  const hasSalesIntent = /\b(price|cost|quote|how much|buy|order|pricing|rates|prices|menu)\b/i.test(msgLower);
   if (hasSalesIntent && activeAgents.has("sales")) {
     ctx.agentType = "sales";
     ctx.routingReason = "keyword_pre_check_sales";
-    ctx._queryAnalysis = {
-      agent: "sales", intent: "pricing_or_order", entities: {}, urgency: "low", wants_human: false, emotional_tone: "calm",
-    };
+    ctx._queryAnalysis = mkAnalysis("sales", "pricing_or_order");
     return { handled: false };
   }
 
@@ -174,15 +166,13 @@ export async function runT2(ctx: PipelineContext): Promise<TierResult> {
   console.log(`[T2] workingAgent=${workingAgent} convCtxLen=${conversationContext?.length} hasActive=${workingAgent ? activeAgents.has(workingAgent) : "N/A"}`)
   if ((ctx.session.message_count ?? 0) > 0 && workingAgent && activeAgents.has(workingAgent) && conversationContext) {
     const isFollowUp = /^(ok|yes|yeah|sure|correct|right|that'?s? right|go ahead|please|okay|alright)/i.test(msg)
-      || /(cancel|reschedule|reshedule|change|modify|book|schedule|appointment|consult|visit|service|design|construct|name|date|time|email|phone|contact|tomorrow|today|next|hours|this\s+(week|month))/i.test(msg);
+      || /(consult|visit|service|design|construct|name|date|time|email|phone|contact|tomorrow|today|next|hours|this\s+(week|month))/i.test(msg);
     console.log(`[T2] followUpCheck=${isFollowUp}`)
     if (isFollowUp) {
       console.log(`[T2] WORKING CONTEXT: keeping agent ${workingAgent}`)
       ctx.agentType = workingAgent;
       ctx.routingReason = "working_context_follow_up";
-      ctx._queryAnalysis = {
-        agent: workingAgent as any, intent: "follow_up", entities: {}, urgency: "low", wants_human: false, emotional_tone: "calm",
-      };
+      ctx._queryAnalysis = mkAnalysis(workingAgent, "follow_up");
       return { handled: false };
     }
   }

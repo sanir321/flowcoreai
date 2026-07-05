@@ -130,10 +130,14 @@ export async function getDevices(): Promise<any[]> {
         'Authorization': `Basic ${GOWA_AUTH}`
       }
     });
-    if (!response.ok) return [];
+    if (!response.ok) {
+      console.error("[GOWA] getDevices failed:", response.status, response.statusText);
+      return [];
+    }
     const data = await response.json();
     return data.results || [];
-  } catch {
+  } catch (e) {
+    console.error("[GOWA] getDevices error:", e?.message || e);
     return [];
   }
 }
@@ -192,15 +196,17 @@ export async function initiateQRLogin(workspaceId: string, storedDeviceId?: stri
  * Logout Session
  */
 export async function logoutSession(deviceId: string): Promise<void> {
-  await fetch(`${GOWA_BASE_URL}/devices/${deviceId}/logout`, {
+  const res = await fetch(`${GOWA_BASE_URL}/devices/${deviceId}/logout`, {
     method: 'POST',
     headers: gowaHeaders
   });
+  if (!res.ok) console.error("[GOWA] logoutSession failed:", res.status, res.statusText);
 }
 
 export async function deleteDevice(deviceId: string): Promise<void> {
-  await fetch(`${GOWA_BASE_URL}/devices/${deviceId}`, {
+  const res = await fetch(`${GOWA_BASE_URL}/devices/${deviceId}`, {
     method: 'DELETE',
     headers: gowaHeaders
   });
+  if (!res.ok) console.error("[GOWA] deleteDevice failed:", res.status, res.statusText);
 }
