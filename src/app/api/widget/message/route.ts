@@ -3,11 +3,13 @@ import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { rateLimit } from "@/lib/rate-limit";
 
+// C2: SECURITY DEFINER PG function handles all DB operations via anon key.
+// service_role retained only for orchestrator edge-function invocation.
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
-// Uses service_role (not anon) because this route must create sessions, contacts,
-// and messages for the widget flow — anon+RLS cannot safely isolate per-workspace
-// writes without exposing cross-tenant data. Security is enforced at the application
-// layer via domain allowlist validation + IP/session rate limiting.
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -37,6 +39,12 @@ function getCorsHeaders(origin: string) {
 
 export async function POST(req: NextRequest) {
   try {
+    // 0. CSRF protection: require custom header that browsers cannot set cross-origin
+    const csrfHeader = req.headers.get("x-widget-token");
+    if (!csrfHeader) {
+      return new Response("Missing CSRF header", { status: 403 });
+    }
+
     // 0. Rate Limiting - IP-based
     const ip = req.headers.get("x-forwarded-for") || "127.0.0.1";
     const { success: isAllowed } = await rateLimit(ip);
@@ -53,59 +61,36 @@ export async function POST(req: NextRequest) {
 
     const { workspace_id, session_token, message, customer_name, customer_email } = result.data;
 
+    // 0.1 Validate CSRF token matches session token
+    if (csrfHeader !== session_token) {
+      return new Response("Invalid CSRF token", { status: 403 });
+    }
+
     // 0.5 Rate Limiting - per session token
     const { success: sessionAllowed } = await rateLimit(`widget:${session_token}`, SESSION_RATE_LIMIT, SESSION_RATE_WINDOW);
     if (!sessionAllowed) {
       return new Response("Too many messages from this session. Please wait.", { status: 429 });
     }
 
-    // 0.5 Validate Workspace exists and widget is enabled for it
-    const { data: workspace } = await supabaseAdmin
-      .from("workspaces")
-      .select("id, is_ai_enabled")
-      .eq("id", workspace_id)
-      .is("deleted_at", null)
-      .maybeSingle();
+    // 0.5 Domain allowlist check via SECURITY DEFINER function
+    const { data: widgetInfo, error: widgetError } = await supabase.rpc("get_widget_config", {
+      p_workspace_id: workspace_id,
+    });
 
-    if (!workspace) {
-      return new Response("Workspace not found", { status: 404 });
+    if (widgetError || !widgetInfo || widgetInfo.error) {
+      return new Response(widgetInfo?.error || "Widget not configured", { status: 403 });
     }
 
-    if (workspace.is_ai_enabled === false) {
-      return new Response("AI responses are currently disabled", { status: 403 });
-    }
-
-    // Verify widget is configured and active for this workspace
-    const { data: widgetConfig } = await supabaseAdmin
-      .from("widget_config")
-      .select("workspace_id, is_active, allowed_domains")
-      .eq("workspace_id", workspace_id)
-      .is("deleted_at", null)
-      .maybeSingle();
-
-    if (!widgetConfig) {
-      return new Response("Widget not configured for this workspace", { status: 403 });
-    }
-
-    if (widgetConfig.is_active === false) {
-      return new Response("Widget is currently disabled", { status: 403 });
-    }
-
-    // Domain allowlist check (Origin header vs configured domains)
     const origin = req.headers.get("origin") || req.headers.get("referer") || "";
+    const allowedDomains = widgetInfo.allowed_domains as string[];
     let allowedOrigin = "*";
-    
-    // Require allowed_domains to be configured
-    if (!widgetConfig.allowed_domains || !Array.isArray(widgetConfig.allowed_domains) || widgetConfig.allowed_domains.length === 0) {
-      return new Response("Widget not configured — no allowed domains set", { status: 403 });
-    }
-    
+
     if (!origin) {
       return new Response("Missing origin header", { status: 403 });
     }
     try {
       const originDomain = new URL(origin).hostname;
-      const allowed = (widgetConfig.allowed_domains as string[]).some(d =>
+      const allowed = allowedDomains.some(d =>
         originDomain === d || originDomain.endsWith("." + d)
       );
       if (!allowed) {
@@ -116,94 +101,25 @@ export async function POST(req: NextRequest) {
       return new Response("Invalid origin", { status: 403 });
     }
 
-    // 1. Resolve/Upsert Session
-    let { data: session } = await supabaseAdmin
-      .from("conversation_sessions")
-      .select("*")
-      .eq("workspace_id", workspace_id)
-      .eq("customer_jid", session_token)
-      .eq("channel", "widget")
-      .eq("status", "active")
-      .is("deleted_at", null)
-      .maybeSingle();
-
-    if (!session) {
-      // Upsert contact for widget user
-      const contactName = customer_name || "Widget User";
-      const { data: contact } = await supabaseAdmin
-        .from("contacts")
-        .upsert({
-          workspace_id,
-          session_token,
-          channel: "widget",
-          name: contactName,
-          ...(customer_email ? { email: customer_email } : {}),
-        }, { onConflict: "workspace_id,session_token,channel" })
-        .select()
-        .single();
-
-      // Try to create session — race condition safe
-      try {
-        const { data: newSession } = await supabaseAdmin
-          .from("conversation_sessions")
-          .insert({
-            workspace_id,
-            contact_id: contact?.id,
-            customer_jid: session_token,
-            customer_name: contactName,
-            channel: "widget",
-            agent_type: "customer_support",
-            status: "active",
-          })
-          .select()
-          .single();
-        
-        session = newSession;
-      } catch {
-        // Unique constraint violation — another request created the session
-        const { data: existingSession } = await supabaseAdmin
-          .from("conversation_sessions")
-          .select("*")
-          .eq("workspace_id", workspace_id)
-          .eq("customer_jid", session_token)
-          .eq("channel", "widget")
-          .eq("status", "active")
-          .is("deleted_at", null)
-          .maybeSingle();
-        session = existingSession;
-      }
-    }
-
-    if (!session) throw new Error("Could not initialize session");
-
-    // Update contact/session with real name if provided and currently placeholder
-    if (customer_name && session.customer_name === "Widget User") {
-      await supabaseAdmin.from("conversation_sessions")
-        .update({ customer_name, updated_at: new Date().toISOString() })
-        .eq("id", session.id);
-      if (session.contact_id) {
-        await supabaseAdmin.from("contacts")
-          .update({ name: customer_name, ...(customer_email ? { email: customer_email } : {}), updated_at: new Date().toISOString() })
-          .eq("id", session.contact_id);
-      }
-      session.customer_name = customer_name;
-    }
-
-    // 2. Store Inbound Message
-    await supabaseAdmin.from("messages").insert({
-      workspace_id,
-      session_id: session.id,
-      content: message,
-      direction: "inbound",
-      role: "customer",
+    // 1. All DB operations via SECURITY DEFINER function
+    const { data: sessionResult, error: sessionError } = await supabase.rpc("handle_widget_message", {
+      p_workspace_id: workspace_id,
+      p_session_token: session_token,
+      p_message: message,
+      p_customer_name: customer_name || null,
+      p_customer_email: customer_email || null,
     });
 
-    // 3. Invoke AI Orchestrator
+    if (sessionError || !sessionResult || sessionResult.error) {
+      throw new Error(sessionResult?.error || sessionError?.message || "Could not initialize session");
+    }
+
+    // 2. Invoke AI Orchestrator (still service_role — outbound edge function call)
     const { data: aiResponse, error: aiError } = await supabaseAdmin.functions.invoke("agent-orchestrator", {
       body: {
         workspace_id,
         customer_jid: session_token,
-        customer_name: customer_name || session?.customer_name || "Widget User",
+        customer_name: customer_name || sessionResult.customer_name || "Widget User",
         customer_email: customer_email || null,
         message,
         channel: "widget",
@@ -216,14 +132,8 @@ export async function POST(req: NextRequest) {
       throw new Error(aiError?.message || "AI Agent failed to respond");
     }
 
-    // 4. Extract AI response
+    // 3. Extract AI response
     const reply = aiResponse.response || "I apologize, but I am unable to respond at the moment.";
-
-    // Update session metadata (message_count is managed by orchestrator)
-    await supabaseAdmin.from("conversation_sessions").update({
-      last_message_at: new Date().toISOString(),
-      last_message_preview: reply.substring(0, 100),
-    }).eq("id", session.id);
 
     // Return the combined reply for the widget UI
     return NextResponse.json({ reply }, {
@@ -257,32 +167,12 @@ export async function GET(req: NextRequest) {
 
     const { workspace_id, session_token, since } = result.data;
 
-    const { data: session } = await supabaseAdmin
-      .from("conversation_sessions")
-      .select("id")
-      .eq("workspace_id", workspace_id)
-      .eq("customer_jid", session_token)
-      .eq("channel", "widget")
-      .is("deleted_at", null)
-      .maybeSingle();
+    const { data: messages, error } = await supabase.rpc("get_widget_messages", {
+      p_workspace_id: workspace_id,
+      p_session_token: session_token,
+      p_since: since ? new Date(since).toISOString() : null,
+    });
 
-    if (!session) {
-      return NextResponse.json({ messages: [] }, { headers: getCorsHeaders("*") });
-    }
-
-    let query = supabaseAdmin
-      .from("messages")
-      .select("content, direction, role, created_at")
-      .eq("workspace_id", workspace_id)
-      .eq("session_id", session.id)
-      .neq("role", "system")
-      .order("created_at", { ascending: true });
-
-    if (since) {
-      query = query.gt("created_at", since);
-    }
-
-    const { data: messages, error } = await query;
     if (error) throw error;
 
     return NextResponse.json({ messages: messages || [] }, {
@@ -296,7 +186,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function OPTIONS() {
+  const origin = "*";
   return new Response(null, {
-    headers: getCorsHeaders("*"),
+    headers: getCorsHeaders(origin),
   });
 }

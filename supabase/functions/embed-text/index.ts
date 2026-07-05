@@ -3,8 +3,9 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.108.1"
 
 const APP_URL = Deno.env.get('NEXT_PUBLIC_APP_URL')
 const corsHeaders = {
-  'Access-Control-Allow-Origin': APP_URL || '*',
+  'Access-Control-Allow-Origin': APP_URL ?? '',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Vary': 'Origin',
 }
 
 const model = new Supabase.ai.Session('gte-small')
@@ -35,7 +36,7 @@ Deno.serve(async (req) => {
       serviceRoleKey ?? ''
     )
 
-    const { workspace_id, source_id, content, embed_batch, tag } = await req.json()
+    const { workspace_id, source_id, content, embed_batch, tag, _retry_count } = await req.json()
 
     // ── Mode 2: embed a batch of pending (null-embedding) chunks ──
     // Each batch runs in its own worker invocation so the gte-small CPU budget
@@ -44,7 +45,13 @@ Deno.serve(async (req) => {
       if (!source_id) {
         return new Response(JSON.stringify({ error: 'source_id required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
       }
-      const result = await embedPendingBatch(supabase, source_id)
+      const retryCount = _retry_count ?? 0
+      if (retryCount > 50) {
+        await supabase.from('kb_sources').update({ status: 'failed', error_message: 'Embedding exceeded max retries (50)' }).eq('id', source_id)
+        await supabase.from('ingestion_jobs').update({ status: 'failed' }).eq('source_id', source_id)
+        return new Response(JSON.stringify({ error: 'Max retries exceeded' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      }
+      const result = await embedPendingBatch(supabase, source_id, retryCount)
       return new Response(JSON.stringify({ success: true, ...result }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
@@ -202,7 +209,7 @@ function isMeaningfulChunk(chunk: string): boolean {
 // Embed up to BATCH null-embedding chunks for a source. Each call runs in its own
 // worker invocation so the gte-small CPU budget resets between batches.
 const BATCH = 3
-async function embedPendingBatch(supabase: any, source_id: string) {
+async function embedPendingBatch(supabase: any, source_id: string, retryCount = 0) {
   const { data: pending, error: selErr } = await supabase
     .from('kb_chunks')
     .select('id, content')
@@ -239,7 +246,7 @@ async function embedPendingBatch(supabase: any, source_id: string) {
     await supabase.from('kb_sources').update({
       error_message: `Embedding ${done}/${total || 0}...`
     }).eq('id', source_id)
-    triggerEmbedBatch(supabase, source_id)
+    triggerEmbedBatch(supabase, source_id, undefined, retryCount)
     return { done, total: total || 0, remaining }
   }
 
@@ -256,7 +263,7 @@ async function embedPendingBatch(supabase: any, source_id: string) {
 }
 
 // Fire-and-forget self-invocation to embed the next batch in a fresh worker.
-function triggerEmbedBatch(supabase: any, source_id: string, workspace_id?: string) {
+function triggerEmbedBatch(supabase: any, source_id: string, workspace_id?: string, retryCount = 0) {
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
   const baseUrl = Deno.env.get('SUPABASE_URL')
   if (!serviceRoleKey || !baseUrl) {
@@ -270,7 +277,7 @@ function triggerEmbedBatch(supabase: any, source_id: string, workspace_id?: stri
       'Content-Type': 'application/json',
       'apikey': serviceRoleKey,
     },
-    body: JSON.stringify({ source_id, workspace_id, embed_batch: true }),
+    body: JSON.stringify({ source_id, workspace_id, embed_batch: true, _retry_count: retryCount + 1 }),
   })
     .then((r) => {
       if (!r.ok) throw new Error(`HTTP ${r.status}`)

@@ -3,8 +3,9 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.108.1"
 
 const APP_URL = Deno.env.get('NEXT_PUBLIC_APP_URL')
 const corsHeaders = {
-  'Access-Control-Allow-Origin': APP_URL || '*',
+  'Access-Control-Allow-Origin': APP_URL ?? '',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Vary': 'Origin',
 }
 
 const PRIVATE_CIDRS = [
@@ -104,14 +105,14 @@ Deno.serve(async (req) => {
     const token = authHeader.replace('Bearer ', '')
     const validTokens = new Set([srk, serviceKey, internalSecret || ''].filter(Boolean))
     if (!token || !validTokens.has(token)) {
-      const verifyClient = createClient(Deno.env.get('SUPABASE_URL') ?? '', srk || legacySrk)
+      const verifyClient = createClient(Deno.env.get('SUPABASE_URL') ?? '', srk)
       const { data: { user }, error: authError } = await verifyClient.auth.getUser(token)
       if (authError || !user) {
         return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
       }
     }
 
-    const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', srk || legacySrk)
+    const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', srk)
     const opencodeKey = Deno.env.get('OPENCODE_ZEN_API_KEY')
 
     const { workspace_id, source_id, url: rawUrl } = await req.json()
@@ -175,7 +176,7 @@ Deno.serve(async (req) => {
     }).eq('id', source_id)
 
     // Kick off batched embedding; embed-text finalizes status='active' when done.
-    triggerEmbedBatch(supabase, source_id, workspace_id)
+    promptEmbedBatch(source_id, workspace_id)
 
     if (opencodeKey && chunks.length > 0) {
       fireAndForget(supabase, "extract-business-profile", { workspace_id, source_id })
@@ -398,7 +399,7 @@ function isMeaningfulChunk(chunk: string): boolean {
   return true
 }
 
-function fireAndForget(supabase: any, functionName: string, body: object) {
+function fireAndForget(supabase: any, functionName: string, body: Record<string, unknown>) {
   const secret = Deno.env.get('INTERNAL_CRON_SECRET')
   supabase.functions.invoke(functionName, { body, headers: { Authorization: `Bearer ${secret}` } })
     .then(r => r.text())
@@ -410,11 +411,18 @@ function fireAndForget(supabase: any, functionName: string, body: object) {
     })
 }
 
-function triggerEmbedBatch(supabase: any, source_id: string, workspace_id?: string) {
+const MAX_EMBED_RETRIES = 50
+const promptEmbedBatch = (source_id: string, workspace_id?: string, retryCount = 0) => {
   const embedKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
   const baseUrl = Deno.env.get('SUPABASE_URL')
   if (!embedKey || !baseUrl) {
     console.error('[triggerEmbedBatch] missing SUPABASE_SERVICE_ROLE_KEY or SUPABASE_URL')
+    return
+  }
+  if (retryCount >= MAX_EMBED_RETRIES) {
+    console.error(`[triggerEmbedBatch] max retries (${MAX_EMBED_RETRIES}) exceeded for source ${source_id}`)
+    const supabase = createClient(baseUrl, embedKey)
+    supabase.from('kb_sources').update({ status: 'failed', error_message: 'Embedding exceeded max retries' }).eq('id', source_id).catch(() => {})
     return
   }
   fetch(`${baseUrl}/functions/v1/embed-text`, {
@@ -424,7 +432,7 @@ function triggerEmbedBatch(supabase: any, source_id: string, workspace_id?: stri
       'Content-Type': 'application/json',
       'apikey': embedKey,
     },
-    body: JSON.stringify({ source_id, workspace_id, embed_batch: true }),
+    body: JSON.stringify({ source_id, workspace_id, embed_batch: true, _retry_count: retryCount + 1 }),
   })
     .then((r) => {
       if (!r.ok) throw new Error(`HTTP ${r.status}`)

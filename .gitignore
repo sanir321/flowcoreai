@@ -42,6 +42,10 @@ supabase/functions/agent-orchestrator/index.js
 test-results/
 skills-lock.json
 
+# bundled edge function artifacts (checked in by mistake)
+supabase/functions/agent-orchestrator/agent-orchestrator-bundle-deno.ts
+supabase/functions/agent-orchestrator/index.js
+
 # media files (keep local only)
 public/images/agents/*.png
 public/producthunt/

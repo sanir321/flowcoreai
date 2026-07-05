@@ -55,6 +55,36 @@ Two changes to `pipeline/t2-router.ts`:
 - **cancel**: ✅ routes to `appointment_booking`
 - **"yes" alone (no history)**: ✅ correctly goes to LLM → `customer_support` (follow-up blocked by message_count guard)
 
+## Session Handover: Audit Fixes — C2/C7/C9/H22 (2026-07-05)
+
+### Fixes Applied
+
+**C7 — Hardcoded UUIDs in migration** (`supabase/migrations/20260522000000_restore_whatsapp_link.sql`)
+- Wrapped INSERT/UPDATE in `DO $$ BEGIN IF EXISTS (SELECT 1 FROM workspaces WHERE id = '…') THEN … END IF; END $$;`
+- Fresh deploys no-op instead of FK errors
+
+**C9 — `supabase: any` in types.ts** (`supabase/functions/agent-orchestrator/lib/types.ts`)
+- Added `import type { SupabaseClient } from "jsr:@supabase/supabase-js@2"`
+- Changed `supabase: any` → `supabase: SupabaseClient`
+
+**H22 — Silent test failure in CI** (`.github/workflows/ci.yml`)
+- Removed `|| true` from `test-edge-functions` step — failures now fail the workflow
+
+**C2 — Widget API SECURITY DEFINER** (`migrations/20260705000004_widget_security_definer.sql` + `src/app/api/widget/message/route.ts`)
+- Created 3 new SECURITY DEFINER PG functions:
+  - `get_widget_config(uuid)` — lightweight workspace+config validation for domain allowlist
+  - `handle_widget_message(uuid, text, text, text, text)` — all DB writes (session, contact, message)
+  - `get_widget_messages(uuid, text, timestamptz)` — reads for poll endpoint
+- All granted EXECUTE to `anon` role
+- Route now uses `NEXT_PUBLIC_SUPABASE_ANON_KEY` for DB operations via `supabase.rpc()`
+- `service_role` retained only for `supabaseAdmin.functions.invoke('agent-orchestrator')`
+- `get_widget_config` validates workspace + widget config; route does domain allowlist check
+- `handle_widget_message` uses SELECT-first-then-INSERT with `unique_violation` exception handler (PG-version-agnostic)
+
+### Blocked
+- **C1 (Secret Rotation)**: Needs user action to reset on Supabase dashboard, Google Cloud, GoWA, Resend
+- **C14/C15**: Sentry removed (was never integrated)
+
 ## Verification
 
 ## Known Issues

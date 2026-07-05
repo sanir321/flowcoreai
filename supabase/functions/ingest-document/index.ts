@@ -5,8 +5,9 @@ import { Buffer } from "node:buffer"
 
 const APP_URL = Deno.env.get('NEXT_PUBLIC_APP_URL')
 const corsHeaders = {
-  'Access-Control-Allow-Origin': APP_URL || '*',
+  'Access-Control-Allow-Origin': APP_URL ?? '',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Vary': 'Origin',
 }
 
 let model: Supabase.ai.Session | null = null
@@ -28,14 +29,14 @@ Deno.serve(async (req) => {
     const token = authHeader.replace('Bearer ', '')
     const validTokens = new Set([srk, serviceKey, internalSecret || ''].filter(Boolean))
     if (!token || !validTokens.has(token)) {
-      const verifyClient = createClient(Deno.env.get('SUPABASE_URL') ?? '', srk || legacySrk)
+      const verifyClient = createClient(Deno.env.get('SUPABASE_URL') ?? '', srk)
       const { data: { user }, error: authError } = await verifyClient.auth.getUser(token)
       if (authError || !user) {
         return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
       }
     }
 
-    const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', srk || legacySrk)
+    const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', srk)
     const opencodeKey = Deno.env.get('OPENCODE_ZEN_API_KEY')
 
     const { workspace_id, source_id, storage_path } = await req.json()

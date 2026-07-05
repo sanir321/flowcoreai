@@ -94,8 +94,10 @@ export interface ToolCallEntry {
   duration_ms: number;
 }
 
+import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
+
 export interface PipelineContext {
-  supabase: any;
+  supabase: SupabaseClient;
   session: SessionRow;
   payload: WebhookPayload;
   _cacheKeyHex?: string;

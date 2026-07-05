@@ -49,4 +49,4 @@ jobs:
           deno-version: v2.x
       - name: Run Deno tests
         working-directory: supabase/functions/agent-orchestrator/tests
-        run: deno task test -- --allow-env --allow-net --allow-read --allow-write --no-check 2>&1 || true
+        run: deno task test -- --allow-env --allow-net --allow-read --allow-write --no-check 2>&1

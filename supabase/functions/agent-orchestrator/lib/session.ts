@@ -64,44 +64,31 @@ export async function getOrCreateSession(supabase: ReturnType<typeof createClien
     let contact_id = contact?.id;
 
     if (!contact_id) {
-       const { data: newContact, error: contactError } = await supabase
+      const uniqueColumn = channel === 'whatsapp' ? 'whatsapp_jid' : 'session_token';
+      const { data: newContact } = await supabase
+        .from('contacts')
+        .upsert({
+          workspace_id,
+          [uniqueColumn]: customer_jid,
+          channel: dbChannel,
+          name: customer_name || null,
+          phone: channel === 'whatsapp' ? customer_jid.split('@')[0] : null,
+        }, { onConflict: `workspace_id,${uniqueColumn}`, ignoreDuplicates: false })
+        .select('id')
+        .maybeSingle();
+      if (!newContact?.id) {
+        const { data: retryContact } = await supabase
           .from('contacts')
-           .insert({
-             workspace_id,
-             [channel === 'whatsapp' ? 'whatsapp_jid' : 'session_token']: customer_jid,
-             channel: dbChannel,
-             name: customer_name || null,
-             phone: channel === 'whatsapp' ? customer_jid.split('@')[0] : null,
-           })
-         .select('id')
-         .single();
-       if (contactError || !newContact) {
-         const { data: fallbackContact } = await supabase
-           .from('contacts')
-           .select('id')
-           .eq('workspace_id', workspace_id)
-           .eq('phone', channel === 'whatsapp' ? customer_jid.split('@')[0] : null)
-           .is("deleted_at", null)
-           .maybeSingle();
-         if (fallbackContact) {
-           contact_id = fallbackContact.id;
-         } else {
-           const { data: emergencyContact } = await supabase
-             .from('contacts')
-             .insert({
-               workspace_id,
-               whatsapp_jid: customer_jid,
-               channel: dbChannel,
-               name: customer_name || null,
-               phone: channel === 'whatsapp' ? customer_jid.split('@')[0] : null,
-             })
-             .select('id')
-             .maybeSingle();
-           contact_id = emergencyContact?.id || crypto.randomUUID();
-         }
-       } else {
-         contact_id = newContact.id;
-       }
+          .select('id')
+          .eq('workspace_id', workspace_id)
+          .eq(uniqueColumn, customer_jid)
+          .is("deleted_at", null)
+          .maybeSingle();
+        contact_id = retryContact?.id;
+        if (!contact_id) throw new Error("Failed to create or find contact");
+      } else {
+        contact_id = newContact.id;
+      }
     }
 
     const { data: newSession, error: createError } = await supabase
