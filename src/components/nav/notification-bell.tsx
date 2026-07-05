@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
-import { Heart, Zap, Lightbulb, RefreshCw, Megaphone, CheckCheck, ExternalLink, BellRing } from "lucide-react"
+import { Heart, Zap, Lightbulb, RefreshCw, Megaphone, CheckCheck, ExternalLink, BellRing, type LucideIcon } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -16,7 +16,7 @@ interface Notification {
   is_read: boolean
 }
 
-const typeConfig: Record<Notification['type'], { icon: any; color: string; bg: string }> = {
+const typeConfig: Record<Notification['type'], { icon: LucideIcon; color: string; bg: string }> = {
   update:       { icon: RefreshCw, color: "text-blue-600", bg: "bg-blue-50" },
   credit:       { icon: Zap,       color: "text-amber-600", bg: "bg-amber-50" },
   announcement: { icon: Megaphone, color: "text-purple-600", bg: "bg-purple-50" },

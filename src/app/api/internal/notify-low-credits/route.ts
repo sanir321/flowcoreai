@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
 
     const notificationId = crypto.randomUUID();
 
-    const { error: notifError } = await (admin as any)
+    const { error: notifError } = await admin
       .from("notifications")
       .insert({
         id: notificationId,
@@ -62,15 +62,15 @@ export async function POST(req: NextRequest) {
           "⚠️ Your FlowCore workspace has run out of credits. Customer messages are being blocked. Upgrade your plan at flowcore.ai/settings/billing"
         );
         results.whatsapp = "sent";
-      } catch (waErr: any) {
-        console.error("[NOTIFY_LOW_CREDITS] WhatsApp failed:", waErr?.message || waErr);
+      } catch (waErr: unknown) {
+        console.error("[NOTIFY_LOW_CREDITS] WhatsApp failed:", waErr instanceof Error ? waErr.message : waErr);
         results.whatsapp = "failed";
       }
     }
 
     return NextResponse.json({ success: true, notification_id: notificationId, results });
-  } catch (err: any) {
-    console.error("[NOTIFY_LOW_CREDITS] Error:", err.message);
+  } catch (err: unknown) {
+    console.error("[NOTIFY_LOW_CREDITS] Error:", err instanceof Error ? err.message : err);
     return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }

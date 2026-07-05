@@ -77,7 +77,7 @@ export default function NotificationsPage() {
     
     fetchConfig()
     fetchNotifications()
-  }, [workspaceId, supabase])
+  }, [workspaceId, supabase, fetchNotifications])
 
   const fetchNotifications = useCallback(async () => {
     try {

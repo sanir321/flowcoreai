@@ -13,26 +13,23 @@ export async function GET() {
 
     const admin = createAdminClient()
 
-    const { data: notifications, error } = await (admin as any)
+    const { data: notifications, error } = await admin
       .from("notifications")
-      .select(`
-        *,
-        notification_reads!left(user_id)
-      `)
+      .select("*, notification_reads!left(user_id)")
       .eq("workspace_id", workspaceId)
       .order("created_at", { ascending: false })
       .limit(50)
 
     if (error) throw error
 
-    const mapped: Array<{ id: string; title: string; message: string; type: string; link: string | null; created_at: string; is_read: boolean }> = (notifications || []).map((n: any) => ({
+    const mapped: Array<{ id: string; title: string; message: string; type: string; link: string | null; created_at: string; is_read: boolean }> = (notifications || []).map((n: { id: string; title: string; message: string; type: string; link: string | null; created_at: string; notification_reads?: Array<{ user_id: string }> }) => ({
       id: n.id,
       title: n.title,
       message: n.message,
       type: n.type,
       link: n.link,
       created_at: n.created_at,
-      is_read: n.notification_reads?.some((r: any) => r.user_id === user.id) ?? false,
+      is_read: n.notification_reads?.some((r) => r.user_id === user.id) ?? false,
     }))
 
     const unread_count = mapped.filter((n) => !n.is_read).length
@@ -56,7 +53,7 @@ export async function POST(req: NextRequest) {
     }
 
     const admin = createAdminClient()
-    const { error } = await (admin as any)
+    const { error } = await admin
       .from("notification_reads")
       .insert({ user_id: user.id, notification_id })
       .select()
@@ -90,7 +87,7 @@ export async function DELETE(req: NextRequest) {
     }
 
     const admin = createAdminClient()
-    const { error } = await (admin as any)
+    const { error } = await admin
       .from("notification_reads")
       .delete()
       .eq("user_id", user.id)

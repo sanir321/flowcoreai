@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { motion, useScroll, useTransform, useMotionValue, useSpring, animate } from "framer-motion"
+import { motion, useScroll, useTransform, animate } from "framer-motion"
 import React, { useState, useRef, useCallback, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
