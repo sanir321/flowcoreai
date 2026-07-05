@@ -129,6 +129,7 @@ export interface PipelineContext {
   _retryHint?: string;
   _reviewSent?: boolean;
   _timeoutPerMessage?: number;
+  agentConfig?: Record<string, unknown>;
 }
 
 export interface AgentPlan {

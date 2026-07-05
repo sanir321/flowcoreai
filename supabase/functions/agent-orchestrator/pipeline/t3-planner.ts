@@ -32,6 +32,7 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
 
   if (agent) {
     ctx.session.workspace_agents = agent;
+    ctx.agentConfig = agent?.config;
   }
 
   if (ctx.session?.status === "escalated") {
