@@ -12,6 +12,7 @@ const CreateSchema = z.object({
   price: z.number().positive(),
   category: z.string().optional(),
   is_available: z.boolean().optional().default(true),
+  stock_count: z.number().int().min(0).optional(),
 });
 
 const MenuGetSchema = z.object({
@@ -31,6 +32,7 @@ const UpdateSchema = z.object({
   price: z.number().positive().optional(),
   category: z.string().optional(),
   is_available: z.boolean().optional(),
+  stock_count: z.number().int().min(0).optional(),
 });
 
 export async function GET(req: NextRequest) {
@@ -110,7 +112,7 @@ export async function POST(req: NextRequest) {
     const parsed = CreateSchema.safeParse(body);
     if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("menu_items")
       .insert({ ...parsed.data, workspace_id: workspaceId })
       .select()
@@ -144,7 +146,7 @@ export async function PUT(req: NextRequest) {
     if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
     const { id, ...updates } = parsed.data;
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("menu_items")
       .update(updates)
       .eq("id", id)

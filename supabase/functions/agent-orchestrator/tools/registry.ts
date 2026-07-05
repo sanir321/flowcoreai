@@ -82,6 +82,45 @@ export const ALL_TOOLS: Record<string, ToolDefinition> = {
       additionalProperties: false
     }
   },
+  get_order: {
+    name: "get_order",
+    description: "Look up full order details by order number or order ID. Returns items, status, payment info, and timestamps.",
+    parameters: {
+      type: "object",
+      properties: {
+        order_number: { type: "string", description: "The order number to look up (e.g. 'ORD-ABC123')." },
+        order_id: { type: "string", description: "The order UUID (alternative to order_number)." }
+      },
+      additionalProperties: false
+    }
+  },
+  track_order: {
+    name: "track_order",
+    description: "Customer-facing order tracking. Returns simplified status with human-readable label. Optionally verify with phone number.",
+    parameters: {
+      type: "object",
+      properties: {
+        order_number: { type: "string", description: "The order number to track." },
+        phone: { type: "string", description: "Customer's phone number to verify ownership (optional)." }
+      },
+      required: ["order_number"],
+      additionalProperties: false
+    }
+  },
+  update_stock: {
+    name: "update_stock",
+    description: "Update stock count or availability for a menu item. Used for inventory management.",
+    parameters: {
+      type: "object",
+      properties: {
+        item_id: { type: "string", description: "The menu item UUID." },
+        stock_count: { type: "number", description: "New stock count value." },
+        is_available: { type: "boolean", description: "Set item availability." }
+      },
+      required: ["item_id"],
+      additionalProperties: false
+    }
+  },
   search_kb: {
     name: "search_kb",
     description: "Search the business knowledge base for answers about services, policies, and general info.",
@@ -147,7 +186,11 @@ export const AGENT_TOOLS: Record<string, string[]> = {
   ],
   sales: [
     "manage_catalog", "manage_contact", "get_business_info",
-    "place_order", "search_kb", "transfer_agent"
+    "place_order", "get_order", "track_order", "search_kb", "transfer_agent"
+  ],
+  customer_support: [
+    "search_kb", "manage_contact", "get_business_info", "transfer_agent", "escalate",
+    "track_order"
   ]
 };
 

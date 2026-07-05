@@ -227,6 +227,114 @@ async function sendGowaMessage(deviceId: string, phone: string, message: string)
   }
 }
 
+export async function getOrder(
+  params: { order_number?: string; order_id?: string },
+  ctx: PipelineContext
+) {
+  const { order_number, order_id } = params;
+  if (!order_number && !order_id) {
+    return { success: false, error: "Provide either order_number or order_id." };
+  }
+
+  let query = ctx.supabase
+    .from("orders")
+    .select("id, order_number, status, items, subtotal, total, currency, notes, customer_phone, payment_method, payment_ref, payment_verified_at, created_at, updated_at")
+    .eq("workspace_id", ctx.payload.workspace_id)
+    .is("deleted_at", null);
+
+  if (order_id) query = query.eq("id", order_id);
+  else query = query.eq("order_number", order_number);
+
+  const { data: order, error } = await query.maybeSingle();
+
+  if (error || !order) {
+    return { success: false, error: `Order not found.` };
+  }
+
+  return { success: true, order };
+}
+
+export async function trackOrder(
+  params: { order_number: string; phone?: string },
+  ctx: PipelineContext
+) {
+  const { order_number, phone } = params;
+  if (!order_number) {
+    return { success: false, error: "Provide the order number to track." };
+  }
+
+  let query = ctx.supabase
+    .from("orders")
+    .select("order_number, status, items, total, currency, notes, customer_phone, created_at, updated_at")
+    .eq("workspace_id", ctx.payload.workspace_id)
+    .eq("order_number", order_number)
+    .is("deleted_at", null);
+
+  const { data: order, error } = await query.maybeSingle();
+
+  if (error || !order) {
+    return { success: false, error: `No order found with number "${order_number}".` };
+  }
+
+  // If phone provided, verify it matches the order's customer phone
+  if (phone) {
+    const orderPhone = (order.customer_phone || "").replace(/\D/g, "");
+    const inputPhone = phone.replace(/\D/g, "");
+    if (orderPhone && inputPhone && !orderPhone.includes(inputPhone) && !inputPhone.includes(orderPhone)) {
+      return { success: false, error: "Order number and phone do not match." };
+    }
+  }
+
+  const statusLabels: Record<string, string> = {
+    pending: "Pending — awaiting payment confirmation",
+    paid: "Paid — being processed",
+    fulfilled: "Fulfilled — completed",
+    cancelled: "Cancelled",
+  };
+
+  return {
+    success: true,
+    tracking: {
+      order_number: order.order_number,
+      status: order.status,
+      status_label: statusLabels[order.status as string] || order.status,
+      items: order.items,
+      total: order.total,
+      currency: order.currency || "INR",
+      created_at: order.created_at,
+      updated_at: order.updated_at,
+    }
+  };
+}
+
+export async function updateStock(
+  params: { item_id: string; stock_count?: number; is_available?: boolean },
+  ctx: PipelineContext
+) {
+  const { item_id, stock_count, is_available } = params;
+  if (!item_id) {
+    return { success: false, error: "item_id is required." };
+  }
+
+  const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  if (stock_count !== undefined) updateData.stock_count = stock_count;
+  if (is_available !== undefined) updateData.is_available = is_available;
+
+  const { data, error } = await ctx.supabase
+    .from("menu_items")
+    .update(updateData)
+    .eq("id", item_id)
+    .eq("workspace_id", ctx.payload.workspace_id)
+    .select("id, name, stock_count, is_available")
+    .maybeSingle();
+
+  if (error || !data) {
+    return { success: false, error: "Failed to update stock — item not found." };
+  }
+
+  return { success: true, item: data };
+}
+
 export async function placeOrder(
   params: { items?: { name: string; qty?: number }[]; item_name?: string; notes?: string },
   ctx: PipelineContext

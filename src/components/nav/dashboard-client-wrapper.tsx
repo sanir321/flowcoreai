@@ -7,7 +7,7 @@ import { CommandPalette } from "@/components/nav/command-palette"
 import { PageTransition } from "@/components/ui/page-transition"
 import { useMemo, useState } from "react"
 import { cn } from "@/lib/utils"
-import { Inbox, Bot, Calendar, TrendingUp, BookOpen, Users, Menu, Zap, Settings, Bell, ShoppingCart, ChevronRight, X, Wrench } from "lucide-react"
+import { Inbox, Bot, Calendar, TrendingUp, BookOpen, Users, Menu, Zap, Settings, Bell, ShoppingCart, Package, ChevronRight, X, Wrench } from "lucide-react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
 const MOBILE_NAV = [
@@ -25,6 +25,7 @@ const MORE_SECTIONS = [
       { icon: BookOpen, href: "/knowledge", label: "Knowledge Base" },
       { icon: Zap, href: "/ceo", label: "CEO Analyst" },
       { icon: ShoppingCart, href: "/orders", label: "Orders" },
+      { icon: Package, href: "/menu", label: "Menu" },
       { icon: Wrench, href: "/agent-hub/tools", label: "Agent Tools" },
     ],
   },
@@ -97,7 +98,7 @@ export function DashboardClientWrapper({
   const pathname = usePathname()
 
   const isDashboardRoute = useMemo(() => {
-    return ['/inbox', '/agent-hub', '/settings', '/contacts', '/knowledge', '/insights', '/appointments', '/orders', '/ceo', '/agent-hub/test', '/agent-hub/tools', '/agent-hub/escalations'].some(r => pathname.startsWith(r))
+    return ['/inbox', '/agent-hub', '/settings', '/contacts', '/knowledge', '/insights', '/appointments', '/orders', '/menu', '/ceo', '/agent-hub/test', '/agent-hub/tools', '/agent-hub/escalations'].some(r => pathname.startsWith(r))
   }, [pathname])
 
   const isFullBleed = useMemo(() => {

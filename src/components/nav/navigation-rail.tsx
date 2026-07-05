@@ -11,7 +11,8 @@ import {
   LogOut,
   TrendingUp,
   Calendar as CalendarIcon,
-  ShoppingCart
+  ShoppingCart,
+  Package
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState, useEffect, useRef, useCallback } from "react"
@@ -32,6 +33,7 @@ const NAV_ITEMS = [
   { icon: Inbox, href: "/inbox", label: "Inbox" },
   { icon: Bot, href: "/agent-hub", label: "Agents" },
   { icon: ShoppingCart, href: "/orders", label: "Orders" },
+  { icon: Package, href: "/menu", label: "Menu" },
   { icon: CalendarIcon, href: "/appointments", label: "Appointments" },
   { icon: TrendingUp, href: "/insights", label: "Insights" },
   { icon: BookOpen, href: "/knowledge", label: "Knowledge" },
