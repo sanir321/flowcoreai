@@ -48,5 +48,6 @@ supabase/functions/agent-orchestrator/index.js
 
 # media files (keep local only)
 public/images/agents/*.png
-public/producthunt/
+public/producthunt/*.mp4
+public/producthunt/*.webm
 docs/*.png
