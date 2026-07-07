@@ -1,7 +1,13 @@
 # SaaS Launch Checklist
 
 ## Done
-- [x] Terms checkbox on signup/sign-in (new users only)
+- [x] Terms checkbox on signup/sign-in (enforced for all; persisted in localStorage for returning users)
+- [x] User enumeration prevention — `checkUserExists` always returns `{exists: true}`
+- [x] Middleware redirect — authenticated users on /login → /inbox; removed mobile dashboard block
+- [x] Cookie consent banner — moved outside AuthGuard, localStorage try/catch, type=button
+- [x] Auth callback — workspace fallback for stale JWT metadata; removed premature welcome email
+- [x] Onboarding — skip button on agent selection step
+- [x] Cleanup — removed unused `RESEND_API_KEY`, `sendAuthEmail`, `checkUserExists` from login page
 - [x] RLS enabled on rate_limits table
 - [x] README.md — replaced boilerplate with project docs
 - [x] Legal pages: Cookie Policy, Refund Policy, DPA, AUP, Data Deletion (all 5 created)
