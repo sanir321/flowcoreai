@@ -19,7 +19,12 @@ export default function LoginPage() {
   const [otp, setOtp] = useState("")
   const [isOtpSent, setIsOtpSent] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [acceptedTerms, setAcceptedTerms] = useState(false)
+  const [acceptedTerms, setAcceptedTerms] = useState(() => {
+    if (typeof window !== "undefined") {
+      try { return localStorage.getItem("flowcore_terms_accepted") === "true" } catch {}
+    }
+    return false
+  })
   const [termsError, setTermsError] = useState("")
   
   const router = useRouter()
@@ -232,7 +237,11 @@ export default function LoginPage() {
                     <label className="flex items-start gap-3 cursor-pointer">
                       <Checkbox
                         checked={acceptedTerms}
-                        onCheckedChange={(checked) => { setAcceptedTerms(checked === true); setTermsError("") }}
+                        onCheckedChange={(checked) => {
+                          const val = checked === true
+                          setAcceptedTerms(val); setTermsError("")
+                          try { localStorage.setItem("flowcore_terms_accepted", val ? "true" : "false") } catch {}
+                        }}
                         className="mt-0.5 border-neutral-600 data-[state=checked]:bg-[#D95E46] data-[state=checked]:border-[#D95E46]"
                       />
                       <span className="text-xs text-neutral-500 leading-relaxed">
