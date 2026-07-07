@@ -36,11 +36,6 @@ export async function middleware(request: NextRequest) {
     url.pathname.startsWith(route)
   )
 
-  if (isMobile && isDashboardRoute) {
-    url.pathname = "/"
-    return NextResponse.redirect(url)
-  }
-
   const isOnboardingRoute = url.pathname.startsWith("/onboarding")
   const isLoginRoute = url.pathname === "/login"
   const isInternalApiRoute = url.pathname.startsWith("/api/") && 

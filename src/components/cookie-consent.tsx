@@ -9,26 +9,30 @@ type ConsentLevel = "accepted" | "rejected" | null
 const STORAGE_KEY = "flowcore_cookie_consent"
 
 export function CookieConsent() {
-  const [, setConsent] = useState<ConsentLevel>(null)
+  const [consent, setConsent] = useState<ConsentLevel>(null)
   const [showBanner, setShowBanner] = useState(false)
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    if (!stored) {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY)
+      if (!stored) {
+        setShowBanner(true)
+      } else {
+        setConsent(stored as ConsentLevel)
+      }
+    } catch {
       setShowBanner(true)
-    } else {
-      setConsent(stored as ConsentLevel)
     }
   }, [])
 
   function handleAccept() {
-    localStorage.setItem(STORAGE_KEY, "accepted")
+    try { localStorage.setItem(STORAGE_KEY, "accepted") } catch {}
     setConsent("accepted")
     setShowBanner(false)
   }
 
   function handleReject() {
-    localStorage.setItem(STORAGE_KEY, "rejected")
+    try { localStorage.setItem(STORAGE_KEY, "rejected") } catch {}
     setConsent("rejected")
     setShowBanner(false)
   }
@@ -67,33 +71,16 @@ export function CookieConsent() {
             </Link>
           </p>
           <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-            <button
-              onClick={handleReject}
-              style={{
-                padding: "8px 20px",
-                borderRadius: 100,
-                border: "1px solid rgba(255,255,255,0.1)",
-                background: "transparent",
-                color: "#999",
-                fontSize: 13,
-                cursor: "pointer",
-              }}
-            >
+            <button type="button" onClick={handleReject} style={{
+              padding: "8px 20px", borderRadius: 100, border: "1px solid rgba(255,255,255,0.1)",
+              background: "transparent", color: "#999", fontSize: 13, cursor: "pointer",
+            }}>
               Reject All
             </button>
-            <button
-              onClick={handleAccept}
-              style={{
-                padding: "8px 20px",
-                borderRadius: 100,
-                border: "none",
-                background: "#c65f39",
-                color: "#fff",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
+            <button type="button" onClick={handleAccept} style={{
+              padding: "8px 20px", borderRadius: 100, border: "none",
+              background: "#c65f39", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer",
+            }}>
               Accept All
             </button>
           </div>

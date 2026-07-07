@@ -99,11 +99,11 @@ export default async function RootLayout({
       <body className={`${inter.variable} ${lora.variable} font-sans antialiased`} nonce={nonce}>
         <PostHogProvider>
           <QueryProvider>
+            <CookieConsent />
             <AuthGuard>
               <StructuredData />
               {children}
               <Toaster />
-              <CookieConsent />
             </AuthGuard>
           </QueryProvider>
         </PostHogProvider>
