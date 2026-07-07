@@ -65,7 +65,7 @@ export async function createWorkspace(input: unknown): Promise<ActionResponse<{ 
         name: result.data.name,
         business_type: result.data.business_type,
         website_url: result.data.website_url,
-        contact_phone: result.data.contact_phone || null,
+        owner_personal_phone: result.data.contact_phone || null,
         employee_count: result.data.employee_count,
         owner_id: user.id,
         status: 'active',
