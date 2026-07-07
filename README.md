@@ -19,6 +19,7 @@ FlowCore unifies WhatsApp and webchat into a single AI-powered inbox. Three spec
 
 - **3 Specialized AI Agents** — Booking (appointment scheduling), Sales (catalog + quotes), Support (KB Q&A + escalation)
 - **Multi-channel** — WhatsApp (GoWA self-hosted gateway) + Webchat widget
+- **Automatic website scraper** — Extracts business profile + ingests content into KB on signup
 - **Agent handoff** — AI recognizes when it's out of depth, hands off to human agents
 - **Real-time indicators** — Typing indicators (Supabase Broadcast) + active connections (Presence)
 - **Knowledge base** — Semantic search with pgvector, configurable per workspace (threshold, match count, chunk truncation)
@@ -39,7 +40,7 @@ GoWA (WhatsApp gateway) or Widget API
     ↓
 Supabase Edge Function: agent-orchestrator
     ↓
-Pipeline: T0 (instant) → T1 (cache) → T2 (router) → T3 (LLM planner + tool execution)
+Pipeline: T0 (guards) → T1 (cache) → T2 (router) → T3 (context + planner) → T4 (LLM) → T5 (quality check)
     ↓
 3 Agents: booking | support | sales
     ↓
@@ -49,16 +50,18 @@ Dispatch: Store in DB + send via GoWA/Widget
 ```
 
 ### Pipeline Stages
-- **T0 — Instant Reply**: Greeting detection, quick canned responses
-- **T1 — Cache Check**: Session continuity, context reuse
-- **T2 — Router**: Classifies intent → routes to correct agent (or skip)
-- **T3 — Planner**: LLM plans actions, executes tools, retries on failure (3 attempts with backoff)
+- **T0 — Guards**: Greeting detection, topic blocking, rate limiting, keyword escalation, canned replies
+- **T1 — Cache**: Session hash hit/miss, context reuse
+- **T2 — Router**: Regex pre-check + LLM classification → routes to correct agent (or follow-up detection)
+- **T3 — Context + Planner**: KB retrieval (pgvector), appointment lookups, system prompt assembly with tool schemas
+- **T4 — LLM**: Executes plan with tool calls, retries on failure (3 attempts with backoff)
+- **T5 — Quality**: Validates response is non-empty and substantive, triggers retry with re-query if needed
 
 ### Key Components
-- **Edge Function**: `agent-orchestrator` — Deno-based, handles all AI processing
-- **API Routes**: Next.js server-side (test chat, OAuth, webhooks)
-- **Server Actions**: CRUD for workspaces, settings, contacts, etc.
-- **Dashboard**: Inbox, Agent Hub, Contacts, Knowledge Base, Analytics, Settings
+- **Edge Function**: `agent-orchestrator` — Deno-based, handles all AI processing (multi-agent routing + tool execution)
+- **API Routes**: Next.js server-side (widget, OAuth, webhooks, health checks)
+- **Server Actions**: CRUD for workspaces, settings, contacts, agents, etc.
+- **Dashboard**: Inbox, Agent Hub, Contacts, Knowledge Base, Analytics, Settings, Data & Privacy
 - **Widget**: Embeddable webchat widget for any website
 
 ## Stack
@@ -67,7 +70,7 @@ Dispatch: Store in DB + send via GoWA/Widget
 |-------|-----------|
 | Frontend | Next.js 15 (App Router) + Tailwind CSS 4 + Framer Motion |
 | Backend | Supabase (PostgreSQL 17 + Auth + Realtime) |
-| AI | BluesMinds API (OpenAI-compatible, `gpt-5-mini` + `gpt-4o`) |
+| AI | OpenCode Zen (`nemotron-3-ultra-free`, OpenAI-compatible) |
 | Embeddings | pgvector (384d, cosine similarity, threshold ≥ 0.35) |
 | WhatsApp | GoWA (go-whatsapp-web-multidevice, self-hosted on Railway) |
 | Email | Nodemailer (SMTP) |
@@ -87,7 +90,7 @@ Dispatch: Store in DB + send via GoWA/Widget
 
 - Node.js 18+
 - Supabase project (PostgreSQL 17 with pgvector)
-- BluesMinds API key (or compatible OpenAI endpoint)
+- OpenCode Zen API key (free, for AI agent responses)
 - GoWA instance (for WhatsApp — Railway deployment)
 
 ### Setup
@@ -98,20 +101,7 @@ cd flowcoreai
 npm install
 ```
 
-Copy `.env.example` to `.env.local` and configure:
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase anon key |
-| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Service role key |
-| `OPENAI_API_KEY` | Yes | BluesMinds API key |
-| `GOWA_BASE_URL` | Yes | GoWA server URL |
-| `GOWA_API_KEY` | Yes | GoWA auth (user:pass) |
-| `GOWA_WEBHOOK_SECRET` | Yes | GoWA webhook secret |
-| `NEXT_PUBLIC_APP_URL` | Yes | Public app URL |
-| `NEXT_PUBLIC_SUPPORT_EMAIL` | Yes | Support email |
-| `NEXT_PUBLIC_COMPANY_NAME` | Yes | Company name |
+Copy `.env.example` to `.env.local` and configure all required variables.
 
 ### Run
 
@@ -130,6 +120,8 @@ supabase functions deploy gowa-cleanup
 supabase functions deploy tool-executor
 supabase functions deploy ingest-document
 supabase functions deploy ingest-url
+supabase functions deploy extract-business-profile
+supabase functions deploy embed-text
 supabase functions deploy crm-export
 ```
 
@@ -140,17 +132,19 @@ src/
 ├── app/
 │   ├── (auth)/login            # Email OTP sign-in/sign-up
 │   ├── (dashboard)/            # Main app: inbox, agents, contacts, etc.
-│   ├── api/                    # API routes (widget, gowa, insights, etc.)
-│   ├── actions/                # Server actions (workspace, agents, etc.)
-│   ├── legal/                  # Legal pages (privacy, terms, dpa, etc.)
-│   └── onboarding/             # Workspace setup flow
+│   ├── api/                    # API routes (widget, gowa, insights, data export, etc.)
+│   ├── actions/                # Server actions (workspace, agents, whatsapp, etc.)
+│   ├── legal/                  # Legal pages (privacy, terms, dpa, cookie, etc.)
+│   ├── onboarding/             # Workspace + agent setup flow
+│   ├── faq/                    # FAQ page
+│   └── changelog/              # Changelog
 ├── components/
 │   ├── nav/                    # Navigation rail, sidebar, header
 │   ├── ui/                     # Design system (shadcn-style primitives)
 │   ├── appointments/           # Booking calendar UI
 │   ├── contacts/               # Contact table
 │   ├── insights/               # Charts and CEO analyst components
-│   └── emails/                 # Email templates
+│   └── emails/                 # Email templates (welcome, OTP, escalation, etc.)
 ├── lib/
 │   ├── supabase/               # Client, server, admin, middleware
 │   ├── schemas/                # Zod validation schemas
@@ -162,15 +156,23 @@ src/
 └── types/                      # TypeScript definitions
 
 supabase/functions/
-├── agent-orchestrator/         # AI orchestration (multi-agent routing)
+├── agent-orchestrator/         # AI orchestration (5-stage pipeline with 3 agents)
 ├── gowa-webhook/               # WhatsApp inbound webhook
 ├── gowa-cleanup/               # Session cleanup on device removal
-├── tool-executor/              # Tool execution (calendar, etc.)
-├── ingest-document/            # Single doc ingestion
+├── tool-executor/              # Tool execution (calendar, CRM, etc.)
+├── ingest-document/            # Single document ingestion
 ├── ingest-url/                 # URL content ingestion
+├── extract-business-profile/   # Business profile extraction from website
+├── embed-text/                 # Batched embedding of KB chunks
+├── sales-cron/                 # Scheduled sales reporting
 └── crm-export/                 # CRM data export
-
 ```
+
+## Onboarding Flow
+
+1. **Step 1** — User enters business profile (name, website, industry, contact). Website URL triggers automatic business profile extraction + KB content ingestion.
+2. **Step 2** — User selects primary agent (Support, Booking, or Sales). The agent is activated via `workspace_agents` table.
+3. **Step 3** — Workspace is ready, user lands in the inbox.
 
 ## License
 
