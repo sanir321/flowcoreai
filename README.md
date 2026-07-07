@@ -71,7 +71,7 @@ Dispatch: Store in DB + send via GoWA/Widget
 | Frontend | Next.js 15 (App Router) + Tailwind CSS 4 + Framer Motion |
 | Backend | Supabase (PostgreSQL 17 + Auth + Realtime) |
 | AI | OpenCode Zen (primary: `deepseek-v4-flash-free`, fallback: `nemotron-3-ultra-free`) |
-| Embeddings | pgvector (384d, cosine similarity, threshold ≥ 0.35) |
+| Embeddings | `gte-small` via `Supabase.ai.Session` → pgvector HNSW (384d, cosine similarity) |
 | WhatsApp | GoWA (go-whatsapp-web-multidevice, self-hosted on Railway) |
 | Email | Nodemailer (SMTP) |
 | Analytics | PostHog |
