@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Checkbox } from "@/components/ui/checkbox"
 import { motion, AnimatePresence } from "framer-motion"
+import { checkUserExists } from "@/app/actions/workspace"
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -70,7 +71,10 @@ export default function LoginPage() {
       }
     } catch { /* proceed if check fails */ }
 
-    if (!acceptedTerms) {
+    // Check if returning user — only enforce terms for new signups
+    const { data: existsData } = await checkUserExists(email)
+    const isNewUser = existsData ? !existsData.exists : true
+    if (isNewUser && !acceptedTerms) {
       setTermsError("You must accept the Privacy Policy and Terms & Conditions")
       setIsLoading(false)
       return

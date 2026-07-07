@@ -235,7 +235,7 @@ export async function checkUserExists(email: string): Promise<ActionResponse<{ e
 
     if (error) throw error
     
-    return { data: { exists: true }, error: null }
+    return { data: { exists: users.length > 0 }, error: null }
   } catch (err) {
     console.error(err)
     // Return generic error to prevent information leakage

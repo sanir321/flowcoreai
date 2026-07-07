@@ -23,6 +23,14 @@ verify_jwt = false
 # Auth: Manual Bearer token check against INTERNAL_CRON_SECRET or JWT via auth.getUser()
 verify_jwt = false
 
+[functions.extract-business-profile]
+# Auth: Manual Bearer token check against SUPABASE_SERVICE_ROLE_KEY or INTERNAL_CRON_SECRET
+verify_jwt = false
+
+[functions.embed-text]
+# Auth: Manual Bearer token check against INTERNAL_CRON_SECRET
+verify_jwt = false
+
 [functions.sales-cron]
 # Auth: Manual Bearer token check against INTERNAL_CRON_SECRET
 verify_jwt = false
