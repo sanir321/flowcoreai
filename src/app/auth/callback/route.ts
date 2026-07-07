@@ -36,26 +36,40 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/login?error=Could not authenticate user`)
   }
 
-  const isNewUser = !data.user.last_sign_in_at
-  const username = data.user.user_metadata?.full_name || data.user.email?.split("@")[0] || "User"
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL || "http://localhost:3000"
-
-  fetch(`${baseUrl}/api/emails/send`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.INTERNAL_CRON_SECRET}`,
-    },
-    body: JSON.stringify({
-      to: data.user.email,
-      subject: isNewUser ? "Welcome to FlowCore!" : "New Sign-in detected",
-      template: isNewUser ? "welcome" : "signin",
-      data: { username, loginUrl: `${baseUrl}/login` },
-    }),
-  }).catch((e) => console.error("Auth email failed:", e))
-
   const workspaceId = data.user.app_metadata?.workspace_id
-  const redirectTo = workspaceId ? "/inbox" : next
+
+  let redirectTo: string
+  if (workspaceId) {
+    redirectTo = "/inbox"
+  } else {
+    const { data: existing } = await supabase
+      .from("workspaces")
+      .select("id")
+      .eq("owner_id", data.user.id)
+      .eq("status", "active")
+      .is("deleted_at", null)
+      .maybeSingle()
+    redirectTo = existing ? "/inbox" : next
+  }
+
+  if (!data.user.last_sign_in_at) {
+    const username = data.user.user_metadata?.full_name || data.user.email?.split("@")[0] || "User"
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL || "http://localhost:3000"
+    fetch(`${baseUrl}/api/emails/send`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.INTERNAL_CRON_SECRET}`,
+      },
+      body: JSON.stringify({
+        to: data.user.email,
+        subject: "New Sign-in detected",
+        template: "signin",
+        data: { username, loginUrl: `${baseUrl}/login` },
+      }),
+    }).catch((e) => console.error("Auth email failed:", e))
+  }
+
   const response = NextResponse.redirect(`${origin}${redirectTo}`)
 
   for (const cookie of supabaseCookies) {

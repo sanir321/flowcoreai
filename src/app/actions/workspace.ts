@@ -47,6 +47,7 @@ export async function createWorkspace(input: unknown): Promise<ActionResponse<{ 
       website_url: z.string().url().optional().or(z.literal("")),
       contact_phone: z.string().optional(),
       employee_count: z.string().optional(),
+      accept_terms: z.boolean().refine(val => val === true, { message: "You must accept the terms and conditions" }).optional(),
     }).safeParse(input)
 
     if (!result.success) {
@@ -107,7 +108,7 @@ export async function createWorkspace(input: unknown): Promise<ActionResponse<{ 
         const emailHtml = await render(
           React.createElement(WelcomeEmail, {
             username: result.data.name || user.email?.split("@")[0] || "there",
-            loginUrl: `${process.env.NEXT_PUBLIC_APP_URL || "https://7flowcore.vercel.app"}/login`,
+            loginUrl: `${process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL || "http://localhost:3000"}/login`,
           })
         )
         await sendEmail({
@@ -234,10 +235,7 @@ export async function checkUserExists(email: string): Promise<ActionResponse<{ e
 
     if (error) throw error
     
-    const exists = users.length > 0
-    // Always return success to prevent user enumeration
-    // The actual check happens during login/signup
-    return { data: { exists }, error: null }
+    return { data: { exists: true }, error: null }
   } catch (err) {
     console.error(err)
     // Return generic error to prevent information leakage

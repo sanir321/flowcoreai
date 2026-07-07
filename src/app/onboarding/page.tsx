@@ -483,6 +483,12 @@ export default function OnboardingPage() {
                 >
                   {isLoading ? <Loader2 className="h-5 w-5 animate-spin mx-auto" /> : "Launch Assistant"}
                 </Button>
+                <Button
+                  onClick={() => setStep(3)}
+                  className="w-full h-10 rounded-xl bg-transparent border border-white/10 hover:bg-white/5 text-neutral-400 hover:text-white font-medium text-xs transition-all"
+                >
+                  Skip for now
+                </Button>
                 <div className="flex gap-2 justify-center text-gray-900">
                    {AGENTS.map((_, i) => (
                      <div key={i} className={cn("h-1 w-4 rounded-full transition-all duration-500", selectedAgentIndex === i ? "bg-white" : "bg-white/10")} />

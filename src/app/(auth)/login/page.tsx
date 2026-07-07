@@ -10,7 +10,6 @@ import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Checkbox } from "@/components/ui/checkbox"
-import { checkUserExists } from "@/app/actions/workspace"
 import { motion, AnimatePresence } from "framer-motion"
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -66,17 +65,7 @@ export default function LoginPage() {
       }
     } catch { /* proceed if check fails */ }
 
-    // Check if this is a new or existing user
-    const result = await checkUserExists(email)
-    if (result.error) {
-      console.error("checkUserExists error:", result.error)
-      toast.error("Unable to verify account. Please try again.")
-      setIsLoading(false)
-      return
-    }
-    const isNewUser = !result.data?.exists
-
-    if (isNewUser && !acceptedTerms) {
+    if (!acceptedTerms) {
       setTermsError("You must accept the Privacy Policy and Terms & Conditions")
       setIsLoading(false)
       return
@@ -134,18 +123,6 @@ export default function LoginPage() {
       const { data: { user } } = await supabase.auth.getUser()
       
       if (user) {
-        const isNewUser = !user.last_sign_in_at || (new Date().getTime() - new Date(user.created_at).getTime() < 10000);
-        try {
-          const { sendAuthEmail } = await import("@/app/actions/auth");
-          await sendAuthEmail({
-            email: user.email!,
-            isNewUser,
-            username: user.user_metadata?.full_name || user.email?.split("@")[0] || "there",
-          });
-        } catch (emailErr) {
-          console.error("Failed to send auth notification email:", emailErr);
-        }
-
         const workspaceId = user.app_metadata?.workspace_id
         if (workspaceId) {
           const { data: ws } = await supabase

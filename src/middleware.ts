@@ -42,6 +42,7 @@ export async function middleware(request: NextRequest) {
   }
 
   const isOnboardingRoute = url.pathname.startsWith("/onboarding")
+  const isLoginRoute = url.pathname === "/login"
   const isInternalApiRoute = url.pathname.startsWith("/api/") && 
     !url.pathname.startsWith("/api/widget/") && 
     !url.pathname.startsWith("/api/webhooks/") &&
@@ -50,7 +51,8 @@ export async function middleware(request: NextRequest) {
 
   let supabaseResponse = NextResponse.next({ request })
 
-  if (isPublicRoute && !isDashboardRoute && !isOnboardingRoute && !isInternalApiRoute) {
+  const skipAuthRoutes = isPublicRoute && !isDashboardRoute && !isOnboardingRoute && !isInternalApiRoute && !isLoginRoute
+  if (skipAuthRoutes) {
     return applySecurityHeaders(supabaseResponse, nonce)
   }
 
@@ -88,6 +90,11 @@ export async function middleware(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser()
+
+  if (isLoginRoute && user) {
+    url.pathname = "/inbox"
+    return NextResponse.redirect(url)
+  }
 
   if (isDashboardRoute || isOnboardingRoute || isInternalApiRoute) {
     if (!user) {
