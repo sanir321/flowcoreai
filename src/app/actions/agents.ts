@@ -19,9 +19,16 @@ export async function finalizeOnboarding(input: unknown): Promise<ActionResponse
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
 
-    const userWorkspaceId = user.app_metadata?.workspace_id
-    if (!userWorkspaceId) return { data: null, error: "No workspace" }
-    if (workspace_id !== userWorkspaceId) return { data: null, error: "Unauthorized" }
+    // Verify workspace ownership via DB query instead of app_metadata JWT
+    // (app_metadata may be stale - the JWT cookie was issued before createWorkspace updated it)
+    const { data: ws } = await supabase
+      .from("workspaces")
+      .select("id")
+      .eq("id", workspace_id)
+      .eq("owner_id", user.id)
+      .is("deleted_at", null)
+      .maybeSingle()
+    if (!ws) return { data: null, error: "Workspace not found" }
 
     const agentsToInsert = agent_types.map(type => ({
       workspace_id,
