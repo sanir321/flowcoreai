@@ -1,0 +1,38 @@
+# Flowcore AI
+> AI-powered customer service orchestration platform for WhatsApp and webchat. Automate responses, manage bookings, and escalate to humans when it matters.
+
+## Essentials
+- Flowcore AI: https://7flowcore.vercel.app
+- Features: https://7flowcore.vercel.app/features
+- Pricing: https://7flowcore.vercel.app/pricing
+- FAQ: https://7flowcore.vercel.app/faq
+- Changelog: https://7flowcore.vercel.app/changelog
+- Blog: https://7flowcore.vercel.app/blog
+- Case Studies: https://7flowcore.vercel.app/case-studies
+
+## Legal
+- Privacy Policy: https://7flowcore.vercel.app/legal/privacy-policy
+- Terms of Service: https://7flowcore.vercel.app/legal/terms
+- Cookie Policy: https://7flowcore.vercel.app/legal/cookie-policy
+- Refund Policy: https://7flowcore.vercel.app/legal/refund-policy
+- Data Processing Agreement: https://7flowcore.vercel.app/legal/dpa
+- Acceptable Use Policy: https://7flowcore.vercel.app/legal/aup
+- Data Deletion: https://7flowcore.vercel.app/legal/data-deletion
+
+## Platform
+- Flowcore AI provides AI-powered customer service automation for WhatsApp and webchat.
+- Supports appointment booking, order management, and product inquiries via AI agents.
+- Unified inbox for managing conversations across WhatsApp, webchat, and email.
+- Knowledge base management for training AI agents on business-specific information.
+- Human escalation when AI cannot resolve a query.
+- Analytics dashboard with real-time metrics on messages, conversations, and automation rates.
+- GoWA (Go WhatsApp API) integration for WhatsApp messaging without Meta Cloud API.
+- Works with Google Calendar, Google Sheets, and Gmail integrations.
+
+## Getting Started
+1. Sign up at https://7flowcore.vercel.app/login
+2. Complete business profile setup during onboarding
+3. Configure AI agents (Support, Sales, Appointment Booking)
+4. Connect WhatsApp by scanning QR code via GoWA
+5. Add knowledge base documents and custom prompts
+6. Go live — AI handles customer conversations automatically

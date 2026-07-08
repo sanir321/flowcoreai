@@ -30,6 +30,27 @@ export function StructuredData() {
     },
     {
       "@context": "https://schema.org",
+      "@type": "WebPage",
+      "@id": `${siteUrl}#webpage`,
+      "url": siteUrl,
+      "name": "Flowcore AI — Automated Customer Service & AI Assistants",
+      "description": "AI-powered customer service orchestration platform for WhatsApp and webchat.",
+      "publisher": { "@type": "Organization", "@id": `${siteUrl}#organization` },
+      "breadcrumb": { "@type": "BreadcrumbList", "@id": `${siteUrl}#breadcrumb` },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "@id": `${siteUrl}#breadcrumb`,
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": siteUrl },
+        { "@type": "ListItem", "position": 2, "name": "Features", "item": `${siteUrl}/features` },
+        { "@type": "ListItem", "position": 3, "name": "Pricing", "item": `${siteUrl}/pricing` },
+        { "@type": "ListItem", "position": 4, "name": "FAQ", "item": `${siteUrl}/faq` },
+      ],
+    },
+    {
+      "@context": "https://schema.org",
       "@type": "SoftwareApplication",
       "name": "Flowcore AI",
       "operatingSystem": "Web",

@@ -1,0 +1,36 @@
+# Robots.txt for Flowcore AI
+User-agent: *
+Allow: /
+Disallow: /auth/
+Disallow: /login
+Disallow: /api/
+Disallow: /onboarding
+Disallow: /settings
+
+# Block AI crawlers from indexing dashboard areas
+User-agent: GPTBot
+Disallow: /dashboard/
+Disallow: /settings/
+Disallow: /api/
+
+User-agent: CCBot
+Disallow: /dashboard/
+Disallow: /settings/
+Disallow: /api/
+
+User-agent: anthropic-ai
+Disallow: /dashboard/
+Disallow: /settings/
+Disallow: /api/
+
+User-agent: Google-Extended
+Disallow: /dashboard/
+Disallow: /settings/
+Disallow: /api/
+
+# Allow AI crawlers to access public pages
+Allow: /
+Disallow: /login
+Disallow: /onboarding
+
+Sitemap: https://7flowcore.vercel.app/sitemap.xml

@@ -535,6 +535,23 @@ export function LandingPage() {
           </div>
         </motion.section>
 
+        <motion.section {...sectionAnim} className="py-24 px-6 lg:px-12" style={{ background: "#ffffff", borderTop: "1px solid #e5e5e5" }}>
+          <div className="max-w-[820px] mx-auto text-center space-y-8">
+            <h2 className="font-normal tracking-tight" style={{ fontSize: "35.2508px", lineHeight: "44.0635px", letterSpacing: "-0.15667px", color: "#171717" }}>
+              What is Flowcore AI?
+            </h2>
+            <p className="text-base leading-relaxed" style={{ color: "#525252", lineHeight: 1.8 }}>
+              Flowcore AI is a customer service automation platform that connects WhatsApp, webchat, email, and Google Business Messages into one AI-powered inbox. Instead of juggling multiple tools, businesses get a single platform where AI agents handle repetitive questions, book appointments, process orders, and escalate complex issues to human agents.
+            </p>
+            <p className="text-base leading-relaxed" style={{ color: "#525252", lineHeight: 1.8 }}>
+              Built on top of GoWA (Go WhatsApp API), Flowcore works with the official WhatsApp Web multi-device API — no Meta Cloud API required. The platform uses Groq AI (llama-3.3-70b-versatile) for fast, reliable inference, with a knowledge base that learns from your business documents to provide accurate, context-aware responses.
+            </p>
+            <p className="text-base leading-relaxed" style={{ color: "#525252", lineHeight: 1.8 }}>
+              Key capabilities include: AI agents for support, sales, and appointment booking; a unified conversation inbox; automated escalation to human agents; real-time analytics and reporting; Google Calendar and Sheets integrations; knowledge base management with vector search; and multi-tenant workspace support for agencies and enterprises.
+            </p>
+          </div>
+        </motion.section>
+
         <motion.section {...sectionAnim} className="py-24 px-6 lg:px-12 relative overflow-hidden" style={{ background: "#050505" }}>
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
@@ -610,6 +627,8 @@ export function LandingPage() {
               <nav className="flex flex-col gap-3">
                 <Link href="/features" className="text-sm font-normal transition-colors" style={{ color: "#525252" }}>Features</Link>
                 <Link href="/pricing" className="text-sm font-normal transition-colors" style={{ color: "#525252" }}>Pricing</Link>
+                <Link href="/blog" className="text-sm font-normal transition-colors" style={{ color: "#525252" }}>Blog</Link>
+                <Link href="/case-studies" className="text-sm font-normal transition-colors" style={{ color: "#525252" }}>Case Studies</Link>
                 <Link href="/changelog" className="text-sm font-normal transition-colors" style={{ color: "#525252" }}>Changelog</Link>
                 <Link href="/faq" className="text-sm font-normal transition-colors" style={{ color: "#525252" }}>FAQ</Link>
               </nav>

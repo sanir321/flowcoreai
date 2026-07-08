@@ -7,6 +7,8 @@ import { ArrowUpRight, Check } from "lucide-react"
 
 const sf = { fontFamily: "'Söhne', 'Inter', ui-sans-serif, system-ui, sans-serif" }
 
+const siteUrl = "https://7flowcore.vercel.app"
+
 export function PricingPageClient() {
   const [email, setEmail] = useState("")
   const [firstName, setFirstName] = useState("")
@@ -173,6 +175,21 @@ export function PricingPageClient() {
             </motion.div>
           </div>
         </section>
+
+        <script type="application/ld+json" dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "ItemList",
+            "name": "Flowcore AI Pricing Plans",
+            "description": "Simple, transparent pricing for Flowcore AI. Start free, scale as you grow.",
+            "url": `${siteUrl}/pricing`,
+            "itemListElement": [
+              { "@type": "ListItem", "position": 1, "name": "Free Plan", "description": "Get started at no cost" },
+              { "@type": "ListItem", "position": 2, "name": "Growth Plan", "description": "For growing teams" },
+              { "@type": "ListItem", "position": 3, "name": "Enterprise Plan", "description": "For large organizations" },
+            ],
+          }),
+        }} />
       </main>
     </div>
   )

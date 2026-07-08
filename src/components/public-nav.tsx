@@ -6,6 +6,8 @@ import { usePathname } from "next/navigation"
 const navLinks = [
   { href: "/features", label: "Features" },
   { href: "/pricing", label: "Pricing" },
+  { href: "/blog", label: "Blog" },
+  { href: "/case-studies", label: "Case Studies" },
   { href: "/faq", label: "FAQ" },
   { href: "/changelog", label: "Changelog" },
   { href: "/about", label: "About" },
@@ -78,6 +80,8 @@ export function PublicFooter() {
           <nav style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
             <Link href="/features" style={{ fontSize: "14px", color: "#888", textDecoration: "none" }}>Features</Link>
             <Link href="/pricing" style={{ fontSize: "14px", color: "#888", textDecoration: "none" }}>Pricing</Link>
+            <Link href="/blog" style={{ fontSize: "14px", color: "#888", textDecoration: "none" }}>Blog</Link>
+            <Link href="/case-studies" style={{ fontSize: "14px", color: "#888", textDecoration: "none" }}>Case Studies</Link>
             <Link href="/faq" style={{ fontSize: "14px", color: "#888", textDecoration: "none" }}>FAQ</Link>
             <Link href="/changelog" style={{ fontSize: "14px", color: "#888", textDecoration: "none" }}>Changelog</Link>
             <Link href="/sitemap" style={{ fontSize: "14px", color: "#888", textDecoration: "none" }}>Sitemap</Link>
