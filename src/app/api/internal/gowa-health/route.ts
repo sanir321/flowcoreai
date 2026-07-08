@@ -85,8 +85,10 @@ export async function GET(req: NextRequest) {
                     const { data: owner } = await supabaseAdmin.auth.admin.getUserById(workspace.owner_id);
                     const ownerEmail = owner?.user?.email;
                     if (ownerEmail) {
-                        const inboxUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://7flowcore.vercel.app'}/inbox`;
-                        await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'https://7flowcore.vercel.app'}/api/emails/send`, {
+                        const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
+                        if (!baseUrl) continue;
+                        const inboxUrl = `${baseUrl}/inbox`;
+                        await fetch(`${baseUrl}/api/emails/send`, {
                             method: "POST",
                             headers: { "Content-Type": "application/json", "Authorization": `Bearer ${process.env.INTERNAL_CRON_SECRET}` },
                             body: JSON.stringify({
@@ -116,7 +118,9 @@ export async function GET(req: NextRequest) {
 
                         if (device?.gowa_session_id) {
                             const gowaKey = process.env.GOWA_API_KEY || "";
-                            const alertMsg = `🚨 *Escalation Alert*\n\nWorkspace: ${workspace?.name || 'Unknown'}\nCustomer: ${customerName || 'A Customer'}\nReason: ${esc.trigger_message || esc.trigger_type || "Customer requested human assistance"}\n\nView inbox: ${process.env.NEXT_PUBLIC_APP_URL || 'https://7flowcore.vercel.app'}/inbox`;
+                            const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
+                            if (!baseUrl) continue;
+                            const alertMsg = `🚨 *Escalation Alert*\n\nWorkspace: ${workspace?.name || 'Unknown'}\nCustomer: ${customerName || 'A Customer'}\nReason: ${esc.trigger_message || esc.trigger_type || "Customer requested human assistance"}\n\nView inbox: ${baseUrl}/inbox`;
                             const gowaBase = process.env.GOWA_BASE_URL?.replace(/\/$/, "");
                             await fetch(`${gowaBase}/send/message`, {
                                 method: "POST",

@@ -35,7 +35,7 @@ export async function runT3(ctx: PipelineContext, requeryContext?: { previous_em
           const nameInAppt = (data.customer_name || "").toLowerCase().trim();
           const nameInSession = (ctx.payload.customer_name || ctx.session.customer_name || "").toLowerCase().trim();
           if (nameInSession && nameInAppt && nameInSession !== nameInAppt) {
-            console.log(`[T3] Name mismatch: session "${nameInSession}" vs appointment "${nameInAppt}" — treating as new customer`);
+            console.debug(`[T3] Name mismatch: session "${nameInSession}" vs appointment "${nameInAppt}" — treating as new customer`);
             ctx._existingAppointment = null;
           } else {
             ctx._existingAppointment = data;

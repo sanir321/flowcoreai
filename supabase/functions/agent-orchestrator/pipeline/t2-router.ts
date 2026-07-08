@@ -145,10 +145,10 @@ export async function runT2(ctx: PipelineContext): Promise<TierResult> {
   const msgLower = msg.toLowerCase();
   const hasBookingIntent = /\b(book|appointment|schedule|reschedule|cancel|rebook)\b/i.test(msgLower);
   const hasSalesIntent = /\b(price|cost|quote|how much|buy|order|pricing|rates|prices|menu)\b/i.test(msgLower);
-  console.log(`[T2] msg="${msgLower}" bookingMatch=${hasBookingIntent} priceMatch=${hasSalesIntent} activeBooking=${activeAgents.has("appointment_booking")} workingAgent=${workingAgent}`)
+  console.debug(`[T2] msg="${msgLower}" bookingMatch=${hasBookingIntent} priceMatch=${hasSalesIntent} activeBooking=${activeAgents.has("appointment_booking")} workingAgent=${workingAgent}`)
 
   if (hasBookingIntent && activeAgents.has("appointment_booking")) {
-    console.log("[T2] KEYWORD PRE-CHECK: routing to appointment_booking")
+    console.debug("[T2] KEYWORD PRE-CHECK: routing to appointment_booking")
     ctx.agentType = "appointment_booking";
     ctx.routingReason = "keyword_pre_check_booking";
     ctx._queryAnalysis = mkAnalysis("appointment_booking", "booking_request");
@@ -163,13 +163,13 @@ export async function runT2(ctx: PipelineContext): Promise<TierResult> {
   }
 
   // Pre-check: if session has an active agent and message is a clear follow-up, keep it
-  console.log(`[T2] workingAgent=${workingAgent} convCtxLen=${conversationContext?.length} hasActive=${workingAgent ? activeAgents.has(workingAgent) : "N/A"}`)
+  console.debug(`[T2] workingAgent=${workingAgent} convCtxLen=${conversationContext?.length} hasActive=${workingAgent ? activeAgents.has(workingAgent) : "N/A"}`)
   if ((ctx.session.message_count ?? 0) > 0 && workingAgent && activeAgents.has(workingAgent) && conversationContext) {
     const isFollowUp = /^(ok|yes|yeah|sure|correct|right|that'?s? right|go ahead|please|okay|alright)/i.test(msg)
       || /(consult|visit|service|design|construct|name|date|time|email|phone|contact|tomorrow|today|next|hours|this\s+(week|month))/i.test(msg);
-    console.log(`[T2] followUpCheck=${isFollowUp}`)
+    console.debug(`[T2] followUpCheck=${isFollowUp}`)
     if (isFollowUp) {
-      console.log(`[T2] WORKING CONTEXT: keeping agent ${workingAgent}`)
+      console.debug(`[T2] WORKING CONTEXT: keeping agent ${workingAgent}`)
       ctx.agentType = workingAgent;
       ctx.routingReason = "working_context_follow_up";
       ctx._queryAnalysis = mkAnalysis(workingAgent, "follow_up");

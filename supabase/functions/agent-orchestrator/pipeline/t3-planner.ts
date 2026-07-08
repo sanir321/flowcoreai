@@ -21,7 +21,7 @@ const MAX_CONSECUTIVE_TOOL_FAILURES = 3;
 export async function runT3(ctx: PipelineContext): Promise<TierResult> {
   const t3Start = Date.now();
   let agentType = ctx.agentType || "customer_support";
-  console.log(`[T3-PLANNER] agentType=${agentType} ctx.agentType=${ctx.agentType} routingReason=${ctx.routingReason}`)
+  console.debug(`[T3-PLANNER] agentType=${agentType} ctx.agentType=${ctx.agentType} routingReason=${ctx.routingReason}`)
 
   const { data: agent } = await ctx.supabase
     .from("workspace_agents")
