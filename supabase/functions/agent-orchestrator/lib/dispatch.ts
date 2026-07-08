@@ -1,26 +1,41 @@
 import { PipelineContext } from "./types.ts";
 
-async function sendTyping(gowaBase: string, auth: string, deviceId: string, phone: string, action: "start" | "stop"): Promise<void> {
+async function sendTyping(
+  gowaBase: string,
+  auth: string,
+  deviceId: string,
+  phone: string,
+  action: "start" | "stop",
+): Promise<void> {
   try {
     await fetch(`${gowaBase}/send/chat-presence`, {
       method: "POST",
-      headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json", "X-Device-Id": deviceId },
+      headers: {
+        Authorization: `Basic ${auth}`,
+        "Content-Type": "application/json",
+        "X-Device-Id": deviceId,
+      },
       body: JSON.stringify({ phone, action }),
-      signal: AbortSignal.timeout(5000)
+      signal: AbortSignal.timeout(5000),
     });
   } catch (e) {
     console.error("[DISPATCH] Typing indicator failed:", e?.message || e);
   }
 }
 
-export async function dispatch(ctx: PipelineContext, response: string | null): Promise<void> {
+export async function dispatch(
+  ctx: PipelineContext,
+  response: string | null,
+): Promise<void> {
   if (!response) return;
   const phone = ctx.payload.customer_phone;
   const source = ctx.payload.source || "whatsapp";
 
   // Skip GoWA sends for test messages
   if (ctx.payload.is_test) {
-    const parts = response.length > 1000 ? splitAtSentence(response, 1000) : [response];
+    const parts = response.length > 1000
+      ? splitAtSentence(response, 1000)
+      : [response];
     for (const part of parts) {
       await storeOutboundMessage(ctx, part);
     }
@@ -33,16 +48,27 @@ export async function dispatch(ctx: PipelineContext, response: string | null): P
 
   const gowaBase = Deno.env.get("GOWA_BASE_URL")?.replace(/\/$/, "");
   const gowaKey = Deno.env.get("GOWA_API_KEY");
-  
+
   let deviceId = "";
   if (source === "whatsapp" && gowaBase && gowaKey) {
     // Circuit breaker: health-check GoWA before attempting dispatch
     const healthy = await checkGoWAHealth(gowaBase, gowaKey);
     if (!healthy) {
-      console.error("[DISPATCH] GoWA circuit breaker open — skipping WhatsApp send, saving failed message");
-      for (const part of (response.length > 1000 ? splitAtSentence(response, 1000) : [response])) {
+      console.error(
+        "[DISPATCH] GoWA circuit breaker open — skipping WhatsApp send, saving failed message",
+      );
+      for (
+        const part of (response.length > 1000
+          ? splitAtSentence(response, 1000)
+          : [response])
+      ) {
         await storeOutboundMessage(ctx, part);
-        await saveFailedMessage(ctx, phone || "unknown", part, "GoWA circuit breaker — health check failed");
+        await saveFailedMessage(
+          ctx,
+          phone || "unknown",
+          part,
+          "GoWA circuit breaker — health check failed",
+        );
       }
       return;
     }
@@ -58,22 +84,18 @@ export async function dispatch(ctx: PipelineContext, response: string | null): P
 
   const auth = gowaKey ? btoa(gowaKey) : "";
 
-  const parts = response.length > 1000 ? splitAtSentence(response, 1000) : [response];
+  const parts = response.length > 1000
+    ? splitAtSentence(response, 1000)
+    : [response];
 
   for (const part of parts) {
     await storeOutboundMessage(ctx, part);
-    
-    if (source === "whatsapp" && deviceId && phone) {
-      await sendTyping(gowaBase, auth, deviceId, phone, "start");
-      const delayMs = Math.min(part.length * 12, 1500);
-      await new Promise(resolve => setTimeout(resolve, delayMs));
-      await sendTyping(gowaBase, auth, deviceId, phone, "stop");
-    }
 
     if (source === "whatsapp" && deviceId && phone) {
       const formatted = part.replace(/\*\*(.+?)\*\*/g, "*$1*");
+      await sendTyping(gowaBase, auth, deviceId, phone, "stop");
       await sendWithRetry(ctx, gowaBase!, phone, formatted, auth, deviceId);
-      if (parts.length > 1) await new Promise(res => setTimeout(res, 500));
+      if (parts.length > 1) await new Promise((res) => setTimeout(res, 500));
     }
   }
 
@@ -83,27 +105,57 @@ export async function dispatch(ctx: PipelineContext, response: string | null): P
     .eq("id", ctx.session.id);
 }
 
-async function sendWithRetry(ctx: PipelineContext, gowaBase: string, phone: string, text: string, auth: string, deviceId: string, attempt = 1): Promise<void> {
+async function sendWithRetry(
+  ctx: PipelineContext,
+  gowaBase: string,
+  phone: string,
+  text: string,
+  auth: string,
+  deviceId: string,
+  attempt = 1,
+): Promise<void> {
   const backoffs = [0, 1000, 2000, 4000];
-  if (attempt > 1) await new Promise(res => setTimeout(res, backoffs[attempt - 1]));
+  if (attempt > 1) {
+    await new Promise((res) => setTimeout(res, backoffs[attempt - 1]));
+  }
 
   try {
     const res = await fetch(`${gowaBase}/send/message`, {
       method: "POST",
-      headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json", "X-Device-Id": deviceId },
+      headers: {
+        Authorization: `Basic ${auth}`,
+        "Content-Type": "application/json",
+        "X-Device-Id": deviceId,
+      },
       body: JSON.stringify({ phone, message: text }),
-      signal: AbortSignal.timeout(10000)
+      signal: AbortSignal.timeout(10000),
     });
 
     if (!res.ok && attempt < 3) {
-      return sendWithRetry(ctx, gowaBase, phone, text, auth, deviceId, attempt + 1);
+      return sendWithRetry(
+        ctx,
+        gowaBase,
+        phone,
+        text,
+        auth,
+        deviceId,
+        attempt + 1,
+      );
     } else if (!res.ok) {
       await saveFailedMessage(ctx, phone, text, `GoWA ${res.status}`);
     }
   } catch (e) {
     console.error("[DISPATCH] GoWA send failed:", e?.message || e);
     if (attempt < 3) {
-      return sendWithRetry(ctx, gowaBase, phone, text, auth, deviceId, attempt + 1);
+      return sendWithRetry(
+        ctx,
+        gowaBase,
+        phone,
+        text,
+        auth,
+        deviceId,
+        attempt + 1,
+      );
     }
     await saveFailedMessage(ctx, phone, text, "GoWA timeout");
   }
@@ -134,15 +186,18 @@ async function storeOutboundMessage(ctx: PipelineContext, response: string) {
     direction: "outbound",
     role: "agent",
     agent_type: ctx.agentType || "customer_support",
-    is_test: ctx.payload.is_test || false
+    is_test: ctx.payload.is_test || false,
   });
 }
 
-async function checkGoWAHealth(baseUrl: string, apiKey: string): Promise<boolean> {
+async function checkGoWAHealth(
+  baseUrl: string,
+  apiKey: string,
+): Promise<boolean> {
   try {
     const res = await fetch(`${baseUrl}/devices`, {
       headers: { Authorization: `Basic ${btoa(apiKey)}` },
-      signal: AbortSignal.timeout(5000)
+      signal: AbortSignal.timeout(5000),
     });
     return res.ok;
   } catch {
@@ -150,7 +205,12 @@ async function checkGoWAHealth(baseUrl: string, apiKey: string): Promise<boolean
   }
 }
 
-async function saveFailedMessage(ctx: PipelineContext, phone: string, text: string, reason: string) {
+async function saveFailedMessage(
+  ctx: PipelineContext,
+  phone: string,
+  text: string,
+  reason: string,
+) {
   try {
     await ctx.supabase.from("failed_messages").insert({
       workspace_id: ctx.payload.workspace_id,
@@ -158,7 +218,7 @@ async function saveFailedMessage(ctx: PipelineContext, phone: string, text: stri
       raw_message: text,
       failure_reason: reason,
       retry_count: 3,
-      resolved: false
+      resolved: false,
     });
   } catch (e) {
     console.error("[DISPATCH] Failed to save failed_message:", e?.message || e);

@@ -12062,22 +12062,17 @@ async function runT5(ctx, response, agentType) {
 }
 
 // supabase/functions/agent-orchestrator/lib/dispatch.ts
-async function sendPresence(gowaBase, auth, deviceId, phone, type) {
+async function sendChatPresence(gowaBase, auth, deviceId, phone, action) {
   try {
-    const ac = new AbortController();
-    setTimeout(() => ac.abort(), 5e3);
-    await fetch(`${gowaBase}/send/presence`, {
+    await fetch(`${gowaBase}/send/chat-presence`, {
       method: "POST",
       headers: {
         Authorization: `Basic ${auth}`,
         "Content-Type": "application/json",
         "X-Device-Id": deviceId
       },
-      body: JSON.stringify({
-        phone,
-        type
-      }),
-      signal: ac.signal
+      body: JSON.stringify({ phone, action }),
+      signal: AbortSignal.timeout(5000)
     });
   } catch (_6) {
   }
@@ -12112,13 +12107,8 @@ async function dispatch(ctx, response) {
   for (const part of parts) {
     await storeOutboundMessage(ctx, part);
     if (source === "whatsapp" && deviceId && phone) {
-      await sendPresence(gowaBase, auth, deviceId, phone, "available");
-      const delayMs = Math.min(part.length * 12, 1500);
-      await new Promise((resolve) => setTimeout(resolve, delayMs));
-      await sendPresence(gowaBase, auth, deviceId, phone, "unavailable");
-    }
-    if (source === "whatsapp" && deviceId && phone) {
       const formatted = part.replace(/\*\*(.+?)\*\*/g, "*$1*");
+      await sendChatPresence(gowaBase, auth, deviceId, phone, "stop");
       await sendWithRetry(ctx, gowaBase, phone, formatted, auth, deviceId);
       if (parts.length > 1) await new Promise((res) => setTimeout(res, 500));
     }
@@ -12341,6 +12331,25 @@ async function processMessage(payload) {
       ];
     }
     await runT2(ctx);
+    if (payload.source === "whatsapp" && !payload.is_test) {
+      try {
+        const gowaBase = Deno.env.get("GOWA_BASE_URL")?.replace(/\/$/, "");
+        const gowaKey = Deno.env.get("GOWA_API_KEY");
+        if (gowaBase && gowaKey) {
+          const { data: gowaSession } = await supabase.from("gowa_sessions").select("gowa_session_id").eq("workspace_id", payload.workspace_id).eq("status", "connected").maybeSingle();
+          const deviceId = gowaSession?.gowa_session_id || "";
+          const phone = payload.customer_phone;
+          if (deviceId && phone) {
+            fetch(`${gowaBase}/send/chat-presence`, {
+              method: "POST",
+              headers: { Authorization: `Basic ${btoa(gowaKey)}`, "Content-Type": "application/json", "X-Device-Id": deviceId },
+              body: JSON.stringify({ phone, action: "start" }),
+              signal: AbortSignal.timeout(5000)
+            }).catch(() => {});
+          }
+        }
+      } catch (_) {}
+    }
     await runT3(ctx);
     const kbWasEmpty = ctx._kbChunks?.length === 0;
     const t4 = await runT32(ctx);
@@ -12413,6 +12422,24 @@ async function processMessage(payload) {
   } catch (e) {
     console.error("[ORCHESTRATOR] CRASH in processMessage:", e.message);
     console.error("[ORCHESTRATOR] Stack:", e.stack);
+    if (payload.source === "whatsapp" && payload.customer_phone && !payload.is_test) {
+      try {
+        const gowaBase = Deno.env.get("GOWA_BASE_URL")?.replace(/\/$/, "");
+        const gowaKey = Deno.env.get("GOWA_API_KEY");
+        if (gowaBase && gowaKey) {
+          const { data: gowaSession } = await supabase.from("gowa_sessions").select("gowa_session_id").eq("workspace_id", payload.workspace_id).eq("status", "connected").maybeSingle();
+          const deviceId = gowaSession?.gowa_session_id || "";
+          if (deviceId) {
+            fetch(`${gowaBase}/send/chat-presence`, {
+              method: "POST",
+              headers: { Authorization: `Basic ${btoa(gowaKey)}`, "Content-Type": "application/json", "X-Device-Id": deviceId },
+              body: JSON.stringify({ phone: payload.customer_phone, action: "stop" }),
+              signal: AbortSignal.timeout(5000)
+            }).catch(() => {});
+          }
+        }
+      } catch (_) {}
+    }
     try {
       await supabase.from("debug_logs").insert({
         level: "error",
