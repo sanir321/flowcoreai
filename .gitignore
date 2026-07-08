@@ -46,6 +46,15 @@ skills-lock.json
 supabase/functions/agent-orchestrator/agent-orchestrator-bundle-deno.ts
 supabase/functions/agent-orchestrator/index.js
 
+# internal planning & docs
+/docs/
+TODO.md
+AGENTS.md
+
+# unit / integration tests (not for production builds)
+/tests/
+supabase/functions/agent-orchestrator/tests/
+
 # media files (keep local only)
 public/images/agents/*.png
 public/producthunt/*.mp4
