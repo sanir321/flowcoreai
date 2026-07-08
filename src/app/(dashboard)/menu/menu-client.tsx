@@ -32,25 +32,14 @@ interface MenuItem {
   created_at: string | null
 }
 
-interface MenuMedia {
-  id: string
-  file_name: string
-  file_path: string
-  file_type: string
-  created_at: string | null
-}
-
 const CATEGORIES = ["Food", "Beverage", "Dessert", "Service", "Other"]
 
 export function MenuClient({
   initialItems,
-  initialMedia,
 }: {
   initialItems: MenuItem[]
-  initialMedia: MenuMedia[]
 }) {
   const [items, setItems] = useState(initialItems)
-  const [media, setMedia] = useState(initialMedia)
   const [search, setSearch] = useState("")
   const [activeTab, setActiveTab] = useState<string>("all")
   const [expandedId, setExpandedId] = useState<string | null>(null)

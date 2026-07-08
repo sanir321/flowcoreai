@@ -20,9 +20,6 @@ export async function middleware(request: NextRequest) {
 
   const url = request.nextUrl.clone()
 
-  const userAgent = request.headers.get("user-agent") || ""
-  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent)
-
   const publicRoutes = ["/", "/login", "/faq", "/changelog", "/legal", "/pricing", "/features", "/about", "/auth/callback"]
   const isPublicRoute = publicRoutes.some(route =>
     route === "/" ? url.pathname === "/" : url.pathname.startsWith(route)

@@ -21,19 +21,10 @@ export default async function MenuPage() {
     .order("category")
     .order("name")
 
-  const { data: media } = await supabase
-    .from("menu_media")
-    .select("*")
-    .eq("workspace_id", workspaceId)
-    .is("deleted_at", null)
-    .order("created_at", { ascending: false })
-
   return (
     <MenuClient
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       initialItems={(items as any[]) || []}
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      initialMedia={(media as any[]) || []}
     />
   )
 }
