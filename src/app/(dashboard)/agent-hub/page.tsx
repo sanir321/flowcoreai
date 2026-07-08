@@ -13,7 +13,7 @@ export default async function AgentHubPage() {
     redirect("/login")
   }
 
-  const workspaceId = user.app_metadata.workspace_id
+  const workspaceId = user.app_metadata?.workspace_id
   if (!workspaceId) {
     redirect("/onboarding")
   }

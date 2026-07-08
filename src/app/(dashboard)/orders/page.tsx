@@ -10,8 +10,26 @@ export default async function OrdersPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  const workspaceId = user.app_metadata?.workspace_id
-  if (!workspaceId) redirect("/onboarding")
+  let workspaceId = user.app_metadata?.workspace_id
+  if (!workspaceId) {
+    const { data: w } = await supabase
+      .from("workspaces")
+      .select("id")
+      .eq("owner_id", user.id)
+      .eq("status", "active")
+      .is("deleted_at", null)
+      .maybeSingle()
+    if (w) workspaceId = w.id
+    else redirect("/onboarding")
+  }
+
+  const { data: ws } = await supabase
+    .from("workspaces")
+    .select("id")
+    .eq("id", workspaceId)
+    .is("deleted_at", null)
+    .single()
+  if (!ws) redirect("/onboarding")
 
   const { data: orders } = await supabase
     .from("orders")

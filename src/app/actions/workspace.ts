@@ -76,10 +76,10 @@ export async function createWorkspace(input: unknown): Promise<ActionResponse<{ 
 
     if (error) throw error
 
-    // Set workspace_id in app_metadata immediately so the user can access the workspace
-    // even if finalizeOnboarding fails later
+    // Set workspace_id in app_metadata — fire-and-forget because all dashboard pages
+    // now have DB fallback (query by owner_id) if the JWT is stale
     const admin = createAdminClient()
-    await admin.auth.admin.updateUserById(user.id, {
+    admin.auth.admin.updateUserById(user.id, {
       app_metadata: { workspace_id: data.id }
     }).catch(e => console.error("[WORKSPACE_METADATA_UPDATE_FAILED]", e))
 

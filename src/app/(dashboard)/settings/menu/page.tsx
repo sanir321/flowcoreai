@@ -8,8 +8,18 @@ export default async function MenuSettingsPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  const workspaceId = user.app_metadata?.workspace_id
-  if (!workspaceId) redirect("/onboarding")
+  let workspaceId = user.app_metadata?.workspace_id
+  if (!workspaceId) {
+    const { data: ws } = await supabase
+      .from("workspaces")
+      .select("id")
+      .eq("owner_id", user.id)
+      .eq("status", "active")
+      .is("deleted_at", null)
+      .maybeSingle()
+    if (ws) workspaceId = ws.id
+    else redirect("/onboarding")
+  }
 
   const { data: items } = await supabase
     .from("menu_items")

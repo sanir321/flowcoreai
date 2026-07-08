@@ -208,7 +208,7 @@ function isMeaningfulChunk(chunk: string): boolean {
 
 // Embed up to BATCH null-embedding chunks for a source. Each call runs in its own
 // worker invocation so the gte-small CPU budget resets between batches.
-const BATCH = 3
+const BATCH = 10
 async function embedPendingBatch(supabase: any, source_id: string, retryCount = 0) {
   const { data: pending, error: selErr } = await supabase
     .from('kb_chunks')

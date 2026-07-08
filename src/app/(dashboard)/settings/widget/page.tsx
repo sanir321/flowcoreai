@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
+import { useWorkspace } from "@/hooks/use-workspace"
 import { updateWidgetConfig } from "@/app/actions/settings"
 import WidgetPreview from "@/components/widget/preview"
 import type { WidgetConfig } from "@/components/widget/preview"
@@ -54,7 +55,7 @@ export default function WidgetSettingsPage() {
   const [copied, setCopied] = useState(false)
   const [origin, setOrigin] = useState("")
   const [saving, setSaving] = useState(false)
-  const [workspaceId, setWorkspaceId] = useState<string | null>(null)
+  const { workspaceId } = useWorkspace()
   
   // Preview Controls
   const [previewView, setPreviewView] = useState<"form" | "chat">("form")
@@ -82,36 +83,33 @@ export default function WidgetSettingsPage() {
   useEffect(() => {
     if (typeof window === "undefined") return
     setOrigin(window.location.origin)
+  }, [])
+
+  useEffect(() => {
+    if (!workspaceId) return
     let aborted = false
     const supabase = createClient()
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.from("widget_config").select("*").eq("workspace_id", workspaceId).maybeSingle().then(({ data: d2 }) => {
       if (aborted) return
-      const wid = user?.app_metadata?.workspace_id as string
-      if (wid) {
-        setWorkspaceId(wid)
-        supabase.from("widget_config").select("*").eq("workspace_id", wid).maybeSingle().then(({ data: d2 }) => {
-          if (aborted) return
-          if (d2) {
-            const d = d2 as Record<string, unknown>
-            setConfig({
-              header_text: (d.header_text as string) || "FlowCore",
-              agent_name: (d.agent_name as string) || "Assistant",
-              greeting: (d.greeting as string) || "Hi! How can I help?",
-              post_form_message: (d.post_form_message as string) || "Thank you! How can I help you today?",
-              accent_color: (d.accent_color as string) || "#050505",
-              launcher_icon: (d.launcher_icon as string) || "chat",
-              allow_anonymous: (d.allow_anonymous as boolean) || false,
-              auto_fill_params: (d.auto_fill_params as boolean) || false,
-              trusted_domains: ((d.allowed_domains as string[])?.join(", ")) || "",
-              email_notifications: (d.email_notifications as boolean) || false,
-              logo_url: (d.logo_url as string) || ""
-            })
-          }
+      if (d2) {
+        const d = d2 as Record<string, unknown>
+        setConfig({
+          header_text: (d.header_text as string) || "FlowCore",
+          agent_name: (d.agent_name as string) || "Assistant",
+          greeting: (d.greeting as string) || "Hi! How can I help?",
+          post_form_message: (d.post_form_message as string) || "Thank you! How can I help you today?",
+          accent_color: (d.accent_color as string) || "#050505",
+          launcher_icon: (d.launcher_icon as string) || "chat",
+          allow_anonymous: (d.allow_anonymous as boolean) || false,
+          auto_fill_params: (d.auto_fill_params as boolean) || false,
+          trusted_domains: ((d.allowed_domains as string[])?.join(", ")) || "",
+          email_notifications: (d.email_notifications as boolean) || false,
+          logo_url: (d.logo_url as string) || ""
         })
       }
     })
     return () => { aborted = true }
-  }, [])
+  }, [workspaceId])
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]

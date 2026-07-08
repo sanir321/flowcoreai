@@ -12,6 +12,16 @@ export function useWorkspace() {
       const { data: { user } } = await supabase.auth.getUser()
       if (user?.app_metadata?.workspace_id) {
         setWorkspaceId(user.app_metadata.workspace_id)
+      } else if (user?.id) {
+        // Fallback: if JWT is stale, query the DB directly
+        const { data: ws } = await supabase
+          .from("workspaces")
+          .select("id")
+          .eq("owner_id", user.id)
+          .eq("status", "active")
+          .is("deleted_at", null)
+          .maybeSingle()
+        if (ws) setWorkspaceId(ws.id)
       }
       setIsLoading(false)
     }
