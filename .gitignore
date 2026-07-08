@@ -39,6 +39,7 @@ supabase/functions/agent-orchestrator/dist/
 supabase/functions/agent-orchestrator/index.js
 .claude/
 .agents/
+.planning/
 test-results/
 skills-lock.json
 
