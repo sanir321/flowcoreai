@@ -1,15 +1,15 @@
 import { PipelineContext } from "./types.ts";
 
-async function sendPresence(gowaBase: string, auth: string, deviceId: string, phone: string, type: string): Promise<void> {
+async function sendTyping(gowaBase: string, auth: string, deviceId: string, phone: string, action: "start" | "stop"): Promise<void> {
   try {
-    await fetch(`${gowaBase}/send/presence`, {
+    await fetch(`${gowaBase}/send/chat-presence`, {
       method: "POST",
       headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json", "X-Device-Id": deviceId },
-      body: JSON.stringify({ phone, type }),
+      body: JSON.stringify({ phone, action }),
       signal: AbortSignal.timeout(5000)
     });
   } catch (e) {
-    console.error("[DISPATCH] Presence update failed:", e?.message || e);
+    console.error("[DISPATCH] Typing indicator failed:", e?.message || e);
   }
 }
 
@@ -64,10 +64,10 @@ export async function dispatch(ctx: PipelineContext, response: string | null): P
     await storeOutboundMessage(ctx, part);
     
     if (source === "whatsapp" && deviceId && phone) {
-      await sendPresence(gowaBase, auth, deviceId, phone, "available");
+      await sendTyping(gowaBase, auth, deviceId, phone, "start");
       const delayMs = Math.min(part.length * 12, 1500);
       await new Promise(resolve => setTimeout(resolve, delayMs));
-      await sendPresence(gowaBase, auth, deviceId, phone, "unavailable");
+      await sendTyping(gowaBase, auth, deviceId, phone, "stop");
     }
 
     if (source === "whatsapp" && deviceId && phone) {
