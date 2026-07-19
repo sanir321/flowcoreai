@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { getUserWorkspaceId } from "@/lib/workspace-auth"
 
 export async function GET() {
   try {
@@ -8,7 +9,8 @@ export async function GET() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-    const workspaceId = user.app_metadata?.workspace_id
+    // Get workspace ID via DB lookup (not stale JWT app_metadata)
+    const workspaceId = await getUserWorkspaceId(supabase, user.id)
     if (!workspaceId) return NextResponse.json({ error: "No workspace" }, { status: 400 })
 
     const admin = createAdminClient()
@@ -52,8 +54,26 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "notification_id is required" }, { status: 400 })
     }
 
+    // Verify the notification belongs to this user's workspace
+    // Get workspace ID via DB lookup (not stale JWT app_metadata)
+    const workspaceId = await getUserWorkspaceId(supabase, user.id)
+    if (!workspaceId) return NextResponse.json({ error: "No workspace" }, { status: 400 })
+
     const admin = createAdminClient()
-    const { error } = await (admin as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: notification } = await (admin as any)
+      .from("notifications")
+      .select("id")
+      .eq("id", notification_id)
+      .eq("workspace_id", workspaceId)
+      .maybeSingle()
+
+    if (!notification) {
+      return NextResponse.json({ error: "Notification not found" }, { status: 404 })
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (admin as any)
       .from("notification_reads")
       .insert({ user_id: user.id, notification_id })
       .select()

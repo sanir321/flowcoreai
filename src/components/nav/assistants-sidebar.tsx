@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils"
 import { useState, useEffect, useCallback } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { motion, AnimatePresence } from "framer-motion"
+import { useWorkspace } from "@/hooks/use-workspace"
 
 interface Agent {
   id: string
@@ -22,11 +23,10 @@ export function AssistantsSidebar({ onAddAssistant }: AssistantsSidebarProps) {
   const router = useRouter()
   const [agents, setAgents] = useState<Agent[]>([])
   const supabase = createClient()
+  const { workspaceId } = useWorkspace()
 
   const fetchAgents = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    const workspaceId = user.app_metadata.workspace_id
+    if (!workspaceId) return
 
     const { data } = await supabase
       .from("workspace_agents")
@@ -35,7 +35,7 @@ export function AssistantsSidebar({ onAddAssistant }: AssistantsSidebarProps) {
       .is("deleted_at", null)
     
     setAgents((data as Agent[]) || [])
-  }, [supabase])
+  }, [supabase, workspaceId])
 
   useEffect(() => {
     fetchAgents()

@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server"
 import { CreateSkillSchema, UpdateSkillSchema, DeleteSkillSchema, AssignSkillSchema, UnassignSkillSchema } from "@/lib/schemas"
 import { revalidatePath } from "next/cache"
 import { ActionResponse } from "./workspace"
+import { getUserWorkspaceId } from "@/lib/workspace-auth"
 
 export async function createSkill(input: unknown): Promise<ActionResponse<{ skill_id: string }>> {
   try {
@@ -16,8 +17,10 @@ export async function createSkill(input: unknown): Promise<ActionResponse<{ skil
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
 
-    const workspaceId = user.app_metadata?.workspace_id
+    // Get workspace ID via DB lookup (not stale JWT app_metadata)
+    const workspaceId = await getUserWorkspaceId(supabase, user.id)
     if (!workspaceId) return { data: null, error: "No workspace" }
+
     if (result.data.workspace_id !== workspaceId) return { data: null, error: "Unauthorized" }
 
     const { data: skill, error } = await (supabase as any)
@@ -55,7 +58,8 @@ export async function updateSkill(input: unknown): Promise<ActionResponse<{ succ
 
     if (!skill) return { data: null, error: "Skill not found" }
 
-    const workspaceId = user.app_metadata?.workspace_id
+    // Get workspace ID via DB lookup (not stale JWT app_metadata)
+    const workspaceId = await getUserWorkspaceId(supabase, user.id)
     if (!workspaceId || skill.workspace_id !== workspaceId) return { data: null, error: "Unauthorized" }
 
     const { error } = await (supabase as any)
@@ -90,7 +94,8 @@ export async function deleteSkill(input: unknown): Promise<ActionResponse<{ succ
 
     if (!skill) return { data: null, error: "Skill not found" }
 
-    const workspaceId = user.app_metadata?.workspace_id
+    // Get workspace ID via DB lookup (not stale JWT app_metadata)
+    const workspaceId = await getUserWorkspaceId(supabase, user.id)
     if (!workspaceId || skill.workspace_id !== workspaceId) return { data: null, error: "Unauthorized" }
 
     const { error } = await (supabase as any)
@@ -117,7 +122,8 @@ export async function assignSkill(input: unknown): Promise<ActionResponse<{ succ
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
 
-    const workspaceId = user.app_metadata?.workspace_id
+    // Get workspace ID via DB lookup (not stale JWT app_metadata)
+    const workspaceId = await getUserWorkspaceId(supabase, user.id)
     if (!workspaceId) return { data: null, error: "No workspace" }
 
     const { data: agent } = await (supabase as any)
@@ -151,7 +157,8 @@ export async function unassignSkill(input: unknown): Promise<ActionResponse<{ su
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
 
-    const workspaceId = user.app_metadata?.workspace_id
+    // Get workspace ID via DB lookup (not stale JWT app_metadata)
+    const workspaceId = await getUserWorkspaceId(supabase, user.id)
     if (!workspaceId) return { data: null, error: "No workspace" }
 
     const { data: agent } = await (supabase as any)

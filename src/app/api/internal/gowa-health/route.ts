@@ -8,7 +8,8 @@ export async function GET(req: NextRequest) {
     // Auth: verify Bearer token against INTERNAL_CRON_SECRET
     // NOTE: x-vercel-cron header is NOT trusted for auth (any client can set it)
     const authHeader = req.headers.get("Authorization");
-    if (authHeader !== `Bearer ${process.env.INTERNAL_CRON_SECRET}`) {
+    const cronSecret = process.env.INTERNAL_CRON_SECRET;
+    if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
       return new Response("Unauthorized", { status: 401 });
     }
 

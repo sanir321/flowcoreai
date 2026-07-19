@@ -40,7 +40,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
     }
 
-    const { to, subject, template, data } = parsed.data;
+    const { to, subject: rawSubject, template, data } = parsed.data;
+    const subject = rawSubject.replace(/[\r\n]/g, '');
 
     let emailHtml = "";
 

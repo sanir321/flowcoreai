@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { sendWhatsAppText } from "@/lib/gowa";
 import { z } from "zod";
 import { rateLimit } from "@/lib/rate-limit";
+import { getUserWorkspaceId } from "@/lib/workspace-auth";
 
 const UpdateSchema = z.object({
   id: z.string().uuid(),
@@ -22,7 +23,8 @@ export async function PUT(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const workspaceId = user.app_metadata?.workspace_id;
+    // Get workspace ID via DB lookup (not stale JWT app_metadata)
+    const workspaceId = await getUserWorkspaceId(supabase, user.id);
     if (!workspaceId) return NextResponse.json({ error: "No workspace" }, { status: 400 });
 
     const body = await req.json();
@@ -44,9 +46,25 @@ export async function PUT(req: NextRequest) {
     }
 
     const nextStatus = parsed.data.status;
+
+    // Enforce valid state transitions
+    const validTransitions: Record<string, string[]> = {
+      pending: ["paid", "cancelled"],
+      paid: ["fulfilled", "cancelled"],
+      fulfilled: ["cancelled"],
+      cancelled: [],
+    };
+    const allowed = validTransitions[existing.status as string] || [];
+    if (!allowed.includes(nextStatus)) {
+      return NextResponse.json(
+        { error: `Cannot transition from "${existing.status}" to "${nextStatus}"` },
+        { status: 409 }
+      );
+    }
+
     const isPaidTransition = existing.status === "pending" && nextStatus === "paid";
     const isFulfilledTransition = existing.status === "paid" && nextStatus === "fulfilled";
-    const isCancelledTransition = nextStatus === "cancelled";
+    const isCancelledTransition = nextStatus === "cancelled" && existing.status !== "cancelled";
 
     const now = new Date().toISOString();
 

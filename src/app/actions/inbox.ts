@@ -5,6 +5,7 @@ import { SendManualReplySchema, ResolveEscalationSchema, TakeOverSessionSchema }
 import { revalidatePath } from "next/cache"
 import { sendTextMessage } from "@/lib/gowa"
 import { ActionResponse } from "./workspace"
+import { getUserWorkspaceId, verifyWorkspaceOwnership } from "@/lib/workspace-auth"
 
 export async function takeOverSession(input: unknown): Promise<ActionResponse<{ success: true }>> {
   try {
@@ -15,7 +16,8 @@ export async function takeOverSession(input: unknown): Promise<ActionResponse<{ 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
 
-    const workspaceId = user.app_metadata?.workspace_id
+    // Get workspace ID via DB lookup (not stale JWT app_metadata)
+    const workspaceId = await getUserWorkspaceId(supabase, user.id)
     if (!workspaceId) return { data: null, error: "No workspace" }
 
     const { session_id } = result.data
@@ -54,7 +56,10 @@ export async function sendManualReply(input: unknown): Promise<ActionResponse<an
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
 
-    const workspaceId = user.app_metadata.workspace_id
+    // Get workspace ID via DB lookup (not stale JWT app_metadata)
+    const workspaceId = await getUserWorkspaceId(supabase, user.id)
+    if (!workspaceId) return { data: null, error: "No workspace" }
+
     const { session_id, content } = result.data
 
     // Fetch session details
@@ -132,7 +137,8 @@ export async function resolveEscalation(input: unknown): Promise<ActionResponse<
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
 
-    const workspaceId = user.app_metadata?.workspace_id
+    // Get workspace ID via DB lookup (not stale JWT app_metadata)
+    const workspaceId = await getUserWorkspaceId(supabase, user.id)
     if (!workspaceId) return { data: null, error: "No workspace" }
 
     const { escalation_id, notes } = result.data

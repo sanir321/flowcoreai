@@ -6,6 +6,7 @@ import { z } from "zod"
 import { CreateAppointmentSchema, RescheduleAppointmentSchema } from "@/lib/schemas/appointments"
 import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent } from "@/lib/google"
 import { ActionResponse } from "./workspace"
+import { verifyWorkspaceOwnership } from "@/lib/workspace-auth"
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function createAppointment(input: unknown): Promise<ActionResponse<any>> {
@@ -24,10 +25,9 @@ export async function createAppointment(input: unknown): Promise<ActionResponse<
 
     const { workspace_id, customer_name, customer_phone, service, start_at, end_at } = result.data
 
-    // IDOR Check: Ensure user owns the workspace
-    if (user.app_metadata.workspace_id !== workspace_id) {
-      return { data: null, error: "Forbidden: You do not own this workspace" }
-    }
+    // IDOR Check: verify ownership via DB (not stale JWT app_metadata)
+    const auth = await verifyWorkspaceOwnership(supabase, user.id, workspace_id)
+    if (!auth.authorized) return { data: null, error: auth.error }
 
     // 1. Create Google Calendar Event
     let google_event_id = null
@@ -98,10 +98,9 @@ export async function rescheduleAppointment(input: unknown): Promise<ActionRespo
       return { data: null, error: "Appointment not found" }
     }
 
-    // IDOR Check: Ensure user owns the workspace associated with this appointment
-    if (user.app_metadata.workspace_id !== existing.workspace_id) {
-      return { data: null, error: "Forbidden: You do not own this workspace" }
-    }
+    // IDOR Check: verify ownership via DB (not stale JWT app_metadata)
+    const auth = await verifyWorkspaceOwnership(supabase, user.id, existing.workspace_id)
+    if (!auth.authorized) return { data: null, error: auth.error }
 
     if (existing.google_event_id) {
       try {
@@ -163,10 +162,9 @@ export async function cancelAppointment(input: unknown): Promise<ActionResponse<
       return { data: null, error: "Appointment not found" }
     }
 
-    // IDOR Check: Ensure user owns the workspace associated with this appointment
-    if (user.app_metadata.workspace_id !== appt.workspace_id) {
-      return { data: null, error: "Forbidden: You do not own this workspace" }
-    }
+    // IDOR Check: verify ownership via DB (not stale JWT app_metadata)
+    const auth = await verifyWorkspaceOwnership(supabase, user.id, appt.workspace_id)
+    if (!auth.authorized) return { data: null, error: auth.error }
 
     if (appt.google_event_id) {
       try {

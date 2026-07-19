@@ -36,21 +36,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/login?error=Could not authenticate user`)
   }
 
-  const workspaceId = data.user.app_metadata?.workspace_id
-
-  let redirectTo: string
-  if (workspaceId) {
-    redirectTo = "/inbox"
-  } else {
-    const { data: existing } = await supabase
-      .from("workspaces")
-      .select("id")
-      .eq("owner_id", data.user.id)
-      .eq("status", "active")
-      .is("deleted_at", null)
-      .maybeSingle()
-    redirectTo = existing ? "/inbox" : next
-  }
+  const { data: existingWorkspace } = await supabase
+    .from("workspaces")
+    .select("id")
+    .eq("owner_id", data.user.id)
+    .eq("status", "active")
+    .is("deleted_at", null)
+    .maybeSingle()
+  const redirectTo = existingWorkspace ? "/inbox" : next
 
   if (!data.user.last_sign_in_at) {
     const username = data.user.user_metadata?.full_name || data.user.email?.split("@")[0] || "User"

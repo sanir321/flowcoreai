@@ -22,7 +22,7 @@ export async function middleware(request: NextRequest) {
 
   const publicRoutes = ["/", "/login", "/faq", "/changelog", "/legal", "/pricing", "/features", "/about", "/auth/callback"]
   const isPublicRoute = publicRoutes.some(route =>
-    route === "/" ? url.pathname === "/" : url.pathname.startsWith(route)
+    route === "/" ? url.pathname === "/" : url.pathname === route || url.pathname.startsWith(route + "/")
   )
 
   const dashboardRoutes = [
@@ -95,7 +95,13 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(url)
     }
 
-    const workspaceId = user.app_metadata?.workspace_id
+    const { data: ws } = await supabase
+      .from("workspaces")
+      .select("id")
+      .eq("owner_id", user.id)
+      .is("deleted_at", null)
+      .maybeSingle()
+    const workspaceId = ws?.id
 
     if (isDashboardRoute && !workspaceId) {
       const onboardingUrl = new URL("/onboarding", request.url)
@@ -123,7 +129,6 @@ function applySecurityHeaders(response: NextResponse, nonce: string): NextRespon
   Object.entries(headers).forEach(([key, value]) => {
     response.headers.set(key, value);
   });
-  response.headers.set("x-nonce", nonce);
   return response
 }
 

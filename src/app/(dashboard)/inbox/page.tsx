@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { InboxClient } from "./inbox-client"
+import { getUserWorkspaceId } from "@/lib/workspace-auth"
 
 export const metadata: Metadata = { title: "Inbox" }
 
@@ -10,18 +11,8 @@ export default async function InboxPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  let workspaceId = user.app_metadata?.workspace_id
-  if (!workspaceId) {
-    const { data: ws } = await supabase
-      .from("workspaces")
-      .select("id")
-      .eq("owner_id", user.id)
-      .eq("status", "active")
-      .is("deleted_at", null)
-      .maybeSingle()
-    if (ws) workspaceId = ws.id
-    else redirect("/onboarding")
-  }
+  const workspaceId = await getUserWorkspaceId(supabase, user.id)
+  if (!workspaceId) redirect("/onboarding")
 
   const { data: workspace } = await supabase
     .from("workspaces")

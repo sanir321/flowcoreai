@@ -10,6 +10,7 @@ import { sendEmail } from "@/lib/mail"
 import { render } from "@react-email/components"
 import { WelcomeEmail } from "@/components/emails/welcome"
 import * as React from "react"
+import { getUserWorkspaceId } from "@/lib/workspace-auth"
 
 export interface Workspace {
   id: string
@@ -249,7 +250,8 @@ export async function deleteWorkspace(): Promise<ActionResponse<{ success: true 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
 
-    const workspaceId = user.app_metadata?.workspace_id
+    // Get workspace ID via DB lookup (not stale JWT app_metadata)
+    const workspaceId = await getUserWorkspaceId(supabase, user.id)
     if (!workspaceId) return { data: null, error: "No workspace found" }
 
     // Cleanup GoWA session before deleting workspace

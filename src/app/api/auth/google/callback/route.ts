@@ -90,14 +90,14 @@ export async function GET(req: NextRequest) {
         updated_at: new Date().toISOString(),
       });
 
-    return NextResponse.redirect(`${origin}/settings/integrations?connected=google`);
+    const successResponse = NextResponse.redirect(`${origin}/settings/integrations?connected=google`);
+    successResponse.cookies.set("google_oauth_nonce", "", { maxAge: 0, path: "/" });
+    return successResponse;
 
   } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
     console.error("Google Callback Error:", error);
-    return NextResponse.redirect(`${origin}/settings/integrations?error=Failed to connect Google. Please try again.`);
-  } finally {
-    // Clear the nonce cookie
-    const response = NextResponse.redirect(`${origin}/settings/integrations`);
-    response.cookies.set("google_oauth_nonce", "", { maxAge: 0, path: "/api/auth/google/callback" });
+    const errorResponse = NextResponse.redirect(`${origin}/settings/integrations?error=Failed to connect Google. Please try again.`);
+    errorResponse.cookies.set("google_oauth_nonce", "", { maxAge: 0, path: "/" });
+    return errorResponse;
   }
 }

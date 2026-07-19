@@ -8,6 +8,7 @@ import { revalidatePath } from "next/cache"
 import { ActionResponse } from "./workspace"
 import { z } from "zod"
 import { logAudit } from "@/lib/audit"
+import { verifyWorkspaceOwnership, getUserWorkspaceId } from "@/lib/workspace-auth"
 
 // Lazy-initialized admin client for triggering background tasks
 let _supabaseAdmin: ReturnType<typeof createSupabaseClient> | null = null
@@ -45,7 +46,8 @@ export async function addUrlSource(input: unknown): Promise<ActionResponse<{ id:
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) return { data: null, error: "Unauthorized" }
 
-    const userWorkspaceId = user.app_metadata?.workspace_id
+    // Get workspace ID via DB lookup (not stale JWT app_metadata)
+    const userWorkspaceId = await getUserWorkspaceId(supabase, user.id)
     if (!userWorkspaceId) return { data: null, error: "No workspace" }
     if (workspace_id !== userWorkspaceId) return { data: null, error: "Unauthorized" }
 
@@ -104,8 +106,8 @@ export async function deleteSource(id: string): Promise<ActionResponse<{ success
     const { data: source } = await supabase.from("kb_sources").select("workspace_id, bp_extracted_fields").eq("id", res.data).maybeSingle()
     if (!source) return { data: null, error: "Source not found" }
 
-    // Verify workspace ownership
-    const userWsId = user.app_metadata?.workspace_id
+    // Verify workspace ownership via DB lookup
+    const userWsId = await getUserWorkspaceId(supabase, user.id)
     if (!userWsId || source.workspace_id !== userWsId) {
       return { data: null, error: "Unauthorized" }
     }
@@ -193,10 +195,9 @@ export async function createDocumentSource(input: unknown): Promise<ActionRespon
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
 
-    // IDOR Check
-    if (user.app_metadata.workspace_id !== workspace_id) {
-      return { data: null, error: "Forbidden: Workspace mismatch" }
-    }
+    // IDOR Check: verify ownership via DB (not stale JWT app_metadata)
+    const auth = await verifyWorkspaceOwnership(supabase, user.id, workspace_id)
+    if (!auth.authorized) return { data: null, error: auth.error }
 
     const { data, error } = await supabase
       .from("kb_sources")
@@ -237,12 +238,14 @@ export async function pasteKbText(input: { workspace_id: string; content: string
   try {
     const { workspace_id, content, tag } = input
     if (!content.trim()) return { data: null, error: "Content is required" }
+    if (content.length > 50000) return { data: null, error: "Content exceeds maximum length of 50,000 characters" }
 
     const supabase = await createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) return { data: null, error: "Unauthorized" }
 
-    const userWorkspaceId = user.app_metadata?.workspace_id
+    // Get workspace ID via DB lookup (not stale JWT app_metadata)
+    const userWorkspaceId = await getUserWorkspaceId(supabase, user.id)
     if (!userWorkspaceId) return { data: null, error: "No workspace" }
     if (workspace_id !== userWorkspaceId) return { data: null, error: "Unauthorized" }
 
@@ -308,10 +311,9 @@ export async function uploadDocumentSource(input: unknown): Promise<ActionRespon
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
 
-    // IDOR Check
-    if (user.app_metadata.workspace_id !== workspace_id) {
-      return { data: null, error: "Forbidden: Workspace mismatch" }
-    }
+    // IDOR Check: verify ownership via DB (not stale JWT app_metadata)
+    const auth = await verifyWorkspaceOwnership(supabase, user.id, workspace_id)
+    if (!auth.authorized) return { data: null, error: auth.error }
 
     const { data, error } = await supabase
       .from("kb_sources")

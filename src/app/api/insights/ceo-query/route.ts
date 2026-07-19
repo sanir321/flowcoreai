@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 import { rateLimit } from "@/lib/rate-limit"
 import { z } from "zod"
+import { getUserWorkspaceId } from "@/lib/workspace-auth"
 
 const QuerySchema = z.object({
   message: z.string().min(1).max(1000).trim(),
@@ -22,10 +23,10 @@ export async function POST(req: Request) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return new NextResponse("Unauthorized", { status: 401 })
 
-    const workspaceId = user.app_metadata.workspace_id
+    // Get workspace ID via DB lookup (not stale JWT app_metadata)
+    const workspaceId = await getUserWorkspaceId(supabase, user.id)
     if (!workspaceId) return new NextResponse("No workspace", { status: 400 })
 
-    // Verify workspace exists (stale JWT guard)
     const { data: workspace } = await supabase
       .from("workspaces").select("id").eq("id", workspaceId).is("deleted_at", null).maybeSingle()
     if (!workspace) return NextResponse.json({ reply: "Workspace not found" }, { status: 404 })
@@ -65,8 +66,8 @@ export async function POST(req: Request) {
       supabase.from("gowa_sessions").select("status, gowa_session_id").eq("workspace_id", workspaceId).is("deleted_at", null).maybeSingle(),
       supabase.from("google_oauth_tokens").select("calendar_id, sheet_id").eq("workspace_id", workspaceId).is("deleted_at", null).maybeSingle(),
       supabase.from("kb_chunks").select("*", { count: "exact", head: true }).eq("workspace_id", workspaceId).is("deleted_at", null),
-      // Optional: Specific Contact Context
-      contact_id ? supabase.from("contacts").select("*").eq("id", contact_id).single() : Promise.resolve(null)
+      // Optional: Specific Contact Context (scoped to workspace)
+      contact_id ? supabase.from("contacts").select("*").eq("id", contact_id).eq("workspace_id", workspaceId).single() : Promise.resolve(null)
     ])
 
     const stats = {

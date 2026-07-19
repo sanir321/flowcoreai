@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import {
   ShieldAlert, User, Search, Filter, X, CheckCircle, Clock,
   AlertTriangle, MessageSquare, ChevronDown, RefreshCw
@@ -79,7 +79,7 @@ export default function EscalationsPage() {
   const [filters, setFilters] = useState<FilterState>({ search: "", status: "all" })
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [resolving, setResolving] = useState<string | null>(null)
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   const fetchLogs = useCallback(async () => {
     setIsLoading(true)
@@ -88,11 +88,9 @@ export default function EscalationsPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      let workspaceId = user.app_metadata?.workspace_id as string | undefined
-      if (!workspaceId) {
-        const { data: ws } = await supabase.from("workspaces").select("id").eq("owner_id", user.id).is("deleted_at", null).order("created_at", { ascending: false }).limit(1).single()
-        workspaceId = ws?.id
-      }
+      let workspaceId: string | undefined
+      const { data: ws } = await supabase.from("workspaces").select("id").eq("owner_id", user.id).is("deleted_at", null).order("created_at", { ascending: true }).limit(1).maybeSingle()
+      workspaceId = ws?.id
       if (!workspaceId) return
 
       const { data, error: fetchError } = await supabase

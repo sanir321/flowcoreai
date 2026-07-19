@@ -6,6 +6,7 @@ import { UpdateNotificationsSchema, UpdateWidgetConfigSchema } from "@/lib/schem
 import { revalidatePath } from "next/cache"
 import { ActionResponse } from "./workspace"
 import { z } from "zod"
+import { verifyWorkspaceOwnership, getUserWorkspaceId } from "@/lib/workspace-auth"
 
 // Lazy-initialized admin client
 let _supabaseAdmin: ReturnType<typeof createSupabaseClient> | null = null
@@ -30,10 +31,9 @@ export async function updateNotifications(input: unknown): Promise<ActionRespons
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
 
-    // IDOR Check
-    if (user.app_metadata.workspace_id !== workspace_id) {
-      return { data: null, error: "Forbidden: Workspace mismatch" }
-    }
+    // IDOR Check: verify ownership via DB (not stale JWT app_metadata)
+    const auth = await verifyWorkspaceOwnership(supabase, user.id, workspace_id)
+    if (!auth.authorized) return { data: null, error: auth.error }
 
     const { error } = await supabase
       .from("workspace_notifications")
@@ -80,10 +80,9 @@ export async function updateWidgetConfig(input: unknown): Promise<ActionResponse
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
 
-    // IDOR Check
-    if (user.app_metadata.workspace_id !== workspace_id) {
-      return { data: null, error: "Forbidden: Workspace mismatch" }
-    }
+    // IDOR Check: verify ownership via DB (not stale JWT app_metadata)
+    const auth = await verifyWorkspaceOwnership(supabase, user.id, workspace_id)
+    if (!auth.authorized) return { data: null, error: auth.error }
 
     const { error } = await supabase
       .from("widget_config")
@@ -109,9 +108,9 @@ export async function getGoogleAuthUrl(workspace_id: string): Promise<ActionResp
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
 
-    if (user.app_metadata.workspace_id !== result.data) {
-      return { data: null, error: "Forbidden: Workspace mismatch" }
-    }
+    // IDOR Check: verify ownership via DB (not stale JWT app_metadata)
+    const auth = await verifyWorkspaceOwnership(supabase, user.id, result.data)
+    if (!auth.authorized) return { data: null, error: auth.error }
 
     const client_id = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
     const redirect_uri = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/google/callback`;
@@ -162,10 +161,9 @@ export async function updateGoogleConfig(input: unknown): Promise<ActionResponse
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return { data: null, error: "Unauthorized" }
 
-      // IDOR Check
-      if (user.app_metadata.workspace_id !== workspace_id) {
-        return { data: null, error: "Forbidden: Workspace mismatch" }
-      }
+      // IDOR Check: verify ownership via DB (not stale JWT app_metadata)
+      const auth = await verifyWorkspaceOwnership(supabase, user.id, workspace_id)
+      if (!auth.authorized) return { data: null, error: auth.error }
   
       const { error } = await supabase
         .from("google_oauth_tokens")
@@ -197,9 +195,9 @@ export async function disconnectGoogleIntegration(workspace_id: string): Promise
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
 
-    if (user.app_metadata.workspace_id !== res.data) {
-      return { data: null, error: "Forbidden: Workspace mismatch" }
-    }
+    // IDOR Check: verify ownership via DB (not stale JWT app_metadata)
+    const auth = await verifyWorkspaceOwnership(supabase, user.id, res.data)
+    if (!auth.authorized) return { data: null, error: auth.error }
 
     const { error } = await supabase
       .from("google_oauth_tokens")
@@ -226,10 +224,9 @@ export async function exportToSheets(workspace_id: string): Promise<ActionRespon
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return { data: null, error: "Unauthorized" }
 
-      // IDOR Check
-      if (user.app_metadata.workspace_id !== res.data) {
-        return { data: null, error: "Forbidden: Workspace mismatch" }
-      }
+      // IDOR Check: verify ownership via DB (not stale JWT app_metadata)
+      const auth = await verifyWorkspaceOwnership(supabase, user.id, res.data)
+      if (!auth.authorized) return { data: null, error: auth.error }
 
       const { data, error } = await getSupabaseAdmin().functions.invoke("crm-export", {
         body: { workspace_id: res.data }

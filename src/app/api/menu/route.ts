@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { z } from "zod";
 import { rateLimit } from "@/lib/rate-limit";
+import { getUserWorkspaceId } from "@/lib/workspace-auth";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -47,7 +48,7 @@ export async function GET(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const workspaceId = user.app_metadata?.workspace_id;
+    const workspaceId = await getUserWorkspaceId(supabase, user.id);
     if (!workspaceId) return NextResponse.json({ error: "No workspace" }, { status: 400 });
 
     const { searchParams } = new URL(req.url);
@@ -105,7 +106,8 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const workspaceId = user.app_metadata?.workspace_id;
+    // Get workspace ID via DB lookup (not stale JWT app_metadata)
+    const workspaceId = await getUserWorkspaceId(supabase, user.id);
     if (!workspaceId) return NextResponse.json({ error: "No workspace" }, { status: 400 });
 
     const body = await req.json();
@@ -138,7 +140,8 @@ export async function PUT(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const workspaceId = user.app_metadata?.workspace_id;
+    // Get workspace ID via DB lookup (not stale JWT app_metadata)
+    const workspaceId = await getUserWorkspaceId(supabase, user.id);
     if (!workspaceId) return NextResponse.json({ error: "No workspace" }, { status: 400 });
 
     const body = await req.json();
@@ -174,7 +177,8 @@ export async function DELETE(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const workspaceId = user.app_metadata?.workspace_id;
+    // Get workspace ID via DB lookup (not stale JWT app_metadata)
+    const workspaceId = await getUserWorkspaceId(supabase, user.id);
     if (!workspaceId) return NextResponse.json({ error: "No workspace" }, { status: 400 });
 
     const { searchParams } = new URL(req.url);

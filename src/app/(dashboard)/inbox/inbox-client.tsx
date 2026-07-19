@@ -36,6 +36,7 @@ import { updateWelcomeTemplate } from "@/app/actions/workspace"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { motion } from "framer-motion"
+import { useMemo } from "react"
 
 interface Contact {
   id: string
@@ -78,7 +79,7 @@ export function InboxClient({
   initialWelcomeTemplate,
   workspaceId 
 }: InboxClientProps) {
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
   const [sessions, setSessions] = useState<Session[]>(initialSessions)
   const [contacts] = useState<Contact[]>(initialContacts)
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)

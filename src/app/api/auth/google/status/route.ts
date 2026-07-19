@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 import { rateLimit } from "@/lib/rate-limit"
+import { getUserWorkspaceId } from "@/lib/workspace-auth"
 
 export async function GET(req: Request) {
   try {
@@ -14,7 +15,7 @@ export async function GET(req: Request) {
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-    const workspaceId = user.app_metadata.workspace_id
+    const workspaceId = await getUserWorkspaceId(supabase, user.id)
     if (!workspaceId) return NextResponse.json({ error: "No workspace" }, { status: 400 })
 
     const { data: googleTokens, error } = await (supabase

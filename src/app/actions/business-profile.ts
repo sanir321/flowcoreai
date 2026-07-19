@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import { logAudit } from "@/lib/audit"
 import { Json } from "@/types/supabase"
+import { verifyWorkspaceOwnership } from "@/lib/workspace-auth"
 
 const businessProfileSchema = z.object({
   workspace_id: z.string().uuid(),
@@ -47,8 +48,9 @@ export async function getBusinessProfile(workspaceId: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { data: null, error: "Unauthorized" }
 
-  const userWsId = user.app_metadata?.workspace_id
-  if (!userWsId || userWsId !== workspaceId) return { data: null, error: "Unauthorized" }
+  // IDOR Check: verify ownership via DB (not stale JWT app_metadata)
+  const auth = await verifyWorkspaceOwnership(supabase, user.id, workspaceId)
+  if (!auth.authorized) return { data: null, error: auth.error }
 
   const { data, error } = await supabase
     .from("workspaces")
@@ -81,8 +83,10 @@ export async function updateBusinessProfile(input: unknown) {
     if (!user) return { data: null, error: "Unauthorized" }
 
     const workspaceId = result.data.workspace_id
-    const userWsId = user.app_metadata?.workspace_id
-    if (!userWsId || userWsId !== workspaceId) return { data: null, error: "Unauthorized" }
+
+    // IDOR Check: verify ownership via DB (not stale JWT app_metadata)
+    const auth = await verifyWorkspaceOwnership(supabase, user.id, workspaceId)
+    if (!auth.authorized) return { data: null, error: auth.error }
 
     const { data: existing } = await supabase
       .from("workspaces")
@@ -169,8 +173,9 @@ export async function getRequiredInfo(workspaceId: string): Promise<{ data: Requ
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
 
-    const userWsId = user.app_metadata?.workspace_id
-    if (!userWsId || userWsId !== workspaceId) return { data: null, error: "Unauthorized" }
+    // IDOR Check: verify ownership via DB (not stale JWT app_metadata)
+    const auth = await verifyWorkspaceOwnership(supabase, user.id, workspaceId)
+    if (!auth.authorized) return { data: null, error: auth.error }
 
     const wsResult = await supabase
       .from("workspaces")

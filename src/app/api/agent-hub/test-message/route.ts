@@ -3,6 +3,7 @@ import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
 import { rateLimit } from "@/lib/rate-limit";
+import { getUserWorkspaceId } from "@/lib/workspace-auth";
 
 
 const supabaseAdmin = createAdminClient(
@@ -35,9 +36,9 @@ export async function POST(req: NextRequest) {
 
     const { workspace_id, message, agent_type } = result.data;
 
-    // IDOR Check: Ensure user owns the workspace
-    if (user.app_metadata?.workspace_id !== workspace_id) {
-      if (process.env.NODE_ENV !== 'production') console.error("[TEST_MSG] IDOR mismatch:", { uid: user.id, meta_ws: user.app_metadata?.workspace_id, req_ws: workspace_id });
+    // IDOR Check: verify workspace ownership via DB lookup (not stale JWT app_metadata)
+    const userWorkspaceId = await getUserWorkspaceId(supabase, user.id);
+    if (!userWorkspaceId || userWorkspaceId !== workspace_id) {
       return NextResponse.json({ error: "Forbidden: You do not own this workspace" }, { status: 403 });
     }
 
@@ -111,6 +112,7 @@ export async function POST(req: NextRequest) {
           agent_type,
           is_test: true
         },
+        signal: controller.signal,
       });
       aiResponse = result.data;
       aiError = result.error;

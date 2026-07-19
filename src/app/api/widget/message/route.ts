@@ -27,9 +27,10 @@ const MessageSchema = z.object({
 const SESSION_RATE_LIMIT = 10;
 const SESSION_RATE_WINDOW = 60;
 
-function getCorsHeaders(origin: string) {
+function getCorsHeaders(origin: string, allowedOrigin?: string) {
+  const effectiveOrigin = (origin && origin !== "*" && allowedOrigin) ? allowedOrigin : "*";
   return {
-    "Access-Control-Allow-Origin": origin || "*",
+    "Access-Control-Allow-Origin": effectiveOrigin,
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
     "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
@@ -167,10 +168,16 @@ export async function GET(req: NextRequest) {
 
     const { workspace_id, session_token, since } = result.data;
 
+    const sinceTimestamp = since ? (() => {
+      const d = new Date(since);
+      if (isNaN(d.getTime())) return null;
+      return d.toISOString();
+    })() : null;
+
     const { data: messages, error } = await supabase.rpc("get_widget_messages", {
       p_workspace_id: workspace_id,
       p_session_token: session_token,
-      p_since: since ? new Date(since).toISOString() : null,
+      p_since: sinceTimestamp,
     });
 
     if (error) throw error;

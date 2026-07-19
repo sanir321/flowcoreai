@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache"
 import { ActionResponse } from "./workspace"
 import { sendWhatsAppText } from "@/lib/gowa"
 import { z } from "zod"
+import { verifyWorkspaceOwnership, getUserWorkspaceId } from "@/lib/workspace-auth"
 
 export async function sendManualMessage(input: unknown): Promise<ActionResponse<{ success: true }>> {
   try {
@@ -24,10 +25,9 @@ export async function sendManualMessage(input: unknown): Promise<ActionResponse<
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
 
-    // IDOR Check
-    if (user.app_metadata.workspace_id !== workspace_id) {
-      return { data: null, error: "Forbidden: Workspace mismatch" }
-    }
+    // IDOR Check: verify ownership via DB (not stale JWT app_metadata)
+    const auth = await verifyWorkspaceOwnership(supabase, user.id, workspace_id)
+    if (!auth.authorized) return { data: null, error: auth.error }
 
     // 1. Send via GoWA
     await sendWhatsAppText(workspace_id, phone, message)
@@ -106,10 +106,9 @@ export async function createContact(input: unknown): Promise<ActionResponse<{ id
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
 
-    // IDOR Check
-    if (user.app_metadata.workspace_id !== workspace_id) {
-      return { data: null, error: "Forbidden: Workspace mismatch" }
-    }
+    // IDOR Check: verify ownership via DB (not stale JWT app_metadata)
+    const auth = await verifyWorkspaceOwnership(supabase, user.id, workspace_id)
+    if (!auth.authorized) return { data: null, error: auth.error }
 
     const { data, error } = await supabase
       .from("contacts")
@@ -148,7 +147,8 @@ export async function updateContact(input: unknown): Promise<ActionResponse<{ su
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
 
-    const userWsId = user.app_metadata?.workspace_id
+    // Get workspace ID via DB lookup (not stale JWT app_metadata)
+    const userWsId = await getUserWorkspaceId(supabase, user.id)
     if (!userWsId) return { data: null, error: "No workspace assigned" }
 
     // Verify contact belongs to user's workspace before update
@@ -190,11 +190,11 @@ export async function getContactsPaginated(
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
 
-    if (user.app_metadata.workspace_id !== workspace_id) {
-      return { data: null, error: "Forbidden: Workspace mismatch" }
-    }
+    // IDOR Check: verify ownership via DB (not stale JWT app_metadata)
+    const auth = await verifyWorkspaceOwnership(supabase, user.id, workspace_id)
+    if (!auth.authorized) return { data: null, error: auth.error }
 
-    const { data: contacts, error } = await supabase
+    const { data: contacts, count, error } = await supabase
       .from("contacts")
       .select("*, appointments(count)", { count: "exact" })
       .eq("workspace_id", workspace_id)
@@ -204,7 +204,7 @@ export async function getContactsPaginated(
 
     if (error) throw error
 
-    return { data: { contacts: contacts || [], total: null }, error: null }
+    return { data: { contacts: contacts || [], total: count }, error: null }
   } catch (err) {
     console.error("[GET_CONTACTS_ERROR]", err)
     return { data: null, error: "Failed to load contacts" }
@@ -220,10 +220,9 @@ export async function exportContacts(workspace_id: string): Promise<ActionRespon
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
 
-    // IDOR Check
-    if (user.app_metadata.workspace_id !== res.data) {
-      return { data: null, error: "Forbidden: Workspace mismatch" }
-    }
+    // IDOR Check: verify ownership via DB (not stale JWT app_metadata)
+    const auth = await verifyWorkspaceOwnership(supabase, user.id, res.data)
+    if (!auth.authorized) return { data: null, error: auth.error }
 
     const { data: contacts, error } = await supabase
       .from("contacts")
@@ -251,7 +250,13 @@ export async function exportContacts(workspace_id: string): Promise<ActionRespon
 
     const csvContent = [
       headers.join(","),
-      ...rows.map((r) => r.join(","))
+      ...rows.map((r) => r.map(cell => {
+        const s = String(cell);
+        if (s.includes(",") || s.includes('"') || s.includes("\n")) {
+          return `"${s.replace(/"/g, '""')}"`;
+        }
+        return s;
+      }).join(","))
     ].join("\n")
 
     return { data: { csv: csvContent }, error: null }

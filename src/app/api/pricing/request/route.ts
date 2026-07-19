@@ -34,9 +34,12 @@ export async function POST(req: NextRequest) {
     // Escape HTML to prevent injection
     const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
+    // Sanitize subject line to prevent email header injection (CRLF)
+    const safeSubject = `New pricing request from ${firstName} ${lastName}`.replace(/[\r\n]/g, '');
+
     await sendEmail({
       to: process.env.SMTP_USER!,
-      subject: `New pricing request from ${firstName} ${lastName}`,
+      subject: safeSubject,
       html: `
         <h2>New Pricing Request</h2>
         <p><strong>Name:</strong> ${esc(firstName)} ${esc(lastName)}</p>

@@ -5,6 +5,7 @@ import { FinalizeOnboardingSchema, SetAgentStatusSchema, AddAgentSchema, UpdateA
 import { revalidatePath } from "next/cache"
 import { ActionResponse } from "./workspace"
 import { logAudit } from "@/lib/audit"
+import { getUserWorkspaceId } from "@/lib/workspace-auth"
 
 export async function finalizeOnboarding(input: unknown): Promise<ActionResponse<{ success: true }>> {
   try {
@@ -85,7 +86,8 @@ export async function setAgentStatus(input: unknown): Promise<ActionResponse<{ s
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
 
-    const workspaceId = user.app_metadata?.workspace_id
+    // Get workspace ID via DB lookup (not stale JWT app_metadata)
+    const workspaceId = await getUserWorkspaceId(supabase, user.id)
     if (!workspaceId) return { data: null, error: "No workspace" }
 
     const { data: agent } = await supabase
@@ -124,7 +126,8 @@ export async function addAgent(input: unknown): Promise<ActionResponse<{ agent_i
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
 
-    const userWorkspaceId = user.app_metadata?.workspace_id
+    // Get workspace ID via DB lookup (not stale JWT app_metadata)
+    const userWorkspaceId = await getUserWorkspaceId(supabase, user.id)
     if (!userWorkspaceId) return { data: null, error: "No workspace" }
     if (workspace_id !== userWorkspaceId) return { data: null, error: "Unauthorized" }
 
@@ -160,7 +163,8 @@ export async function deleteAgent(input: unknown): Promise<ActionResponse<{ succ
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
 
-    const workspaceId = user.app_metadata?.workspace_id
+    // Get workspace ID via DB lookup (not stale JWT app_metadata)
+    const workspaceId = await getUserWorkspaceId(supabase, user.id)
     if (!workspaceId) return { data: null, error: "No workspace" }
 
     const { data: agent } = await supabase
@@ -179,16 +183,12 @@ export async function deleteAgent(input: unknown): Promise<ActionResponse<{ succ
 
     if (error) throw error
 
-    // Fetch workspace_id for audit logging
-    const { data: agentAudit } = await supabase.from("workspace_agents").select("workspace_id").eq("id", agent_id).maybeSingle()
-    if (agentAudit) {
-      await logAudit({
-        workspace_id: agentAudit.workspace_id,
-        action: 'delete_agent',
-        entity_type: 'agent',
-        entity_id: agent_id
-      })
-    }
+    await logAudit({
+      workspace_id: workspaceId,
+      action: 'delete_agent',
+      entity_type: 'agent',
+      entity_id: agent_id
+    })
 
     revalidatePath("/agent-hub")
     return { data: { success: true }, error: null }
@@ -209,7 +209,8 @@ export async function updateAgentConfig(input: unknown): Promise<ActionResponse<
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
 
-    const workspaceId = user.app_metadata?.workspace_id
+    // Get workspace ID via DB lookup (not stale JWT app_metadata)
+    const workspaceId = await getUserWorkspaceId(supabase, user.id)
     if (!workspaceId) return { data: null, error: "No workspace" }
 
     // Fetch existing config to merge
@@ -222,7 +223,7 @@ export async function updateAgentConfig(input: unknown): Promise<ActionResponse<
 
     const { error } = await supabase
       .from("workspace_agents")
-      .update({ config: mergedConfig })
+      .update({ config: mergedConfig, updated_at: new Date().toISOString() })
       .eq("id", agent_id)
 
     if (error) throw error

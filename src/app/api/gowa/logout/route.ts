@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { NextRequest, NextResponse } from "next/server"
 import { rateLimit } from "@/lib/rate-limit"
 import { getDevices, logoutSession, deleteDevice } from "@/lib/gowa"
+import { getUserWorkspaceId } from "@/lib/workspace-auth"
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -17,7 +18,7 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return new NextResponse("Unauthorized", { status: 401 })
 
-    const workspaceId = user.app_metadata.workspace_id
+    const workspaceId = await getUserWorkspaceId(supabase, user.id)
     if (!workspaceId) return new NextResponse("No workspace", { status: 400 })
 
     const { data: dbSession } = await (supabase

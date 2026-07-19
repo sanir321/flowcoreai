@@ -44,7 +44,15 @@ export async function rateLimit(ip: string, limit = 30, windowSeconds = 60, work
       return { success: false };
     }
 
-    await supabaseAdmin.from("rate_limits").insert({ ip, workspace_id });
+    // Insert with created_at set to now for accurate window tracking
+    const { error: insertError } = await supabaseAdmin
+      .from("rate_limits")
+      .insert({ ip, workspace_id, created_at: new Date(now * 1000).toISOString() });
+
+    if (insertError) {
+      console.warn("Rate limit insert error:", insertError.message);
+      return { success: false };
+    }
 
     return { success: true };
   } catch (e) {

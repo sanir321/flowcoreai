@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { NextRequest, NextResponse } from "next/server"
 import { rateLimit } from "@/lib/rate-limit"
+import { getUserWorkspaceId } from "@/lib/workspace-auth"
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -56,7 +57,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid or expired confirmation code" }, { status: 401 });
     }
 
-    const workspaceId = user.app_metadata?.workspace_id
+    // Get workspace ID via DB lookup (not stale JWT app_metadata)
+    const workspaceId = await getUserWorkspaceId(supabase, user.id)
 
     // Verify workspace exists (stale JWT guard)
     if (workspaceId) {
@@ -74,24 +76,26 @@ export async function POST(req: NextRequest) {
 
       const deletedAt = new Date().toISOString()
 
-      // Soft-delete all workspace data
-      await Promise.all([
-        supabase.from("contacts").update({ deleted_at: deletedAt }).eq("workspace_id", workspaceId),
-        supabase.from("conversation_sessions").update({ deleted_at: deletedAt }).eq("workspace_id", workspaceId),
-        supabase.from("messages").update({ deleted_at: deletedAt }).eq("workspace_id", workspaceId),
-        supabase.from("workspace_agents").update({ deleted_at: deletedAt }).eq("workspace_id", workspaceId),
-        supabase.from("kb_sources").update({ deleted_at: deletedAt }).eq("workspace_id", workspaceId),
-        supabase.from("kb_chunks").update({ deleted_at: deletedAt }).eq("workspace_id", workspaceId),
-        supabase.from("gowa_sessions").update({ deleted_at: deletedAt }).eq("workspace_id", workspaceId),
-        supabase.from("google_oauth_tokens").update({ deleted_at: deletedAt }).eq("workspace_id", workspaceId),
-        supabase.from("widget_config").update({ deleted_at: deletedAt }).eq("workspace_id", workspaceId),
-        supabase.from("appointments").update({ deleted_at: deletedAt }).eq("workspace_id", workspaceId),
-        supabase.from("escalation_logs").update({ deleted_at: deletedAt }).eq("workspace_id", workspaceId),
-        supabase.from("billing_transactions").update({ deleted_at: deletedAt }).eq("workspace_id", workspaceId),
-        supabase.from("agent_traces").update({ deleted_at: deletedAt }).eq("workspace_id", workspaceId),
-        supabase.from("workspace_notifications").update({ deleted_at: deletedAt }).eq("workspace_id", workspaceId),
-        supabase.from("workspaces").update({ deleted_at: deletedAt }).eq("id", workspaceId),
-      ])
+      // Soft-delete all workspace data (use admin client to bypass RLS)
+      const admin = createAdminClient();
+      const deleteErrors: string[] = [];
+      const tables = [
+        "contacts", "conversation_sessions", "messages", "workspace_agents",
+        "kb_sources", "kb_chunks", "gowa_sessions", "google_oauth_tokens",
+        "widget_config", "appointments", "escalation_logs", "billing_transactions",
+        "agent_traces", "workspace_notifications",
+      ];
+      for (const table of tables) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error } = await (admin as any).from(table).update({ deleted_at: deletedAt }).eq("workspace_id", workspaceId);
+        if (error) deleteErrors.push(`${table}: ${error.message}`);
+      }
+      // Delete workspace itself
+      const { error: wsErr } = await admin.from("workspaces").update({ deleted_at: deletedAt }).eq("id", workspaceId);
+      if (wsErr) deleteErrors.push(`workspaces: ${wsErr.message}`);
+      if (deleteErrors.length > 0) {
+        console.error("[DELETE_ACCOUNT] Partial delete failures:", deleteErrors);
+      }
 
       // Logout + delete GoWA device from Railway
       for (const d of gowaDevices || []) {

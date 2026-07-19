@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { rateLimit } from "@/lib/rate-limit";
+import { getUserWorkspaceId } from "@/lib/workspace-auth";
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,7 +16,8 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const workspaceId = user.app_metadata?.workspace_id;
+    // Get workspace ID via DB lookup (not stale JWT app_metadata)
+    const workspaceId = await getUserWorkspaceId(supabase, user.id);
     if (!workspaceId) return NextResponse.json({ error: "No workspace" }, { status: 400 });
 
     const formData = await req.formData();
@@ -24,7 +26,7 @@ export async function POST(req: NextRequest) {
     if (file.size > 10 * 1024 * 1024) return NextResponse.json({ error: "File too large (max 10MB)" }, { status: 413 });
 
     const mimeType = file.type;
-    const isImage = mimeType.startsWith("image/");
+    const isImage = mimeType.startsWith("image/") && mimeType !== "image/svg+xml";
     const isPdf = mimeType === "application/pdf";
     if (!isImage && !isPdf) {
       return NextResponse.json({ error: "Unsupported file type. Upload an image or PDF." }, { status: 400 });

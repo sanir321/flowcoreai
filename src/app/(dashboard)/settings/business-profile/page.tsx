@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { BusinessProfileClient } from "./business-profile-client"
 import type { BusinessProfile } from "@/app/actions/business-profile"
+import { getUserWorkspaceId } from "@/lib/workspace-auth"
 
 export const metadata: Metadata = { title: "Business Profile" }
 
@@ -11,18 +12,8 @@ export default async function BusinessProfilePage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  let workspaceId = user.app_metadata?.workspace_id as string | undefined
-  if (!workspaceId) {
-    const { data: w } = await supabase
-      .from("workspaces")
-      .select("id")
-      .eq("owner_id", user.id)
-      .eq("status", "active")
-      .is("deleted_at", null)
-      .maybeSingle()
-    if (w) workspaceId = w.id
-    else redirect("/onboarding")
-  }
+  const workspaceId = await getUserWorkspaceId(supabase, user.id)
+  if (!workspaceId) redirect("/onboarding")
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: ws } = await (supabase as any)

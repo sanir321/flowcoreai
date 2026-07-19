@@ -3,12 +3,15 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { sendWhatsAppText } from "@/lib/gowa";
 import { sendEmail } from "@/lib/mail";
 
-const internalSecret = process.env.INTERNAL_CRON_SECRET || "";
+const internalSecret = process.env.INTERNAL_CRON_SECRET;
+if (!internalSecret) {
+  console.error("[NOTIFY_LOW_CREDITS] INTERNAL_CRON_SECRET is not set");
+}
 
 export async function POST(req: NextRequest) {
   try {
     const authHeader = req.headers.get("Authorization");
-    if (authHeader !== `Bearer ${internalSecret}`) {
+    if (!internalSecret || authHeader !== `Bearer ${internalSecret}`) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

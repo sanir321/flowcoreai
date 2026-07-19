@@ -199,17 +199,14 @@ export default function OnboardingPage() {
         router.push('/login')
         return
       }
-      const wid = user.app_metadata?.workspace_id as string | undefined
-      if (wid) {
-        const { data: ws } = await supabase
-          .from("workspaces")
-          .select("id")
-          .eq("id", wid)
-          .is("deleted_at", null)
-          .single()
-        if (ws) {
-          router.push('/inbox')
-        }
+      const { data: ws } = await supabase
+        .from("workspaces")
+        .select("id")
+        .eq("owner_id", user.id)
+        .is("deleted_at", null)
+        .maybeSingle()
+      if (ws) {
+        router.push('/inbox')
       }
     })
   }, [router])

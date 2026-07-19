@@ -56,8 +56,8 @@ export async function GET(req: NextRequest) {
       const url = new URL(origin);
       const hostname = url.hostname;
       
-      // Bypass for local development/preview
-      const isLocal = hostname === "localhost" || hostname === "127.0.0.1";
+      // Only bypass for local development — never in production
+      const isLocal = (hostname === "localhost" || hostname === "127.0.0.1") && process.env.NODE_ENV !== "production";
       
       const allowed = isLocal || config.allowed_domains.some((d: string) => hostname === d || hostname.endsWith("." + d));
       if (!allowed) {

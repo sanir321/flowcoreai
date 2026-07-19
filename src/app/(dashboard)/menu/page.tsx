@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { MenuClient } from "./menu-client"
+import { getUserWorkspaceId } from "@/lib/workspace-auth"
 
 export const metadata: Metadata = { title: "Menu" }
 
@@ -10,7 +11,7 @@ export default async function MenuPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  const workspaceId = user.app_metadata?.workspace_id
+  const workspaceId = await getUserWorkspaceId(supabase, user.id)
   if (!workspaceId) redirect("/onboarding")
 
   const { data: items } = await supabase

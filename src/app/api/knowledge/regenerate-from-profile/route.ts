@@ -3,6 +3,7 @@ import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { rateLimit } from "@/lib/rate-limit"
+import { getUserWorkspaceId } from "@/lib/workspace-auth"
 
 const supabaseAdmin = createAdminClient()
 
@@ -110,7 +111,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const userWsId = user.app_metadata?.workspace_id
+    // Get workspace ID via DB lookup (not stale JWT app_metadata)
+    const userWsId = await getUserWorkspaceId(supabase, user.id)
     if (!userWsId || userWsId !== workspace_id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
@@ -221,7 +223,9 @@ export async function POST(req: Request) {
     // Poll until all chunks are embedded (source status becomes 'active' or 'failed')
     let status = "processing"
     let attempts = 0
-    while (status === "processing" && attempts < 20) {
+    const maxWaitMs = 15000
+    const startTime = Date.now()
+    while (status === "processing" && attempts < 20 && (Date.now() - startTime) < maxWaitMs) {
       await new Promise(r => setTimeout(r, 1000))
       const { data: src } = await supabaseAdmin
         .from("kb_sources")

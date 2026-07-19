@@ -55,13 +55,19 @@ export default function LoginPage() {
     setTermsError("")
     setIsLoading(true)
 
+    // Fetch IP once for this operation
+    let clientIp = "127.0.0.1"
+    try {
+      const ipRes = await fetch("https://api.ipify.org?format=json", { signal: AbortSignal.timeout(3000) })
+      const { ip } = await ipRes.json()
+      if (ip) clientIp = ip
+    } catch { /* use default */ }
+
     // Check login lockout
     try {
-      const ipRes = await fetch("https://api.ipify.org?format=json")
-      const { ip } = await ipRes.json()
-      const { data: lockout } = await (supabase as any).rpc("check_login_lockout", {
+      const { data: lockout } = await supabase.rpc("check_login_lockout", {
         p_email: email,
-        p_ip: ip,
+        p_ip: clientIp,
       })
       if (lockout?.[0]?.locked) {
         const secs = lockout[0].lockout_seconds || 900
@@ -92,9 +98,7 @@ export default function LoginPage() {
     if (error) {
       // Record failed attempt
       try {
-        const ipRes = await fetch("https://api.ipify.org?format=json")
-        const { ip } = await ipRes.json()
-        await (supabase as any).rpc("record_login_attempt", { p_email: email, p_ip: ip, p_success: false })
+        await supabase.rpc("record_login_attempt", { p_email: email, p_ip: clientIp, p_success: false })
       } catch { /* non-critical */ }
       toast.error(error.message)
     } else {
@@ -108,6 +112,14 @@ export default function LoginPage() {
     e.preventDefault()
     setIsLoading(true)
 
+    // Fetch IP once for this operation
+    let clientIp = "127.0.0.1"
+    try {
+      const ipRes = await fetch("https://api.ipify.org?format=json", { signal: AbortSignal.timeout(3000) })
+      const { ip } = await ipRes.json()
+      if (ip) clientIp = ip
+    } catch { /* use default */ }
+
     const { error } = await supabase.auth.verifyOtp({
       email,
       token: otp,
@@ -117,33 +129,26 @@ export default function LoginPage() {
     if (error) {
       // Record failed attempt for lockout tracking
       try {
-        const ipRes = await fetch("https://api.ipify.org?format=json")
-        const { ip } = await ipRes.json()
-        await (supabase as any).rpc("record_login_attempt", { p_email: email, p_ip: ip, p_success: false })
+        await supabase.rpc("record_login_attempt", { p_email: email, p_ip: clientIp, p_success: false })
       } catch { /* non-critical */ }
       toast.error(error.message)
     } else {
       // Record successful login
       try {
-        const ipRes = await fetch("https://api.ipify.org?format=json")
-        const { ip } = await ipRes.json()
-        await (supabase as any).rpc("record_login_attempt", { p_email: email, p_ip: ip, p_success: true })
+        await supabase.rpc("record_login_attempt", { p_email: email, p_ip: clientIp, p_success: true })
       } catch { /* non-critical */ }
       const { data: { user } } = await supabase.auth.getUser()
       
       if (user) {
-        const workspaceId = user.app_metadata?.workspace_id
-        if (workspaceId) {
-          const { data: ws } = await supabase
-            .from("workspaces")
-            .select("id")
-            .eq("id", workspaceId)
-            .is("deleted_at", null)
-            .maybeSingle()
-          if (ws) {
-            router.push("/inbox")
-            return
-          }
+        const { data: ws } = await supabase
+          .from("workspaces")
+          .select("id")
+          .eq("owner_id", user.id)
+          .is("deleted_at", null)
+          .maybeSingle()
+        if (ws) {
+          router.push("/inbox")
+          return
         }
 
         const { data: workspace } = await supabase

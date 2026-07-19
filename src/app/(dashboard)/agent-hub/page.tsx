@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { createClient } from "@/lib/supabase/server"
 import { AgentHubClient, type Agent } from "./agent-hub-client"
 import { redirect } from "next/navigation"
+import { getUserWorkspaceId } from "@/lib/workspace-auth"
 
 export const metadata: Metadata = { title: "Agent Hub" }
 
@@ -13,10 +14,8 @@ export default async function AgentHubPage() {
     redirect("/login")
   }
 
-  const workspaceId = user.app_metadata?.workspace_id
-  if (!workspaceId) {
-    redirect("/onboarding")
-  }
+  const workspaceId = await getUserWorkspaceId(supabase, user.id)
+  if (!workspaceId) redirect("/onboarding")
 
   const { data: ws } = await supabase
     .from("workspaces")

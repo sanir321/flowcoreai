@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { initiateQRLogin } from "@/lib/gowa"
 import { NextRequest, NextResponse } from "next/server"
 import { rateLimit } from "@/lib/rate-limit"
+import { getUserWorkspaceId } from "@/lib/workspace-auth"
 
 export async function GET(req: NextRequest) {
   try {
@@ -16,7 +17,8 @@ export async function GET(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return new NextResponse("Unauthorized", { status: 401 })
 
-    const workspaceId = user.app_metadata?.workspace_id as string | undefined
+    // Get workspace ID via DB lookup (not stale JWT app_metadata)
+    const workspaceId = await getUserWorkspaceId(supabase, user.id)
     if (!workspaceId) {
       return new NextResponse("No active workspace found for user.", { status: 404 })
     }

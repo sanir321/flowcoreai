@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { createClient as createServerClient } from "@/lib/supabase/server"
 import { rateLimit } from "@/lib/rate-limit"
+import { getUserWorkspaceId } from "@/lib/workspace-auth"
 
 export async function GET(req: NextRequest) {
   try {
@@ -20,7 +21,8 @@ export async function GET(req: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    const workspaceId = user.app_metadata?.workspace_id as string | undefined
+    // Get workspace ID via DB lookup (not stale JWT app_metadata)
+    const workspaceId = await getUserWorkspaceId(auth, user.id)
     if (!workspaceId) return NextResponse.json({ error: "No workspace" }, { status: 404 })
 
     const { data: tokens } = await supabase
@@ -60,8 +62,9 @@ export async function GET(req: NextRequest) {
     }
 
     const sheetRange = tokens.sheet_range ?? "Sheet1!A:Z"
+    const encodedRange = encodeURIComponent(sheetRange)
     const res = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${tokens.sheet_id}/values/${sheetRange}`,
+      `https://sheets.googleapis.com/v4/spreadsheets/${tokens.sheet_id}/values/${encodedRange}`,
       { headers: { Authorization: `Bearer ${accessToken}` } }
     )
     if (!res.ok) throw new Error("Failed to read sheet")
