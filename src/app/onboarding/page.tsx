@@ -191,7 +191,7 @@ export default function OnboardingPage() {
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
-  // Auth check on mount — redirect if user already has a valid workspace
+  // Auth check on mount — redirect if user already has a workspace WITH agents
   useEffect(() => {
     const supabase = createClient()
     supabase.auth.getUser().then(async ({ data: { user } }) => {
@@ -206,7 +206,17 @@ export default function OnboardingPage() {
         .is("deleted_at", null)
         .maybeSingle()
       if (ws) {
-        router.push('/inbox')
+        // Check if agents exist — only redirect to inbox if onboarding is complete
+        const { data: agents } = await supabase
+          .from("workspace_agents")
+          .select("id")
+          .eq("workspace_id", ws.id)
+          .is("deleted_at", null)
+          .limit(1)
+        if (agents && agents.length > 0) {
+          router.push('/inbox')
+        }
+        // If workspace exists but no agents, stay on onboarding to complete setup
       }
     })
   }, [router])
@@ -249,7 +259,10 @@ export default function OnboardingPage() {
   }
 
   const handleFinalize = async () => {
-    if (!workspaceId) return
+    if (!workspaceId) {
+      toast.error("Workspace not found. Please go back and create a workspace first.")
+      return
+    }
     const selectedAgent = AGENTS[selectedAgentIndex]
     if (!selectedAgent) return
 
@@ -267,6 +280,25 @@ export default function OnboardingPage() {
     } else {
        toast.success("AI Team Deployed!")
        setStep(3) // Proceed to Particle Animation Step
+    }
+    setIsLoading(false)
+  }
+
+  const handleSkip = async () => {
+    if (!workspaceId) {
+      // No workspace created yet — just advance (shouldn't happen in normal flow)
+      setStep(3)
+      return
+    }
+    setIsLoading(true)
+    const result = await finalizeOnboarding({
+      workspace_id: workspaceId,
+      agent_types: ["customer_support"],
+    })
+    if (result.error) {
+      toast.error(result.error)
+    } else {
+      setStep(3)
     }
     setIsLoading(false)
   }
@@ -480,10 +512,11 @@ export default function OnboardingPage() {
                   {isLoading ? <Loader2 className="h-5 w-5 animate-spin mx-auto" /> : "Launch Assistant"}
                 </Button>
                 <Button
-                  onClick={() => setStep(3)}
+                  onClick={handleSkip}
+                  disabled={isLoading}
                   className="w-full h-10 rounded-xl bg-transparent border border-white/10 hover:bg-white/5 text-neutral-400 hover:text-white font-medium text-xs transition-all"
                 >
-                  Skip for now
+                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : "Skip for now"}
                 </Button>
                 <div className="flex gap-2 justify-center text-gray-900">
                    {AGENTS.map((_, i) => (

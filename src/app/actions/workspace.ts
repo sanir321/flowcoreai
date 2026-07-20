@@ -54,6 +54,17 @@ export async function createWorkspace(input: unknown): Promise<ActionResponse<{ 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: "Unauthorized" }
 
+    // Pre-check: prevent duplicate workspaces for the same user
+    const { data: existingWs } = await supabase
+      .from("workspaces")
+      .select("id")
+      .eq("owner_id", user.id)
+      .is("deleted_at", null)
+      .maybeSingle()
+    if (existingWs) {
+      return { data: { workspace_id: existingWs.id }, error: null }
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error, data } = await (supabase as any)
       .from("workspaces")

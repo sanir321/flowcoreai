@@ -11,7 +11,8 @@ export async function finalizeOnboarding(input: unknown): Promise<ActionResponse
   try {
     const result = FinalizeOnboardingSchema.safeParse(input)
     if (!result.success) {
-      return { data: null, error: "Invalid input" }
+      const msg = result.error.issues[0]?.message || "Invalid input"
+      return { data: null, error: msg }
     }
 
     const { workspace_id, agent_types } = result.data
@@ -31,15 +32,38 @@ export async function finalizeOnboarding(input: unknown): Promise<ActionResponse
       .maybeSingle()
     if (!ws) return { data: null, error: "Workspace not found" }
 
+    // Idempotent: if agents already exist for this workspace, return success
+    // (handles duplicate calls, re-onboarding after page refresh, etc.)
+    const { data: existingAgents } = await supabase
+      .from("workspace_agents")
+      .select("id")
+      .eq("workspace_id", workspace_id)
+      .is("deleted_at", null)
+      .limit(1)
+    if (existingAgents && existingAgents.length > 0) {
+      revalidatePath("/agent-hub")
+      return { data: { success: true }, error: null }
+    }
+
     const agentsToInsert = agent_types.map(type => ({
       workspace_id,
       agent_type: type,
-      status: 'active' as const
+      status: 'active' as const,
     }))
 
-    const { error: agentError } = await supabase.from("workspace_agents").insert(agentsToInsert)
+    const { error: agentError } = await supabase
+      .from("workspace_agents")
+      .insert(agentsToInsert)
 
     if (agentError) throw agentError
+
+    // Audit log
+    await logAudit({
+      workspace_id,
+      action: 'finalize_onboarding',
+      entity_type: 'agent',
+      payload: { agent_types }
+    })
 
     // Auto-scrape website if URL was provided during onboarding
     const { data: workspace } = await supabase

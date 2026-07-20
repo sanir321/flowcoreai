@@ -108,10 +108,9 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(onboardingUrl)
     }
 
-    if (isOnboardingRoute && workspaceId) {
-      const dashboardUrl = new URL("/inbox", request.url)
-      return NextResponse.redirect(dashboardUrl)
-    }
+    // Note: we do NOT redirect /onboarding → /inbox here.
+    // The onboarding page's client-side check handles redirect only when agents exist.
+    // Redirecting here would prevent users from completing agent creation after a page refresh.
   }
 
   return applySecurityHeaders(supabaseResponse, nonce)

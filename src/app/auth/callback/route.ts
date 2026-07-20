@@ -43,7 +43,18 @@ export async function GET(request: NextRequest) {
     .eq("status", "active")
     .is("deleted_at", null)
     .maybeSingle()
-  const redirectTo = existingWorkspace ? "/inbox" : (next || "/onboarding")
+
+  let redirectTo = next || "/onboarding"
+  if (existingWorkspace) {
+    // Check if agents exist — only redirect to inbox if onboarding is complete
+    const { data: agents } = await supabase
+      .from("workspace_agents")
+      .select("id")
+      .eq("workspace_id", existingWorkspace.id)
+      .is("deleted_at", null)
+      .limit(1)
+    redirectTo = (agents && agents.length > 0) ? "/inbox" : "/onboarding"
+  }
 
   if (!data.user.last_sign_in_at) {
     const username = data.user.user_metadata?.full_name || data.user.email?.split("@")[0] || "User"
