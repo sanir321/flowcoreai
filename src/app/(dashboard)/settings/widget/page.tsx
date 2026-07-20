@@ -72,11 +72,13 @@ export default function WidgetSettingsPage() {
     greeting: "Hi! How can I help?",
     post_form_message: "Thank you! How can I help you today?",
     accent_color: "#050505",
+    theme: "dark" as "light" | "dark" | "auto",
     launcher_icon: "chat",
     allow_anonymous: false,
     auto_fill_params: false,
     trusted_domains: "",
     email_notifications: false,
+    is_active: true,
     logo_url: ""
   })
 
@@ -99,11 +101,13 @@ export default function WidgetSettingsPage() {
           greeting: (d.greeting as string) || "Hi! How can I help?",
           post_form_message: (d.post_form_message as string) || "Thank you! How can I help you today?",
           accent_color: (d.accent_color as string) || "#050505",
+          theme: (d.theme as "light" | "dark" | "auto") || "dark",
           launcher_icon: (d.launcher_icon as string) || "chat",
           allow_anonymous: (d.allow_anonymous as boolean) || false,
           auto_fill_params: (d.auto_fill_params as boolean) || false,
           trusted_domains: ((d.allowed_domains as string[])?.join(", ")) || "",
           email_notifications: (d.email_notifications as boolean) || false,
+          is_active: d.is_active !== false,
           logo_url: (d.logo_url as string) || ""
         })
       }
@@ -218,6 +222,28 @@ export default function WidgetSettingsPage() {
               </div>
 
               <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-gray-700 ml-1">Theme</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  {(["light", "dark", "auto"] as const).map(t => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setConfig({...config, theme: t})}
+                      className={cn(
+                        "py-2.5 rounded-xl border-2 text-xs font-bold capitalize transition-all",
+                        config.theme === t
+                          ? "border-[#f9510b] bg-[#f9510b]/5 text-[#f9510b]"
+                          : "border-gray-100 text-gray-500 hover:border-gray-200"
+                      )}
+                    >
+                      {t === "light" ? "☀ Light" : t === "dark" ? "☾ Dark" : "◐ Auto"}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[11px] text-gray-400 italic ml-1">Auto follows the visitor's OS preference.</p>
+              </div>
+
+              <div className="space-y-1.5">
                 <Label className="text-xs font-semibold text-gray-700 ml-1">Welcome Message</Label>
                 <textarea 
                    value={config.greeting} 
@@ -309,6 +335,13 @@ export default function WidgetSettingsPage() {
               <Settings className="w-4 h-4 text-[#f9510b]" /> 2. Logic & Behavior
             </h3>
             <div className="space-y-4">
+               <div className="flex items-center justify-between p-5 border border-gray-100 rounded-2xl group hover:bg-gray-50/50 transition-all">
+                  <div className="space-y-0.5">
+                    <Label className="text-sm font-bold text-gray-800">Widget Active</Label>
+                    <p className="text-[11px] text-gray-400">Show the widget on your website. Disable to hide it completely.</p>
+                  </div>
+                  <Switch checked={config.is_active} onCheckedChange={val => setConfig({...config, is_active: val})} />
+               </div>
                <div className="flex items-center justify-between p-5 border border-gray-100 rounded-2xl group hover:bg-gray-50/50 transition-all">
                   <div className="space-y-0.5">
                     <Label className="text-sm font-bold text-gray-800">Anonymous Conversations</Label>

@@ -10,7 +10,15 @@
   const profileKey = `fc_profile_${workspaceId}`;
   let sessionToken = localStorage.getItem(storageKey);
   if (!sessionToken) {
-    sessionToken = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15);
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      sessionToken = crypto.randomUUID();
+    } else {
+      const bytes = new Uint8Array(16);
+      crypto.getRandomValues(bytes);
+      bytes[6] = (bytes[6] & 0x0f) | 0x40;
+      bytes[8] = (bytes[8] & 0x3f) | 0x80;
+      sessionToken = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('').replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/, '$1-$2-$3-$4-$5');
+    }
     localStorage.setItem(storageKey, sessionToken);
   }
 
@@ -281,7 +289,7 @@
     try {
       const res = await fetch(`${baseUrl}/api/widget/message`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-widget-token': sessionToken },
         body: JSON.stringify({ workspace_id: workspaceId, session_token: sessionToken, message: text, customer_name: customerName, customer_email: customerEmail })
       });
       if (res.status === 403) {
@@ -329,16 +337,26 @@
         document.getElementById('fc-agent-name').innerText = d.agent_name;
       }
       if (d.logo_url) {
-        document.getElementById('fc-avatar').innerHTML = `<img src="${d.logo_url}" alt="Logo">`;
+        const avatarEl = document.getElementById('fc-avatar');
+        avatarEl.innerHTML = '';
+        const img = document.createElement('img');
+        img.src = String(d.logo_url);
+        img.alt = 'Logo';
+        avatarEl.appendChild(img);
       } else if (d.avatar_url) {
-        document.getElementById('fc-avatar').innerHTML = `<img src="${d.avatar_url}" alt="Avatar">`;
+        const avatarEl = document.getElementById('fc-avatar');
+        avatarEl.innerHTML = '';
+        const img = document.createElement('img');
+        img.src = String(d.avatar_url);
+        img.alt = 'Avatar';
+        avatarEl.appendChild(img);
       } else if (d.agent_name) {
         document.getElementById('fc-avatar').innerText = d.agent_name.charAt(0);
       }
 
       // Set launcher icon
       if (d.launcher_icon) {
-        fab.innerHTML = Icons.close ? Icons.close : getLauncherIcon(d.launcher_icon);
+        fab.innerHTML = getLauncherIcon(d.launcher_icon);
       }
 
       // Skip form if profile already saved or anonymous allowed

@@ -56,10 +56,12 @@ export async function GET(req: NextRequest) {
       const url = new URL(origin);
       const hostname = url.hostname;
       
-      // Only bypass for local development — never in production
+      // Bypass for local development and same-origin dashboard requests
       const isLocal = (hostname === "localhost" || hostname === "127.0.0.1") && process.env.NODE_ENV !== "production";
+      const appHostname = process.env.NEXT_PUBLIC_APP_URL ? new URL(process.env.NEXT_PUBLIC_APP_URL).hostname : "";
+      const isSameOrigin = appHostname && (hostname === appHostname || hostname.endsWith("." + appHostname));
       
-      const allowed = isLocal || config.allowed_domains.some((d: string) => hostname === d || hostname.endsWith("." + d));
+      const allowed = isLocal || isSameOrigin || config.allowed_domains.some((d: string) => hostname === d || hostname.endsWith("." + d));
       if (!allowed) {
         return new Response("Domain not allowed", { status: 403 });
       }

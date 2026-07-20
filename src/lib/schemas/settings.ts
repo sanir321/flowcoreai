@@ -25,4 +25,5 @@ export const UpdateWidgetConfigSchema = z.object({
   email_notifications: z.boolean().optional(),
   whatsapp_number: z.string().optional(),
   logo_url: z.string().url().optional().or(z.literal("")),
+  is_active: z.boolean().optional(),
 })
