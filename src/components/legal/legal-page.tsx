@@ -3,8 +3,8 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
-const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@flowcore.ai"
-const companyName = process.env.NEXT_PUBLIC_COMPANY_NAME || "FlowCore"
+const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@Flowter.ai"
+const companyName = process.env.NEXT_PUBLIC_COMPANY_NAME || "Flowter"
 
 export function LegalPage({
   title,
@@ -28,8 +28,8 @@ export function LegalPage({
   ]
 
   const rendered = content
-    .replace(/\[contact@flowcoreai\.com\]/g, supportEmail)
-    .replace(/\[FlowCore AI \/ Your Company Name\]/g, companyName)
+    .replace(/\[contact@Flowterai\.com\]/g, supportEmail)
+    .replace(/\[Flowter \/ Your Company Name\]/g, companyName)
     .replace(/<strong>/g, "").replace(/<\/strong>/g, "")
 
   return (
@@ -63,7 +63,7 @@ export function LegalPage({
             textDecoration: "none",
             letterSpacing: "-0.01em",
           }}>
-            FlowCore
+            Flowter
           </Link>
           <div style={{
             display: "flex",
@@ -87,7 +87,7 @@ export function LegalPage({
                     whiteSpace: "nowrap",
                     textDecoration: "none",
                     background: isActive ? "rgba(198, 95, 57, 0.15)" : "transparent",
-                    color: isActive ? "#c65f39" : "#595859",
+                    color: isActive ? "#f9510b" : "#595859",
                     transition: "all 0.3s",
                   }}
                 >
@@ -174,7 +174,7 @@ export function LegalPage({
                 }}>
                   {cells.map((cell, j) => (
                     <span key={j} style={{
-                      color: j === 0 ? "#c65f39" : "#c0c0c0",
+                      color: j === 0 ? "#f9510b" : "#c0c0c0",
                       fontWeight: j === 0 ? 500 : 400,
                     }}>
                       {cell.replace(/\*\*(.*?)\*\*/g, "$1")}
@@ -198,7 +198,7 @@ export function LegalPage({
                     width: "4px",
                     height: "4px",
                     borderRadius: "50%",
-                    background: "#c65f39",
+                    background: "#f9510b",
                   }} />
                   <span>{line.slice(2).replace(/\*\*(.*?)\*\*/g, "$1")}</span>
                 </div>

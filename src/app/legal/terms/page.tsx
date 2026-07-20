@@ -6,17 +6,17 @@ const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
   title: "Terms & Conditions",
-  description: "Flowcore AI's terms and conditions governing the use of our AI customer service platform and services.",
-  keywords: ["Flowcore AI terms", "terms of service", "platform terms", "SaaS terms"],
+  description: "Flowter's terms and conditions governing the use of our AI customer service platform and services.",
+  keywords: ["Flowter terms", "terms of service", "platform terms", "SaaS terms"],
   openGraph: {
-    title: "Terms & Conditions — Flowcore AI",
-    description: "Terms and conditions for using Flowcore AI's customer service platform.",
+    title: "Terms & Conditions — Flowter",
+    description: "Terms and conditions for using Flowter's customer service platform.",
     url: `${siteUrl}/legal/terms`,
     images: [{ url: `${siteUrl}/api/og?title=Terms%20%26%20Conditions&subtitle=Platform%20Terms%20of%20Service`, width: 1200, height: 630, alt: "Terms & Conditions" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Terms & Conditions — Flowcore AI",
+    title: "Terms & Conditions — Flowter",
     images: [`${siteUrl}/api/og?title=Terms%20%26%20Conditions&subtitle=Platform%20Terms%20of%20Service`],
   },
   alternates: { canonical: `${siteUrl}/legal/terms` },
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 
 const content = `## 1. Acceptance of Terms
 
-By registering for or using FlowCore AI ("Service", "Platform"), you ("User", "Subscriber", "you") agree to be bound by these Terms and Conditions ("Terms"). If you are registering on behalf of a business, you represent that you have authority to bind that business.
+By registering for or using Flowter ("Service", "Platform"), you ("User", "Subscriber", "you") agree to be bound by these Terms and Conditions ("Terms"). If you are registering on behalf of a business, you represent that you have authority to bind that business.
 
 If you do not agree, do not use the Service.
 
@@ -32,7 +32,7 @@ If you do not agree, do not use the Service.
 
 ## 2. The Service
 
-FlowCore AI provides a multi-tenant SaaS platform that enables businesses to:
+Flowter provides a multi-tenant SaaS platform that enables businesses to:
 - Deploy AI-powered customer service agents on WhatsApp
 - Automate customer query handling, lead capture, and order support
 - Manage conversation history, agent configuration, and analytics via a web dashboard
@@ -62,7 +62,7 @@ We reserve the right to suspend or terminate your account immediately if you vio
 ## 4. Subscription Plans & Payments
 
 ### 4.1 Plans
-FlowCore AI offers tiered subscription plans (Starter, Growth, Scale) billed monthly or annually.
+Flowter offers tiered subscription plans (Starter, Growth, Scale) billed monthly or annually.
 
 ### 4.2 Payments
 All payments are processed via **Razorpay** in Indian Rupees (INR). By subscribing, you authorise recurring charges per your selected billing cycle.
@@ -82,30 +82,30 @@ All prices are exclusive of GST. Applicable GST will be added at checkout. A GST
 
 ## 5. WhatsApp & Meta Compliance
 
-Your use of FlowCore AI's WhatsApp integration is subject to:
+Your use of Flowter's WhatsApp integration is subject to:
 - **Meta's WhatsApp Business Policy**
 - **Meta's Commerce Policy**
 - WhatsApp's messaging limits, opt-in requirements, and template approval processes
 
-You are solely responsible for obtaining customer consent before messaging them via WhatsApp and for complying with all applicable WhatsApp Business policies. FlowCore AI is not liable for account bans imposed by Meta due to your violation of their policies.
+You are solely responsible for obtaining customer consent before messaging them via WhatsApp and for complying with all applicable WhatsApp Business policies. Flowter is not liable for account bans imposed by Meta due to your violation of their policies.
 
 ---
 
 ## 6. AI-Generated Content
 
-FlowCore AI uses large language models (via Groq AI — llama-3.3-70b-versatile) to generate automated responses on your behalf.
+Flowter uses large language models (via Groq AI — llama-3.3-70b-versatile) to generate automated responses on your behalf.
 
 - You acknowledge that AI responses may occasionally be inaccurate, incomplete, or inappropriate.
 - You are solely responsible for reviewing and configuring AI agent behaviour.
 - We strongly recommend enabling human handoff for sensitive queries (refunds, legal matters, complaints).
-- FlowCore AI makes no warranty that AI responses will be error-free or fit for any specific business purpose.
+- Flowter makes no warranty that AI responses will be error-free or fit for any specific business purpose.
 
 ---
 
 ## 7. Intellectual Property
 
 ### 7.1 Our IP
-All software, designs, trademarks, and content comprising the FlowCore AI platform are our exclusive property or licensed to us. You may not copy, reproduce, or redistribute any part of the platform.
+All software, designs, trademarks, and content comprising the Flowter platform are our exclusive property or licensed to us. You may not copy, reproduce, or redistribute any part of the platform.
 
 ### 7.2 Your IP
 You retain full ownership of your business data, conversation data, and any content you upload. By using the Service, you grant us a limited, non-exclusive licence to process your data solely to operate and improve the Service.
@@ -127,7 +127,7 @@ Your use of the Service is also governed by our **Privacy Policy**. You acknowle
 
 To the maximum extent permitted by applicable law:
 
-- FlowCore AI's total liability for any claim arising out of or related to these Terms shall not exceed the **amount you paid us in the 3 months preceding the claim**.
+- Flowter's total liability for any claim arising out of or related to these Terms shall not exceed the **amount you paid us in the 3 months preceding the claim**.
 - We are not liable for indirect, incidental, consequential, or punitive damages, including loss of revenue, data, or business opportunity.
 - We are not liable for downtime caused by WhatsApp/Meta, Supabase, Railway, or Razorpay infrastructure failures.
 
@@ -173,7 +173,7 @@ We may update these Terms at any time. We will notify you via email and in-app n
 
 For any questions regarding these Terms:
 
-**FlowCore**
+**Flowter**
 Email: **zenosayz05@gmail.com**
 Location: Chennai, Tamil Nadu, India`
 

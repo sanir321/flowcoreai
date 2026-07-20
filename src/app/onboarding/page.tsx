@@ -314,7 +314,7 @@ export default function OnboardingPage() {
       )}>
         {/* Branding - hide on step 3 */}
         {step !== 3 && (
-           <div className="text-center font-bold tracking-tighter text-2xl text-white/40 mb-12">flowcore</div>
+           <div className="text-center font-bold tracking-tighter text-2xl text-white/40 mb-12">Flowter</div>
         )}
 
         <AnimatePresence mode="wait">

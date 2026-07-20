@@ -146,7 +146,7 @@ export function ContactsTable({ initialContacts = [], workspaceId }: ContactsTab
         </div>
       </div>
 
-      {/* Main Table - FlowCore Minimalist */}
+      {/* Main Table - Flowter Minimalist */}
       <div className="bg-white border border-gray-100 rounded-[2rem] overflow-hidden shadow-sm">
         <Table>
           <TableHeader className="bg-white border-b border-gray-100">
@@ -317,8 +317,8 @@ export function ContactsTable({ initialContacts = [], workspaceId }: ContactsTab
                      {/* Manual Outbound Message Area */}
                      <div className="pt-6 border-t border-gray-100 space-y-4">
                         <div className="flex items-center gap-2 mb-2">
-                           <div className="h-6 w-6 rounded-lg bg-[#c65f39]/10 flex items-center justify-center">
-                              <Zap className="h-3 w-3 text-[#c65f39]" />
+                           <div className="h-6 w-6 rounded-lg bg-[#f9510b]/10 flex items-center justify-center">
+                              <Zap className="h-3 w-3 text-[#f9510b]" />
                            </div>
                            <span className="text-[10px] font-bold text-gray-900">Quick WhatsApp Message</span>
                         </div>
@@ -327,7 +327,7 @@ export function ContactsTable({ initialContacts = [], workspaceId }: ContactsTab
                               value={manualMessage}
                               onChange={(e) => setManualMessage(e.target.value)}
                               placeholder="Type a manual message to send now..."
-                              className="min-h-[100px] bg-white border-gray-100 rounded-2xl focus:border-[#c65f39] transition-all p-4 text-sm font-medium resize-none shadow-sm"
+                              className="min-h-[100px] bg-white border-gray-100 rounded-2xl focus:border-[#f9510b] transition-all p-4 text-sm font-medium resize-none shadow-sm"
                            />
                            <Button 
                               onClick={handleSendMessage}

@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
     let gowaJid = ""
     let gowaDisplay = ""
     let gowaDeviceId = ""
-    const deviceName = `FlowCore_${workspaceId}`
+    const deviceName = `Flowter_${workspaceId}`
     try {
       const devices = await getDevices()
 

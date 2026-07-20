@@ -148,7 +148,7 @@ export async function getDevices(): Promise<any[]> {
 export async function initiateQRLogin(workspaceId: string, storedDeviceId?: string): Promise<{ qr_code: string; device_id: string }> {
   // 1. Try to find an existing device by name or stored ID
   const allDevices = await getDevices();
-  let device = allDevices.find(d => d.name === `FlowCore_${workspaceId}`);
+  let device = allDevices.find(d => d.name === `Flowter_${workspaceId}`);
   if (!device && storedDeviceId) {
     device = allDevices.find(d => d.id === storedDeviceId);
   }
@@ -158,7 +158,7 @@ export async function initiateQRLogin(workspaceId: string, storedDeviceId?: stri
     const createResponse = await fetch(`${GOWA_BASE_URL}/devices`, {
       method: 'POST',
       headers: gowaHeaders,
-      body: JSON.stringify({ name: `FlowCore_${workspaceId}` })
+      body: JSON.stringify({ name: `Flowter_${workspaceId}` })
     });
     if (!createResponse.ok) {
         const errorBody = await createResponse.text();

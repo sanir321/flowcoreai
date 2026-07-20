@@ -406,7 +406,7 @@ export async function placeOrder(
   // Email fallback when GoWA owner notification fails
   if (!ownerNotified && ownerPhone && ctx.workspace?.owner_id) {
     try {
-      const APP_URL = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://7flowcore.vercel.app";
+      const APP_URL = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://flowter.vercel.app";
       const CRON_SECRET = Deno.env.get("INTERNAL_CRON_SECRET") || "";
       const { data: ownerEmail } = await ctx.supabase.rpc("get_user_email", { user_id: ctx.workspace.owner_id });
       if (ownerEmail) {

@@ -152,7 +152,7 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
 
   if (!mounted) return (
     <div className="flex items-center justify-center min-h-[400px]">
-      <Loader2 className="h-8 w-8 animate-spin text-[#c65f39]" />
+      <Loader2 className="h-8 w-8 animate-spin text-[#f9510b]" />
     </div>
   )
 
@@ -198,7 +198,7 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
         <Button 
           onClick={handleSave} 
           disabled={isSaving}
-          className="bg-[#c65f39] hover:bg-[#b55533] text-white rounded-xl h-11 px-8 font-semibold shadow-lg shadow-[#c65f39]/20 transition-all active:scale-95"
+          className="bg-[#f9510b] hover:bg-[#b55533] text-white rounded-xl h-11 px-8 font-semibold shadow-lg shadow-[#f9510b]/20 transition-all active:scale-95"
         >
           {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save Changes"}
         </Button>
@@ -209,7 +209,7 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
           {/* Contact Information */}
           <Card className="p-8 border-gray-100 rounded-[2rem] shadow-sm space-y-6">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-orange-50 flex items-center justify-center text-[#c65f39]">
+              <div className="h-10 w-10 rounded-xl bg-orange-50 flex items-center justify-center text-[#f9510b]">
                 <Phone className="h-5 w-5" />
               </div>
               <h2 className="text-lg font-semibold text-gray-900 tracking-tight">Contact</h2>
@@ -224,7 +224,7 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
                     value={safeContact.phone || ""} 
                     onChange={e => setNestedField("contact", "phone", e.target.value)}
                     placeholder="+91 98765 43210"
-                    className="h-11 pl-10 rounded-xl bg-gray-50/50 border-gray-100 focus:bg-white focus:border-[#c65f39] focus:ring-1 focus:ring-[#c65f39]/10 transition-all"
+                    className="h-11 pl-10 rounded-xl bg-gray-50/50 border-gray-100 focus:bg-white focus:border-[#f9510b] focus:ring-1 focus:ring-[#f9510b]/10 transition-all"
                   />
                 </div>
               </div>
@@ -236,7 +236,7 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
                     value={safeContact.email || ""} 
                     onChange={e => setNestedField("contact", "email", e.target.value)}
                     placeholder="hello@business.com"
-                    className="h-11 pl-10 rounded-xl bg-gray-50/50 border-gray-100 focus:bg-white focus:border-[#c65f39] focus:ring-1 focus:ring-[#c65f39]/10 transition-all"
+                    className="h-11 pl-10 rounded-xl bg-gray-50/50 border-gray-100 focus:bg-white focus:border-[#f9510b] focus:ring-1 focus:ring-[#f9510b]/10 transition-all"
                   />
                 </div>
               </div>
@@ -250,7 +250,7 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
                   value={safeContact.address || ""} 
                   onChange={e => setNestedField("contact", "address", e.target.value)}
                   placeholder="Street, City, State, ZIP"
-                  className="min-h-[80px] pl-10 pt-3 rounded-xl bg-gray-50/50 border-gray-100 focus:bg-white focus:border-[#c65f39] focus:ring-1 focus:ring-[#c65f39]/10 transition-all resize-none"
+                  className="min-h-[80px] pl-10 pt-3 rounded-xl bg-gray-50/50 border-gray-100 focus:bg-white focus:border-[#f9510b] focus:ring-1 focus:ring-[#f9510b]/10 transition-all resize-none"
                 />
               </div>
             </div>
@@ -263,7 +263,7 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
                   value={safeContact.google_maps_link || ""} 
                   onChange={e => setNestedField("contact", "google_maps_link", e.target.value)}
                   placeholder="https://maps.google.com/place/... or your Google review link"
-                  className="h-11 pl-10 rounded-xl bg-gray-50/50 border-gray-100 focus:bg-white focus:border-[#c65f39] focus:ring-1 focus:ring-[#c65f39]/10 transition-all"
+                  className="h-11 pl-10 rounded-xl bg-gray-50/50 border-gray-100 focus:bg-white focus:border-[#f9510b] focus:ring-1 focus:ring-[#f9510b]/10 transition-all"
                 />
               </div>
             </div>
@@ -328,7 +328,7 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
                     setNestedField("hours", "daily", newDaily)
                     toast.success("Applied to all open days")
                   }}
-                  className="px-3 py-1.5 text-[11px] font-medium rounded-lg bg-[#c65f39]/10 text-[#c65f39] hover:bg-[#c65f39]/20 transition-all"
+                  className="px-3 py-1.5 text-[11px] font-medium rounded-lg bg-[#f9510b]/10 text-[#f9510b] hover:bg-[#f9510b]/20 transition-all"
                 >
                   Copy hours
                 </button>
@@ -431,7 +431,7 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
                   <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">Main Services</Label>
                   <div className="flex flex-wrap gap-2 mb-2">
                     {servicesTags.map((s, i) => (
-                      <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#c65f39]/10 border border-[#c65f39]/20 text-xs font-medium text-[#c65f39]">
+                      <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#f9510b]/10 border border-[#f9510b]/20 text-xs font-medium text-[#f9510b]">
                         {s}
                         <button type="button" onClick={() => setServicesTags(prev => prev.filter((_, j) => j !== i))} className="hover:text-[#b55533]">
                           ×
@@ -442,7 +442,7 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
                   <div className="flex gap-2">
                     <Input
                       placeholder="Type a service and press Enter..."
-                      className="h-10 text-sm rounded-xl bg-gray-50/50 border-gray-100 focus:bg-white focus:border-[#c65f39] focus:ring-1 focus:ring-[#c65f39]/10 transition-all"
+                      className="h-10 text-sm rounded-xl bg-gray-50/50 border-gray-100 focus:bg-white focus:border-[#f9510b] focus:ring-1 focus:ring-[#f9510b]/10 transition-all"
                       onKeyDown={e => {
                         const input = e.currentTarget
                         if (e.key === "Enter") {
@@ -477,7 +477,7 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
                           className={cn(
                             "px-4 py-2 rounded-xl text-xs font-semibold transition-all border shrink-0",
                             isActive 
-                              ? "bg-[#c65f39] border-[#c65f39] text-white shadow-md shadow-[#c65f39]/20" 
+                              ? "bg-[#f9510b] border-[#f9510b] text-white shadow-md shadow-[#f9510b]/20" 
                               : "bg-gray-50/50 border-gray-100 text-gray-500 hover:bg-white hover:border-gray-200"
                           )}
                         >
@@ -524,7 +524,7 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
           {extraTemplates.length > 0 && (
             <Card className="p-8 border-gray-100 rounded-[2rem] shadow-sm space-y-6">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-orange-50 flex items-center justify-center text-[#c65f39]">
+                <div className="h-10 w-10 rounded-xl bg-orange-50 flex items-center justify-center text-[#f9510b]">
                   <Building2 className="h-5 w-5" />
                 </div>
                 <h2 className="text-lg font-semibold text-gray-900 tracking-tight">Industry Details</h2>
@@ -542,7 +542,7 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
                         <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">{t.label}</Label>
                         <div className="flex flex-wrap gap-2 mb-2">
                           {tags.map((tag, i) => (
-                            <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#c65f39]/10 border border-[#c65f39]/20 text-xs font-medium text-[#c65f39]">
+                            <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#f9510b]/10 border border-[#f9510b]/20 text-xs font-medium text-[#f9510b]">
                               {tag}
                               <button type="button" onClick={() => {
                                 const updated = tags.filter((_, j) => j !== i)
@@ -557,7 +557,7 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
                         <div className="flex gap-2">
                           <Input
                             placeholder={`Add ${t.label.toLowerCase()}...`}
-                            className="h-10 text-sm rounded-xl bg-gray-50/50 border-gray-100 focus:bg-white focus:border-[#c65f39] focus:ring-1 focus:ring-[#c65f39]/10 transition-all"
+                            className="h-10 text-sm rounded-xl bg-gray-50/50 border-gray-100 focus:bg-white focus:border-[#f9510b] focus:ring-1 focus:ring-[#f9510b]/10 transition-all"
                             value={extrasInputs[t.id] || ""}
                             onChange={e => setExtrasInputs(prev => ({ ...prev, [t.id]: e.target.value }))}
                             onKeyDown={e => {
@@ -584,7 +584,7 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
                       <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">{t.label}</Label>
                       <Input
                         placeholder={t.description || `Enter ${t.label.toLowerCase()}...`}
-                        className="h-11 rounded-xl bg-gray-50/50 border-gray-100 focus:bg-white focus:border-[#c65f39] focus:ring-1 focus:ring-[#c65f39]/10 transition-all"
+                        className="h-11 rounded-xl bg-gray-50/50 border-gray-100 focus:bg-white focus:border-[#f9510b] focus:ring-1 focus:ring-[#f9510b]/10 transition-all"
                         value={typeof value === "string" ? value : ""}
                         onChange={e => setProfile(prev => ({
                           ...prev,
@@ -624,7 +624,7 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
                       value={(safeSocial as any)?.[sm.key] || ""}
                       onChange={e => setNestedField("social", sm.key, e.target.value)}
                       placeholder={`${sm.label} URL...`}
-                      className="h-11 pl-10 rounded-xl bg-gray-50/50 border-gray-100 focus:bg-white focus:border-[#c65f39] focus:ring-1 focus:ring-[#c65f39]/10 transition-all"
+                      className="h-11 pl-10 rounded-xl bg-gray-50/50 border-gray-100 focus:bg-white focus:border-[#f9510b] focus:ring-1 focus:ring-[#f9510b]/10 transition-all"
                     />
                   </div>
                 </div>
@@ -710,7 +710,7 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
                     value={(profile.policies as any)?.[field.key] || ""}
                     onChange={e => setNestedField("policies", field.key, e.target.value)}
                     placeholder={field.placeholder}
-                    className="min-h-[60px] rounded-xl bg-gray-50/50 border-gray-100 focus:bg-white focus:border-[#c65f39] focus:ring-1 focus:ring-[#c65f39]/10 transition-all resize-none text-sm"
+                    className="min-h-[60px] rounded-xl bg-gray-50/50 border-gray-100 focus:bg-white focus:border-[#f9510b] focus:ring-1 focus:ring-[#f9510b]/10 transition-all resize-none text-sm"
                   />
                 </div>
               ))}

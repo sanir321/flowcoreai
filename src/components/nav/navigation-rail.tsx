@@ -80,7 +80,7 @@ export function NavigationRail() {
   return (
     <aside className="hidden lg:flex w-14 border-r border-gray-100 flex-col items-center bg-transparent shrink-0 font-sans z-[60] py-4">
       <div className="mb-5">
-        <Link href="/" className="h-8 w-8 rounded-lg bg-[#c65f39] flex items-center justify-center shadow-[0_2px_8px_rgba(198,95,57,0.15)] hover:scale-105 transition-transform duration-300 group relative">
+        <Link href="/" className="h-8 w-8 rounded-lg bg-[#f9510b] flex items-center justify-center shadow-[0_2px_8px_rgba(198,95,57,0.15)] hover:scale-105 transition-transform duration-300 group relative">
           <span className="text-white font-black text-[11px] tracking-tighter">F</span>
         </Link>
       </div>
@@ -98,7 +98,7 @@ export function NavigationRail() {
               className={cn(
                 "group relative h-9 w-9 flex items-center justify-center rounded-lg transition-all duration-300",
                 isActive 
-                  ? "bg-[#c65f39]/10 text-[#c65f39]" 
+                  ? "bg-[#f9510b]/10 text-[#f9510b]" 
                   : "text-gray-500 hover:text-gray-900 hover:bg-gray-100/50"
               )}
             >
@@ -110,7 +110,7 @@ export function NavigationRail() {
               {isActive && (
                 <motion.div 
                   layoutId="active-rail"
-                  className="absolute -left-2 w-0.5 h-5 bg-[#c65f39] rounded-r-full"
+                  className="absolute -left-2 w-0.5 h-5 bg-[#f9510b] rounded-r-full"
                   transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 />
               )}
@@ -133,7 +133,7 @@ export function NavigationRail() {
             prefetch={false}
             className={cn(
               "h-9 w-9 flex items-center justify-center rounded-lg transition-all duration-300",
-              pathname.startsWith('/settings') ? "bg-[#c65f39]/10 text-[#c65f39]" : "text-gray-500 hover:text-gray-900 hover:bg-gray-100/50"
+              pathname.startsWith('/settings') ? "bg-[#f9510b]/10 text-[#f9510b]" : "text-gray-500 hover:text-gray-900 hover:bg-gray-100/50"
             )}
           >
              <Settings className="h-4 w-4" />
@@ -142,7 +142,7 @@ export function NavigationRail() {
          <DropdownMenu>
             <DropdownMenuTrigger asChild>
                <div className="relative cursor-pointer group" suppressHydrationWarning>
-                  <div className="h-7 w-7 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-900 text-[10px] font-black overflow-hidden group-hover:border-[#c65f39]/50 transition-colors">
+                  <div className="h-7 w-7 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-900 text-[10px] font-black overflow-hidden group-hover:border-[#f9510b]/50 transition-colors">
                      <span>{userInitial}</span>
                   </div>
                   <div className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-[#10b981] border-2 border-white" />

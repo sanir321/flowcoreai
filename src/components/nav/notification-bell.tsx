@@ -122,14 +122,14 @@ export function NotificationBell() {
         className={cn(
           "relative h-9 w-9 flex items-center justify-center rounded-lg transition-all duration-300",
           open
-            ? "bg-[#c65f39]/10 text-[#c65f39]"
+            ? "bg-[#f9510b]/10 text-[#f9510b]"
             : "text-gray-500 hover:text-gray-900 hover:bg-gray-100/50"
         )}
       >
         <Heart
           className={cn(
             "h-4 w-4 transition-transform duration-300 hover:scale-110",
-            unreadCount > 0 && "fill-[#c65f39] text-[#c65f39]"
+            unreadCount > 0 && "fill-[#f9510b] text-[#f9510b]"
           )}
         />
         {unreadCount > 0 && (
@@ -156,11 +156,11 @@ export function NotificationBell() {
           >
             <div className="absolute -left-1.5 bottom-6 h-3 w-3 rotate-45 bg-white border-l border-b border-gray-100" />
 
-            <div className="bg-gradient-to-r from-[#c65f39]/5 to-[#c65f39]/10 px-5 py-3.5 border-b border-[#c65f39]/10">
+            <div className="bg-gradient-to-r from-[#f9510b]/5 to-[#f9510b]/10 px-5 py-3.5 border-b border-[#f9510b]/10">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <div className="h-7 w-7 rounded-lg bg-white/80 flex items-center justify-center shadow-sm shadow-[#c65f39]/5">
-                    <BellRing className="h-3.5 w-3.5 text-[#c65f39]" />
+                  <div className="h-7 w-7 rounded-lg bg-white/80 flex items-center justify-center shadow-sm shadow-[#f9510b]/5">
+                    <BellRing className="h-3.5 w-3.5 text-[#f9510b]" />
                   </div>
                   <div>
                     <h3 className="text-sm font-bold text-gray-900 -mt-0.5">Notifications</h3>
@@ -211,7 +211,7 @@ export function NotificationBell() {
                           "flex items-start gap-3.5 mx-2 px-3.5 py-3 rounded-xl cursor-pointer transition-all",
                           n.is_read
                             ? "hover:bg-gray-50"
-                            : "bg-gradient-to-r from-[#c65f39]/[0.03] to-transparent hover:from-[#c65f39]/[0.06]"
+                            : "bg-gradient-to-r from-[#f9510b]/[0.03] to-transparent hover:from-[#f9510b]/[0.06]"
                         )}
                       >
                         {}
@@ -226,7 +226,7 @@ export function NotificationBell() {
                               {n.title}
                             </p>
                             {!n.is_read && (
-                              <span className="h-2 w-2 rounded-full bg-[#c65f39] shrink-0 mt-1.5 shadow-sm shadow-[#c65f39]/30" />
+                              <span className="h-2 w-2 rounded-full bg-[#f9510b] shrink-0 mt-1.5 shadow-sm shadow-[#f9510b]/30" />
                             )}
                           </div>
                           <p className={cn(
@@ -238,7 +238,7 @@ export function NotificationBell() {
                           <div className="flex items-center gap-3 mt-1.5">
                             <span className="text-[9px] text-gray-400 font-medium">{timeAgo(n.created_at)}</span>
                             {n.link && (
-                              <span className="flex items-center gap-0.5 text-[9px] font-semibold text-[#c65f39] hover:text-[#a84d2e] transition-colors">
+                              <span className="flex items-center gap-0.5 text-[9px] font-semibold text-[#f9510b] hover:text-[#a84d2e] transition-colors">
                                 <ExternalLink className="h-2.5 w-2.5" />
                                 View details
                               </span>
@@ -258,7 +258,7 @@ export function NotificationBell() {
                 <p className="text-[9px] text-gray-400 font-medium">
                   {notifications.length} total
                 </p>
-                <a href="/settings/notifications" onClick={() => setOpen(false)} className="text-[9px] font-semibold text-[#c65f39] hover:text-[#a84d2e] transition-colors">
+                <a href="/settings/notifications" onClick={() => setOpen(false)} className="text-[9px] font-semibold text-[#f9510b] hover:text-[#a84d2e] transition-colors">
                   View all
                 </a>
               </div>

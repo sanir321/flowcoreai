@@ -30,7 +30,7 @@ export default function NotFound() {
         alignItems: "center",
         justifyContent: "center",
         fontSize: "28px",
-        color: "#c65f39",
+        color: "#f9510b",
         marginBottom: "24px",
       }}>
         404
@@ -56,7 +56,7 @@ export default function NotFound() {
         <Link href="/" style={{
           display: "inline-block",
           padding: "10px 24px",
-          background: "#c65f39",
+          background: "#f9510b",
           color: "#fff",
           borderRadius: "8px",
           fontSize: "14px",

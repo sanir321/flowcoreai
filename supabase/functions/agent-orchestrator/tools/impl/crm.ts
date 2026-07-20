@@ -1,7 +1,7 @@
 import { PipelineContext } from "../../lib/types.ts";
 import { getGoogleConfig } from "./google.ts";
 
-const APP_URL = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://7flowcore.vercel.app";
+const APP_URL = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://flowter.vercel.app";
 const CRON_SECRET = Deno.env.get("INTERNAL_CRON_SECRET") || "";
 
 function potentialToScore(potential: string): number {

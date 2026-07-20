@@ -67,7 +67,7 @@ export default function WidgetSettingsPage() {
 
   // Configuration State (All new features included)
   const [config, setConfig] = useState({
-    header_text: "FlowCore",
+    header_text: "Flowter",
     agent_name: "Assistant",
     greeting: "Hi! How can I help?",
     post_form_message: "Thank you! How can I help you today?",
@@ -96,7 +96,7 @@ export default function WidgetSettingsPage() {
       if (d2) {
         const d = d2 as Record<string, unknown>
         setConfig({
-          header_text: (d.header_text as string) || "FlowCore",
+          header_text: (d.header_text as string) || "Flowter",
           agent_name: (d.agent_name as string) || "Assistant",
           greeting: (d.greeting as string) || "Hi! How can I help?",
           post_form_message: (d.post_form_message as string) || "Thank you! How can I help you today?",

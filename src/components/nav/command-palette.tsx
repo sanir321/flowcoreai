@@ -186,16 +186,16 @@ export function CommandPalette() {
         {(isDragging || isUploading) && (
           <div className={cn(
             "absolute inset-0 z-50 flex flex-col items-center justify-center rounded-[1.5rem] transition-all duration-300 backdrop-blur-md",
-            isDragging ? "bg-[#c65f39]/20 border-2 border-dashed border-[#c65f39]" : "bg-white/80"
+            isDragging ? "bg-[#f9510b]/20 border-2 border-dashed border-[#f9510b]" : "bg-white/80"
           )}>
             {isUploading ? (
               <>
-                <Loader2 className="h-10 w-10 text-[#c65f39] animate-spin mb-4" />
+                <Loader2 className="h-10 w-10 text-[#f9510b] animate-spin mb-4" />
                 <p className="text-sm font-bold text-gray-900 uppercase tracking-widest">Ingesting Intelligence...</p>
               </>
             ) : (
               <>
-                <FileUp className="h-10 w-10 text-[#c65f39] mb-4 animate-bounce" />
+                <FileUp className="h-10 w-10 text-[#f9510b] mb-4 animate-bounce" />
                 <p className="text-sm font-bold text-gray-900 uppercase tracking-widest">Drop to Ingest Knowledge</p>
                 <p className="text-[10px] text-gray-400 mt-2 font-medium uppercase tracking-widest">PDF, Text, or Markdown</p>
               </>

@@ -224,7 +224,7 @@ export async function createAppointment(
     // Alert workspace owner about broken OAuth
     if (e.message?.includes("token") || e.message?.includes("invalid_grant")) {
       try {
-        const APP_URL = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://7flowcore.vercel.app";
+        const APP_URL = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://flowter.vercel.app";
         const CRON_SECRET = Deno.env.get("INTERNAL_CRON_SECRET") || "";
         const { data: workspace } = await ctx.supabase
           .from("workspaces").select("owner_id, name").eq("id", ctx.payload.workspace_id).maybeSingle();
@@ -269,7 +269,7 @@ export async function createAppointment(
     ? { ...appt, google_event_id: googleEventId, meeting_link: meetLink }
     : appt;
 
-  const appUrl = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://7flowcore.vercel.app";
+  const appUrl = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://flowter.vercel.app";
   const appointmentLink = `${appUrl}/appointment/${appt.id}`;
 
   return {
@@ -320,7 +320,7 @@ async function sendAppointmentWhatsApp(ctx: PipelineContext, appt: any, meetLink
     if (!gowaBase || !gowaKey) return;
     const auth = btoa(gowaKey);
     const formattedDate = formatIST(appt.start_at);
-    const appUrl = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://7flowcore.vercel.app";
+    const appUrl = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://flowter.vercel.app";
     const appointmentLink = `${appUrl}/appointment/${appt.id}`;
 
     let message = `✅ Appointment Confirmed!\n\nHi ${appt.customer_name},\n\nYour appointment has been confirmed:\n• Service: ${appt.service}\n• Date: ${formattedDate}\n\nView details: ${appointmentLink}\n\nThank you!`;
@@ -352,7 +352,7 @@ async function sendAppointmentEmail(ctx: PipelineContext, appt: any, meetLink: s
     if (!workspaceData) return;
     const email = appt.customer_email || workspaceData.session?.[0]?.contact?.email;
     if (!email) return;
-    const appUrl = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://7flowcore.vercel.app";
+    const appUrl = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://flowter.vercel.app";
     const workspaceName = workspaceData.name || "FlowCore";
     const formattedDate = formatIST(appt.start_at);
     const appointmentLink = `${appUrl}/appointment/${appt.id}`;

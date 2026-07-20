@@ -45,12 +45,12 @@ export async function POST(req: NextRequest) {
     if (owner_email) {
       const { error: emailErr } = await sendEmail({
         to: owner_email,
-        subject: "FlowCore — Credits Exhausted",
+        subject: "Flowter — Credits Exhausted",
         html: `
           <h2>Your workspace has run out of credits</h2>
           <p>Customer messages are currently being blocked until credits are restored.</p>
-          <p><a href="${process.env.NEXT_PUBLIC_APP_URL || "https://flowcore.ai"}/settings/billing" style="display:inline-block;padding:12px 24px;background:#2563eb;color:#fff;text-decoration:none;border-radius:6px;font-weight:600;">Upgrade Now</a></p>
-          <p style="margin-top:24px;font-size:13px;color:#666;">FlowCore AI Customer Service</p>
+          <p><a href="${process.env.NEXT_PUBLIC_APP_URL || "https://Flowter.ai"}/settings/billing" style="display:inline-block;padding:12px 24px;background:#2563eb;color:#fff;text-decoration:none;border-radius:6px;font-weight:600;">Upgrade Now</a></p>
+          <p style="margin-top:24px;font-size:13px;color:#666;">Flowter Customer Service</p>
         `,
       });
       results.email = emailErr ? "failed" : "sent";
@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
         await sendWhatsAppText(
           workspace_id,
           owner_phone,
-          "⚠️ Your FlowCore workspace has run out of credits. Customer messages are being blocked. Upgrade your plan at flowcore.ai/settings/billing"
+          "⚠️ Your Flowter workspace has run out of credits. Customer messages are being blocked. Upgrade your plan at Flowter.ai/settings/billing"
         );
         results.whatsapp = "sent";
       } catch (waErr: unknown) {

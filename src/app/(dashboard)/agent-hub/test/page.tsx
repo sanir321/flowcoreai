@@ -223,7 +223,7 @@ export default function TestChatPage() {
                         >
                           <agent.icon className="h-3 w-3 text-gray-400" />
                           <span className="font-medium">{agent.name}</span>
-                          {selectedAgent === agent.id && <Check className="h-3 w-3 text-[#c65f39] ml-auto" />}
+                          {selectedAgent === agent.id && <Check className="h-3 w-3 text-[#f9510b] ml-auto" />}
                         </button>
                       ))}
                     </div>

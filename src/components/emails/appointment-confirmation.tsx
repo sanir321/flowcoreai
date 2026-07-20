@@ -23,7 +23,7 @@ interface AppointmentConfirmationEmailProps {
 
 export const AppointmentConfirmationEmail = ({
   customerName = "there",
-  workspaceName = "FlowCore",
+  workspaceName = "Flowter",
   service = "Consultation",
   date = new Date().toLocaleString(),
   meetLink,
@@ -40,7 +40,7 @@ export const AppointmentConfirmationEmail = ({
           theme: {
             extend: {
               colors: {
-                brand: "#c65f39",
+                brand: "#f9510b",
               },
             },
           },
@@ -50,7 +50,7 @@ export const AppointmentConfirmationEmail = ({
           <Container className="border border-solid border-[#eaeaea] rounded-xl my-[40px] mx-auto p-[20px] max-w-[465px]">
             <Section className="mt-[32px]">
               <div style={{ marginBottom: '36px' }}>
-                <span style={{ fontSize: '20px', fontWeight: 800, color: '#111827', letterSpacing: '-0.5px', fontFamily: "'Inter', 'Helvetica Neue', Arial, sans-serif" }}>flowcore</span>
+                <span style={{ fontSize: '20px', fontWeight: 800, color: '#111827', letterSpacing: '-0.5px', fontFamily: "'Inter', 'Helvetica Neue', Arial, sans-serif" }}>Flowter</span>
               </div>
             </Section>
             <Heading className="text-black text-[24px] font-bold p-0 my-[30px] mx-0">
@@ -103,7 +103,7 @@ export const AppointmentConfirmationEmail = ({
             </Text>
             <Hr className="border border-solid border-[#eaeaea] my-[26px] mx-0 w-full" />
             <Text className="text-[#666666] text-[12px] leading-[24px]">
-              {workspaceName} — Powered by FlowCore AI
+              {workspaceName} — Powered by Flowter
             </Text>
           </Container>
         </Body>

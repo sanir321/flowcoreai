@@ -378,7 +378,7 @@ export function InboxClient({
                          <Settings className="h-3.5 w-3.5" />
                      </button>
                  </h2>
-                 <Badge className="bg-[#c65f39] text-white border-none text-[9px] px-1.5 h-4 font-semibold">{filteredSessions.length}</Badge>
+                 <Badge className="bg-[#f9510b] text-white border-none text-[9px] px-1.5 h-4 font-semibold">{filteredSessions.length}</Badge>
               </div>
               <div className="relative group">
                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3 w-3 text-gray-500 group-focus-within:text-black transition-colors" />
@@ -439,7 +439,7 @@ export function InboxClient({
                         <div className="flex justify-between items-center w-full text-gray-900">
                            <div className="flex items-center gap-1.5">
                               <span className="text-xs font-semibold truncate max-w-[120px] md:max-w-[160px] tracking-tight">{s.contacts?.name || "Unknown Contact"}</span>
-                              {s.status === 'escalated' && <div className="h-1.5 w-1.5 rounded-full bg-[#c65f39]" />}
+                              {s.status === 'escalated' && <div className="h-1.5 w-1.5 rounded-full bg-[#f9510b]" />}
                            </div>
                            <span className="text-[9px] font-semibold text-gray-500">
                               {s.last_message_at ? new Date(s.last_message_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "--:--"}
@@ -447,11 +447,11 @@ export function InboxClient({
                         </div>
                         <div className="flex items-center gap-1">
                            <Badge variant="outline" className="text-[8px] font-semibold px-1 h-3.5 border-gray-200 text-gray-500 bg-white">{s.channel}</Badge>
-                           <Badge variant="outline" className="text-[8px] font-semibold px-1 h-3.5 border-[#c65f39]/20 text-[#c65f39] bg-[#c65f39]/5 tracking-tight">
+                           <Badge variant="outline" className="text-[8px] font-semibold px-1 h-3.5 border-[#f9510b]/20 text-[#f9510b] bg-[#f9510b]/5 tracking-tight">
                               {formatAgentType(s.agent_type)}
                            </Badge>
                         </div>
-                        {selectedSessionId === s.id && <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-[#c65f39]" />}
+                        {selectedSessionId === s.id && <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-[#f9510b]" />}
                      </button>
                    ))
                  )}
@@ -478,7 +478,7 @@ export function InboxClient({
                      <div className="flex flex-col text-gray-900">
                         <div className="flex items-center gap-2">
                            <span className="text-sm font-semibold tracking-tight">{selectedSession.contacts?.name || "Anonymous contact"}</span>
-                           <Badge className="bg-[#c65f39]/10 text-[#c65f39] border-none text-[8px] font-semibold px-1.5 h-4">
+                           <Badge className="bg-[#f9510b]/10 text-[#f9510b] border-none text-[8px] font-semibold px-1.5 h-4">
                               {formatAgentType(selectedSession.agent_type)}
                            </Badge>
                         </div>
@@ -502,7 +502,7 @@ export function InboxClient({
                         <Button 
                           onClick={handleResolve}
                           disabled={isUpdatingStatus}
-                          className="h-8 px-4 rounded-lg bg-[#c65f39] hover:bg-[#b05432] text-white text-[9px] font-semibold transition-all active:scale-95 gap-1.5"
+                          className="h-8 px-4 rounded-lg bg-[#f9510b] hover:bg-[#b05432] text-white text-[9px] font-semibold transition-all active:scale-95 gap-1.5"
                         >
                            {isUpdatingStatus ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
                            Resume AI
@@ -552,7 +552,7 @@ export function InboxClient({
                            <div className="flex items-center gap-2 px-1 text-gray-500 font-semibold">
                               <span className="text-[8px]">{m.role === 'customer' ? 'Customer' : 'Assistant'}</span>
                               {m.role !== 'customer' && m.agent_type && m.agent_type !== 'customer_support' && (
-                                <span className="text-[7px] uppercase tracking-wider text-[#c65f39] font-bold">{formatAgentType(m.agent_type)}</span>
+                                <span className="text-[7px] uppercase tracking-wider text-[#f9510b] font-bold">{formatAgentType(m.agent_type)}</span>
                               )}
                            </div>
                        </div>
@@ -567,9 +567,9 @@ export function InboxClient({
                         >
                            <div className="bg-white border border-gray-100 p-3 rounded-xl shadow-sm flex items-center gap-2">
                               <div className="flex gap-1">
-                                 <div className="h-1 w-1 bg-[#c65f39] rounded-full animate-bounce [animation-delay:-0.3s]" />
-                                 <div className="h-1 w-1 bg-[#c65f39] rounded-full animate-bounce [animation-delay:-0.15s]" />
-                                 <div className="h-1 w-1 bg-[#c65f39] rounded-full animate-bounce" />
+                                 <div className="h-1 w-1 bg-[#f9510b] rounded-full animate-bounce [animation-delay:-0.3s]" />
+                                 <div className="h-1 w-1 bg-[#f9510b] rounded-full animate-bounce [animation-delay:-0.15s]" />
+                                 <div className="h-1 w-1 bg-[#f9510b] rounded-full animate-bounce" />
                               </div>
                               <span className="text-[9px] font-bold text-gray-400 capitalize">
                                  {selectedSession.typing_status.replace(/_/g, ' ')}...

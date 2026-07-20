@@ -46,7 +46,7 @@ export function NavItem({ icon: Icon, label, href, isCollapsed, active }: NavIte
     >
       <Icon className={cn(
         "h-4 w-4 shrink-0 transition-transform duration-500",
-        active ? "text-[#c65f39] scale-110" : "group-hover:scale-110"
+        active ? "text-[#f9510b] scale-110" : "group-hover:scale-110"
       )} />
       {!isCollapsed && (
         <span className="text-[13px] font-semibold tracking-tight">{label}</span>
@@ -54,7 +54,7 @@ export function NavItem({ icon: Icon, label, href, isCollapsed, active }: NavIte
       {active && (
         <motion.div 
           layoutId="active-pill"
-          className="absolute left-0 w-1 h-4 bg-[#c65f39] rounded-r-full"
+          className="absolute left-0 w-1 h-4 bg-[#f9510b] rounded-r-full"
         />
       )}
     </Link>

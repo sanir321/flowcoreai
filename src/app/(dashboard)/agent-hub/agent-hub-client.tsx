@@ -77,7 +77,7 @@ export function AgentHubClient({ initialAgents: agents, workspaceId }: AgentHubC
                                   <p className="text-white/60 font-medium text-[13px] leading-relaxed max-w-[200px] mx-auto">Assistant is active and handling interactions.</p>
                                </div>
                                <div className="mt-auto pt-8 border-t border-white/5 w-full flex flex-col items-start text-left gap-2">
-                                  <span className="text-[10px] font-semibold text-[#c65f39]">Connection Status</span>
+                                  <span className="text-[10px] font-semibold text-[#f9510b]">Connection Status</span>
                                   <div className="flex items-center gap-3">
                                      <div className={cn("h-2 w-2 rounded-full shadow-[0_0_8px]", agent.status === 'active' ? "bg-emerald-500 shadow-emerald-500/50" : "bg-gray-500 shadow-gray-500/50")} />
                                      <span className="text-[12px] font-semibold text-white/70 tracking-tight">{agent.status === 'active' ? 'Active' : 'Inactive'}</span>

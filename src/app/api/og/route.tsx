@@ -4,7 +4,7 @@ export const runtime = 'edge'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
-  const title = searchParams.get('title') || 'Flowcore AI'
+  const title = searchParams.get('title') || 'Flowter'
   const subtitle = searchParams.get('subtitle') || 'Automated Customer Service & AI Assistants'
 
   return new ImageResponse(
@@ -62,13 +62,13 @@ export async function GET(request: Request) {
           style={{
             fontSize: '18px',
             fontWeight: 400,
-            color: '#c65f39',
+            color: '#f9510b',
             textAlign: 'center',
             marginTop: '40px',
             zIndex: 1,
           }}
         >
-          flowcore.ai
+          Flowter.ai
         </p>
       </div>
     ),

@@ -257,7 +257,7 @@ export default function IntegrationsPage() {
                         </div>
                     ))}
                     {!isRequirementsMet && (
-                        <Link href="/agent-hub" className="text-[10px] font-bold text-[#c65f39] hover:underline flex items-center gap-1 ml-auto">
+                        <Link href="/agent-hub" className="text-[10px] font-bold text-[#f9510b] hover:underline flex items-center gap-1 ml-auto">
                             Go to Agent Hub <ArrowRight className="h-3 w-3" />
                         </Link>
                     )}
@@ -277,7 +277,7 @@ export default function IntegrationsPage() {
                        </div>
 
                        <div className="space-y-1 relative z-10 text-gray-900">
-                          <h4 className="text-[10px] font-bold text-[#c65f39]">Automated Sync</h4>
+                          <h4 className="text-[10px] font-bold text-[#f9510b]">Automated Sync</h4>
                           <p className="text-lg font-semibold text-gray-900 tracking-tight">Active Google Connection</p>
                        </div>
                        

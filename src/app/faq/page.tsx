@@ -6,55 +6,55 @@ const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
   title: "Frequently Asked Questions",
-  description: "Answers to common questions about Flowcore AI's AI customer service platform, WhatsApp integration, pricing, and features.",
+  description: "Answers to common questions about Flowter's AI customer service platform, WhatsApp integration, pricing, and features.",
   keywords: [
-    "Flowcore AI FAQ",
+    "Flowter FAQ",
     "AI customer service questions",
     "WhatsApp automation FAQ",
     "AI chatbot questions",
   ],
   openGraph: {
-    title: "Frequently Asked Questions | Flowcore AI",
-    description: "Answers to common questions about Flowcore AI's AI customer service platform.",
+    title: "Frequently Asked Questions | Flowter",
+    description: "Answers to common questions about Flowter's AI customer service platform.",
     url: `${siteUrl}/faq`,
     images: [
       {
-        url: `${siteUrl}/api/og?title=FAQ&subtitle=Questions%20about%20Flowcore%20AI`,
+        url: `${siteUrl}/api/og?title=FAQ&subtitle=Questions%20about%20Flowter%20AI`,
         width: 1200,
         height: 630,
-        alt: "Flowcore AI FAQ",
+        alt: "Flowter FAQ",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Frequently Asked Questions | Flowcore AI",
-    description: "Answers to common questions about Flowcore AI's AI customer service platform.",
-    images: [`${siteUrl}/api/og?title=FAQ&subtitle=Questions%20about%20Flowcore%20AI`],
+    title: "Frequently Asked Questions | Flowter",
+    description: "Answers to common questions about Flowter's AI customer service platform.",
+    images: [`${siteUrl}/api/og?title=FAQ&subtitle=Questions%20about%20Flowter%20AI`],
   },
   alternates: { canonical: `${siteUrl}/faq` },
 }
 
 const faqs = [
   {
-    q: "What is FlowCore?",
-    a: "FlowCore is an AI-powered customer service orchestration platform. It connects WhatsApp and webchat to a single AI inbox, automating responses while keeping a human in the loop when needed.",
+    q: "What is Flowter?",
+    a: "Flowter is an AI-powered customer service orchestration platform. It connects WhatsApp and webchat to a single AI inbox, automating responses while keeping a human in the loop when needed.",
   },
   {
-    q: "Which channels does FlowCore support?",
+    q: "Which channels does Flowter support?",
     a: "WhatsApp (via GoWA) and a native webchat widget. Each channel connects through its own integration — you bring the credentials, we handle the rest.",
   },
   {
     q: "Do I need a Meta/WhatsApp Business API approval?",
-    a: "No. FlowCore uses GoWA (self-hosted WhatsApp Web API), which connects via QR code like WhatsApp Web. No Meta Business API approval or WABA number required.",
+    a: "No. Flowter uses GoWA (self-hosted WhatsApp Web API), which connects via QR code like WhatsApp Web. No Meta Business API approval or WABA number required.",
   },
   {
-    q: "What AI model does FlowCore use?",
+    q: "What AI model does Flowter use?",
     a: "We use Groq AI (llama-3.3-70b-versatile) for fast, reliable inference. Temperature is set to 0.3 for consistent professional responses, with a 300-token limit per reply.",
   },
   {
     q: "Can a human take over a conversation?",
-    a: "Yes. FlowCore supports escalation — when a customer asks for a human or triggers specific keywords, the conversation is automatically assigned to a human agent. You can also manually take over from the inbox.",
+    a: "Yes. Flowter supports escalation — when a customer asks for a human or triggers specific keywords, the conversation is automatically assigned to a human agent. You can also manually take over from the inbox.",
   },
   {
     q: "Is my data secure?",

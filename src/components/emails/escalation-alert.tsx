@@ -24,7 +24,7 @@ export const EscalationAlertEmail = ({
   workspaceName = "Your Workspace",
   customerName = "A Customer",
   reason = "Needs human intervention",
-  inboxUrl = "https://flowcore.ai/inbox",
+  inboxUrl = "https://Flowter.ai/inbox",
 }: EscalationAlertEmailProps) => {
   const previewText = `Escalation Alert: ${customerName} needs attention in ${workspaceName}`;
 
@@ -37,7 +37,7 @@ export const EscalationAlertEmail = ({
           theme: {
             extend: {
               colors: {
-                brand: "#c65f39",
+                brand: "#f9510b",
               },
             },
           },
@@ -47,7 +47,7 @@ export const EscalationAlertEmail = ({
           <Container className="border border-solid border-[#eaeaea] rounded-xl my-[40px] mx-auto p-[20px] max-w-[465px]">
             <Section className="mt-[32px]">
               <div style={{ marginBottom: '36px' }}>
-                <span style={{ fontSize: '20px', fontWeight: 800, color: '#111827', letterSpacing: '-0.5px', fontFamily: "'Inter', 'Helvetica Neue', Arial, sans-serif" }}>flowcore</span>
+                <span style={{ fontSize: '20px', fontWeight: 800, color: '#111827', letterSpacing: '-0.5px', fontFamily: "'Inter', 'Helvetica Neue', Arial, sans-serif" }}>Flowter</span>
               </div>
             </Section>
             <Heading className="text-black text-[24px] font-bold text-center p-0 my-[30px] mx-0">

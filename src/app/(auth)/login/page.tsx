@@ -22,7 +22,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [acceptedTerms, setAcceptedTerms] = useState(() => {
     if (typeof window !== "undefined") {
-      try { return localStorage.getItem("flowcore_terms_accepted") === "true" } catch {}
+      try { return localStorage.getItem("Flowter_terms_accepted") === "true" } catch {}
     }
     return false
   })
@@ -172,7 +172,7 @@ export default function LoginPage() {
               <span className="text-white font-bold text-base tracking-tighter">F</span>
             </Link>
             <div className="space-y-1">
-               <h2 className="text-lg font-semibold tracking-tight text-white">FlowCore</h2>
+               <h2 className="text-lg font-semibold tracking-tight text-white">Flowter</h2>
                <p className="text-xs text-gray-500 font-medium">AI agent platform</p>
             </div>
           </div>
@@ -238,7 +238,7 @@ export default function LoginPage() {
                         onCheckedChange={(checked) => {
                           const val = checked === true
                           setAcceptedTerms(val); setTermsError("")
-                          try { localStorage.setItem("flowcore_terms_accepted", val ? "true" : "false") } catch {}
+                          try { localStorage.setItem("Flowter_terms_accepted", val ? "true" : "false") } catch {}
                         }}
                         className="mt-0.5 border-neutral-600 data-[state=checked]:bg-[#D95E46] data-[state=checked]:border-[#D95E46]"
                       />

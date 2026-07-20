@@ -347,11 +347,11 @@ export default function EscalationsPage() {
                                 "p-3 rounded-lg text-xs leading-relaxed",
                                 msg.role === "assistant"
                                   ? "bg-white border border-gray-100 ml-6"
-                                  : "bg-[#c65f39]/5 border border-[#c65f39]/10 mr-6"
+                                  : "bg-[#f9510b]/5 border border-[#f9510b]/10 mr-6"
                               )}>
                                 <span className={cn(
                                   "text-[10px] font-bold uppercase tracking-wider block mb-0.5",
-                                  msg.role === "assistant" ? "text-gray-400" : "text-[#c65f39]"
+                                  msg.role === "assistant" ? "text-gray-400" : "text-[#f9510b]"
                                 )}>
                                   {msg.role || "user"}
                                 </span>

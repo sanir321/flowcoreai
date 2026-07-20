@@ -7,26 +7,26 @@ const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
   title: "Sitemap",
-  description: "Complete sitemap of Flowcore AI — find all pages including features, pricing, FAQ, changelog, about, and legal pages.",
+  description: "Complete sitemap of Flowter — find all pages including features, pricing, FAQ, changelog, about, and legal pages.",
   robots: { index: true, follow: true },
   openGraph: {
-    title: "Sitemap - Flowcore AI",
-    description: "Complete sitemap of Flowcore AI.",
+    title: "Sitemap - Flowter",
+    description: "Complete sitemap of Flowter.",
     url: `${siteUrl}/sitemap`,
     images: [
       {
-        url: `${siteUrl}/api/og?title=Sitemap&subtitle=Flowcore%20AI`,
+        url: `${siteUrl}/api/og?title=Sitemap&subtitle=Flowter%20AI`,
         width: 1200,
         height: 630,
-        alt: "Flowcore AI Sitemap",
+        alt: "Flowter Sitemap",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Sitemap - Flowcore AI",
-    description: "Complete sitemap of Flowcore AI.",
-    images: [`${siteUrl}/api/og?title=Sitemap&subtitle=Flowcore%20AI`],
+    title: "Sitemap - Flowter",
+    description: "Complete sitemap of Flowter.",
+    images: [`${siteUrl}/api/og?title=Sitemap&subtitle=Flowter%20AI`],
   },
   alternates: { canonical: `${siteUrl}/sitemap` },
 }
@@ -65,7 +65,7 @@ export default function SitemapPage() {
         <p style={{
           fontSize: "15px", color: "#888", lineHeight: 1.6, marginBottom: "40px",
         }}>
-          All pages on Flowcore AI organized for easy navigation.
+          All pages on Flowter organized for easy navigation.
         </p>
         <ul style={{
           listStyle: "none", padding: 0, margin: 0,

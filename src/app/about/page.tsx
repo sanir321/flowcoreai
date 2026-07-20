@@ -6,24 +6,24 @@ const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
   title: "About — Our Story & Mission",
-  description: "An AI-powered customer service platform for WhatsApp and webchat. Learn about Flowcore AI's mission, team, and vision for automated communication.",
+  description: "An AI-powered customer service platform for WhatsApp and webchat. Learn about Flowter's mission, team, and vision for automated communication.",
   keywords: [
-    "about Flowcore AI",
+    "about Flowter",
     "AI customer service company",
     "WhatsApp automation platform",
     "customer service AI startup",
   ],
   openGraph: {
-    title: "About — Our Story & Mission | Flowcore AI",
+    title: "About — Our Story & Mission | Flowter",
     description: "AI-powered customer service orchestration platform for WhatsApp and webchat.",
     url: `${siteUrl}/about`,
-    siteName: "Flowcore AI",
+    siteName: "Flowter",
     images: [
       {
         url: `${siteUrl}/api/og?title=About%20%26%20Mission&subtitle=AI%20Customer%20Service%20Orchestration%20Platform`,
         width: 1200,
         height: 630,
-        alt: "About Flowcore AI",
+        alt: "About Flowter",
       },
     ],
     locale: "en_US",
@@ -31,9 +31,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "About — Our Story & Mission | Flowcore AI",
+    title: "About — Our Story & Mission | Flowter",
     description: "AI-powered customer service orchestration platform for WhatsApp and webchat.",
-    images: [`${siteUrl}/api/og?title=About%20Flowcore%20AI&subtitle=AI%20Customer%20Service%20Orchestration%20Platform`],
+    images: [`${siteUrl}/api/og?title=About%20Flowter%20AI&subtitle=AI%20Customer%20Service%20Orchestration%20Platform`],
   },
   alternates: { canonical: `${siteUrl}/about` },
 }
@@ -50,11 +50,11 @@ export default function AboutPage() {
         __html: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "AboutPage",
-          "name": "About Flowcore AI",
+          "name": "About Flowter",
           "url": `${siteUrl}/about`,
           "mainEntity": {
             "@type": "Organization",
-            "name": "FlowCore Systems",
+            "name": "Flowter Systems",
             "url": siteUrl,
             "description": "AI-powered customer service orchestration platform for WhatsApp and webchat.",
             "foundingDate": "2025",
@@ -71,7 +71,7 @@ export default function AboutPage() {
             lineHeight: 1.15, letterSpacing: "-0.02em",
             color: "#fff", margin: "0 0 20px",
           }}>
-            About Flowcore AI
+            About Flowter
           </h1>
           <p style={{ fontSize: "18px", color: "#888", lineHeight: 1.6, maxWidth: "600px" }}>
             We&apos;re building the AI-powered customer service platform that helps businesses automate conversations without losing the human touch.
@@ -87,7 +87,7 @@ export default function AboutPage() {
               Our Mission
             </h2>
             <p style={{ fontSize: "16px", color: "#c0c0c0", lineHeight: 1.8, margin: 0 }}>
-              Small and medium businesses lose customers because they can&apos;t respond fast enough. Hiring support staff is expensive. Chatbots are rigid and impersonal. We built Flowcore AI to bridge that gap — AI agents that understand your business, respond professionally, and know when to hand off to a human.
+              Small and medium businesses lose customers because they can&apos;t respond fast enough. Hiring support staff is expensive. Chatbots are rigid and impersonal. We built Flowter to bridge that gap — AI agents that understand your business, respond professionally, and know when to hand off to a human.
             </p>
           </section>
 
@@ -139,7 +139,7 @@ export default function AboutPage() {
                 { value: "3", label: "AI agent types" },
               ].map((stat) => (
                 <div key={stat.label} style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: "32px", fontWeight: 400, color: "#c65f39", marginBottom: "4px" }}>
+                  <div style={{ fontSize: "32px", fontWeight: 400, color: "#f9510b", marginBottom: "4px" }}>
                     {stat.value}
                   </div>
                   <div style={{ fontSize: "13px", color: "#888" }}>
@@ -159,8 +159,8 @@ export default function AboutPage() {
             </h2>
             <p style={{ fontSize: "16px", color: "#c0c0c0", lineHeight: 1.8, margin: 0 }}>
               Questions, feedback, or partnership inquiries? Reach us at{" "}
-              <a href="mailto:support@flowcore.ai" style={{ color: "#c65f39", textDecoration: "none" }}>
-                support@flowcore.ai
+              <a href="mailto:support@Flowter.ai" style={{ color: "#f9510b", textDecoration: "none" }}>
+                support@Flowter.ai
               </a>
             </p>
           </section>

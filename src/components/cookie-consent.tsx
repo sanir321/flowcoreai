@@ -6,7 +6,7 @@ import Link from "next/link"
 
 type ConsentLevel = "accepted" | "rejected" | null
 
-const STORAGE_KEY = "flowcore_cookie_consent"
+const STORAGE_KEY = "Flowter_cookie_consent"
 
 export function CookieConsent() {
   const [, setConsent] = useState<ConsentLevel>(null)
@@ -66,7 +66,7 @@ export function CookieConsent() {
             margin: "0 0 16px",
           }}>
             We use essential cookies for authentication and optional cookies to improve your experience.{" "}
-            <Link href="/legal/cookie-policy" style={{ color: "#c65f39", textDecoration: "underline" }}>
+            <Link href="/legal/cookie-policy" style={{ color: "#f9510b", textDecoration: "underline" }}>
               Learn more
             </Link>
           </p>
@@ -79,7 +79,7 @@ export function CookieConsent() {
             </button>
             <button type="button" onClick={handleAccept} style={{
               padding: "8px 20px", borderRadius: 100, border: "none",
-              background: "#c65f39", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer",
+              background: "#f9510b", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer",
             }}>
               Accept All
             </button>

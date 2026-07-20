@@ -186,7 +186,7 @@ export function SourcesTab({ initialSources, workspaceId, dialogOpen, onDialogOp
           </div>
           <h3 className="text-sm font-semibold text-gray-900">No sources yet</h3>
           <p className="text-xs text-gray-500 mt-1">Add a website, upload a document, or paste text.</p>
-          <Button onClick={() => onDialogOpenChange(true)} className="bg-[#c65f39] hover:bg-[#b55533] text-white text-xs font-semibold px-4 py-2 rounded-xl transition-all shadow-sm">
+          <Button onClick={() => onDialogOpenChange(true)} className="bg-[#f9510b] hover:bg-[#b55533] text-white text-xs font-semibold px-4 py-2 rounded-xl transition-all shadow-sm">
             <Plus className="h-4 w-4 mr-1" /> Add Source
           </Button>
         </div>
@@ -196,7 +196,7 @@ export function SourcesTab({ initialSources, workspaceId, dialogOpen, onDialogOp
             <Card key={source.id} className="px-5 py-4 border-gray-100 rounded-xl shadow-sm">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3 min-w-0 flex-1">
-                  <div className="h-8 w-8 rounded-lg bg-orange-50 flex items-center justify-center text-[#c65f39] shrink-0">
+                  <div className="h-8 w-8 rounded-lg bg-orange-50 flex items-center justify-center text-[#f9510b] shrink-0">
                     {source.source_type === 'url' ? <Globe className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
                   </div>
                   <div className="min-w-0">

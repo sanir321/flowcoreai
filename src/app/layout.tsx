@@ -33,23 +33,23 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Flowcore AI — Automated Customer Service & AI Assistants",
-    template: "%s | Flowcore AI",
+    default: "Flowter — Automated Customer Service & AI Assistants",
+    template: "%s | Flowter",
   },
   description: siteDescription,
-  keywords: ["AI customer service", "WhatsApp automation", "business AI assistants", "FlowCore", "automated communication", "AI orchestration"],
-  authors: [{ name: "FlowCore Systems" }],
+  keywords: ["AI customer service", "WhatsApp automation", "business AI assistants", "Flowter", "automated communication", "AI orchestration"],
+  authors: [{ name: "Flowter Systems" }],
   openGraph: {
-    title: "Flowcore AI — Automated Customer Service & AI Assistants",
+    title: "Flowter — Automated Customer Service & AI Assistants",
     description: siteDescription,
     url: siteUrl,
-    siteName: "Flowcore AI",
+    siteName: "Flowter",
     images: [
       {
-        url: `${siteUrl}/api/og?title=Flowcore%20AI&subtitle=Automated%20Customer%20Service%20%26%20AI%20Assistants`,
+        url: `${siteUrl}/api/og?title=Flowter%20AI&subtitle=Automated%20Customer%20Service%20%26%20AI%20Assistants`,
         width: 1200,
         height: 630,
-        alt: "Flowcore AI — AI Customer Service Platform",
+        alt: "Flowter — AI Customer Service Platform",
       },
     ],
     locale: "en_US",
@@ -57,9 +57,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Flowcore AI — Automated Customer Service & AI Assistants",
+    title: "Flowter — Automated Customer Service & AI Assistants",
     description: siteDescription,
-    images: [`${siteUrl}/api/og?title=Flowcore%20AI&subtitle=Automated%20Customer%20Service%20%26%20AI%20Assistants`],
+    images: [`${siteUrl}/api/og?title=Flowter%20AI&subtitle=Automated%20Customer%20Service%20%26%20AI%20Assistants`],
   },
   alternates: {
     canonical: siteUrl,

@@ -207,7 +207,7 @@ export function MenuClient({
         </div>
         <Button
           onClick={openCreate}
-          className="bg-[#c65f39] hover:bg-[#b85432] text-white rounded-xl h-9 px-4 text-xs font-bold shadow-sm gap-1.5"
+          className="bg-[#f9510b] hover:bg-[#b85432] text-white rounded-xl h-9 px-4 text-xs font-bold shadow-sm gap-1.5"
         >
           <Plus className="h-3.5 w-3.5" />
           Add Item
@@ -535,7 +535,7 @@ export function MenuClient({
                     type="checkbox"
                     checked={form.is_available}
                     onChange={e => setForm(f => ({ ...f, is_available: e.target.checked }))}
-                    className="h-4 w-4 rounded border-gray-300 text-[#c65f39] focus:ring-[#c65f39]"
+                    className="h-4 w-4 rounded border-gray-300 text-[#f9510b] focus:ring-[#f9510b]"
                   />
                   <span className="text-[10px] font-bold text-gray-500">Available</span>
                 </label>
@@ -553,7 +553,7 @@ export function MenuClient({
               <Button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex-1 bg-[#c65f39] hover:bg-[#b85432] text-white rounded-xl h-10 text-xs font-bold gap-2"
+                className="flex-1 bg-[#f9510b] hover:bg-[#b85432] text-white rounded-xl h-10 text-xs font-bold gap-2"
               >
                 {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
                 {editingId ? "Save Changes" : "Add Item"}

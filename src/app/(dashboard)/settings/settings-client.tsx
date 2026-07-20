@@ -97,7 +97,7 @@ export function SettingsClient({ initialWorkspace }: SettingsClientProps) {
                  <Input 
                    value={workspace.name}
                    onChange={(e) => setWorkspace(prev => ({ ...prev, name: e.target.value }))}
-                   placeholder="e.g. FlowCore Systems" 
+                   placeholder="e.g. Flowter Systems" 
                    className="h-12 border-gray-200 focus:border-black transition-all text-gray-900 bg-gray-50/30"
                  />
                  <p className="text-[10px] text-gray-500 ml-1 font-medium">This name will be used by your automated agents during conversation.</p>

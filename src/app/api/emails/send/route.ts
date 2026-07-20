@@ -98,11 +98,11 @@ export async function POST(req: NextRequest) {
         const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         emailHtml = `
           <div style="font-family: sans-serif; padding: 20px;">
-            <h2 style="color: #c65f39;">${esc(subject)}</h2>
+            <h2 style="color: #f9510b;">${esc(subject)}</h2>
             <div style="background: #f4f4f4; padding: 15px; border-radius: 8px;">
               ${esc(data.message || JSON.stringify(data, null, 2))}
             </div>
-            <p style="font-size: 12px; color: #666; margin-top: 20px;">Sent via FlowCore Notification Service</p>
+            <p style="font-size: 12px; color: #666; margin-top: 20px;">Sent via Flowter Notification Service</p>
           </div>
         `;
     }

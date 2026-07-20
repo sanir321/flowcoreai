@@ -20,9 +20,9 @@ interface WelcomeEmailProps {
 
 export const WelcomeEmail = ({
   username = "there",
-  loginUrl = "https://flowcore.ai/login",
+  loginUrl = "https://Flowter.ai/login",
 }: WelcomeEmailProps) => {
-  const previewText = `Welcome to FlowCore, ${username}!`;
+  const previewText = `Welcome to Flowter, ${username}!`;
 
   return (
     <Html>
@@ -33,7 +33,7 @@ export const WelcomeEmail = ({
           theme: {
             extend: {
               colors: {
-                brand: "#c65f39",
+                brand: "#f9510b",
               },
             },
           },
@@ -43,17 +43,17 @@ export const WelcomeEmail = ({
           <Container className="border border-solid border-[#eaeaea] rounded-xl my-[40px] mx-auto p-[20px] max-w-[465px]">
             <Section className="mt-[32px]">
               <div style={{ marginBottom: '36px' }}>
-                <span style={{ fontSize: '20px', fontWeight: 800, color: '#111827', letterSpacing: '-0.5px', fontFamily: "'Inter', 'Helvetica Neue', Arial, sans-serif" }}>flowcore</span>
+                <span style={{ fontSize: '20px', fontWeight: 800, color: '#111827', letterSpacing: '-0.5px', fontFamily: "'Inter', 'Helvetica Neue', Arial, sans-serif" }}>Flowter</span>
               </div>
             </Section>
             <Heading className="text-black text-[24px] font-bold p-0 my-[30px] mx-0">
-              Welcome to FlowCore!
+              Welcome to Flowter!
             </Heading>
             <Text className="text-black text-[14px] leading-[24px]">
               Hi {username},
             </Text>
             <Text className="text-black text-[14px] leading-[24px]">
-              Your FlowCore workspace is ready. Log in to connect your WhatsApp device and configure your AI agents.
+              Your Flowter workspace is ready. Log in to connect your WhatsApp device and configure your AI agents.
             </Text>
             <Section className="text-center mt-[32px] mb-[32px]">
               <Button
@@ -68,7 +68,7 @@ export const WelcomeEmail = ({
             </Text>
             <Hr className="border border-solid border-[#eaeaea] my-[26px] mx-0 w-full" />
             <Text className="text-[#666666] text-[12px] leading-[24px]">
-              FlowCore Automation Team
+              Flowter Automation Team
             </Text>
           </Container>
         </Body>

@@ -6,24 +6,24 @@ const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
   title: "Changelog",
-  description: "Release history and product updates for Flowcore AI's AI customer service orchestration platform.",
+  description: "Release history and product updates for Flowter's AI customer service orchestration platform.",
   keywords: [
-    "Flowcore AI updates",
+    "Flowter updates",
     "product changelog",
     "AI customer service updates",
     "platform release notes",
   ],
   openGraph: {
-    title: "Changelog — Flowcore AI",
-    description: "Release history and product updates for Flowcore AI.",
+    title: "Changelog — Flowter",
+    description: "Release history and product updates for Flowter.",
     url: `${siteUrl}/changelog`,
-    siteName: "Flowcore AI",
+    siteName: "Flowter",
     images: [
       {
         url: `${siteUrl}/api/og?title=Changelog&subtitle=Product%20Updates%20%26%20Release%20Notes`,
         width: 1200,
         height: 630,
-        alt: "Flowcore AI Changelog",
+        alt: "Flowter Changelog",
       },
     ],
     locale: "en_US",
@@ -31,8 +31,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Changelog — Flowcore AI",
-    description: "Release history and product updates for Flowcore AI.",
+    title: "Changelog — Flowter",
+    description: "Release history and product updates for Flowter.",
     images: [`${siteUrl}/api/og?title=Changelog&subtitle=Product%20Updates%20%26%20Release%20Notes`],
   },
   alternates: { canonical: `${siteUrl}/changelog` },
@@ -83,7 +83,7 @@ const changes = [
     items: [
       "Visual polish pass across all pages",
       "WhatsApp compliance layer for GoWA integration",
-      "FlowCore design language implementation",
+      "Flowter design language implementation",
       "Appointment booking functionality",
     ],
   },
@@ -109,7 +109,7 @@ export default function ChangelogPage() {
             Changelog
           </h1>
           <p style={{ fontSize: "15.667px", color: "#595859", marginTop: "12px" }}>
-            Latest updates and improvements to FlowCore.
+            Latest updates and improvements to Flowter.
           </p>
         </header>
 
@@ -143,7 +143,7 @@ export default function ChangelogPage() {
                     <span style={{
                       position: "absolute", left: "6px", top: "16px",
                       width: "4px", height: "4px", borderRadius: "50%",
-                      background: "#c65f39",
+                      background: "#f9510b",
                     }} />
                     {item}
                   </li>

@@ -6,17 +6,17 @@ const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
   title: "Data Processing Agreement",
-  description: "Flowcore AI's Data Processing Agreement (DPA) governing how we process customer data as a processor under DPDP Act 2023.",
-  keywords: ["Flowcore AI DPA", "data processing agreement", "DPDP Act", "data processor"],
+  description: "Flowter's Data Processing Agreement (DPA) governing how we process customer data as a processor under DPDP Act 2023.",
+  keywords: ["Flowter DPA", "data processing agreement", "DPDP Act", "data processor"],
   openGraph: {
-    title: "Data Processing Agreement — Flowcore AI",
-    description: "How Flowcore AI processes customer data under DPDP Act 2023.",
+    title: "Data Processing Agreement — Flowter",
+    description: "How Flowter processes customer data under DPDP Act 2023.",
     url: `${siteUrl}/legal/dpa`,
     images: [{ url: `${siteUrl}/api/og?title=DPA&subtitle=Data%20Processing%20Agreement`, width: 1200, height: 630, alt: "Data Processing Agreement" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Data Processing Agreement — Flowcore AI",
+    title: "Data Processing Agreement — Flowter",
     images: [`${siteUrl}/api/og?title=DPA&subtitle=Data%20Processing%20Agreement`],
   },
   alternates: { canonical: `${siteUrl}/legal/dpa` },
@@ -26,14 +26,14 @@ const content = `## 1. Parties
 
 This Data Processing Agreement ("DPA") forms part of the Terms & Conditions between:
 
-- **FlowCore AI** ("Processor"), operating from Chennai, Tamil Nadu, India
-- The customer subscribing to FlowCore AI's services ("Controller")
+- **Flowter** ("Processor"), operating from Chennai, Tamil Nadu, India
+- The customer subscribing to Flowter's services ("Controller")
 
 ---
 
 ## 2. Scope
 
-This DPA governs the Processor's processing of Personal Data on behalf of the Controller when using the FlowCore AI platform. It applies to all Personal Data processed through the Service, including end-customer data routed through WhatsApp, webchat, and email channels.
+This DPA governs the Processor's processing of Personal Data on behalf of the Controller when using the Flowter platform. It applies to all Personal Data processed through the Service, including end-customer data routed through WhatsApp, webchat, and email channels.
 
 ---
 
@@ -119,7 +119,7 @@ This DPA is governed by the laws of **India**. Disputes shall be resolved per th
 
 ## 9. Contact
 
-**FlowCore**
+**Flowter**
 Email: **zenosayz05@gmail.com**
 Location: Chennai, Tamil Nadu, India`
 

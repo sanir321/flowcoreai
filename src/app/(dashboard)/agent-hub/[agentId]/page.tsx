@@ -440,7 +440,7 @@ export default function AgentConfigurePage() {
                           <Input 
                             {...form.register("config.name")} 
                             placeholder="e.g. Support Bot"
-                            className="h-11 rounded-xl bg-gray-50/30 border-gray-200 focus:bg-white focus:border-[#c65f39] focus:ring-1 focus:ring-[#c65f39]/10 transition-all text-sm font-medium"
+                            className="h-11 rounded-xl bg-gray-50/30 border-gray-200 focus:bg-white focus:border-[#f9510b] focus:ring-1 focus:ring-[#f9510b]/10 transition-all text-sm font-medium"
                           />
                         </div>
                         
@@ -453,7 +453,7 @@ export default function AgentConfigurePage() {
                                   value={form.watch(`config.traits.${key}` as any)} 
                                   onValueChange={(val) => form.setValue(`config.traits.${key}` as any, val)}
                                 >
-                                  <SelectTrigger className="h-11 rounded-xl bg-gray-50/30 border-gray-200 focus:bg-white focus:border-[#c65f39] focus:ring-1 focus:ring-[#c65f39]/10 transition-all text-sm font-medium capitalize text-left">
+                                  <SelectTrigger className="h-11 rounded-xl bg-gray-50/30 border-gray-200 focus:bg-white focus:border-[#f9510b] focus:ring-1 focus:ring-[#f9510b]/10 transition-all text-sm font-medium capitalize text-left">
                                     <SelectValue placeholder={`Select ${key}`} />
                                   </SelectTrigger>
                                   <SelectContent>
@@ -473,7 +473,7 @@ export default function AgentConfigurePage() {
                             <Textarea 
                               {...form.register("config.traits.custom_directives")}
                               placeholder="Special instructions for the agent's behavior..."
-                              className="min-h-[120px] rounded-xl bg-gray-50/30 border-gray-200 focus:bg-white focus:border-[#c65f39] focus:ring-1 focus:ring-[#c65f39]/10 transition-all text-sm p-5 resize-none font-medium leading-relaxed"
+                              className="min-h-[120px] rounded-xl bg-gray-50/30 border-gray-200 focus:bg-white focus:border-[#f9510b] focus:ring-1 focus:ring-[#f9510b]/10 transition-all text-sm p-5 resize-none font-medium leading-relaxed"
                             />
                           </div>
                         </div>
@@ -496,7 +496,7 @@ export default function AgentConfigurePage() {
                          <Textarea 
                           {...form.register("config.guardrails_text")}
                           placeholder="Enter comma-separated restricted phrases..."
-                          className="h-24 bg-gray-50/30 border-gray-200 rounded-xl text-xs p-4 focus:bg-white focus:border-[#c65f39] focus:ring-1 focus:ring-[#c65f39]/10 transition-all font-medium"
+                          className="h-24 bg-gray-50/30 border-gray-200 rounded-xl text-xs p-4 focus:bg-white focus:border-[#f9510b] focus:ring-1 focus:ring-[#f9510b]/10 transition-all font-medium"
                         />
                       </div>
                     </div>
@@ -517,7 +517,7 @@ export default function AgentConfigurePage() {
                           placeholder="https://docs.yourcompany.com" 
                           value={newUrl}
                           onChange={(e) => setNewUrl(e.target.value)}
-                          className="h-11 pl-10 rounded-xl border-gray-200 bg-gray-50/30 focus:bg-white focus:border-[#c65f39] focus:ring-1 focus:ring-[#c65f39]/10 transition-all text-sm font-medium"
+                          className="h-11 pl-10 rounded-xl border-gray-200 bg-gray-50/30 focus:bg-white focus:border-[#f9510b] focus:ring-1 focus:ring-[#f9510b]/10 transition-all text-sm font-medium"
                         />
                       </div>
                       <Button onClick={handleAddUrl} className="bg-gray-100 text-gray-900 hover:bg-gray-200 rounded-xl px-8 h-11 text-xs font-bold uppercase tracking-widest active:scale-95 transition-all">
@@ -597,7 +597,7 @@ export default function AgentConfigurePage() {
                 value={skillForm.name}
                 onChange={(e) => setSkillForm(p => ({ ...p, name: e.target.value }))}
                 placeholder="e.g. Order Status Lookup"
-                className="h-10 rounded-xl bg-gray-50/30 border-gray-200 focus:bg-white focus:border-[#c65f39] focus:ring-1 focus:ring-[#c65f39]/10 transition-all text-sm font-medium"
+                className="h-10 rounded-xl bg-gray-50/30 border-gray-200 focus:bg-white focus:border-[#f9510b] focus:ring-1 focus:ring-[#f9510b]/10 transition-all text-sm font-medium"
               />
             </div>
             <div className="space-y-1.5">
@@ -606,7 +606,7 @@ export default function AgentConfigurePage() {
                 value={skillForm.description}
                 onChange={(e) => setSkillForm(p => ({ ...p, description: e.target.value }))}
                 placeholder="Briefly describe what this skill does"
-                className="h-10 rounded-xl bg-gray-50/30 border-gray-200 focus:bg-white focus:border-[#c65f39] focus:ring-1 focus:ring-[#c65f39]/10 transition-all text-sm font-medium"
+                className="h-10 rounded-xl bg-gray-50/30 border-gray-200 focus:bg-white focus:border-[#f9510b] focus:ring-1 focus:ring-[#f9510b]/10 transition-all text-sm font-medium"
               />
             </div>
             <div className="space-y-1.5">
@@ -615,7 +615,7 @@ export default function AgentConfigurePage() {
                 value={skillForm.condition}
                 onChange={(e) => setSkillForm(p => ({ ...p, condition: e.target.value }))}
                 placeholder="e.g. When customer asks about order status"
-                className="h-10 rounded-xl bg-gray-50/30 border-gray-200 focus:bg-white focus:border-[#c65f39] focus:ring-1 focus:ring-[#c65f39]/10 transition-all text-sm font-medium"
+                className="h-10 rounded-xl bg-gray-50/30 border-gray-200 focus:bg-white focus:border-[#f9510b] focus:ring-1 focus:ring-[#f9510b]/10 transition-all text-sm font-medium"
               />
             </div>
             <div className="space-y-1.5">
@@ -624,7 +624,7 @@ export default function AgentConfigurePage() {
                 value={skillForm.instructions}
                 onChange={(e) => setSkillForm(p => ({ ...p, instructions: e.target.value }))}
                 placeholder="Step-by-step instructions for the agent to follow..."
-                className="min-h-[120px] rounded-xl bg-gray-50/30 border-gray-200 focus:bg-white focus:border-[#c65f39] focus:ring-1 focus:ring-[#c65f39]/10 transition-all text-sm p-4 resize-none font-medium leading-relaxed"
+                className="min-h-[120px] rounded-xl bg-gray-50/30 border-gray-200 focus:bg-white focus:border-[#f9510b] focus:ring-1 focus:ring-[#f9510b]/10 transition-all text-sm p-4 resize-none font-medium leading-relaxed"
               />
             </div>
           </div>
@@ -699,14 +699,14 @@ function SkillCard({ skill, isAssigned, onToggle, onEdit, onDelete }: {
   onDelete: () => void
 }) {
   return (
-    <Card className="p-5 border-[#c65f39]/20 transition-all duration-300 relative overflow-hidden group rounded-2xl bg-white shadow-md ring-1 ring-[#c65f39]/5 hover:shadow-lg">
+    <Card className="p-5 border-[#f9510b]/20 transition-all duration-300 relative overflow-hidden group rounded-2xl bg-white shadow-md ring-1 ring-[#f9510b]/5 hover:shadow-lg">
       <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-        <Wand2 className="h-14 w-14 text-[#c65f39]" />
+        <Wand2 className="h-14 w-14 text-[#f9510b]" />
       </div>
 
       <div className="flex items-start justify-between relative z-10">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl flex items-center justify-center shadow-sm border bg-[#c65f39] border-[#c65f39] text-white">
+          <div className="h-10 w-10 rounded-xl flex items-center justify-center shadow-sm border bg-[#f9510b] border-[#f9510b] text-white">
             <Lightbulb className="h-5 w-5" />
           </div>
           <div>

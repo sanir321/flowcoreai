@@ -8467,7 +8467,7 @@ function checkNonText(ctx) {
 // supabase/functions/agent-orchestrator/guards/credits.ts
 var GOWA_BASE_URL = Deno.env.get("GOWA_BASE_URL")?.replace(/\/$/, "");
 var GOWA_AUTH = Deno.env.get("GOWA_API_KEY") ? btoa(Deno.env.get("GOWA_API_KEY")) : "";
-var APP_URL = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://7flowcore.vercel.app";
+var APP_URL = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://flowter.vercel.app";
 async function checkCredits(ctx, workspace) {
   if ((workspace.credits_remaining ?? workspace.credits_balance ?? 0) > 0) return null;
   if (!workspace.low_credits_notified) {
@@ -8553,7 +8553,7 @@ function checkWhatsAppWindow(ctx, workspace) {
 }
 
 // supabase/functions/agent-orchestrator/guards/escalation.ts
-var APP_URL2 = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://7flowcore.vercel.app";
+var APP_URL2 = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://flowter.vercel.app";
 var CRON_SECRET = Deno.env.get("INTERNAL_CRON_SECRET") || "";
 var DEFAULT_KEYWORDS = [
   // Explicit human handoff requests
@@ -9972,7 +9972,7 @@ Session: ${ctx.session.id}`,
     console.error("[CALENDAR] Google Calendar sync failed:", e.message);
     if (e.message?.includes("token") || e.message?.includes("invalid_grant")) {
       try {
-        const APP_URL4 = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://7flowcore.vercel.app";
+        const APP_URL4 = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://flowter.vercel.app";
         const CRON_SECRET3 = Deno.env.get("INTERNAL_CRON_SECRET") || "";
         const { data: workspace } = await ctx.supabase.from("workspaces").select("owner_id, name").eq("id", ctx.payload.workspace_id).maybeSingle();
         if (workspace?.owner_id) {
@@ -10020,7 +10020,7 @@ Session: ${ctx.session.id}`,
     google_event_id: googleEventId,
     meeting_link: meetLink
   } : appt;
-  const appUrl = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://7flowcore.vercel.app";
+  const appUrl = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://flowter.vercel.app";
   const appointmentLink = `${appUrl}/appointment/${appt.id}`;
   return {
     ...updatedAppt,
@@ -10066,7 +10066,7 @@ async function sendAppointmentWhatsApp(ctx, appt, meetLink) {
     if (!gowaBase || !gowaKey) return;
     const auth = btoa(gowaKey);
     const formattedDate = formatIST(appt.start_at);
-    const appUrl = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://7flowcore.vercel.app";
+    const appUrl = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://flowter.vercel.app";
     const appointmentLink = `${appUrl}/appointment/${appt.id}`;
     let message = `\u2705 Appointment Confirmed!
 
@@ -10103,7 +10103,7 @@ async function sendAppointmentEmail(ctx, appt, meetLink) {
     if (!workspaceData) return;
     const email = appt.customer_email || workspaceData.session?.[0]?.contact?.email;
     if (!email) return;
-    const appUrl = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://7flowcore.vercel.app";
+    const appUrl = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://flowter.vercel.app";
     const workspaceName = workspaceData.name || "FlowCore";
     const formattedDate = formatIST(appt.start_at);
     const appointmentLink = `${appUrl}/appointment/${appt.id}`;
@@ -10294,7 +10294,7 @@ async function update(params, ctx) {
 }
 
 // supabase/functions/agent-orchestrator/tools/impl/crm.ts
-var APP_URL3 = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://7flowcore.vercel.app";
+var APP_URL3 = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://flowter.vercel.app";
 var CRON_SECRET2 = Deno.env.get("INTERNAL_CRON_SECRET") || "";
 function potentialToScore(potential) {
   switch (potential) {
@@ -10856,7 +10856,7 @@ Open the dashboard to verify payment.`;
   ]);
   if (!ownerNotified && ownerPhone && ctx.workspace?.owner_id) {
     try {
-      const APP_URL4 = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://7flowcore.vercel.app";
+      const APP_URL4 = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://flowter.vercel.app";
       const CRON_SECRET3 = Deno.env.get("INTERNAL_CRON_SECRET") || "";
       const { data: ownerEmail } = await ctx.supabase.rpc("get_user_email", {
         user_id: ctx.workspace.owner_id

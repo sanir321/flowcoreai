@@ -6,17 +6,17 @@ const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
   title: "Refund Policy",
-  description: "Flowcore AI's refund and cancellation policy for our AI customer service platform subscriptions.",
-  keywords: ["Flowcore AI refund", "refund policy", "cancellation policy", "subscription refund"],
+  description: "Flowter's refund and cancellation policy for our AI customer service platform subscriptions.",
+  keywords: ["Flowter refund", "refund policy", "cancellation policy", "subscription refund"],
   openGraph: {
-    title: "Refund Policy — Flowcore AI",
-    description: "Refund and cancellation terms for Flowcore AI subscriptions.",
+    title: "Refund Policy — Flowter",
+    description: "Refund and cancellation terms for Flowter subscriptions.",
     url: `${siteUrl}/legal/refund-policy`,
     images: [{ url: `${siteUrl}/api/og?title=Refund%20Policy&subtitle=Subscription%20Cancellation%20%26%20Refunds`, width: 1200, height: 630, alt: "Refund Policy" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Refund Policy — Flowcore AI",
+    title: "Refund Policy — Flowter",
     images: [`${siteUrl}/api/og?title=Refund%20Policy&subtitle=Subscription%20Cancellation%20%26%20Refunds`],
   },
   alternates: { canonical: `${siteUrl}/legal/refund-policy` },
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 
 const content = `## 1. Overview
 
-This Refund and Cancellation Policy applies to all subscriptions and purchases of FlowCore AI ("Service"). By subscribing, you agree to the terms below.
+This Refund and Cancellation Policy applies to all subscriptions and purchases of Flowter ("Service"). By subscribing, you agree to the terms below.
 
 ---
 
@@ -88,7 +88,7 @@ We may update this policy at any time. Registered users will be notified via ema
 
 ## 8. Contact
 
-**FlowCore**
+**Flowter**
 Email: **zenosayz05@gmail.com**
 Location: Chennai, Tamil Nadu, India`
 

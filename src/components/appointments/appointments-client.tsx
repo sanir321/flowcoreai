@@ -523,7 +523,7 @@ export function AppointmentsClient({ initialAppointments, workspaceId, isModuleA
                                   variant="ghost" 
                                   size="sm"
                                   onClick={() => setSelectedAppt(appt)}
-                                  className="h-8 rounded-lg text-[10px] font-bold text-[#c65f39] hover:bg-[#c65f39]/5 hover:text-[#c65f39]"
+                                  className="h-8 rounded-lg text-[10px] font-bold text-[#f9510b] hover:bg-[#f9510b]/5 hover:text-[#f9510b]"
                                 >
                                   View Details
                                 </Button>
@@ -561,7 +561,7 @@ export function AppointmentsClient({ initialAppointments, workspaceId, isModuleA
                   <form onSubmit={handleCreateAppointment} id="create-appt-form" className="space-y-6 relative">
                      {isActionLoading && (
                         <div className="absolute inset-0 bg-white/50 backdrop-blur-[2px] z-50 flex items-center justify-center">
-                           <Loader2 className="h-8 w-8 animate-spin text-[#c65f39]" />
+                           <Loader2 className="h-8 w-8 animate-spin text-[#f9510b]" />
                         </div>
                      )}
                      <div className="space-y-5">
@@ -625,7 +625,7 @@ export function AppointmentsClient({ initialAppointments, workspaceId, isModuleA
                                  placeholder="e.g. Consultation / Room 102" 
                                  value={formData.propertyId}
                                  onChange={e => setFormData(prev => ({ ...prev, propertyId: e.target.value }))}
-                                 className="h-11 pl-11 rounded-xl bg-gray-50 border-gray-100 focus:bg-white focus:border-[#c65f39]/20 transition-all font-medium text-sm text-gray-900" 
+                                 className="h-11 pl-11 rounded-xl bg-gray-50 border-gray-100 focus:bg-white focus:border-[#f9510b]/20 transition-all font-medium text-sm text-gray-900" 
                               />
                            </div>
                         </div>
@@ -786,7 +786,7 @@ export function AppointmentsClient({ initialAppointments, workspaceId, isModuleA
                       </button>
                    </div>
                    <div className="space-y-1">
-                      <p className="text-[10px] font-bold text-[#c65f39]">Confirmed Slot</p>
+                      <p className="text-[10px] font-bold text-[#f9510b]">Confirmed Slot</p>
                       <h2 className="text-3xl font-semibold text-gray-900 tracking-tight leading-none pt-2">
                          {selectedAppt && format(new Date(selectedAppt.start_at), 'h:mm aa')}
                       </h2>

@@ -45,7 +45,7 @@ export default function SecurityPage() {
     try {
       const { data, error } = await supabase.auth.mfa.enroll({
         factorType: "totp",
-        friendlyName: "FlowCore Authenticator",
+        friendlyName: "Flowter Authenticator",
       })
       if (error) throw error
 

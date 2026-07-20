@@ -170,7 +170,7 @@ export default function NotificationsPage() {
 
       {/* Delivery Mode */}
       <motion.div {...fadeUp} transition={{ delay: 0.1 }} className="space-y-5">
-        <h4 className="text-[10px] font-bold text-[#c65f39]">Delivery Mode</h4>
+        <h4 className="text-[10px] font-bold text-[#f9510b]">Delivery Mode</h4>
         <div className="space-y-3">
           {MODES.map((mode) => {
             const isActive = config?.notification_mode === mode.value
@@ -213,7 +213,7 @@ export default function NotificationsPage() {
 
       {/* Event Notifications */}
       <motion.div {...fadeUp} transition={{ delay: 0.2 }} className="space-y-5">
-        <h4 className="text-[10px] font-bold text-[#c65f39]">Events</h4>
+        <h4 className="text-[10px] font-bold text-[#f9510b]">Events</h4>
         <div className="space-y-2">
           {NOTIFICATION_EVENTS.map((item) => {
             const isChecked = config?.[item.id] ?? true
@@ -245,7 +245,7 @@ export default function NotificationsPage() {
 
       {/* WhatsApp Alert Number */}
       <motion.div {...fadeUp} transition={{ delay: 0.3 }} className="space-y-5">
-        <h4 className="text-[10px] font-bold text-[#c65f39]">WhatsApp Alert Number</h4>
+        <h4 className="text-[10px] font-bold text-[#f9510b]">WhatsApp Alert Number</h4>
         <div className="px-6 py-5 rounded-xl border border-gray-100 bg-white">
           <div className="flex items-center gap-4 mb-4">
             <MessageSquare className="h-4 w-4 text-gray-400" />
@@ -276,7 +276,7 @@ export default function NotificationsPage() {
       {/* Notification History */}
       {notifications.length > 0 && (
         <motion.div {...fadeUp} transition={{ delay: 0.35 }} className="space-y-5">
-          <h4 className="text-[10px] font-bold text-[#c65f39]">History</h4>
+          <h4 className="text-[10px] font-bold text-[#f9510b]">History</h4>
           <div className="space-y-1 border border-gray-100 rounded-xl bg-white divide-y divide-gray-50">
             {notifications.slice(0, 20).map((n) => (
               <a
@@ -306,7 +306,7 @@ export default function NotificationsPage() {
                     <p className={cn("text-xs", n.is_read ? "text-gray-600" : "text-gray-900 font-semibold")}>
                       {n.title}
                     </p>
-                    {!n.is_read && <span className="h-1.5 w-1.5 rounded-full bg-[#c65f39] shrink-0" />}
+                    {!n.is_read && <span className="h-1.5 w-1.5 rounded-full bg-[#f9510b] shrink-0" />}
                   </div>
                   <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-2">{n.message}</p>
                   <div className="flex items-center gap-2 mt-1">

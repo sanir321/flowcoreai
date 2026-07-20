@@ -5,10 +5,10 @@ const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
   title: "Sign In",
-  description: "Sign in to Flowcore AI with email OTP to manage your AI customer service assistants.",
+  description: "Sign in to Flowter with email OTP to manage your AI customer service assistants.",
   openGraph: {
-    title: "Sign In - Flowcore AI",
-    description: "Sign in to Flowcore AI with email OTP.",
+    title: "Sign In - Flowter",
+    description: "Sign in to Flowter with email OTP.",
     url: `${siteUrl}/login`,
   },
   alternates: { canonical: `${siteUrl}/login` },

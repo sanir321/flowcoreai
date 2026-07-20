@@ -1,6 +1,6 @@
 import { PipelineContext, WorkspaceRow } from "../lib/types.ts";
 
-const APP_URL = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://7flowcore.vercel.app";
+const APP_URL = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://flowter.vercel.app";
 const CRON_SECRET = Deno.env.get("INTERNAL_CRON_SECRET") || "";
 
 // Only trigger escalation on explicit requests for human handoff or severe emotional distress

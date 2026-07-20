@@ -31,11 +31,11 @@ const ReasoningAccordion = ({ thought }: { thought: string }) => {
       >
         <div className={cn(
           "h-4 w-4 rounded-lg flex items-center justify-center transition-colors",
-          isOpen ? "bg-[#c65f39]/10" : "bg-gray-50"
+          isOpen ? "bg-[#f9510b]/10" : "bg-gray-50"
         )}>
-          {isOpen ? <ChevronUp size={10} className="text-[#c65f39]" /> : <ChevronDown size={10} className="text-gray-400" />}
+          {isOpen ? <ChevronUp size={10} className="text-[#f9510b]" /> : <ChevronDown size={10} className="text-gray-400" />}
         </div>
-        <Brain size={12} className="text-[#c65f39]" />
+        <Brain size={12} className="text-[#f9510b]" />
         <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 group-hover:text-gray-600 transition-colors">Analysis</span>
       </button>
 
@@ -96,7 +96,7 @@ const ThinkingIndicator = () => {
             key={i}
             animate={{ y: [0, -3, 0] }}
             transition={{ duration: 0.5, repeat: Infinity, delay: i * 0.15 }}
-            className="h-1.5 w-1.5 rounded-full bg-[#c65f39]"
+            className="h-1.5 w-1.5 rounded-full bg-[#f9510b]"
           />
         ))}
       </div>
@@ -185,7 +185,7 @@ const StructuredContent = ({ content }: { content: string }) => {
 
     if (line.startsWith('### ')) {
       if (inList) { inList = false }
-      elements.push(<h3 key={key} className="text-sm font-bold text-gray-900 mt-5 mb-2 flex items-center gap-2"><span className="h-4 w-1 rounded-full bg-[#c65f39]" />{line.slice(4)}</h3>)
+      elements.push(<h3 key={key} className="text-sm font-bold text-gray-900 mt-5 mb-2 flex items-center gap-2"><span className="h-4 w-1 rounded-full bg-[#f9510b]" />{line.slice(4)}</h3>)
       return
     }
     if (line.startsWith('## ')) {
@@ -202,8 +202,8 @@ const StructuredContent = ({ content }: { content: string }) => {
     if (line.startsWith('> ')) {
       if (inList) { inList = false }
       elements.push(
-        <div key={key} className="flex gap-2 my-2 pl-3 border-l-2 border-[#c65f39]/30">
-          <Quote size={12} className="text-[#c65f39]/50 mt-0.5 shrink-0" />
+        <div key={key} className="flex gap-2 my-2 pl-3 border-l-2 border-[#f9510b]/30">
+          <Quote size={12} className="text-[#f9510b]/50 mt-0.5 shrink-0" />
           <p className="text-[12px] text-gray-500 italic leading-relaxed">{renderInline(line.slice(2))}</p>
         </div>
       )
@@ -214,7 +214,7 @@ const StructuredContent = ({ content }: { content: string }) => {
       if (!inList) { inList = true; elements.push(<ul key={`ul-${i}`} className="space-y-1.5 my-1" />) }
       elements.push(
         <li key={key} className="flex items-start gap-2.5 text-[13px] text-gray-700 pl-1">
-          <span className="h-1.5 w-1.5 rounded-full bg-[#c65f39]/60 mt-2 shrink-0" />
+          <span className="h-1.5 w-1.5 rounded-full bg-[#f9510b]/60 mt-2 shrink-0" />
           <span className="flex-1">{renderInline(line.slice(2))}</span>
         </li>
       )
@@ -226,7 +226,7 @@ const StructuredContent = ({ content }: { content: string }) => {
     if (numberedMatch) {
       elements.push(
         <div key={key} className="flex items-start gap-3 text-[13px] text-gray-700 my-1.5">
-          <div className="h-5 w-5 rounded-lg bg-gradient-to-br from-[#c65f39]/10 to-[#c65f39]/5 border border-[#c65f39]/20 text-[#c65f39] text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">{numberedMatch[1]}</div>
+          <div className="h-5 w-5 rounded-lg bg-gradient-to-br from-[#f9510b]/10 to-[#f9510b]/5 border border-[#f9510b]/20 text-[#f9510b] text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">{numberedMatch[1]}</div>
           <span className="flex-1 pt-0.5">{renderInline(numberedMatch[2] ?? "")}</span>
         </div>
       )
@@ -250,13 +250,13 @@ const renderInline = (text: string) => {
       return <strong key={i} className="font-semibold text-gray-900">{part.slice(2, -2)}</strong>
     }
     if (part.startsWith('`') && part.endsWith('`')) {
-      return <code key={i} className="px-1.5 py-0.5 rounded-md bg-gray-100 text-[#c65f39] text-[11px] font-mono">{part.slice(1, -1)}</code>
+      return <code key={i} className="px-1.5 py-0.5 rounded-md bg-gray-100 text-[#f9510b] text-[11px] font-mono">{part.slice(1, -1)}</code>
     }
     if (part.startsWith('http')) {
       try {
         const u = new URL(part);
         if (u.protocol === 'https:' || u.protocol === 'http:') {
-          return <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="text-[#c65f39] underline underline-offset-2 decoration-[#c65f39]/30 hover:decoration-[#c65f39] transition-all">{part}</a>
+          return <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="text-[#f9510b] underline underline-offset-2 decoration-[#f9510b]/30 hover:decoration-[#f9510b] transition-all">{part}</a>
         }
       } catch {}
     }
@@ -437,11 +437,11 @@ export default function CEOAnalystPage() {
                       <div className="flex items-center gap-2 px-1">
                         <div className={cn(
                           "h-4 w-4 rounded-md flex items-center justify-center",
-                          m.role === 'user' ? "bg-gray-100" : "bg-[#c65f39]/10"
+                          m.role === 'user' ? "bg-gray-100" : "bg-[#f9510b]/10"
                         )}>
                           {m.role === 'user'
                             ? <Users size={9} className="text-gray-400" />
-                            : <Brain size={9} className="text-[#c65f39]" />
+                            : <Brain size={9} className="text-[#f9510b]" />
                           }
                         </div>
                         <span className="text-[9px] font-bold uppercase tracking-wider text-gray-400">

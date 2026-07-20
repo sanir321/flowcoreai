@@ -82,7 +82,7 @@ export default function BillingPage() {
   }, [workspaceId, wsLoading, supabase])
 
   const handleUpgrade = () => {
-    window.open("https://wa.me/917904721312?text=I%20want%20to%20recharge%20my%20FlowCore%20credits", "_blank")
+    window.open("https://wa.me/917904721312?text=I%20want%20to%20recharge%20my%20Flowter%20credits", "_blank")
   }
 
   const ANIMATION_TRANSITION = { duration: 0.4, ease: [0.16, 1, 0.3, 1] as const }

@@ -88,7 +88,7 @@ export function KnowledgeHubClient({
               className={cn(
                 "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all",
                 activeTab === key
-                  ? "bg-[#c65f39]/10 text-[#c65f39]"
+                  ? "bg-[#f9510b]/10 text-[#f9510b]"
                   : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
               )}
             >
@@ -116,7 +116,7 @@ export function KnowledgeHubClient({
             {activeTab === "sources" && (
               <Button
                 onClick={() => setDialogOpen(true)}
-                className="h-11 px-8 bg-[#c65f39] hover:bg-[#b55533] text-white rounded-xl font-semibold shadow-lg shadow-[#c65f39]/20 transition-all gap-2 text-sm"
+                className="h-11 px-8 bg-[#f9510b] hover:bg-[#b55533] text-white rounded-xl font-semibold shadow-lg shadow-[#f9510b]/20 transition-all gap-2 text-sm"
               >
                 <Plus className="h-4 w-4" /> Add Source
               </Button>

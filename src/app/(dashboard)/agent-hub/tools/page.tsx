@@ -78,13 +78,13 @@ export default function AgentToolsPage() {
           <div className="max-w-[1200px] mx-auto space-y-10 p-10 pb-20">
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
-                <Badge variant="outline" className="bg-orange-50 text-[#c65f39] border-orange-100 rounded-lg px-2.5 py-0.5 font-semibold text-[10px] uppercase tracking-wider">
+                <Badge variant="outline" className="bg-orange-50 text-[#f9510b] border-orange-100 rounded-lg px-2.5 py-0.5 font-semibold text-[10px] uppercase tracking-wider">
                   Capabilities
                 </Badge>
               </div>
               <h1 className="text-3xl font-bold tracking-tight text-gray-900">Agent Tool Registry</h1>
               <p className="text-gray-500 text-sm max-w-2xl">
-                A comprehensive overview of the 10 specialized tools integrated into the FlowCore engine. 
+                A comprehensive overview of the 10 specialized tools integrated into the Flowter engine. 
                 Each tool is scoped to specific agent types — support, booking, or sales — and can interact with your database, calendar, and external services in real-time.
               </p>
             </div>
@@ -117,7 +117,7 @@ export default function AgentToolsPage() {
                         
                         <div className="space-y-3 relative z-10">
                           <div className="flex items-center justify-between">
-                            <code className="text-[12px] font-mono font-bold text-[#c65f39] bg-orange-50/50 px-2 py-0.5 rounded border border-orange-100/50">
+                            <code className="text-[12px] font-mono font-bold text-[#f9510b] bg-orange-50/50 px-2 py-0.5 rounded border border-orange-100/50">
                               {tool.name}
                             </code>
                           </div>

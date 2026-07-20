@@ -132,7 +132,7 @@ export default function WidgetPreview({ workspaceId, view = "chat", isOpen = tru
         </>
       )}
       <div className="p-3 text-center border-t border-gray-50 text-[9px] font-bold text-gray-300 uppercase tracking-widest">
-         Powered by <span className="text-gray-900">FlowCore</span>
+         Powered by <span className="text-gray-900">Flowter</span>
       </div>
     </div>
   )

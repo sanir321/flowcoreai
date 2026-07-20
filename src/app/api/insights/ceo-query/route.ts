@@ -86,7 +86,7 @@ export async function POST(req: Request) {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const contactData = specificContact ? (specificContact as any).data : null;
-    const systemPrompt = `You are the FlowCore CEO Analyst, a high-level business intelligence agent.
+    const systemPrompt = `You are the Flowter CEO Analyst, a high-level business intelligence agent.
 Your goal is to provide deep, actionable insights based on the real-time performance data of this workspace.
 
 WORKSPACE CONTEXT:

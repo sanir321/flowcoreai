@@ -30,16 +30,16 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const dateStr = formatIST(appt.start_at)
 
   return {
-    title: `Appointment Confirmed — ${workspace?.name || "FlowCore"}`,
+    title: `Appointment Confirmed — ${workspace?.name || "Flowter"}`,
     description: `Hi ${appt.customer_name}, your ${appt.service} appointment on ${dateStr} is confirmed.`,
     openGraph: {
-      title: `Appointment Confirmed — ${workspace?.name || "FlowCore"}`,
+      title: `Appointment Confirmed — ${workspace?.name || "Flowter"}`,
       description: `Hi ${appt.customer_name}, your ${appt.service} appointment on ${dateStr} is confirmed.`,
       type: "website",
     },
     twitter: {
       card: "summary",
-      title: `Appointment Confirmed — ${workspace?.name || "FlowCore"}`,
+      title: `Appointment Confirmed — ${workspace?.name || "Flowter"}`,
       description: `Hi ${appt.customer_name}, your ${appt.service} appointment on ${dateStr} is confirmed.`,
     },
   }
@@ -144,7 +144,7 @@ export default async function PublicAppointmentPage({ params }: { params: Promis
       </Card>
       
       <div className="fixed bottom-8 left-0 right-0 text-center pointer-events-none opacity-40">
-        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Powered by FlowCore AI</p>
+        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Powered by Flowter AI</p>
       </div>
     </div>
   )

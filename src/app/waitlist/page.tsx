@@ -50,7 +50,7 @@ export default function WaitlistPage() {
       {/* Sleek Header */}
       <header className="h-14 flex items-center justify-between px-6 lg:px-12 fixed top-0 left-0 right-0 z-50">
         <Link href="/" className="text-base font-medium tracking-tight text-[#e5e5e5]">
-          FlowCore
+          Flowter
         </Link>
       </header>
 
@@ -67,20 +67,20 @@ export default function WaitlistPage() {
         >
           <div className="text-center space-y-6 mb-10">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/5 text-sm font-medium text-white/80 mb-4">
-              <Sparkles className="w-4 h-4 text-[#c65f39]" />
+              <Sparkles className="w-4 h-4 text-[#f9510b]" />
               Early Access
             </div>
             <h1 className="text-4xl md:text-5xl font-normal tracking-tight text-white leading-tight">
-              Join the <span style={{ color: "#c65f39" }}>Waitlist</span>
+              Join the <span style={{ color: "#f9510b" }}>Waitlist</span>
             </h1>
             <p className="text-[#a3a3a3] text-lg">
-              Get early access to FlowCore&apos;s automated customer service agents before we open to the public.
+              Get early access to Flowter&apos;s automated customer service agents before we open to the public.
             </p>
           </div>
 
           <div className="bg-[#121212] border border-white/10 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
             {/* Subtle card glow */}
-            <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#c65f39] rounded-full blur-[80px] opacity-20" />
+            <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#f9510b] rounded-full blur-[80px] opacity-20" />
 
             <AnimatePresence mode="wait">
               {status === "success" ? (
@@ -124,7 +124,7 @@ export default function WaitlistPage() {
                         setEmail(e.target.value)
                         if (status === "error") setStatus("idle")
                       }}
-                      className="h-12 bg-black/50 border-white/10 text-white placeholder:text-white/30 focus-visible:ring-[#c65f39] focus-visible:border-[#c65f39]"
+                      className="h-12 bg-black/50 border-white/10 text-white placeholder:text-white/30 focus-visible:ring-[#f9510b] focus-visible:border-[#f9510b]"
                     />
                   </div>
 
@@ -141,7 +141,7 @@ export default function WaitlistPage() {
                           setBusinessType(e.target.value)
                           if (status === "error") setStatus("idle")
                         }}
-                        className="w-full h-12 px-3 py-2 bg-black/50 border border-white/10 rounded-md text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#c65f39] focus:border-transparent appearance-none"
+                        className="w-full h-12 px-3 py-2 bg-black/50 border border-white/10 rounded-md text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#f9510b] focus:border-transparent appearance-none"
                       >
                         <option value="" disabled hidden className="text-gray-500">Select your industry...</option>
                         <option value="clinic" className="bg-[#121212] text-white">Clinic / Healthcare</option>
@@ -164,7 +164,7 @@ export default function WaitlistPage() {
                     type="submit" 
                     disabled={status === "loading"}
                     className="w-full h-12 text-white font-medium text-base relative overflow-hidden group"
-                    style={{ background: "#c65f39" }}
+                    style={{ background: "#f9510b" }}
                   >
                     <span className="relative z-10 flex items-center gap-2">
                       {status === "loading" ? (

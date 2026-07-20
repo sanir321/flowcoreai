@@ -73,7 +73,7 @@ function MobileMoreMenu({ pathname }: { pathname: string }) {
                     onClick={() => setOpen(false)}
                     className={cn(
                       "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all",
-                      isActive ? "bg-[#c65f39]/5 text-[#c65f39]" : "text-gray-600 hover:bg-gray-50"
+                      isActive ? "bg-[#f9510b]/5 text-[#f9510b]" : "text-gray-600 hover:bg-gray-50"
                     )}
                   >
                     <item.icon className={cn("h-4 w-4 shrink-0", isActive && "stroke-[2.5]")} />
@@ -107,7 +107,7 @@ export function DashboardClientWrapper({
   }, [pathname])
 
   return (
-    <div className="flex h-dvh bg-white font-sans text-gray-900 selection:bg-[#c65f39]/10 selection:text-[#c65f39]">
+    <div className="flex h-dvh bg-white font-sans text-gray-900 selection:bg-[#f9510b]/10 selection:text-[#f9510b]">
       <CommandPalette />
 
       {isDashboardRoute && <NavigationRail />}
@@ -136,7 +136,7 @@ export function DashboardClientWrapper({
                 href={item.href}
                 className={cn(
                   "flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg transition-all min-w-0",
-                  isActive ? "text-[#c65f39]" : "text-gray-400"
+                  isActive ? "text-[#f9510b]" : "text-gray-400"
                 )}
               >
                 <item.icon className={cn("h-4 w-4", isActive && "stroke-[2.5]")} />

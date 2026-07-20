@@ -2,8 +2,8 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { motion, useScroll, useTransform, animate } from "framer-motion"
-import React, { useState, useRef, useCallback, useEffect } from "react"
+import { motion, useScroll, useTransform } from "framer-motion"
+import React, { useState, useRef, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import {
   ArrowUpRight,
@@ -92,23 +92,6 @@ function TiltCard({ children, className }: { children: React.ReactNode; classNam
   )
 }
 
-function AnimatedCount({ value, suffix = "" }: { value: number; suffix?: string }) {
-  const ref = useRef<HTMLSpanElement>(null)
-  const [displayed, setDisplayed] = useState(0)
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const observer = new IntersectionObserver(([entry]) => {
-      if (!entry?.isIntersecting) return
-      animate(0, value, { duration: 1.5, ease: [0.16, 1, 0.3, 1], onUpdate: (v) => setDisplayed(Math.round(v)) })
-      observer.disconnect()
-    }, { threshold: 0.5 })
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [value])
-  return <span ref={ref}>{displayed}{suffix}</span>
-}
-
 function FloatingParticles({ count = 12 }: { count?: number }) {
   return (
     <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
@@ -141,6 +124,7 @@ function FloatingParticles({ count = 12 }: { count?: number }) {
 
 export function LandingPage() {
   const [email, setEmail] = useState("")
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const router = useRouter()
   const heroRef = useRef(null)
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] })
@@ -161,7 +145,7 @@ export function LandingPage() {
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         >
           <Link href="/" className="text-base font-medium tracking-tight" style={{ color: "#e5e5e5", letterSpacing: "-0.01em" }}>
-            FlowCore
+            Flowter
           </Link>
         </motion.div>
 
@@ -178,17 +162,76 @@ export function LandingPage() {
           ))}
         </nav>
 
+        <button
+          className="md:hidden flex items-center justify-center h-9 w-9 rounded-lg relative z-10"
+          style={{ color: "#a3a3a3" }}
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          aria-label="Toggle menu"
+        >
+          {mobileMenuOpen ? (
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          ) : (
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="3" y1="12" x2="21" y2="12" />
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <line x1="3" y1="18" x2="21" y2="18" />
+            </svg>
+          )}
+        </button>
+
         <motion.div className="flex items-center gap-3 relative z-10"
           initial={{ opacity: 0, x: 12 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         >
           <Link href="/login" className="hidden sm:inline text-sm font-normal transition-colors" style={{ color: "#a3a3a3" }} onMouseEnter={(e) => e.currentTarget.style.color = "#e5e5e5"} onMouseLeave={(e) => e.currentTarget.style.color = "#a3a3a3"}>Sign In</Link>
-          <Button asChild className="h-8 px-4 rounded-[100px] text-sm font-normal flex items-center gap-1 group" style={{ background: "#c65f39", color: "#fff" }}>
+          <Button asChild className="h-8 px-4 rounded-[100px] text-sm font-normal flex items-center gap-1 group" style={{ background: "#f9510b", color: "#fff" }}>
             <Link href="/login">Get Started <ArrowUpRight className="h-3 w-3 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" /></Link>
           </Button>
         </motion.div>
       </header>
+
+      {mobileMenuOpen && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.2 }}
+          className="fixed top-14 left-0 right-0 z-[99] md:hidden"
+          style={{ background: "rgba(5,5,5,0.98)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(198,95,57,0.2)" }}
+        >
+          <nav className="flex flex-col px-6 py-4 gap-1">
+            {([["Features", "/features"], ["Pricing", "/pricing"], ["FAQ", "/faq"], ["Changelog", "/changelog"]] as const).map(([label, href]) => (
+              <Link
+                key={label}
+                href={href}
+                className="px-4 py-3 text-sm font-normal rounded-lg transition-colors"
+                style={{ color: "#a3a3a3" }}
+                onClick={() => setMobileMenuOpen(false)}
+                onMouseEnter={(e) => { e.currentTarget.style.color = "#e5e5e5"; e.currentTarget.style.background = "rgba(255,255,255,0.05)" }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = "#a3a3a3"; e.currentTarget.style.background = "transparent" }}
+              >
+                {label}
+              </Link>
+            ))}
+            <div className="mt-2 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+              <Link
+                href="/login"
+                className="block px-4 py-3 text-sm font-normal rounded-lg transition-colors"
+                style={{ color: "#a3a3a3" }}
+                onClick={() => setMobileMenuOpen(false)}
+                onMouseEnter={(e) => { e.currentTarget.style.color = "#e5e5e5"; e.currentTarget.style.background = "rgba(255,255,255,0.05)" }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = "#a3a3a3"; e.currentTarget.style.background = "transparent" }}
+              >
+                Sign In
+              </Link>
+            </div>
+          </nav>
+        </motion.div>
+      )}
 
       <main ref={heroRef}>
         <section
@@ -217,7 +260,7 @@ export function LandingPage() {
 
               <h1 className="font-normal leading-[1.05] tracking-tighter text-white" style={{ fontSize: "84px", lineHeight: "88px", letterSpacing: "-0.03em" }}>
                 Stop answering the<br/>
-                same question <span style={{ color: "#c65f39" }}>30 times a day</span>
+                same question <span style={{ color: "#f9510b" }}>30 times a day</span>
               </h1>
               <p className="max-w-2xl mx-auto leading-relaxed font-normal" style={{ fontSize: "18px", color: "#888" }}>
                 Your customers get instant answers on WhatsApp, 24/7. AI handles the repetitive questions and bookings, and hands off to you only when it matters.
@@ -245,7 +288,7 @@ export function LandingPage() {
                   required
                   className="bg-transparent border-none h-11 px-4 focus-visible:ring-0 text-sm font-normal" style={{ color: "#fff" }}
                 />
-                <Button type="submit" className="h-11 px-5 rounded-lg text-sm font-normal flex items-center gap-1 group" style={{ background: "#c65f39", color: "#fff" }}>
+                <Button type="submit" className="h-11 px-5 rounded-lg text-sm font-normal flex items-center gap-1 group" style={{ background: "#f9510b", color: "#fff" }}>
                   Get Started <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                 </Button>
               </form>
@@ -266,14 +309,14 @@ export function LandingPage() {
                 <div className="h-2 w-2 rounded-full" style={{ background: "#d4d4d4" }} />
                 <div className="h-2 w-2 rounded-full" style={{ background: "#d4d4d4" }} />
                 <div className="flex items-center gap-2 px-3 py-1 rounded-md mx-auto" style={{ background: "#ffffff", border: "1px solid #e5e5e5" }}>
-                  <div className="h-1 w-1 rounded-full" style={{ background: "#c65f39" }} />
-                  <span className="text-[10px] font-normal" style={{ color: "#737373" }}>app.flowcore.ai/analytics</span>
+                  <div className="h-1 w-1 rounded-full" style={{ background: "#f9510b" }} />
+                  <span className="text-[10px] font-normal" style={{ color: "#737373" }}>app.Flowter.ai/analytics</span>
                 </div>
               </div>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/producthunt/analytics-clean.png"
-                alt="FlowCore analytics dashboard showing messages, contacts, automation rate, and integration status"
+                alt="Flowter analytics dashboard showing messages, contacts, automation rate, and integration status"
                 width={1270}
                 height={588}
                 className="w-full h-auto block"
@@ -282,42 +325,133 @@ export function LandingPage() {
           </motion.div>
         </section>
 
-        <motion.section {...sectionAnim} className="py-16 px-6 flex flex-col items-center" style={{ background: "#ffffff", borderTop: "1px solid #e5e5e5" }}>
-          <div className="text-sm font-normal" style={{ color: "#a3a3a3", letterSpacing: "0.05em" }}>
-            Trusted by growing businesses
+        <motion.section {...sectionAnim} className="py-16 px-6" style={{ background: "#ffffff", borderTop: "1px solid #e5e5e5" }}>
+          <div className="max-w-[1060px] mx-auto">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+              {[
+                { value: "70%+", label: "AI Automation" },
+                { value: "<10 Min", label: "Setup" },
+                { value: "24/7", label: "Coverage" },
+                { value: "3", label: "AI Agents" },
+              ].map((stat, i) => (
+                <motion.div
+                  key={stat.label}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  <div className="text-3xl md:text-4xl font-normal tracking-tight" style={{ color: "#171717" }}>{stat.value}</div>
+                  <div className="text-sm font-normal mt-1" style={{ color: "#a3a3a3" }}>{stat.label}</div>
+                </motion.div>
+              ))}
+            </div>
           </div>
-          <div className="flex flex-wrap justify-center items-center gap-x-12 gap-y-6 max-w-4xl px-6 mt-8" style={{ opacity: 0.5 }}>
-            {["Webuild LLP", "Tasty Bistro"].map((brand, i) => (
-              <motion.span key={i} custom={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: i * 0.05, ease: [0.16, 1, 0.3, 1] }} className="text-base tracking-tight select-none cursor-default" style={{ color: "#171717", fontWeight: 400 }}>
-                {brand}
-              </motion.span>
-            ))}
+        </motion.section>
+
+        <motion.section {...sectionAnim} className="py-20 px-6" style={{ background: "#fafafa", borderTop: "1px solid #e5e5e5" }}>
+          <div className="max-w-[1060px] mx-auto">
+            <div className="text-center mb-12">
+              <p className="text-sm font-normal" style={{ color: "#a3a3a3", letterSpacing: "0.05em" }}>
+                Trusted by growing businesses
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[
+                { name: "Priya Sharma", role: "Founder", company: "Tasty Bistro", text: "We went from missing 40% of WhatsApp messages to responding instantly. Our customers love the speed, and our team finally has time to focus on what matters." },
+                { name: "Arjun Mehta", role: "Operations Lead", company: "Webuild LLP", text: "Setup took less than 10 minutes. The AI handles appointment scheduling and FAQs flawlessly — it&apos;s like having an extra team member who never sleeps." },
+                { name: "Sneha Kulkarni", role: "Customer Success", company: "FreshCart", text: "The unified inbox changed everything. We can see all conversations across WhatsApp and webchat in one place. Response time dropped from hours to seconds." },
+              ].map((testimonial, i) => (
+                <motion.div
+                  key={testimonial.name}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.8, delay: i * 0.12, ease: [0.16, 1, 0.3, 1] }}
+                  className="p-6 rounded-2xl"
+                  style={{ background: "#ffffff", border: "1px solid #e5e5e5" }}
+                >
+                  <p className="text-sm leading-relaxed font-normal mb-6" style={{ color: "#525252" }}>&ldquo;{testimonial.text}&rdquo;</p>
+                  <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-full flex items-center justify-center text-sm font-normal" style={{ background: "rgba(198, 95, 57, 0.08)", color: "#f9510b" }}>
+                      {testimonial.name.charAt(0)}
+                    </div>
+                    <div>
+                      <div className="text-sm font-normal" style={{ color: "#171717" }}>{testimonial.name}</div>
+                      <div className="text-xs font-normal" style={{ color: "#a3a3a3" }}>{testimonial.role}, {testimonial.company}</div>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
           </div>
         </motion.section>
 
         <motion.section {...sectionAnim} className="py-24 px-6 lg:px-12" style={{ background: "#ffffff" }}>
           <div className="max-w-[820px] mx-auto text-center">
-            <p className="text-sm font-normal mb-4" style={{ color: "#c65f39" }}>Platform</p>
+            <p className="text-sm font-normal mb-4" style={{ color: "#f9510b" }}>Platform</p>
             <h2 className="font-normal tracking-tight" style={{ fontSize: "35.2508px", lineHeight: "44.0635px", letterSpacing: "-0.15667px", color: "#171717" }}>
               Handle communication end-to-end
             </h2>
             <p className="max-w-lg mx-auto mt-4 leading-relaxed font-normal" style={{ fontSize: "15.667px", color: "#737373" }}>
-              FlowCore keeps your team focused by intelligently handling communications and escalating only the critical moments.
+              Flowter keeps your team focused by intelligently handling communications and escalating only the critical moments.
             </p>
+          </div>
+        </motion.section>
+
+        <motion.section {...sectionAnim} className="py-24 px-6 lg:px-12" style={{ background: "#fafafa", borderTop: "1px solid #e5e5e5" }}>
+          <div className="max-w-[820px] mx-auto text-center">
+            <p className="text-sm font-normal mb-4" style={{ color: "#f9510b" }}>How It Works</p>
+            <h2 className="font-normal tracking-tight" style={{ fontSize: "35.2508px", lineHeight: "44.0635px", letterSpacing: "-0.15667px", color: "#171717" }}>
+              Three steps to automate support
+            </h2>
+          </div>
+          <div className="max-w-[1060px] mx-auto mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              {
+                step: "01",
+                title: "Connect WhatsApp",
+                description: "Scan a QR code, done in seconds. Same method as WhatsApp Web — no Meta approval or developer setup needed.",
+              },
+              {
+                step: "02",
+                title: "Train your AI",
+                description: "Upload docs, FAQs, policies — your AI learns your business. The more you give it, the smarter it gets.",
+              },
+              {
+                step: "03",
+                title: "Go Live",
+                description: "AI handles conversations 24/7, escalates when needed. You stay in control while your team focuses on what matters.",
+              },
+            ].map((item, i) => (
+              <motion.div
+                key={item.step}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8, delay: i * 0.15, ease: [0.16, 1, 0.3, 1] }}
+                className="text-center p-8 rounded-2xl"
+                style={{ background: "#ffffff", border: "1px solid #e5e5e5" }}
+              >
+                <div className="text-3xl font-normal mb-4" style={{ color: "#f9510b" }}>{item.step}</div>
+                <h3 className="text-base font-normal mb-2" style={{ color: "#171717" }}>{item.title}</h3>
+                <p className="text-sm leading-relaxed font-normal" style={{ color: "#737373" }}>{item.description}</p>
+              </motion.div>
+            ))}
           </div>
         </motion.section>
 
         <motion.section {...sectionAnim} className="py-24 px-6 lg:px-12" style={{ background: "#ffffff" }}>
           <div className="max-w-[1060px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <motion.div {...slideLeft} className="space-y-6">
-              <p className="text-sm font-normal" style={{ color: "#c65f39" }}>Reporting</p>
+              <p className="text-sm font-normal" style={{ color: "#f9510b" }}>Reporting</p>
               <h2 className="font-normal tracking-tight" style={{ fontSize: "35.2508px", lineHeight: "44.0635px", letterSpacing: "-0.15667px", color: "#171717" }}>
                 See ROI in 30 days
               </h2>
               <p className="leading-relaxed max-w-md font-normal" style={{ fontSize: "15.667px", color: "#737373" }}>
                 AI insights to help monitor, evaluate, and continuously optimize your conversations.
               </p>
-              <Button asChild className="h-11 px-5 rounded-[100px] text-sm font-normal flex items-center gap-1" style={{ background: "#c65f39", color: "#fff" }}>
+              <Button asChild className="h-11 px-5 rounded-[100px] text-sm font-normal flex items-center gap-1" style={{ background: "#f9510b", color: "#fff" }}>
                 <Link href="/login">Get Started <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" /></Link>
               </Button>
             </motion.div>
@@ -355,12 +489,12 @@ export function LandingPage() {
                   <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 100 100">
                     <defs>
                       <linearGradient id="chart-grad-light" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#c65f39" stopOpacity="0.15" />
-                        <stop offset="100%" stopColor="#c65f39" stopOpacity="0" />
+                        <stop offset="0%" stopColor="#f9510b" stopOpacity="0.15" />
+                        <stop offset="100%" stopColor="#f9510b" stopOpacity="0" />
                       </linearGradient>
                     </defs>
                     <path d="M0,80 C20,70 40,30 60,50 C80,70 90,20 100,10 L100,100 L0,100 Z" fill="url(#chart-grad-light)" />
-                    <path d="M0,80 C20,70 40,30 60,50 C80,70 90,20 100,10" fill="none" stroke="#c65f39" strokeWidth="2" strokeLinecap="round" />
+                    <path d="M0,80 C20,70 40,30 60,50 C80,70 90,20 100,10" fill="none" stroke="#f9510b" strokeWidth="2" strokeLinecap="round" />
                   </svg>
                 </div>
 
@@ -369,7 +503,7 @@ export function LandingPage() {
                   <div className="space-y-2" style={{ fontSize: "13px" }}>
                     <div className="space-y-1">
                       <div className="flex justify-between" style={{ color: "#525252" }}><span>AI missing info</span><span style={{ color: "#171717" }}>19 <span style={{ color: "#a3a3a3", fontWeight: 400 }}>(52.8%)</span></span></div>
-                      <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ background: "#e5e5e5" }}><div className="h-full w-[52.8%] rounded-full" style={{ background: "#c65f39" }} /></div>
+                      <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ background: "#e5e5e5" }}><div className="h-full w-[52.8%] rounded-full" style={{ background: "#f9510b" }} /></div>
                     </div>
                     <div className="space-y-1">
                       <div className="flex justify-between" style={{ color: "#525252" }}><span>AI needs your help</span><span style={{ color: "#171717" }}>10 <span style={{ color: "#a3a3a3", fontWeight: 400 }}>(27.8%)</span></span></div>
@@ -388,14 +522,14 @@ export function LandingPage() {
 
         <motion.section {...sectionAnim} className="py-24 px-6 lg:px-12" style={{ background: "#ffffff" }}>
           <div className="max-w-[820px] mx-auto text-center">
-            <p className="text-sm font-normal mb-4" style={{ color: "#c65f39" }}>Unified Inbox</p>
+            <p className="text-sm font-normal mb-4" style={{ color: "#f9510b" }}>Unified Inbox</p>
             <h2 className="font-normal tracking-tight" style={{ fontSize: "35.2508px", lineHeight: "44.0635px", letterSpacing: "-0.15667px", color: "#171717" }}>
               Everything in one place
             </h2>
             <p className="max-w-lg mx-auto mt-4 leading-relaxed font-normal" style={{ fontSize: "15.667px", color: "#737373" }}>
               When automation ends, your control begins — streamline every conversation your AI can&apos;t handle in one place.
             </p>
-            <Button asChild className="h-11 px-5 rounded-[100px] text-sm font-normal flex items-center gap-1 mt-6 group" style={{ background: "#c65f39", color: "#fff" }}>
+            <Button asChild className="h-11 px-5 rounded-[100px] text-sm font-normal flex items-center gap-1 mt-6 group" style={{ background: "#f9510b", color: "#fff" }}>
               <Link href="/login">Get Started <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" /></Link>
             </Button>
           </div>
@@ -404,7 +538,7 @@ export function LandingPage() {
         <motion.section {...sectionAnim} className="py-24 px-6 lg:px-12 text-center" style={{ background: "#ffffff" }}>
           <div className="max-w-[820px] mx-auto space-y-12">
             <div className="space-y-6">
-              <p className="text-sm font-normal" style={{ color: "#c65f39" }}>Integrations</p>
+              <p className="text-sm font-normal" style={{ color: "#f9510b" }}>Integrations</p>
               <h2 className="font-normal tracking-tight" style={{ fontSize: "35.2508px", lineHeight: "44.0635px", letterSpacing: "-0.15667px", color: "#171717" }}>
                 Integrate with every aspect of your tech stack
               </h2>
@@ -438,7 +572,7 @@ export function LandingPage() {
         <motion.section {...sectionAnim} className="py-24 px-6 lg:px-12" style={{ background: "#ffffff", borderTop: "1px solid #e5e5e5" }}>
           <div className="max-w-[1060px] mx-auto">
             <div className="text-center mb-16">
-              <p className="text-sm font-normal mb-4" style={{ color: "#c65f39" }}>Features</p>
+              <p className="text-sm font-normal mb-4" style={{ color: "#f9510b" }}>Features</p>
               <h2 className="font-normal tracking-tight" style={{ fontSize: "35.2508px", lineHeight: "44.0635px", letterSpacing: "-0.15667px", color: "#171717" }}>
                 Everything you need to automate support
               </h2>
@@ -451,21 +585,18 @@ export function LandingPage() {
               {[
                 {
                   title: "Booking Agent",
-                  description: "Books appointments end-to-end. Checks availability, schedules slots, sends confirmations, handles rescheduling and cancellations.",
-                  icon: <Globe className="h-5 w-5" style={{ color: "#c65f39" }} />,
-                  stat: "77/77",
+                  description: "Handles appointment scheduling end-to-end — checks availability, books slots, sends confirmations, and manages rescheduling without human intervention.",
+                  icon: <Globe className="h-5 w-5" style={{ color: "#f9510b" }} />,
                 },
                 {
                   title: "Sales Agent",
-                  description: "Responds to product inquiries, searches catalogs, generates quotes, compares options, handles objections, and guides purchase decisions. 69/69 tests passed.",
-                  icon: <BarChart2 className="h-5 w-5" style={{ color: "#c65f39" }} />,
-                  stat: "69/69",
+                  description: "Responds to product inquiries instantly, searches your catalog, generates quotes, and guides customers through purchase decisions — all conversationally.",
+                  icon: <BarChart2 className="h-5 w-5" style={{ color: "#f9510b" }} />,
                 },
                 {
                   title: "Support Agent",
-                  description: "Answers queries from your knowledge base, handles complaints, explains policies, escalates to humans when needed. 71/71 tests passed.",
-                  icon: <Inbox className="h-5 w-5" style={{ color: "#c65f39" }} />,
-                  stat: "71/71",
+                  description: "Answers questions from your knowledge base, handles complaints, explains policies, and seamlessly escalates complex issues to your team when needed.",
+                  icon: <Inbox className="h-5 w-5" style={{ color: "#f9510b" }} />,
                 },
               ].map((feature, i) => (
                 <TiltCard key={feature.title}>
@@ -482,16 +613,13 @@ export function LandingPage() {
                   </div>
                   <h3 className="text-base font-normal mb-2" style={{ color: "#171717" }}>{feature.title}</h3>
                   <p className="text-sm leading-relaxed font-normal" style={{ color: "#737373" }}>{feature.description}</p>
-                  <div className="mt-3 text-xs font-medium" style={{ color: "#c65f39" }}>
-                    Verified: <AnimatedCount value={parseInt(feature.stat.split("/")[0]!)} suffix={"/" + (feature.stat.split("/")[1] || "")} />
-                  </div>
                 </motion.div>
                 </TiltCard>
               ))}
             </div>
 
             <div className="text-center mt-12">
-              <Button asChild className="h-11 px-5 rounded-[100px] text-sm font-normal flex items-center gap-1 mx-auto group" style={{ background: "#c65f39", color: "#fff" }}>
+              <Button asChild className="h-11 px-5 rounded-[100px] text-sm font-normal flex items-center gap-1 mx-auto group" style={{ background: "#f9510b", color: "#fff" }}>
                 <Link href="/features">See All Features <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" /></Link>
               </Button>
             </div>
@@ -501,7 +629,88 @@ export function LandingPage() {
         <motion.section {...sectionAnim} className="py-24 px-6 lg:px-12" style={{ background: "#ffffff", borderTop: "1px solid #e5e5e5" }}>
           <div className="max-w-[1060px] mx-auto">
             <div className="text-center mb-16">
-              <p className="text-sm font-normal mb-4" style={{ color: "#c65f39" }}>What We Believe</p>
+              <p className="text-sm font-normal mb-4" style={{ color: "#f9510b" }}>Pricing</p>
+              <h2 className="font-normal tracking-tight" style={{ fontSize: "35.2508px", lineHeight: "44.0635px", letterSpacing: "-0.15667px", color: "#171717" }}>
+                Simple, transparent pricing
+              </h2>
+              <p className="max-w-lg mx-auto mt-4 leading-relaxed font-normal" style={{ fontSize: "15.667px", color: "#737373" }}>
+                Start free, scale as you grow. No hidden fees, no surprises.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[
+                {
+                  tier: "Starter",
+                  price: "Free",
+                  period: "",
+                  description: "Perfect for trying out Flowter",
+                  features: ["100 conversations/mo", "1 AI agent", "Webchat widget", "Basic analytics"],
+                  cta: "Get Started",
+                  highlighted: false,
+                },
+                {
+                  tier: "Growth",
+                  price: "$29",
+                  period: "/mo",
+                  description: "For growing businesses",
+                  features: ["1,000 conversations/mo", "3 AI agents", "WhatsApp + Webchat", "Priority support", "Advanced analytics"],
+                  cta: "Start Free Trial",
+                  highlighted: true,
+                },
+                {
+                  tier: "Enterprise",
+                  price: "Custom",
+                  period: "",
+                  description: "For large-scale operations",
+                  features: ["Unlimited conversations", "Custom AI training", "SLA guarantee", "Dedicated support", "Custom integrations"],
+                  cta: "Talk to Sales",
+                  highlighted: false,
+                },
+              ].map((plan, i) => (
+                <motion.div
+                  key={plan.tier}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.8, delay: i * 0.12, ease: [0.16, 1, 0.3, 1] }}
+                  className="p-6 rounded-2xl flex flex-col"
+                  style={{
+                    background: plan.highlighted ? "#171717" : "#fafafa",
+                    border: plan.highlighted ? "1px solid #333" : "1px solid #e5e5e5",
+                  }}
+                >
+                  <div className="mb-6">
+                    <p className="text-sm font-normal mb-2" style={{ color: plan.highlighted ? "#f9510b" : "#a3a3a3" }}>{plan.tier}</p>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-3xl font-normal tracking-tight" style={{ color: plan.highlighted ? "#ffffff" : "#171717" }}>{plan.price}</span>
+                      {plan.period && <span className="text-sm font-normal" style={{ color: plan.highlighted ? "#595859" : "#a3a3a3" }}>{plan.period}</span>}
+                    </div>
+                    <p className="text-sm font-normal mt-2" style={{ color: plan.highlighted ? "#595859" : "#737373" }}>{plan.description}</p>
+                  </div>
+                  <ul className="space-y-3 mb-8 flex-1">
+                    {plan.features.map((f) => (
+                      <li key={f} className="flex items-center gap-2 text-sm font-normal" style={{ color: plan.highlighted ? "#d4d4d4" : "#525252" }}>
+                        <svg className="h-4 w-4 flex-shrink-0" style={{ color: "#f9510b" }} viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                  <Button asChild className="h-11 px-5 rounded-[100px] text-sm font-normal flex items-center gap-1 justify-center w-full group" style={{ background: plan.highlighted ? "#f9510b" : "#ffffff", color: plan.highlighted ? "#fff" : "#171717", border: plan.highlighted ? "none" : "1px solid #e5e5e5" }}>
+                    <Link href={plan.tier === "Enterprise" ? "/pricing" : "/login"}>{plan.cta} <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" /></Link>
+                  </Button>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </motion.section>
+
+        <motion.section {...sectionAnim} className="py-24 px-6 lg:px-12" style={{ background: "#ffffff", borderTop: "1px solid #e5e5e5" }}>
+          <div className="max-w-[1060px] mx-auto">
+            <div className="text-center mb-16">
+              <p className="text-sm font-normal mb-4" style={{ color: "#f9510b" }}>What We Believe</p>
               <h2 className="font-normal tracking-tight" style={{ fontSize: "35.2508px", lineHeight: "44.0635px", letterSpacing: "-0.15667px", color: "#171717" }}>
                 AI should assist, not replace
               </h2>
@@ -538,19 +747,33 @@ export function LandingPage() {
         <motion.section {...sectionAnim} className="py-24 px-6 lg:px-12" style={{ background: "#ffffff", borderTop: "1px solid #e5e5e5" }}>
           <div className="max-w-[820px] mx-auto text-center space-y-8">
             <h2 className="font-normal tracking-tight" style={{ fontSize: "35.2508px", lineHeight: "44.0635px", letterSpacing: "-0.15667px", color: "#171717" }}>
-              What is Flowcore AI?
+              What is Flowter?
             </h2>
             <p className="text-base leading-relaxed" style={{ color: "#525252", lineHeight: 1.8 }}>
-              Flowcore AI is a customer service automation platform that connects WhatsApp, webchat, email, and Google Business Messages into one AI-powered inbox. Instead of juggling multiple tools, businesses get a single platform where AI agents handle repetitive questions, book appointments, process orders, and escalate complex issues to human agents.
+              Flowter is an AI-powered customer support platform that helps businesses respond to customers instantly — on WhatsApp, webchat, and more. Instead of hiring more staff or letting messages pile up, Flowter&apos;s AI agents handle the repetitive questions, book appointments, and answer FAQs around the clock.
             </p>
             <p className="text-base leading-relaxed" style={{ color: "#525252", lineHeight: 1.8 }}>
-              Built on top of GoWA (Go WhatsApp API), Flowcore works with the official WhatsApp Web multi-device API — no Meta Cloud API required. The platform uses Groq AI (llama-3.3-70b-versatile) for fast, reliable inference, with a knowledge base that learns from your business documents to provide accurate, context-aware responses.
+              Getting started takes minutes, not months. Scan a QR code to connect WhatsApp, upload your business docs to train your AI, and you&apos;re live. When the AI can&apos;t handle something, it seamlessly hands off to your team — so nothing falls through the cracks.
             </p>
             <p className="text-base leading-relaxed" style={{ color: "#525252", lineHeight: 1.8 }}>
-              Key capabilities include: AI agents for support, sales, and appointment booking; a unified conversation inbox; automated escalation to human agents; real-time analytics and reporting; Google Calendar and Sheets integrations; knowledge base management with vector search; and multi-tenant workspace support for agencies and enterprises.
+              Flowter gives you a unified inbox for all conversations, real-time analytics to track performance, and the flexibility to scale from 100 to 100,000 conversations. It&apos;s customer support that works while you sleep.
             </p>
           </div>
         </motion.section>
+
+        <section className="py-20 px-6" style={{ background: "#050505" }}>
+          <div className="max-w-[820px] mx-auto text-center space-y-6">
+            <h2 className="font-normal tracking-tight text-white" style={{ fontSize: "35.2508px", lineHeight: "44.0635px", letterSpacing: "-0.15667px" }}>
+              Start automating customer support today
+            </h2>
+            <p className="text-base font-normal" style={{ color: "#a3a3a3" }}>
+              Free to start. No credit card required.
+            </p>
+            <Button asChild className="h-12 px-8 rounded-[100px] text-sm font-normal flex items-center gap-1 mx-auto group" style={{ background: "#f9510b", color: "#fff" }}>
+              <Link href="/login">Get Started Free <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" /></Link>
+            </Button>
+          </div>
+        </section>
 
         <motion.section {...sectionAnim} className="py-24 px-6 lg:px-12 relative overflow-hidden" style={{ background: "#050505" }}>
           <motion.div
@@ -563,12 +786,12 @@ export function LandingPage() {
           />
           <div className="max-w-[1060px] mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <motion.div {...slideLeft} className="space-y-6">
-              <p className="text-sm font-normal" style={{ color: "#c65f39" }}>Enterprise</p>
+              <p className="text-sm font-normal" style={{ color: "#f9510b" }}>Enterprise</p>
               <h2 className="font-normal tracking-tight text-white" style={{ fontSize: "35.2508px", lineHeight: "44.0635px", letterSpacing: "-0.15667px" }}>
                 Built for Enterprise Security and Privacy
               </h2>
               <div className="flex flex-wrap gap-4">
-                <Button asChild className="h-11 px-5 rounded-[100px] text-sm font-normal flex items-center gap-1 group" style={{ background: "#c65f39", color: "#fff" }}>
+                <Button asChild className="h-11 px-5 rounded-[100px] text-sm font-normal flex items-center gap-1 group" style={{ background: "#f9510b", color: "#fff" }}>
                   <Link href="/pricing">Talk to Sales <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" /></Link>
                 </Button>
               </div>
@@ -612,13 +835,13 @@ export function LandingPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-12 mb-16">
             <div className="col-span-2 md:col-span-1 space-y-5">
               <Link href="/" className="text-lg font-medium tracking-tight" style={{ color: "#171717", letterSpacing: "-0.01em" }}>
-                FlowCore
+                Flowter
               </Link>
               <p className="text-sm leading-relaxed font-normal max-w-[200px]" style={{ color: "#737373" }}>
                 AI agents for customer communication.
               </p>
               <p className="text-sm font-normal" style={{ color: "#737373" }}>
-                support@flowcore.ai
+                support@Flowter.ai
               </p>
             </div>
 
@@ -640,6 +863,10 @@ export function LandingPage() {
                 <Link href="/legal/privacy-policy" className="text-sm font-normal transition-colors" style={{ color: "#525252" }}>Privacy Policy</Link>
                 <Link href="/legal/terms" className="text-sm font-normal transition-colors" style={{ color: "#525252" }}>Terms</Link>
                 <Link href="/legal/cookie-policy" className="text-sm font-normal transition-colors" style={{ color: "#525252" }}>Cookies</Link>
+                <Link href="/legal/refund-policy" className="text-sm font-normal transition-colors" style={{ color: "#525252" }}>Refund Policy</Link>
+                <Link href="/legal/dpa" className="text-sm font-normal transition-colors" style={{ color: "#525252" }}>DPA</Link>
+                <Link href="/legal/aup" className="text-sm font-normal transition-colors" style={{ color: "#525252" }}>AUP</Link>
+                <Link href="/legal/data-deletion" className="text-sm font-normal transition-colors" style={{ color: "#525252" }}>Data Deletion</Link>
                 <Link href="/legal" className="text-sm font-normal transition-colors" style={{ color: "#525252" }}>Legal</Link>
               </nav>
             </div>
@@ -654,7 +881,7 @@ export function LandingPage() {
           </div>
 
           <div className="flex flex-col md:flex-row justify-between items-center pt-8 gap-6" style={{ borderTop: "1px solid #e5e5e5" }}>
-            <span className="text-sm font-normal" style={{ color: "#a3a3a3" }}>&copy; 2026 FlowCore Systems. All rights reserved.</span>
+            <span className="text-sm font-normal" style={{ color: "#a3a3a3" }}>&copy; 2026 Flowter Systems. All rights reserved.</span>
           </div>
         </div>
       </footer>

@@ -2,7 +2,7 @@ import { PipelineContext, WorkspaceRow } from "../lib/types.ts";
 
 const GOWA_BASE_URL = Deno.env.get("GOWA_BASE_URL")?.replace(/\/$/, "");
 const GOWA_AUTH = Deno.env.get("GOWA_API_KEY") ? btoa(Deno.env.get("GOWA_API_KEY")!) : "";
-const APP_URL = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://7flowcore.vercel.app";
+const APP_URL = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://flowter.vercel.app";
 
 export async function checkCredits(ctx: PipelineContext, workspace: WorkspaceRow): Promise<string | null> {
   if ((workspace.credits_remaining ?? workspace.credits_balance ?? 0) > 0) return null;

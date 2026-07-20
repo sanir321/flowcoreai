@@ -7,7 +7,7 @@ const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
   title: "Features — AI Customer Service Automation",
-  description: "Explore Flowcore AI's features: AI agents, WhatsApp automation, unified inbox, knowledge base, analytics, and multi-channel orchestration.",
+  description: "Explore Flowter's features: AI agents, WhatsApp automation, unified inbox, knowledge base, analytics, and multi-channel orchestration.",
   keywords: [
     "AI customer service features",
     "WhatsApp automation features",
@@ -18,16 +18,16 @@ export const metadata: Metadata = {
     "AI agent orchestration",
   ],
   openGraph: {
-    title: "Features — AI Customer Service Automation | Flowcore AI",
+    title: "Features — AI Customer Service Automation | Flowter",
     description: "AI-powered customer service features: WhatsApp automation, unified inbox, knowledge base, analytics, and multi-channel orchestration.",
     url: `${siteUrl}/features`,
-    siteName: "Flowcore AI",
+    siteName: "Flowter",
     images: [
       {
         url: `${siteUrl}/api/og?title=Features&subtitle=AI%20Customer%20Service%20Automation%20Capabilities`,
         width: 1200,
         height: 630,
-        alt: "Flowcore AI Features",
+        alt: "Flowter Features",
       },
     ],
     locale: "en_US",
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Features — AI Customer Service Automation | Flowcore AI",
+    title: "Features — AI Customer Service Automation | Flowter",
     description: "AI-powered customer service features: WhatsApp automation, unified inbox, knowledge base, analytics.",
     images: [`${siteUrl}/api/og?title=Features&subtitle=AI%20Customer%20Service%20Automation%20Capabilities`],
   },
@@ -108,7 +108,7 @@ const features = [
       },
       {
         name: "API Access",
-        description: "RESTful API for custom integrations. Automate workflows, sync data, and build custom solutions on top of Flowcore.",
+        description: "RESTful API for custom integrations. Automate workflows, sync data, and build custom solutions on top of Flowter.",
       },
     ],
   },
@@ -149,7 +149,7 @@ export default function FeaturesPage() {
         __html: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "ItemList",
-          "name": "Flowcore AI Features",
+          "name": "Flowter Features",
           "description": "AI-powered customer service automation features for WhatsApp and webchat.",
           "itemListElement": features.flatMap((cat, ci) =>
             cat.items.map((item, ii) => ({
@@ -165,7 +165,7 @@ export default function FeaturesPage() {
         __html: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "HowTo",
-          "name": "How to Set Up AI Customer Service with Flowcore",
+          "name": "How to Set Up AI Customer Service with Flowter",
           "description": "Step-by-step guide to automating your customer service with AI-powered WhatsApp and webchat assistants.",
           "step": howItWorks.map((s) => ({
             "@type": "HowToStep",
@@ -210,7 +210,7 @@ export default function FeaturesPage() {
               <div key={step.step}>
                 <div style={{
                   width: "40px", height: "40px", borderRadius: "50%",
-                  background: "rgba(198,95,57,0.15)", color: "#c65f39",
+                  background: "rgba(198,95,57,0.15)", color: "#f9510b",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: "16px", fontWeight: 600, marginBottom: "16px",
                 }}>
@@ -278,7 +278,7 @@ export default function FeaturesPage() {
           <Link href="/login" style={{
             display: "inline-block",
             padding: "12px 32px",
-            background: "#c65f39",
+            background: "#f9510b",
             color: "#fff",
             borderRadius: "8px",
             fontSize: "15px",

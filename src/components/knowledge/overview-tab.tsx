@@ -121,12 +121,12 @@ export function OverviewTab({ businessProfile, sources, templates, usedTags, onN
         <div className="p-6 rounded-2xl bg-white border border-gray-100 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <p className="text-2xl font-bold text-gray-900">{profileComplete}/{profileItems.length}</p>
-            <div className="h-8 w-8 rounded-lg bg-[#c65f39]/10 flex items-center justify-center">
-              <Building2 className="h-4 w-4 text-[#c65f39]" />
+            <div className="h-8 w-8 rounded-lg bg-[#f9510b]/10 flex items-center justify-center">
+              <Building2 className="h-4 w-4 text-[#f9510b]" />
             </div>
           </div>
           <p className="text-xs text-gray-500">Profile fields filled</p>
-          <button onClick={() => onNavigate("profile")} className="mt-2 text-xs font-medium text-[#c65f39] hover:text-[#b55533] flex items-center gap-1">
+          <button onClick={() => onNavigate("profile")} className="mt-2 text-xs font-medium text-[#f9510b] hover:text-[#b55533] flex items-center gap-1">
             Complete <ArrowRight className="h-3 w-3" />
           </button>
         </div>
@@ -186,7 +186,7 @@ export function OverviewTab({ businessProfile, sources, templates, usedTags, onN
           </p>
           <div className="flex gap-2 mt-4">
             <button onClick={() => onNavigate("profile")}
-              className="text-xs font-semibold px-4 py-2 rounded-xl bg-[#c65f39] text-white hover:bg-[#b55533] transition-all">
+              className="text-xs font-semibold px-4 py-2 rounded-xl bg-[#f9510b] text-white hover:bg-[#b55533] transition-all">
               Edit Profile
             </button>
             <button onClick={() => onNavigate("sources")}

@@ -6,17 +6,17 @@ const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
   title: "Acceptable Use Policy",
-  description: "Flowcore AI's Acceptable Use Policy (AUP) defining prohibited activities and proper use of our AI platform.",
-  keywords: ["Flowcore AI AUP", "acceptable use policy", "platform rules", "prohibited activities"],
+  description: "Flowter's Acceptable Use Policy (AUP) defining prohibited activities and proper use of our AI platform.",
+  keywords: ["Flowter AUP", "acceptable use policy", "platform rules", "prohibited activities"],
   openGraph: {
-    title: "Acceptable Use Policy — Flowcore AI",
-    description: "Rules and prohibited activities for Flowcore AI platform usage.",
+    title: "Acceptable Use Policy — Flowter",
+    description: "Rules and prohibited activities for Flowter platform usage.",
     url: `${siteUrl}/legal/aup`,
     images: [{ url: `${siteUrl}/api/og?title=AUP&subtitle=Acceptable%20Use%20Policy`, width: 1200, height: 630, alt: "Acceptable Use Policy" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Acceptable Use Policy — Flowcore AI",
+    title: "Acceptable Use Policy — Flowter",
     images: [`${siteUrl}/api/og?title=AUP&subtitle=Acceptable%20Use%20Policy`],
   },
   alternates: { canonical: `${siteUrl}/legal/aup` },
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 
 const content = `## 1. Purpose
 
-This Acceptable Use Policy ("AUP") governs your use of FlowCore AI ("Service"). By using the Service, you agree to comply with this policy. Violations may result in account suspension or termination.
+This Acceptable Use Policy ("AUP") governs your use of Flowter ("Service"). By using the Service, you agree to comply with this policy. Violations may result in account suspension or termination.
 
 ---
 
@@ -112,7 +112,7 @@ We may update this AUP at any time. Continued use of the Service after changes t
 
 ## 9. Contact
 
-**FlowCore**
+**Flowter**
 Email: **zenosayz05@gmail.com**
 Location: Chennai, Tamil Nadu, India`
 
