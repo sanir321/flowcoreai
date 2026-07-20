@@ -10,13 +10,15 @@ const GOWA_BASE_URL = process.env.GOWA_BASE_URL?.replace(/\/$/, "") || ""
 const GOWA_API_KEY = process.env.GOWA_API_KEY || ""
 const GOWA_AUTH = GOWA_API_KEY ? Buffer.from(GOWA_API_KEY).toString("base64") : ""
 
-async function deleteGoWADevice(deviceId: string) {
-  await fetch(`${GOWA_BASE_URL}/devices/${deviceId}/logout`, {
+async function deleteGoWADevice(deviceId: string): Promise<string | null> {
+  const logoutErr = await fetch(`${GOWA_BASE_URL}/devices/${deviceId}/logout`, {
     method: "POST", headers: { "Authorization": `Basic ${GOWA_AUTH}` },
-  }).catch(() => {})
-  await fetch(`${GOWA_BASE_URL}/devices/${deviceId}`, {
+  }).then(r => r.ok ? null : `logout ${r.status}`).catch(e => `logout: ${e}`)
+  const deleteErr = await fetch(`${GOWA_BASE_URL}/devices/${deviceId}`, {
     method: "DELETE", headers: { "Authorization": `Basic ${GOWA_AUTH}` },
-  }).catch(() => {})
+  }).then(r => r.ok ? null : `delete ${r.status}`).catch(e => `delete: ${e}`)
+  const errs = [logoutErr, deleteErr].filter(Boolean)
+  return errs.length ? errs.join(", ") : null
 }
 
 export async function POST(req: NextRequest) {
@@ -90,22 +92,31 @@ export async function POST(req: NextRequest) {
         const { error } = await (admin as any).from(table).update({ deleted_at: deletedAt }).eq("workspace_id", workspaceId);
         if (error) deleteErrors.push(`${table}: ${error.message}`);
       }
-      // Delete workspace itself
+      // Delete workspace itself — abort if this fails
       const { error: wsErr } = await admin.from("workspaces").update({ deleted_at: deletedAt }).eq("id", workspaceId);
-      if (wsErr) deleteErrors.push(`workspaces: ${wsErr.message}`);
+      if (wsErr) {
+        deleteErrors.push(`workspaces: ${wsErr.message}`);
+        console.error("[DELETE_ACCOUNT] Workspace delete failed, aborting:", deleteErrors);
+        return NextResponse.json({ error: "Failed to delete workspace data" }, { status: 500 });
+      }
       if (deleteErrors.length > 0) {
-        console.error("[DELETE_ACCOUNT] Partial delete failures:", deleteErrors);
+        console.error("[DELETE_ACCOUNT] Partial table delete failures:", deleteErrors);
       }
 
-      // Logout + delete GoWA device from Railway
+      // Logout + delete GoWA device from Railway (best-effort)
       for (const d of gowaDevices || []) {
-        await deleteGoWADevice(d.gowa_session_id)
+        const err = await deleteGoWADevice(d.gowa_session_id)
+        if (err) console.error(`[DELETE_ACCOUNT] GoWA cleanup failed for ${d.gowa_session_id}:`, err)
       }
     }
 
     // Delete auth user (service_role)
     const admin = createAdminClient()
-    await admin.auth.admin.deleteUser(user.id)
+    const { error: authErr } = await admin.auth.admin.deleteUser(user.id)
+    if (authErr) {
+      console.error("[DELETE_ACCOUNT] Auth user deletion failed:", authErr.message)
+      return NextResponse.json({ error: "Failed to delete auth user" }, { status: 500 })
+    }
 
     return NextResponse.json({ success: true })
   } catch (err: any) {

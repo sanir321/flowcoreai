@@ -260,7 +260,9 @@ export async function deleteWorkspace(): Promise<ActionResponse<{ success: true 
     const workspaceId = await getUserWorkspaceId(supabase, user.id)
     if (!workspaceId) return { data: null, error: "No workspace found" }
 
-    // Cleanup GoWA session before deleting workspace
+    const errors: string[] = []
+
+    // 1. Cleanup GoWA session (best-effort — external API)
     const { data: gowaSession } = await supabase
       .from("gowa_sessions")
       .select("gowa_session_id")
@@ -269,33 +271,40 @@ export async function deleteWorkspace(): Promise<ActionResponse<{ success: true 
       .maybeSingle()
 
     if (gowaSession?.gowa_session_id) {
-      await logoutSession(gowaSession.gowa_session_id).catch(e =>
-        console.error("[WORKSPACE_DELETE_LOGOUT_FAILED]", e)
-      )
-      await deleteDevice(gowaSession.gowa_session_id).catch(e =>
-        console.error("[WORKSPACE_DELETE_DEVICE_FAILED]", e)
-      )
+      const logoutErr = await logoutSession(gowaSession.gowa_session_id).catch(e => e)
+      if (logoutErr) errors.push(`gowa_logout: ${logoutErr}`)
+      const deviceErr = await deleteDevice(gowaSession.gowa_session_id).catch(e => e)
+      if (deviceErr) errors.push(`gowa_device: ${deviceErr}`)
     }
 
-    // Soft-delete gowa_sessions
-    await supabase
+    // 2. Soft-delete gowa_sessions
+    const { error: gowaDelErr } = await supabase
       .from("gowa_sessions")
       .update({ deleted_at: new Date().toISOString() })
       .eq("workspace_id", workspaceId)
+    if (gowaDelErr) errors.push(`gowa_sessions: ${gowaDelErr.message}`)
 
-    // Soft-delete workspace
+    // 3. Soft-delete workspace (critical — must not silently fail)
     const admin = createAdminClient()
-    const { error } = await admin
+    const { error: wsErr } = await admin
       .from("workspaces")
       .update({ deleted_at: new Date().toISOString() })
       .eq("id", workspaceId)
       .eq("owner_id", user.id)
+    if (wsErr) errors.push(`workspaces: ${wsErr.message}`)
 
-    if (error) throw error
-
-    await admin.auth.admin.updateUserById(user.id, {
+    // 4. Clear app_metadata
+    const { error: metaErr } = await admin.auth.admin.updateUserById(user.id, {
       app_metadata: {}
     })
+    if (metaErr) errors.push(`app_metadata: ${metaErr.message}`)
+
+    // If the workspace itself failed to delete, abort — don't report partial success
+    if (wsErr) throw new Error(`Workspace delete failed: ${wsErr.message}`)
+
+    if (errors.length) {
+      console.error("[WORKSPACE_DELETE_PARTIAL]", errors)
+    }
 
     revalidatePath("/", "layout")
     return { data: { success: true }, error: null }
