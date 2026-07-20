@@ -45,14 +45,18 @@ export async function POST(req: NextRequest) {
         <p><strong>Name:</strong> ${esc(firstName)} ${esc(lastName)}</p>
         <p><strong>Email:</strong> ${esc(email)}</p>
       `,
-    }).catch((e) => console.error("[PRICING_REQUEST] Email notification failed:", e));
+    }).catch((e) => {
+      console.error("[PRICING_REQUEST] Email notification failed:", e)
+      // Continue — DB insert is the critical path
+    });
 
     const { error: insertError } = await supabaseAdmin
       .from("pricing_requests")
       .insert({ first_name: firstName, last_name: lastName, email });
 
     if (insertError) {
-      console.error("[PRICING_REQUEST] DB insert error (non-fatal):", insertError);
+      console.error("[PRICING_REQUEST] DB insert error:", insertError)
+      return NextResponse.json({ error: "Failed to save pricing request" }, { status: 500 })
     }
 
     return NextResponse.json({ success: true });

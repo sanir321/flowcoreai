@@ -42,9 +42,14 @@ export async function POST(req: NextRequest) {
       console.error("[LOGOUT_GOWA_ERROR]", e)
     }
 
-    await (supabase.from("gowa_sessions") as any)
+    const { error: updateError } = await (supabase.from("gowa_sessions") as any)
       .update({ deleted_at: new Date().toISOString() })
       .eq("workspace_id", workspaceId)
+
+    if (updateError) {
+      console.error("[LOGOUT_DB_UPDATE_FAILED]", updateError)
+      return NextResponse.json({ status: 'partial', message: 'GoWA session disconnected but DB update failed' })
+    }
 
     return NextResponse.json({ status: 'ok', message: 'Session disconnected' })
 

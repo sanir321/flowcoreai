@@ -4,7 +4,9 @@ import { createServerClient } from "@supabase/ssr"
 export async function middleware(request: NextRequest) {
   const nonce = crypto.randomUUID()
 
+  // Set nonce on request headers so Server Components can read it
   const requestHeaders = new Headers(request.headers)
+  requestHeaders.set("x-nonce", nonce)
   const headerSize = JSON.stringify([...requestHeaders.entries()]).length
 
   if (headerSize > 12000) {
@@ -41,7 +43,7 @@ export async function middleware(request: NextRequest) {
     !url.pathname.startsWith("/api/internal/") &&
     !url.pathname.startsWith("/api/auth/google/callback")
 
-  let supabaseResponse = NextResponse.next({ request })
+  let supabaseResponse = NextResponse.next({ request: { ...request, headers: requestHeaders } })
 
   const skipAuthRoutes = isPublicRoute && !isDashboardRoute && !isOnboardingRoute && !isInternalApiRoute && !isLoginRoute
   if (skipAuthRoutes) {
@@ -65,7 +67,9 @@ export async function middleware(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           )
-          supabaseResponse = NextResponse.next({ request })
+          // Ensure nonce header persists through response creation
+          requestHeaders.set("x-nonce", nonce)
+          supabaseResponse = NextResponse.next({ request: { ...request, headers: requestHeaders } })
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
           )
@@ -118,12 +122,22 @@ export async function middleware(request: NextRequest) {
 
 function applySecurityHeaders(response: NextResponse, nonce: string): NextResponse {
   response.headers.set("x-nonce", nonce)
+  const gowaUrl = (process.env.GOWA_BASE_URL || "").replace(/\/$/, "")
   const headers = {
     "X-Frame-Options": "DENY",
     "X-Content-Type-Options": "nosniff",
     "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
     "Referrer-Policy": "strict-origin-when-cross-origin",
-    "Content-Security-Policy": `default-src 'self'; script-src 'self' 'nonce-${nonce}'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co https://opencode.ai https://go-whatsapp-web-multidevice-production-8644.up.railway.app; frame-ancestors 'none'`,
+    "Content-Security-Policy": [
+      `default-src 'self'`,
+      `script-src 'self' 'nonce-${nonce}'`,
+      `style-src 'self' 'unsafe-inline'`,
+      `img-src 'self' data: https:`,
+      `font-src 'self' data:`,
+      `connect-src 'self' https://*.supabase.co https://opencode.ai ${gowaUrl} https://*.posthog.com https://api.ipify.org`,
+      `worker-src 'self' blob:`,
+      `frame-ancestors 'none'`,
+    ].join("; "),
     "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
   };
   Object.entries(headers).forEach(([key, value]) => {

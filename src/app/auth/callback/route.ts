@@ -2,10 +2,20 @@ import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 import type { CookieOptions } from "@supabase/ssr"
 
+function sanitizeRedirect(next: string | null, origin: string): string {
+  if (!next) return "/onboarding"
+  // Only allow relative paths starting with / and not containing protocol/double-slash
+  if (next.startsWith("/") && !next.startsWith("//") && !next.includes("://")) {
+    return next
+  }
+  // Block absolute URLs (open redirect attempt)
+  return "/onboarding"
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get("code")
-  const next = searchParams.get("next")
+  const next = sanitizeRedirect(searchParams.get("next"), origin)
 
   if (!code) {
     return NextResponse.redirect(`${origin}/login?error=No code provided`)
@@ -44,7 +54,7 @@ export async function GET(request: NextRequest) {
     .is("deleted_at", null)
     .maybeSingle()
 
-  let redirectTo = next || "/onboarding"
+  let redirectTo = next
   if (existingWorkspace) {
     // Check if agents exist — only redirect to inbox if onboarding is complete
     const { data: agents } = await supabase

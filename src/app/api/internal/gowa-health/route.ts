@@ -87,23 +87,27 @@ export async function GET(req: NextRequest) {
                     const ownerEmail = owner?.user?.email;
                     if (ownerEmail) {
                         const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
-                        if (!baseUrl) continue;
-                        const inboxUrl = `${baseUrl}/inbox`;
-                        await fetch(`${baseUrl}/api/emails/send`, {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${process.env.INTERNAL_CRON_SECRET}` },
-                            body: JSON.stringify({
-                                to: ownerEmail,
-                                subject: `Escalation Alert — ${workspace.name || 'Your Workspace'}`,
-                                template: "escalation",
-                                data: {
-                                    workspaceName: workspace.name || 'Your Workspace',
-                                    customerName,
-                                    reason: esc.trigger_message || esc.trigger_type || "Customer requested human assistance",
-                                    inboxUrl,
-                                }
-                            }),
-                        }).catch(e => console.error(`[GOWA_HEALTH] Email notification failed: ${e.message}`));
+                        if (!baseUrl) {
+                            console.error("[GOWA_HEALTH] NEXT_PUBLIC_APP_URL not set — cannot send email notification");
+                            // Fall through to mark notification_sent to prevent infinite retry
+                        } else {
+                            const inboxUrl = `${baseUrl}/inbox`;
+                            await fetch(`${baseUrl}/api/emails/send`, {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${process.env.INTERNAL_CRON_SECRET}` },
+                                body: JSON.stringify({
+                                    to: ownerEmail,
+                                    subject: `Escalation Alert — ${workspace.name || 'Your Workspace'}`,
+                                    template: "escalation",
+                                    data: {
+                                        workspaceName: workspace.name || 'Your Workspace',
+                                        customerName,
+                                        reason: esc.trigger_message || esc.trigger_type || "Customer requested human assistance",
+                                        inboxUrl,
+                                    }
+                                }),
+                            }).catch(e => console.error(`[GOWA_HEALTH] Email notification failed: ${e.message}`));
+                        }
                     }
                 }
 
@@ -120,18 +124,21 @@ export async function GET(req: NextRequest) {
                         if (device?.gowa_session_id) {
                             const gowaKey = process.env.GOWA_API_KEY || "";
                             const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
-                            if (!baseUrl) continue;
-                            const alertMsg = `🚨 *Escalation Alert*\n\nWorkspace: ${workspace?.name || 'Unknown'}\nCustomer: ${customerName || 'A Customer'}\nReason: ${esc.trigger_message || esc.trigger_type || "Customer requested human assistance"}\n\nView inbox: ${baseUrl}/inbox`;
-                            const gowaBase = process.env.GOWA_BASE_URL?.replace(/\/$/, "");
-                            await fetch(`${gowaBase}/send/message`, {
-                                method: "POST",
-                                headers: {
-                                    "Content-Type": "application/json",
-                                    Authorization: `Basic ${btoa(gowaKey)}`,
-                                    "X-Device-Id": device.gowa_session_id
-                                },
-                                body: JSON.stringify({ phone: whatsappNumber, message: alertMsg }),
-                            }).catch(e => console.error(`[GOWA_HEALTH] WhatsApp notification failed: ${e.message}`));
+                            if (!baseUrl) {
+                                console.error("[GOWA_HEALTH] NEXT_PUBLIC_APP_URL not set — cannot send WhatsApp alert");
+                            } else {
+                                const alertMsg = `🚨 *Escalation Alert*\n\nWorkspace: ${workspace?.name || 'Unknown'}\nCustomer: ${customerName || 'A Customer'}\nReason: ${esc.trigger_message || esc.trigger_type || "Customer requested human assistance"}\n\nView inbox: ${baseUrl}/inbox`;
+                                const gowaBase = process.env.GOWA_BASE_URL?.replace(/\/$/, "");
+                                await fetch(`${gowaBase}/send/message`, {
+                                    method: "POST",
+                                    headers: {
+                                        "Content-Type": "application/json",
+                                        Authorization: `Basic ${btoa(gowaKey)}`,
+                                        "X-Device-Id": device.gowa_session_id
+                                    },
+                                    body: JSON.stringify({ phone: whatsappNumber, message: alertMsg }),
+                                }).catch(e => console.error(`[GOWA_HEALTH] WhatsApp notification failed: ${e.message}`));
+                            }
                         }
                     } catch (e: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
                         console.error("[GOWA_HEALTH] WhatsApp notification error:", e.message);
