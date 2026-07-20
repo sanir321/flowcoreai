@@ -216,7 +216,12 @@
     const b = parseInt(accentColor.slice(5,7), 16);
     container.style.setProperty('--fc-accent-light', `rgba(${r},${g},${b},0.08)`);
 
-    if (theme === 'light') {
+    let resolved = theme;
+    if (theme === 'auto' || !theme) {
+      resolved = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    }
+
+    if (resolved === 'light') {
       container.style.setProperty('--fc-bg', '#ffffff');
       container.style.setProperty('--fc-text', '#050505');
     } else {
@@ -258,7 +263,8 @@
     document.getElementById('fc-view-form').classList.remove('active');
     document.getElementById('fc-view-chat').classList.add('active');
 
-    addMessage(`Hi ${name.split(' ')[0]}! How can I help you today?`, 'ai');
+    const postMsg = config.post_form_message || "Thank you! How can I help you today?";
+    addMessage(postMsg, 'ai');
   };
 
   function addMessage(text, role) {
@@ -357,6 +363,19 @@
       // Set launcher icon
       if (d.launcher_icon) {
         fab.innerHTML = getLauncherIcon(d.launcher_icon);
+      }
+
+      // Apply header text
+      if (d.header_text) {
+        document.getElementById('fc-header-status').innerText = d.header_text;
+      }
+
+      // Auto-fill form fields from saved profile
+      if (d.auto_fill_params && savedProfile) {
+        const nameInput = document.getElementById('fc-name');
+        const emailInput = document.getElementById('fc-email');
+        if (nameInput && savedProfile.name) nameInput.value = savedProfile.name;
+        if (emailInput && savedProfile.email) emailInput.value = savedProfile.email;
       }
 
       // Skip form if profile already saved or anonymous allowed
