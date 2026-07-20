@@ -140,17 +140,6 @@ export default function LoginPage() {
       const { data: { user } } = await supabase.auth.getUser()
       
       if (user) {
-        const { data: ws } = await supabase
-          .from("workspaces")
-          .select("id")
-          .eq("owner_id", user.id)
-          .is("deleted_at", null)
-          .maybeSingle()
-        if (ws) {
-          router.push("/inbox")
-          return
-        }
-
         const { data: workspace } = await supabase
           .from("workspaces")
           .select("id")

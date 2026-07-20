@@ -118,6 +118,7 @@ export async function middleware(request: NextRequest) {
 }
 
 function applySecurityHeaders(response: NextResponse, nonce: string): NextResponse {
+  response.headers.set("x-nonce", nonce)
   const headers = {
     "X-Frame-Options": "DENY",
     "X-Content-Type-Options": "nosniff",

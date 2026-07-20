@@ -11,6 +11,7 @@ import { render } from "@react-email/components"
 import { WelcomeEmail } from "@/components/emails/welcome"
 import * as React from "react"
 import { getUserWorkspaceId } from "@/lib/workspace-auth"
+import { CreateWorkspaceSchema } from "@/lib/schemas/workspace"
 
 export interface Workspace {
   id: string
@@ -42,17 +43,11 @@ export type ActionResponse<T = unknown> = {
 
 export async function createWorkspace(input: unknown): Promise<ActionResponse<{ workspace_id: string }>> {
   try {
-    const result = z.object({
-      name: z.string().min(1),
-      business_type: z.string().optional(),
-      website_url: z.string().url().optional().or(z.literal("")),
-      contact_phone: z.string().optional(),
-      employee_count: z.string().optional(),
-      accept_terms: z.boolean().refine(val => val === true, { message: "You must accept the terms and conditions" }).optional(),
-    }).safeParse(input)
+    const result = CreateWorkspaceSchema.safeParse(input)
 
     if (!result.success) {
-      return { data: null, error: "Invalid workspace data" }
+      const firstError = result.error.issues[0]?.message || "Invalid workspace data"
+      return { data: null, error: firstError }
     }
 
     const supabase = await createClient()

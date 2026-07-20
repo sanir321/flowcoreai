@@ -5,7 +5,7 @@ import type { CookieOptions } from "@supabase/ssr"
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get("code")
-  const next = searchParams.get("next") ?? "/onboarding"
+  const next = searchParams.get("next")
 
   if (!code) {
     return NextResponse.redirect(`${origin}/login?error=No code provided`)
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
     .eq("status", "active")
     .is("deleted_at", null)
     .maybeSingle()
-  const redirectTo = existingWorkspace ? "/inbox" : next
+  const redirectTo = existingWorkspace ? "/inbox" : (next || "/onboarding")
 
   if (!data.user.last_sign_in_at) {
     const username = data.user.user_metadata?.full_name || data.user.email?.split("@")[0] || "User"

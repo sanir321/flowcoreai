@@ -23,12 +23,23 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const isProtectedRoute = dashboardRoutes.some(route => pathname.startsWith(route))
 
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout
+
     async function checkAuth() {
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (user) {
-        setIsAuthorized(true);
-      } else {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        
+        if (user) {
+          setIsAuthorized(true);
+        } else {
+          setIsAuthorized(false);
+          if (isProtectedRoute) {
+            window.location.href = `/login?redirect=${encodeURIComponent(pathname)}`;
+            return;
+          }
+        }
+      } catch {
+        // If auth check fails, assume unauthorized for protected routes
         setIsAuthorized(false);
         if (isProtectedRoute) {
           window.location.href = `/login?redirect=${encodeURIComponent(pathname)}`;
@@ -41,6 +52,14 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     if (!hasCheckedAuth.current) {
       hasCheckedAuth.current = true
       checkAuth()
+      // Fallback: if auth check takes too long, stop loading to prevent blank page
+      timeoutId = setTimeout(() => {
+        setIsLoading(false)
+      }, 5000)
+    }
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isProtectedRoute])
