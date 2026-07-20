@@ -13,8 +13,6 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { motion, AnimatePresence } from "framer-motion"
 import { checkUserExists } from "@/app/actions/workspace"
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [otp, setOtp] = useState("")

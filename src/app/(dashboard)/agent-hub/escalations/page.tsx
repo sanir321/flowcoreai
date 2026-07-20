@@ -88,9 +88,8 @@ export default function EscalationsPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      let workspaceId: string | undefined
       const { data: ws } = await supabase.from("workspaces").select("id").eq("owner_id", user.id).is("deleted_at", null).order("created_at", { ascending: true }).limit(1).maybeSingle()
-      workspaceId = ws?.id
+      const workspaceId = ws?.id
       if (!workspaceId) return
 
       const { data, error: fetchError } = await supabase

@@ -6,7 +6,7 @@ import { UpdateNotificationsSchema, UpdateWidgetConfigSchema } from "@/lib/schem
 import { revalidatePath } from "next/cache"
 import { ActionResponse } from "./workspace"
 import { z } from "zod"
-import { verifyWorkspaceOwnership, getUserWorkspaceId } from "@/lib/workspace-auth"
+import { verifyWorkspaceOwnership } from "@/lib/workspace-auth"
 
 // Lazy-initialized admin client
 let _supabaseAdmin: ReturnType<typeof createSupabaseClient> | null = null

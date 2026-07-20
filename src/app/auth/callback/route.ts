@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 import type { CookieOptions } from "@supabase/ssr"
 
-function sanitizeRedirect(next: string | null, origin: string): string {
+function sanitizeRedirect(next: string | null): string {
   if (!next) return "/onboarding"
   // Only allow relative paths starting with / and not containing protocol/double-slash
   if (next.startsWith("/") && !next.startsWith("//") && !next.includes("://")) {
@@ -15,7 +15,7 @@ function sanitizeRedirect(next: string | null, origin: string): string {
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get("code")
-  const next = sanitizeRedirect(searchParams.get("next"), origin)
+  const next = sanitizeRedirect(searchParams.get("next"))
 
   if (!code) {
     return NextResponse.redirect(`${origin}/login?error=No code provided`)

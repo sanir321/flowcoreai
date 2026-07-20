@@ -88,7 +88,6 @@ export async function POST(req: NextRequest) {
         "agent_traces", "workspace_notifications",
       ];
       for (const table of tables) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { error } = await (admin as any).from(table).update({ deleted_at: deletedAt }).eq("workspace_id", workspaceId);
         if (error) deleteErrors.push(`${table}: ${error.message}`);
       }

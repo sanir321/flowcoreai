@@ -5,7 +5,7 @@ import { SendManualReplySchema, ResolveEscalationSchema, TakeOverSessionSchema }
 import { revalidatePath } from "next/cache"
 import { sendTextMessage } from "@/lib/gowa"
 import { ActionResponse } from "./workspace"
-import { getUserWorkspaceId, verifyWorkspaceOwnership } from "@/lib/workspace-auth"
+import { getUserWorkspaceId } from "@/lib/workspace-auth"
 
 export async function takeOverSession(input: unknown): Promise<ActionResponse<{ success: true }>> {
   try {
