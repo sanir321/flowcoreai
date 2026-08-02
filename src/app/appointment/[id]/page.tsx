@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase/admin"
+import { createClient } from "@/lib/supabase/server"
 import { notFound } from "next/navigation"
 import { Card } from "@/components/ui/card"
 import { Calendar, MapPin, Video, Building2, CheckCircle2 } from "lucide-react"
@@ -17,29 +17,26 @@ function formatIST(isoString: string): string {
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params
-  const supabase = createAdminClient()
+  const supabase = await createClient()
   const { data: appt } = await supabase
-    .from("appointments")
-    .select("customer_name, service, start_at, workspace:workspaces(name)")
-    .eq("id", id)
+    .rpc("get_public_appointment", { p_appointment_id: id })
     .single()
 
   if (!appt) return { title: "Appointment Not Found" }
 
-  const workspace = appt.workspace as { name: string } | null
   const dateStr = formatIST(appt.start_at)
 
   return {
-    title: `Appointment Confirmed — ${workspace?.name || "Flowter"}`,
+    title: `Appointment Confirmed — ${appt.workspace_name || "Flowter"}`,
     description: `Hi ${appt.customer_name}, your ${appt.service} appointment on ${dateStr} is confirmed.`,
     openGraph: {
-      title: `Appointment Confirmed — ${workspace?.name || "Flowter"}`,
+      title: `Appointment Confirmed — ${appt.workspace_name || "Flowter"}`,
       description: `Hi ${appt.customer_name}, your ${appt.service} appointment on ${dateStr} is confirmed.`,
       type: "website",
     },
     twitter: {
       card: "summary",
-      title: `Appointment Confirmed — ${workspace?.name || "Flowter"}`,
+      title: `Appointment Confirmed — ${appt.workspace_name || "Flowter"}`,
       description: `Hi ${appt.customer_name}, your ${appt.service} appointment on ${dateStr} is confirmed.`,
     },
   }
@@ -47,28 +44,17 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 export default async function PublicAppointmentPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const supabase = createAdminClient()
-  
-  // Fetch appointment with workspace details
+  const supabase = await createClient()
+
   const { data: appt, error } = await supabase
-    .from("appointments")
-    .select(`
-      *,
-      workspace:workspaces (
-        name,
-        business_profile
-      )
-    `)
-    .eq("id", id)
+    .rpc("get_public_appointment", { p_appointment_id: id })
     .single()
 
   if (error || !appt) {
     notFound()
   }
 
-  const workspace = appt.workspace as { name: string; business_profile?: Record<string, unknown> } | null
-  const profile = workspace?.business_profile || ({} as Record<string, unknown>)
-  const address = (profile.contact as Record<string, unknown> | undefined)?.address as string | undefined
+  const address = appt.workspace_address
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 font-sans">
@@ -81,7 +67,7 @@ export default async function PublicAppointmentPage({ params }: { params: Promis
           </div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Appointment Confirmed</h1>
           <p className="text-slate-500 mt-2 text-sm leading-relaxed px-2">
-            Hi {appt.customer_name}, your booking with <strong>{workspace?.name || "the business"}</strong> is all set.
+            Hi {appt.customer_name}, your booking with <strong>{appt.workspace_name || "the business"}</strong> is all set.
           </p>
         </div>
 

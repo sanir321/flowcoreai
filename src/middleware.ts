@@ -22,9 +22,22 @@ export async function middleware(request: NextRequest) {
 
   const url = request.nextUrl.clone()
 
-  const publicRoutes = ["/", "/login", "/faq", "/changelog", "/legal", "/pricing", "/features", "/about", "/auth/callback"]
+  const publicRoutes = ["/", "/login", "/faq", "/changelog", "/legal", "/pricing", "/features", "/about", "/blog", "/waitlist", "/case-studies", "/sitemap", "/auth/callback"]
   const isPublicRoute = publicRoutes.some(route =>
     route === "/" ? url.pathname === "/" : url.pathname === route || url.pathname.startsWith(route + "/")
+  )
+
+  // Public or server-to-server API routes that handle their own auth
+  // (session-independent: Bearer secret, service role, or fully public).
+  const publicApiRoutes = [
+    "/api/emails/send", // INTERNAL_CRON_SECRET Bearer auth
+    "/api/waitlist", // public form (service role + rate limit)
+    "/api/pricing/request", // public form (service role + rate limit)
+    "/api/og", // public OG image generator
+    "/api/health", // public health check
+  ]
+  const isPublicApiRoute = publicApiRoutes.some(route =>
+    url.pathname.startsWith(route)
   )
 
   const dashboardRoutes = [
@@ -41,7 +54,8 @@ export async function middleware(request: NextRequest) {
     !url.pathname.startsWith("/api/widget/") && 
     !url.pathname.startsWith("/api/webhooks/") &&
     !url.pathname.startsWith("/api/internal/") &&
-    !url.pathname.startsWith("/api/auth/google/callback")
+    !url.pathname.startsWith("/api/auth/google/") &&
+    !isPublicApiRoute
 
   let supabaseResponse = NextResponse.next({ request: { ...request, headers: requestHeaders } })
 

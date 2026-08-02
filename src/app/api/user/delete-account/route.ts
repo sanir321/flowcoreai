@@ -70,36 +70,18 @@ export async function POST(req: NextRequest) {
     }
 
     if (workspaceId) {
-      // Get GoWA device IDs before deleting rows
+      // Get GoWA device IDs before purging rows
       const { data: gowaDevices } = await supabase
         .from("gowa_sessions").select("gowa_session_id")
         .eq("workspace_id", workspaceId)
         .is("deleted_at", null)
 
-      const deletedAt = new Date().toISOString()
-
-      // Soft-delete all workspace data (use admin client to bypass RLS)
+      // Hard-delete all workspace data in one transaction (service_role-only RPC)
       const admin = createAdminClient();
-      const deleteErrors: string[] = [];
-      const tables = [
-        "contacts", "conversation_sessions", "messages", "workspace_agents",
-        "kb_sources", "kb_chunks", "gowa_sessions", "google_oauth_tokens",
-        "widget_config", "appointments", "escalation_logs", "billing_transactions",
-        "agent_traces", "workspace_notifications",
-      ];
-      for (const table of tables) {
-        const { error } = await (admin as any).from(table).update({ deleted_at: deletedAt }).eq("workspace_id", workspaceId);
-        if (error) deleteErrors.push(`${table}: ${error.message}`);
-      }
-      // Delete workspace itself — abort if this fails
-      const { error: wsErr } = await admin.from("workspaces").update({ deleted_at: deletedAt }).eq("id", workspaceId);
-      if (wsErr) {
-        deleteErrors.push(`workspaces: ${wsErr.message}`);
-        console.error("[DELETE_ACCOUNT] Workspace delete failed, aborting:", deleteErrors);
+      const { error: purgeError } = await admin.rpc("purge_workspace", { p_workspace_id: workspaceId });
+      if (purgeError) {
+        console.error("[DELETE_ACCOUNT] purge_workspace failed, aborting:", purgeError.message);
         return NextResponse.json({ error: "Failed to delete workspace data" }, { status: 500 });
-      }
-      if (deleteErrors.length > 0) {
-        console.error("[DELETE_ACCOUNT] Partial table delete failures:", deleteErrors);
       }
 
       // Logout + delete GoWA device from Railway (best-effort)

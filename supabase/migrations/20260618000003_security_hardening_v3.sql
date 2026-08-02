@@ -36,13 +36,14 @@ alter function public.match_kb_chunks(vector, double precision, integer, uuid, t
 -- ==========================================
 -- 3. Revoke SECURITY DEFINER functions from anon/authenticated
 -- ==========================================
-revoke execute on function public.check_login_lockout(p_email text, p_ip text, p_max_attempts integer, p_window_minutes integer, p_lockout_minutes integer) from public;
-revoke execute on function public.cleanup_old_login_attempts() from public;
-revoke execute on function public.decrement_credits(p_workspace_id uuid, p_credits integer) from public;
-revoke execute on function public.process_pending_follow_ups() from public;
-revoke execute on function public.purge_old_audit_logs() from public;
-revoke execute on function public.purge_old_debug_logs() from public;
-revoke execute on function public.record_login_attempt(p_email text, p_ip text, p_success boolean) from public;
+revoke execute on function public.check_login_lockout(p_email text, p_ip text, p_max_attempts integer, p_window_minutes integer, p_lockout_minutes integer) from public, anon, authenticated;
+revoke execute on function public.cleanup_old_login_attempts() from public, anon, authenticated;
+revoke execute on function public.decrement_credits(p_workspace_id uuid, p_credits integer) from public, anon, authenticated;
+revoke execute on function public.process_pending_follow_ups() from public, anon, authenticated;
+revoke execute on function public.purge_old_audit_logs() from public, anon, authenticated;
+revoke execute on function public.purge_old_debug_logs() from public, anon, authenticated;
+revoke execute on function public.record_login_attempt(p_email text, p_ip text, p_success boolean) from public, anon, authenticated;
+revoke execute on function public.process_webhook_message(uuid, text, text, text, text, jsonb, text, text, text, text) from public, anon, authenticated;
 
 -- get_distinct_kb_tags: switch from SECURITY DEFINER to INVOKER
 -- (reads kb_chunks with RLS scoped by workspace_id — caller perms are sufficient)

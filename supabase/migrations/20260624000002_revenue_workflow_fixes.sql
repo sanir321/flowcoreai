@@ -139,3 +139,10 @@ EXCEPTION
     RETURN jsonb_build_object('status', 'error', 'reason', SQLERRM);
 END;
 $function$;
+
+-- ==========================================
+-- 4. Revoke PUBLIC/anon/authenticated execute on the SECURITY DEFINER RPC
+--    (CREATE OR REPLACE above re-grants PUBLIC execute on fresh deploys)
+-- ==========================================
+revoke execute on function public.process_webhook_message(uuid, text, text, text, text, jsonb, text, text, text, text) from public, anon, authenticated;
+grant execute on function public.process_webhook_message(uuid, text, text, text, text, jsonb, text, text, text, text) to service_role;

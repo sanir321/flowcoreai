@@ -230,19 +230,21 @@ export async function checkUserExists(email: string): Promise<ActionResponse<{ e
     }
 
     const supabase = createAdminClient()
-    
-    // Efficiently check if user exists without listing all users
-    const { data: { users }, error } = await supabase.auth.admin.listUsers({
-      filters: {
-        email: emailResult.data
-      },
-      perPage: 1
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any)
 
-    if (error) throw error
-    
-    return { data: { exists: users.length > 0 }, error: null }
+    // listUsers() no longer supports the `filters.email` param (supabase-js v2).
+    // Paginate over auth.users and match the email locally.
+    let page = 1
+    let exists = false
+    const pageSize = 200
+    while (!exists) {
+      const { data: { users }, error } = await supabase.auth.admin.listUsers({ page, perPage: pageSize })
+      if (error) throw error
+      if (users.length === 0) break
+      exists = users.some((u) => u.email?.toLowerCase() === emailResult.data.toLowerCase())
+      page += 1
+    }
+
+    return { data: { exists }, error: null }
   } catch (err) {
     console.error(err)
     // Return generic error to prevent information leakage
