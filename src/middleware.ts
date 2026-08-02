@@ -134,7 +134,7 @@ function applySecurityHeaders(response: NextResponse, nonce: string): NextRespon
       `style-src 'self' 'unsafe-inline'`,
       `img-src 'self' data: https:`,
       `font-src 'self' data:`,
-      `connect-src 'self' https://*.supabase.co https://opencode.ai ${gowaUrl} https://*.posthog.com https://api.ipify.org`,
+      `connect-src 'self' https://*.supabase.co https://opencode.ai ${gowaUrl} https://*.posthog.com`,
       `worker-src 'self' blob:`,
       `frame-ancestors 'none'`,
     ].join("; "),

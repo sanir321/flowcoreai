@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Checkbox } from "@/components/ui/checkbox"
 import { motion, AnimatePresence } from "framer-motion"
-import { checkUserExists } from "@/app/actions/workspace"
+import { sendOtpAction, verifyOtpAction } from "@/app/actions/auth"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -53,53 +53,22 @@ export default function LoginPage() {
     setTermsError("")
     setIsLoading(true)
 
-    // Fetch IP once for this operation
-    let clientIp = "127.0.0.1"
-    try {
-      const ipRes = await fetch("https://api.ipify.org?format=json", { signal: AbortSignal.timeout(3000) })
-      const { ip } = await ipRes.json()
-      if (ip) clientIp = ip
-    } catch { /* use default */ }
+    // Server action handles: IP extraction, lockout check (service role),
+    // terms enforcement, and OTP delivery — all server-side.
+    const { error, isOtpSent } = await sendOtpAction({ email, acceptedTerms })
 
-    // Check login lockout
-    try {
-      const { data: lockout } = await supabase.rpc("check_login_lockout", {
-        p_email: email,
-        p_ip: clientIp,
-      })
-      if (lockout?.[0]?.locked) {
-        const secs = lockout[0].lockout_seconds || 900
-        toast.error(`Too many attempts. Try again in ${Math.ceil(secs / 60)} minutes.`)
-        setIsLoading(false)
-        return
+    if (error) {
+      // Terms/validation errors are shown inline; transient errors via toast
+      if (error.includes("Terms & Conditions") || error.includes("valid email")) {
+        setTermsError(error)
+      } else {
+        toast.error(error)
       }
-    } catch { /* proceed if check fails */ }
-
-    // Check if returning user — only enforce terms for new signups
-    const { data: existsData } = await checkUserExists(email)
-    const isNewUser = existsData ? !existsData.exists : true
-    if (isNewUser && !acceptedTerms) {
-      setTermsError("You must accept the Privacy Policy and Terms & Conditions")
       setIsLoading(false)
       return
     }
 
-    // Explicitly send OTP
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        shouldCreateUser: true,
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
-    })
-
-    if (error) {
-      // Record failed attempt
-      try {
-        await supabase.rpc("record_login_attempt", { p_email: email, p_ip: clientIp, p_success: false })
-      } catch { /* non-critical */ }
-      toast.error(error.message)
-    } else {
+    if (isOtpSent) {
       setIsOtpSent(true)
       toast.success("Verification code sent to your email")
     }
@@ -110,50 +79,19 @@ export default function LoginPage() {
     e.preventDefault()
     setIsLoading(true)
 
-    // Fetch IP once for this operation
-    let clientIp = "127.0.0.1"
-    try {
-      const ipRes = await fetch("https://api.ipify.org?format=json", { signal: AbortSignal.timeout(3000) })
-      const { ip } = await ipRes.json()
-      if (ip) clientIp = ip
-    } catch { /* use default */ }
-
-    const { error } = await supabase.auth.verifyOtp({
-      email,
-      token: otp,
-      type: 'email'
-    })
+    const { error, targetRoute } = await verifyOtpAction({ email, token: otp })
 
     if (error) {
-      // Record failed attempt for lockout tracking
-      try {
-        await supabase.rpc("record_login_attempt", { p_email: email, p_ip: clientIp, p_success: false })
-      } catch { /* non-critical */ }
-      toast.error(error.message)
-    } else {
-      // Record successful login
-      try {
-        await supabase.rpc("record_login_attempt", { p_email: email, p_ip: clientIp, p_success: true })
-      } catch { /* non-critical */ }
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (user) {
-        const { data: workspace } = await supabase
-          .from("workspaces")
-          .select("id")
-          .eq("owner_id", user.id)
-          .eq("status", "active")
-          .is("deleted_at", null)
-          .maybeSingle()
-        
-        if (workspace) {
-          router.push("/inbox")
-        } else {
-          router.push("/onboarding")
-        }
-      }
+      toast.error(error)
+      setIsLoading(false)
+      return
     }
-    setIsLoading(false)
+
+    if (targetRoute) {
+      router.push(targetRoute)
+    } else {
+      setIsLoading(false)
+    }
   }
 
   return (
