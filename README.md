@@ -15,6 +15,8 @@
 
 FlowCore unifies WhatsApp and webchat into a single AI-powered inbox. Three specialized AI agents (booking, sales, support) handle customer conversations autonomously across both channels.
 
+Live app: [https://7flowcore.vercel.app](https://7flowcore.vercel.app)
+
 ## Features
 
 - **3 Specialized AI Agents** — Booking (appointment scheduling), Sales (catalog + quotes), Support (KB Q&A + escalation)
