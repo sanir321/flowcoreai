@@ -6,24 +6,24 @@ const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
   title: "Changelog",
-  description: "Release history and product updates for Flowter's AI customer service orchestration platform.",
+  description: "Release history and product updates for Flowcore's AI customer service orchestration platform.",
   keywords: [
-    "Flowter updates",
+    "Flowcore updates",
     "product changelog",
     "AI customer service updates",
     "platform release notes",
   ],
   openGraph: {
-    title: "Changelog — Flowter",
-    description: "Release history and product updates for Flowter.",
+    title: "Changelog — Flowcore",
+    description: "Release history and product updates for Flowcore.",
     url: `${siteUrl}/changelog`,
-    siteName: "Flowter",
+    siteName: "Flowcore",
     images: [
       {
         url: `${siteUrl}/api/og?title=Changelog&subtitle=Product%20Updates%20%26%20Release%20Notes`,
         width: 1200,
         height: 630,
-        alt: "Flowter Changelog",
+        alt: "Flowcore Changelog",
       },
     ],
     locale: "en_US",
@@ -31,8 +31,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Changelog — Flowter",
-    description: "Release history and product updates for Flowter.",
+    title: "Changelog — Flowcore",
+    description: "Release history and product updates for Flowcore.",
     images: [`${siteUrl}/api/og?title=Changelog&subtitle=Product%20Updates%20%26%20Release%20Notes`],
   },
   alternates: { canonical: `${siteUrl}/changelog` },
@@ -83,7 +83,7 @@ const changes = [
     items: [
       "Visual polish pass across all pages",
       "WhatsApp compliance layer for GoWA integration",
-      "Flowter design language implementation",
+      "Flowcore design language implementation",
       "Appointment booking functionality",
     ],
   },
@@ -109,7 +109,7 @@ export default function ChangelogPage() {
             Changelog
           </h1>
           <p style={{ fontSize: "15.667px", color: "#595859", marginTop: "12px" }}>
-            Latest updates and improvements to Flowter.
+            Latest updates and improvements to Flowcore.
           </p>
         </header>
 

@@ -33,23 +33,23 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Flowter — Automated Customer Service & AI Assistants",
-    template: "%s | Flowter",
+    default: "Flowcore — Automated Customer Service & AI Assistants",
+    template: "%s | Flowcore",
   },
   description: siteDescription,
-  keywords: ["AI customer service", "WhatsApp automation", "business AI assistants", "Flowter", "automated communication", "AI orchestration"],
-  authors: [{ name: "Flowter Systems" }],
+  keywords: ["AI customer service", "WhatsApp automation", "business AI assistants", "Flowcore", "automated communication", "AI orchestration"],
+  authors: [{ name: "Flowcore Systems" }],
   openGraph: {
-    title: "Flowter — Automated Customer Service & AI Assistants",
+    title: "Flowcore — Automated Customer Service & AI Assistants",
     description: siteDescription,
     url: siteUrl,
-    siteName: "Flowter",
+    siteName: "Flowcore",
     images: [
       {
-        url: `${siteUrl}/api/og?title=Flowter%20AI&subtitle=Automated%20Customer%20Service%20%26%20AI%20Assistants`,
+        url: `${siteUrl}/api/og?title=Flowcore%20AI&subtitle=Automated%20Customer%20Service%20%26%20AI%20Assistants`,
         width: 1200,
         height: 630,
-        alt: "Flowter — AI Customer Service Platform",
+        alt: "Flowcore — AI Customer Service Platform",
       },
     ],
     locale: "en_US",
@@ -57,9 +57,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Flowter — Automated Customer Service & AI Assistants",
+    title: "Flowcore — Automated Customer Service & AI Assistants",
     description: siteDescription,
-    images: [`${siteUrl}/api/og?title=Flowter%20AI&subtitle=Automated%20Customer%20Service%20%26%20AI%20Assistants`],
+    images: [`${siteUrl}/api/og?title=Flowcore%20AI&subtitle=Automated%20Customer%20Service%20%26%20AI%20Assistants`],
   },
   alternates: {
     canonical: siteUrl,

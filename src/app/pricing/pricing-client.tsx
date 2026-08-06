@@ -48,7 +48,7 @@ export function PricingPageClient() {
     <div className="min-h-screen" style={{ background: "#050505", ...sf }}>
       <header className="h-14 flex items-center justify-between px-6 lg:px-12 fixed top-0 left-0 right-0 z-[100]" style={{ background: "rgba(5,5,5,0.85)", backdropFilter: "blur(14px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
         <Link href="/" className="text-base font-medium tracking-tight" style={{ color: "#fff", letterSpacing: "-0.01em", textDecoration: "none" }}>
-          Flowter
+          Flowcore
         </Link>
 
         <div className="flex items-center gap-3">
@@ -181,8 +181,8 @@ export function PricingPageClient() {
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "ItemList",
-            "name": "Flowter Pricing Plans",
-            "description": "Simple, transparent pricing for Flowter. Start free, scale as you grow.",
+            "name": "Flowcore Pricing Plans",
+            "description": "Simple, transparent pricing for Flowcore. Start free, scale as you grow.",
             "url": `${siteUrl}/pricing`,
             "itemListElement": [
               { "@type": "ListItem", "position": 1, "name": "Free Plan", "description": "Get started at no cost" },

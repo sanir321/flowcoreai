@@ -6,7 +6,7 @@ import Link from "next/link"
 
 type ConsentLevel = "accepted" | "rejected" | null
 
-const STORAGE_KEY = "Flowter_cookie_consent"
+const STORAGE_KEY = "Flowcore_cookie_consent"
 
 export function CookieConsent() {
   const [, setConsent] = useState<ConsentLevel>(null)

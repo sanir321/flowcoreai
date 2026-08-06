@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
       .eq("workspace_id", workspaceId)
       .maybeSingle() as any)
 
-    const deviceName = `Flowter_${workspaceId}`
+    const deviceName = `Flowcore_${workspaceId}`
     try {
       const devices = await getDevices()
       const ourDevice = devices.find((d: any) =>

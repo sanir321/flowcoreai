@@ -3,8 +3,8 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
-const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@Flowter.ai"
-const companyName = process.env.NEXT_PUBLIC_COMPANY_NAME || "Flowter"
+const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@Flowcore.ai"
+const companyName = process.env.NEXT_PUBLIC_COMPANY_NAME || "Flowcore"
 
 export function LegalPage({
   title,
@@ -28,8 +28,8 @@ export function LegalPage({
   ]
 
   const rendered = content
-    .replace(/\[contact@Flowterai\.com\]/g, supportEmail)
-    .replace(/\[Flowter \/ Your Company Name\]/g, companyName)
+    .replace(/\[contact@Flowcoreai\.com\]/g, supportEmail)
+    .replace(/\[Flowcore \/ Your Company Name\]/g, companyName)
     .replace(/<strong>/g, "").replace(/<\/strong>/g, "")
 
   return (
@@ -63,7 +63,7 @@ export function LegalPage({
             textDecoration: "none",
             letterSpacing: "-0.01em",
           }}>
-            Flowter
+            Flowcore
           </Link>
           <div style={{
             display: "flex",

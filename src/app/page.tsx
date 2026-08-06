@@ -5,7 +5,7 @@ import { LandingPage } from "./home-client"
 const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
-  title: "Flowter — Automated Customer Service & AI Assistants",
+  title: "Flowcore — Automated Customer Service & AI Assistants",
   description: "AI-powered customer service for WhatsApp and webchat. AI handles questions and bookings 24/7 — and hands off to you when it matters.",
   keywords: [
     "AI customer service",
@@ -20,16 +20,16 @@ export const metadata: Metadata = {
     "WhatsApp business automation",
   ],
   openGraph: {
-    title: "Flowter — Automated Customer Service & AI Assistants",
+    title: "Flowcore — Automated Customer Service & AI Assistants",
     description: "AI-powered customer service orchestration platform for WhatsApp and webchat. Connect specialized AI agents to manage and resolve customer conversations.",
     url: siteUrl,
-    siteName: "Flowter",
+    siteName: "Flowcore",
     images: [
       {
-        url: `${siteUrl}/api/og?title=Flowter%20AI&subtitle=Automated%20Customer%20Service%20%26%20AI%20Assistants`,
+        url: `${siteUrl}/api/og?title=Flowcore%20AI&subtitle=Automated%20Customer%20Service%20%26%20AI%20Assistants`,
         width: 1200,
         height: 630,
-        alt: "Flowter — AI Customer Service Platform",
+        alt: "Flowcore — AI Customer Service Platform",
       },
     ],
     locale: "en_US",
@@ -37,9 +37,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Flowter — Automated Customer Service & AI Assistants",
+    title: "Flowcore — Automated Customer Service & AI Assistants",
     description: "AI-powered customer service orchestration platform for WhatsApp and webchat.",
-    images: [`${siteUrl}/api/og?title=Flowter%20AI&subtitle=Automated%20Customer%20Service%20%26%20AI%20Assistants`],
+    images: [`${siteUrl}/api/og?title=Flowcore%20AI&subtitle=Automated%20Customer%20Service%20%26%20AI%20Assistants`],
   },
   alternates: {
     canonical: siteUrl,

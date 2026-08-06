@@ -6,17 +6,17 @@ const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
   title: "Cookie Policy",
-  description: "Flowter's cookie policy explains how we use essential cookies for authentication and preferences.",
-  keywords: ["Flowter cookies", "cookie policy", "essential cookies", "privacy cookies"],
+  description: "Flowcore's cookie policy explains how we use essential cookies for authentication and preferences.",
+  keywords: ["Flowcore cookies", "cookie policy", "essential cookies", "privacy cookies"],
   openGraph: {
-    title: "Cookie Policy — Flowter",
-    description: "How Flowter uses essential cookies.",
+    title: "Cookie Policy — Flowcore",
+    description: "How Flowcore uses essential cookies.",
     url: `${siteUrl}/legal/cookie-policy`,
     images: [{ url: `${siteUrl}/api/og?title=Cookie%20Policy&subtitle=Essential%20Cookies%20%26%20Tracking`, width: 1200, height: 630, alt: "Cookie Policy" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Cookie Policy — Flowter",
+    title: "Cookie Policy — Flowcore",
     images: [`${siteUrl}/api/og?title=Cookie%20Policy&subtitle=Essential%20Cookies%20%26%20Tracking`],
   },
   alternates: { canonical: `${siteUrl}/legal/cookie-policy` },
@@ -43,7 +43,7 @@ We do **not** use advertising cookies, tracking pixels, or cross-site tracking c
 
 ## 3. Cookie Consent
 
-When you first visit the Flowter dashboard, a cookie banner will appear asking for your consent to non-essential cookies. You may:
+When you first visit the Flowcore dashboard, a cookie banner will appear asking for your consent to non-essential cookies. You may:
 
 - **Accept all** — enable preference and analytics cookies
 - **Reject all** — use essential cookies only
@@ -82,7 +82,7 @@ We may update this Cookie Policy at any time. Changes will be posted here with a
 
 For questions about our use of cookies:
 
-**Flowter**
+**Flowcore**
 Email: **zenosayz05@gmail.com**
 Location: Chennai, Tamil Nadu, India`
 

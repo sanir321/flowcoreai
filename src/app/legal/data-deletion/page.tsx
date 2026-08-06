@@ -6,17 +6,17 @@ const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
   title: "Data Deletion & Export",
-  description: "How to request data deletion or export from Flowter in compliance with DPDP Act 2023 and GDPR.",
-  keywords: ["Flowter data deletion", "data export", "DPDP Act", "right to be forgotten"],
+  description: "How to request data deletion or export from Flowcore in compliance with DPDP Act 2023 and GDPR.",
+  keywords: ["Flowcore data deletion", "data export", "DPDP Act", "right to be forgotten"],
   openGraph: {
-    title: "Data Deletion & Export — Flowter",
-    description: "Request data deletion or export from Flowter.",
+    title: "Data Deletion & Export — Flowcore",
+    description: "Request data deletion or export from Flowcore.",
     url: `${siteUrl}/legal/data-deletion`,
     images: [{ url: `${siteUrl}/api/og?title=Data%20Deletion%20%26%20Export&subtitle=Your%20Data%2C%20Your%20Control`, width: 1200, height: 630, alt: "Data Deletion & Export" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Data Deletion & Export — Flowter",
+    title: "Data Deletion & Export — Flowcore",
     images: [`${siteUrl}/api/og?title=Data%20Deletion%20%26%20Export&subtitle=Your%20Data%2C%20Your%20Control`],
   },
   alternates: { canonical: `${siteUrl}/legal/data-deletion` },
@@ -31,7 +31,7 @@ Under the Digital Personal Data Protection Act, 2023 (DPDP Act) and other applic
 ## 2. How to Request Deletion
 
 ### Option A: Self-Service (Recommended)
-1. Log in to your Flowter dashboard
+1. Log in to your Flowcore dashboard
 2. Navigate to **Settings → Account**
 3. Click **Delete Account**
 4. Confirm your password/OTP
@@ -112,7 +112,7 @@ If you change your mind within **7 days** of submitting a deletion request, emai
 
 For questions about data deletion or to escalate a request:
 
-**Flowter**
+**Flowcore**
 Email: **zenosayz05@gmail.com**
 Location: Chennai, Tamil Nadu, India`
 

@@ -145,7 +145,7 @@ export function LandingPage() {
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         >
           <Link href="/" className="text-base font-medium tracking-tight" style={{ color: "#e5e5e5", letterSpacing: "-0.01em" }}>
-            Flowter
+            Flowcore
           </Link>
         </motion.div>
 
@@ -310,13 +310,13 @@ export function LandingPage() {
                 <div className="h-2 w-2 rounded-full" style={{ background: "#d4d4d4" }} />
                 <div className="flex items-center gap-2 px-3 py-1 rounded-md mx-auto" style={{ background: "#ffffff", border: "1px solid #e5e5e5" }}>
                   <div className="h-1 w-1 rounded-full" style={{ background: "#f9510b" }} />
-                  <span className="text-[10px] font-normal" style={{ color: "#737373" }}>app.Flowter.ai/analytics</span>
+                  <span className="text-[10px] font-normal" style={{ color: "#737373" }}>app.Flowcore.ai/analytics</span>
                 </div>
               </div>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/producthunt/analytics-clean.png"
-                alt="Flowter analytics dashboard showing messages, contacts, automation rate, and integration status"
+                alt="Flowcore analytics dashboard showing messages, contacts, automation rate, and integration status"
                 width={1270}
                 height={588}
                 className="w-full h-auto block"
@@ -394,7 +394,7 @@ export function LandingPage() {
               Handle communication end-to-end
             </h2>
             <p className="max-w-lg mx-auto mt-4 leading-relaxed font-normal" style={{ fontSize: "15.667px", color: "#737373" }}>
-              Flowter keeps your team focused by intelligently handling communications and escalating only the critical moments.
+              Flowcore keeps your team focused by intelligently handling communications and escalating only the critical moments.
             </p>
           </div>
         </motion.section>
@@ -644,7 +644,7 @@ export function LandingPage() {
                   tier: "Starter",
                   price: "Free",
                   period: "",
-                  description: "Perfect for trying out Flowter",
+                  description: "Perfect for trying out Flowcore",
                   features: ["100 conversations/mo", "1 AI agent", "Webchat widget", "Basic analytics"],
                   cta: "Get Started",
                   highlighted: false,
@@ -747,16 +747,16 @@ export function LandingPage() {
         <motion.section {...sectionAnim} className="py-24 px-6 lg:px-12" style={{ background: "#ffffff", borderTop: "1px solid #e5e5e5" }}>
           <div className="max-w-[820px] mx-auto text-center space-y-8">
             <h2 className="font-normal tracking-tight" style={{ fontSize: "35.2508px", lineHeight: "44.0635px", letterSpacing: "-0.15667px", color: "#171717" }}>
-              What is Flowter?
+              What is Flowcore?
             </h2>
             <p className="text-base leading-relaxed" style={{ color: "#525252", lineHeight: 1.8 }}>
-              Flowter is an AI-powered customer support platform that helps businesses respond to customers instantly — on WhatsApp, webchat, and more. Instead of hiring more staff or letting messages pile up, Flowter&apos;s AI agents handle the repetitive questions, book appointments, and answer FAQs around the clock.
+              Flowcore is an AI-powered customer support platform that helps businesses respond to customers instantly — on WhatsApp, webchat, and more. Instead of hiring more staff or letting messages pile up, Flowcore&apos;s AI agents handle the repetitive questions, book appointments, and answer FAQs around the clock.
             </p>
             <p className="text-base leading-relaxed" style={{ color: "#525252", lineHeight: 1.8 }}>
               Getting started takes minutes, not months. Scan a QR code to connect WhatsApp, upload your business docs to train your AI, and you&apos;re live. When the AI can&apos;t handle something, it seamlessly hands off to your team — so nothing falls through the cracks.
             </p>
             <p className="text-base leading-relaxed" style={{ color: "#525252", lineHeight: 1.8 }}>
-              Flowter gives you a unified inbox for all conversations, real-time analytics to track performance, and the flexibility to scale from 100 to 100,000 conversations. It&apos;s customer support that works while you sleep.
+              Flowcore gives you a unified inbox for all conversations, real-time analytics to track performance, and the flexibility to scale from 100 to 100,000 conversations. It&apos;s customer support that works while you sleep.
             </p>
           </div>
         </motion.section>
@@ -835,13 +835,13 @@ export function LandingPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-12 mb-16">
             <div className="col-span-2 md:col-span-1 space-y-5">
               <Link href="/" className="text-lg font-medium tracking-tight" style={{ color: "#171717", letterSpacing: "-0.01em" }}>
-                Flowter
+                Flowcore
               </Link>
               <p className="text-sm leading-relaxed font-normal max-w-[200px]" style={{ color: "#737373" }}>
                 AI agents for customer communication.
               </p>
               <p className="text-sm font-normal" style={{ color: "#737373" }}>
-                support@Flowter.ai
+                support@Flowcore.ai
               </p>
             </div>
 
@@ -881,7 +881,7 @@ export function LandingPage() {
           </div>
 
           <div className="flex flex-col md:flex-row justify-between items-center pt-8 gap-6" style={{ borderTop: "1px solid #e5e5e5" }}>
-            <span className="text-sm font-normal" style={{ color: "#a3a3a3" }}>&copy; 2026 Flowter Systems. All rights reserved.</span>
+            <span className="text-sm font-normal" style={{ color: "#a3a3a3" }}>&copy; 2026 Flowcore Systems. All rights reserved.</span>
           </div>
         </div>
       </footer>

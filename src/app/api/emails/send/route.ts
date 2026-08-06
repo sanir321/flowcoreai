@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
             <div style="background: #f4f4f4; padding: 15px; border-radius: 8px;">
               ${esc(data.message || JSON.stringify(data, null, 2))}
             </div>
-            <p style="font-size: 12px; color: #666; margin-top: 20px;">Sent via Flowter Notification Service</p>
+            <p style="font-size: 12px; color: #666; margin-top: 20px;">Sent via Flowcore Notification Service</p>
           </div>
         `;
     }

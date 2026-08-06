@@ -30,7 +30,7 @@ export function PublicNav() {
           fontSize: "15.667px", fontWeight: 500, color: "#c0c0c0",
           textDecoration: "none", letterSpacing: "-0.01em",
         }}>
-          Flowter
+          Flowcore
         </Link>
         <div style={{ display: "flex", gap: "24px", alignItems: "center" }}>
           {navLinks.map((link) => (
@@ -93,7 +93,7 @@ export function PublicFooter() {
           </h4>
           <nav style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
             <Link href="/about" style={{ fontSize: "14px", color: "#888", textDecoration: "none" }}>About</Link>
-            <a href="mailto:support@Flowter.ai" style={{ fontSize: "14px", color: "#888", textDecoration: "none" }}>Contact</a>
+            <a href="mailto:support@Flowcore.ai" style={{ fontSize: "14px", color: "#888", textDecoration: "none" }}>Contact</a>
           </nav>
         </div>
         <div>
@@ -118,7 +118,7 @@ export function PublicFooter() {
         gap: "16px",
       }}>
         <p style={{ fontSize: "13px", color: "#595859", margin: 0 }}>
-          &copy; {new Date().getFullYear()} Flowter. All rights reserved.
+          &copy; {new Date().getFullYear()} Flowcore. All rights reserved.
         </p>
         <div style={{ display: "flex", gap: "16px" }}>
           <span style={{ fontSize: "12px", color: "#595859" }}>SOC 2 — in progress</span>

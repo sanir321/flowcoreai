@@ -6,24 +6,24 @@ const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
   title: "AI Pricing & Plans",
-  description: "Simple, transparent pricing for Flowter. Start free, scale as you grow. AI-powered customer service for WhatsApp and webchat.",
+  description: "Simple, transparent pricing for Flowcore. Start free, scale as you grow. AI-powered customer service for WhatsApp and webchat.",
   keywords: [
-    "Flowter pricing",
+    "Flowcore pricing",
     "AI customer service pricing",
     "WhatsApp automation pricing",
     "customer service AI plans",
   ],
   openGraph: {
-    title: "AI Pricing & Plans | Flowter",
-    description: "Simple, transparent pricing for Flowter. Start free, scale as you grow.",
+    title: "AI Pricing & Plans | Flowcore",
+    description: "Simple, transparent pricing for Flowcore. Start free, scale as you grow.",
     url: `${siteUrl}/pricing`,
-    siteName: "Flowter",
+    siteName: "Flowcore",
     images: [
       {
-        url: `${siteUrl}/api/og?title=AI%20Pricing%20%26%20Plans&subtitle=Simple%2C%20Transparent%20Pricing%20for%20Flowter%20AI`,
+        url: `${siteUrl}/api/og?title=AI%20Pricing%20%26%20Plans&subtitle=Simple%2C%20Transparent%20Pricing%20for%20Flowcore%20AI`,
         width: 1200,
         height: 630,
-        alt: "Flowter Pricing",
+        alt: "Flowcore Pricing",
       },
     ],
     locale: "en_US",
@@ -31,9 +31,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "AI Pricing & Plans | Flowter",
-    description: "Simple, transparent pricing for Flowter. Start free, scale as you grow.",
-    images: [`${siteUrl}/api/og?title=Pricing&subtitle=Simple%2C%20Transparent%20Pricing%20for%20Flowter%20AI`],
+    title: "AI Pricing & Plans | Flowcore",
+    description: "Simple, transparent pricing for Flowcore. Start free, scale as you grow.",
+    images: [`${siteUrl}/api/og?title=Pricing&subtitle=Simple%2C%20Transparent%20Pricing%20for%20Flowcore%20AI`],
   },
   alternates: {
     canonical: `${siteUrl}/pricing`,

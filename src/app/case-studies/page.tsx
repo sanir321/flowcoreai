@@ -5,27 +5,27 @@ import { PublicNav, PublicFooter } from "@/components/public-nav"
 const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
-  title: "Case Studies — Real Businesses Using Flowter",
-  description: "See how businesses use Flowter to automate customer service, reduce response times, and scale support operations across WhatsApp and webchat.",
+  title: "Case Studies — Real Businesses Using Flowcore",
+  description: "See how businesses use Flowcore to automate customer service, reduce response times, and scale support operations across WhatsApp and webchat.",
   keywords: [
-    "Flowter case studies",
+    "Flowcore case studies",
     "WhatsApp automation examples",
     "AI customer service success stories",
     "business automation case studies",
   ],
   openGraph: {
-    title: "Case Studies — Flowter Customer Success Stories",
-    description: "Real businesses automating customer service with Flowter.",
+    title: "Case Studies — Flowcore Customer Success Stories",
+    description: "Real businesses automating customer service with Flowcore.",
     url: `${siteUrl}/case-studies`,
-    siteName: "Flowter",
+    siteName: "Flowcore",
     images: [{ url: `${siteUrl}/api/og?title=Case%20Studies&subtitle=Customer%20Success%20Stories`, width: 1200, height: 630 }],
     locale: "en_US",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Case Studies — Flowter Customer Success Stories",
-    description: "Real businesses automating customer service with Flowter.",
+    title: "Case Studies — Flowcore Customer Success Stories",
+    description: "Real businesses automating customer service with Flowcore.",
     images: [`${siteUrl}/api/og?title=Case%20Studies&subtitle=Customer%20Success%20Stories`],
   },
   alternates: { canonical: `${siteUrl}/case-studies` },
@@ -37,7 +37,7 @@ const caseStudies = [
     industry: "Construction & Real Estate",
     headline: "80% of customer inquiries automated within 2 weeks",
     challenge: "Webuild LLP was receiving 200+ WhatsApp messages daily from prospective home buyers. A team of 4 sales reps spent 60% of their time answering the same questions about pricing, floor plans, and site visits.",
-    solution: "Deployed Flowter with a custom-trained knowledge base containing all property listings, pricing sheets, and FAQ documents. Configured the Booking Agent for site visit scheduling synced with Google Calendar.",
+    solution: "Deployed Flowcore with a custom-trained knowledge base containing all property listings, pricing sheets, and FAQ documents. Configured the Booking Agent for site visit scheduling synced with Google Calendar.",
     results: [
       "80% of inquiries handled without human intervention",
       "Average response time dropped from 4 hours to 15 seconds",
@@ -50,7 +50,7 @@ const caseStudies = [
     industry: "Restaurant & Hospitality",
     headline: "Restaurant handles 1000+ reservation requests per week with one AI agent",
     challenge: "A busy restaurant chain was overwhelmed by phone calls and WhatsApp messages for reservations, menu inquiries, and event bookings during peak hours. Hosts were stretched thin managing both in-person guests and digital requests.",
-    solution: "Implemented Flowter with a custom agent trained on the menu, pricing, table layouts, and reservation policies. Connected WhatsApp Business API for customer inquiries and automated order management.",
+    solution: "Implemented Flowcore with a custom agent trained on the menu, pricing, table layouts, and reservation policies. Connected WhatsApp Business API for customer inquiries and automated order management.",
     results: [
       "95% of reservation requests handled automatically",
       "No-show rate reduced by 60% with automated reminders",
@@ -63,7 +63,7 @@ const caseStudies = [
     industry: "Healthcare",
     headline: "Appointment booking AI saves 50 hours of admin work per week",
     challenge: "MediCare Clinics operated 5 locations with a centralized booking team handling 500+ appointment requests daily via phone, WhatsApp, and webchat. Long wait times led to patient frustration and missed appointments.",
-    solution: "Deployed Flowter with Appointment Booking Agent trained on doctor schedules, insurance policies, and clinic locations. Integrated with Google Calendar for real-time slot availability and automated reminders.",
+    solution: "Deployed Flowcore with Appointment Booking Agent trained on doctor schedules, insurance policies, and clinic locations. Integrated with Google Calendar for real-time slot availability and automated reminders.",
     results: [
       "70% of appointments booked without human involvement",
       "Patient wait time for booking reduced from 2 hours to instant",
@@ -84,7 +84,7 @@ export default function CaseStudiesPage() {
             Case Studies
           </h1>
           <p style={{ fontSize: "15.667px", color: "#595859", marginTop: "12px", maxWidth: "600px", margin: "12px auto 0" }}>
-            Real businesses using Flowter to automate customer service, reduce response times, and scale support.
+            Real businesses using Flowcore to automate customer service, reduce response times, and scale support.
           </p>
         </header>
 
@@ -145,8 +145,8 @@ export default function CaseStudiesPage() {
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "ItemList",
-            "name": "Flowter Case Studies",
-            "description": "Real businesses using Flowter to automate customer service.",
+            "name": "Flowcore Case Studies",
+            "description": "Real businesses using Flowcore to automate customer service.",
             "itemListElement": caseStudies.map((cs, i) => ({
               "@type": "ListItem",
               "position": i + 1,

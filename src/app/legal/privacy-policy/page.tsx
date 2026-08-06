@@ -6,17 +6,17 @@ const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
-  description: "Flowter's privacy policy explains how we collect, use, store, and protect your data in compliance with DPDP Act 2023 and IT Act 2000.",
-  keywords: ["Flowter privacy policy", "data protection", "DPDP Act", "customer data privacy"],
+  description: "Flowcore's privacy policy explains how we collect, use, store, and protect your data in compliance with DPDP Act 2023 and IT Act 2000.",
+  keywords: ["Flowcore privacy policy", "data protection", "DPDP Act", "customer data privacy"],
   openGraph: {
-    title: "Privacy Policy — Flowter",
-    description: "How Flowter collects, uses, stores, and protects your data.",
+    title: "Privacy Policy — Flowcore",
+    description: "How Flowcore collects, uses, stores, and protects your data.",
     url: `${siteUrl}/legal/privacy-policy`,
     images: [{ url: `${siteUrl}/api/og?title=Privacy%20Policy&subtitle=Data%20Protection%20%26%20Privacy`, width: 1200, height: 630, alt: "Privacy Policy" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Privacy Policy — Flowter",
+    title: "Privacy Policy — Flowcore",
     images: [`${siteUrl}/api/og?title=Privacy%20Policy&subtitle=Data%20Protection%20%26%20Privacy`],
   },
   alternates: { canonical: `${siteUrl}/legal/privacy-policy` },
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 
 const content = `## 1. Introduction
 
-Flowter ("we", "our", "us") operates a WhatsApp-based AI customer service SaaS platform ("Service") designed for Indian small and medium businesses. This Privacy Policy explains how we collect, use, store, and protect your data when you use Flowter.
+Flowcore ("we", "our", "us") operates a WhatsApp-based AI customer service SaaS platform ("Service") designed for Indian small and medium businesses. This Privacy Policy explains how we collect, use, store, and protect your data when you use Flowcore.
 
 By accessing or using our Service, you agree to the collection and use of information as described in this policy. This policy is compliant with the **Information Technology Act, 2000**, the **IT (Amendment) Act, 2008**, the **IT (Reasonable Security Practices) Rules, 2011**, and India's **Digital Personal Data Protection Act, 2023 (DPDP Act)**.
 
@@ -134,7 +134,7 @@ We use essential cookies for session authentication and preference storage. We d
 
 ## 9. Children's Privacy
 
-Flowter is a B2B platform intended for business owners aged 18 and above. We do not knowingly collect data from individuals under 18.
+Flowcore is a B2B platform intended for business owners aged 18 and above. We do not knowingly collect data from individuals under 18.
 
 ---
 
@@ -146,7 +146,7 @@ We may update this policy from time to time. When we do, we will update the "Las
 
 ## 11. Contact & Grievance Officer
 
-**Flowter**
+**Flowcore**
 Email: **zenosayz05@gmail.com**
 Location: Chennai, Tamil Nadu, India
 

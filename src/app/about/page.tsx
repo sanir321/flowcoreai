@@ -6,24 +6,24 @@ const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
   title: "About — Our Story & Mission",
-  description: "An AI-powered customer service platform for WhatsApp and webchat. Learn about Flowter's mission, team, and vision for automated communication.",
+  description: "An AI-powered customer service platform for WhatsApp and webchat. Learn about Flowcore's mission, team, and vision for automated communication.",
   keywords: [
-    "about Flowter",
+    "about Flowcore",
     "AI customer service company",
     "WhatsApp automation platform",
     "customer service AI startup",
   ],
   openGraph: {
-    title: "About — Our Story & Mission | Flowter",
+    title: "About — Our Story & Mission | Flowcore",
     description: "AI-powered customer service orchestration platform for WhatsApp and webchat.",
     url: `${siteUrl}/about`,
-    siteName: "Flowter",
+    siteName: "Flowcore",
     images: [
       {
         url: `${siteUrl}/api/og?title=About%20%26%20Mission&subtitle=AI%20Customer%20Service%20Orchestration%20Platform`,
         width: 1200,
         height: 630,
-        alt: "About Flowter",
+        alt: "About Flowcore",
       },
     ],
     locale: "en_US",
@@ -31,9 +31,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "About — Our Story & Mission | Flowter",
+    title: "About — Our Story & Mission | Flowcore",
     description: "AI-powered customer service orchestration platform for WhatsApp and webchat.",
-    images: [`${siteUrl}/api/og?title=About%20Flowter%20AI&subtitle=AI%20Customer%20Service%20Orchestration%20Platform`],
+    images: [`${siteUrl}/api/og?title=About%20Flowcore%20AI&subtitle=AI%20Customer%20Service%20Orchestration%20Platform`],
   },
   alternates: { canonical: `${siteUrl}/about` },
 }
@@ -50,11 +50,11 @@ export default function AboutPage() {
         __html: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "AboutPage",
-          "name": "About Flowter",
+          "name": "About Flowcore",
           "url": `${siteUrl}/about`,
           "mainEntity": {
             "@type": "Organization",
-            "name": "Flowter Systems",
+            "name": "Flowcore Systems",
             "url": siteUrl,
             "description": "AI-powered customer service orchestration platform for WhatsApp and webchat.",
             "foundingDate": "2025",
@@ -71,7 +71,7 @@ export default function AboutPage() {
             lineHeight: 1.15, letterSpacing: "-0.02em",
             color: "#fff", margin: "0 0 20px",
           }}>
-            About Flowter
+            About Flowcore
           </h1>
           <p style={{ fontSize: "18px", color: "#888", lineHeight: 1.6, maxWidth: "600px" }}>
             We&apos;re building the AI-powered customer service platform that helps businesses automate conversations without losing the human touch.
@@ -87,7 +87,7 @@ export default function AboutPage() {
               Our Mission
             </h2>
             <p style={{ fontSize: "16px", color: "#c0c0c0", lineHeight: 1.8, margin: 0 }}>
-              Small and medium businesses lose customers because they can&apos;t respond fast enough. Hiring support staff is expensive. Chatbots are rigid and impersonal. We built Flowter to bridge that gap — AI agents that understand your business, respond professionally, and know when to hand off to a human.
+              Small and medium businesses lose customers because they can&apos;t respond fast enough. Hiring support staff is expensive. Chatbots are rigid and impersonal. We built Flowcore to bridge that gap — AI agents that understand your business, respond professionally, and know when to hand off to a human.
             </p>
           </section>
 
@@ -159,8 +159,8 @@ export default function AboutPage() {
             </h2>
             <p style={{ fontSize: "16px", color: "#c0c0c0", lineHeight: 1.8, margin: 0 }}>
               Questions, feedback, or partnership inquiries? Reach us at{" "}
-              <a href="mailto:support@Flowter.ai" style={{ color: "#f9510b", textDecoration: "none" }}>
-                support@Flowter.ai
+              <a href="mailto:support@Flowcore.ai" style={{ color: "#f9510b", textDecoration: "none" }}>
+                support@Flowcore.ai
               </a>
             </p>
           </section>

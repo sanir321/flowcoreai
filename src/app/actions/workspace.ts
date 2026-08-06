@@ -120,7 +120,7 @@ export async function createWorkspace(input: unknown): Promise<ActionResponse<{ 
         )
         await sendEmail({
           to: user.email,
-          subject: "Welcome to Flowter!",
+          subject: "Welcome to Flowcore!",
           html: emailHtml,
         })
       } catch (e) {

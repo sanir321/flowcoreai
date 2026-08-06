@@ -26,7 +26,7 @@ export async function sendEmail({ to, subject, html }: { to: string, subject: st
 
   try {
     const info = await transporter.sendMail({
-      from: `"Flowter" <${email}>`,
+      from: `"Flowcore" <${email}>`,
       to,
       subject,
       html,

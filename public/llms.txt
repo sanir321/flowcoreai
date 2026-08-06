@@ -1,8 +1,8 @@
-# Flowter
+# Flowcore
 > AI-powered customer service orchestration platform for WhatsApp and webchat. Automate responses, manage bookings, and escalate to humans when it matters.
 
 ## Essentials
-- Flowter: /
+- Flowcore: /
 - Features: /features
 - Pricing: /pricing
 - FAQ: /faq
@@ -20,7 +20,7 @@
 - Data Deletion: /legal/data-deletion
 
 ## Platform
-- Flowter provides AI-powered customer service automation for WhatsApp and webchat.
+- Flowcore provides AI-powered customer service automation for WhatsApp and webchat.
 - Supports appointment booking, order management, and product inquiries via AI agents.
 - Unified inbox for managing conversations across WhatsApp, webchat, and email.
 - Knowledge base management for training AI agents on business-specific information.

@@ -4,7 +4,7 @@ import fs from "fs"
 const doc = new Document({
   sections: [{
     children: [
-      new Paragraph({ children: [new TextRun({ text: "Flowter Business Profile", bold: true, size: 28 })] }),
+      new Paragraph({ children: [new TextRun({ text: "Flowcore Business Profile", bold: true, size: 28 })] }),
       new Paragraph({ children: [new TextRun("This is a test DOCX file for the knowledge base ingestion pipeline.")] }),
       new Paragraph({ children: [new TextRun("")] }),
       new Paragraph({ children: [new TextRun("Our company provides AI-powered customer service automation for WhatsApp, Webchat, and Email channels.")] }),

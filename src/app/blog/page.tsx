@@ -7,7 +7,7 @@ const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
   title: "Blog — AI Customer Service, WhatsApp Automation & Business Tips",
-  description: "Learn about AI-powered customer service, WhatsApp automation, business communication strategies, and tips for scaling your support operations with Flowter.",
+  description: "Learn about AI-powered customer service, WhatsApp automation, business communication strategies, and tips for scaling your support operations with Flowcore.",
   keywords: [
     "AI customer service blog",
     "WhatsApp automation tips",
@@ -16,17 +16,17 @@ export const metadata: Metadata = {
     "AI agents",
   ],
   openGraph: {
-    title: "Blog — AI Customer Service Insights | Flowter",
+    title: "Blog — AI Customer Service Insights | Flowcore",
     description: "Practical guides and insights on AI customer service, WhatsApp automation, and scaling business communication.",
     url: `${siteUrl}/blog`,
-    siteName: "Flowter",
+    siteName: "Flowcore",
     images: [{ url: `${siteUrl}/api/og?title=Blog&subtitle=AI%20Customer%20Service%20Insights`, width: 1200, height: 630 }],
     locale: "en_US",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Blog — AI Customer Service Insights | Flowter",
+    title: "Blog — AI Customer Service Insights | Flowcore",
     description: "Practical guides and insights on AI customer service, WhatsApp automation, and scaling business communication.",
     images: [`${siteUrl}/api/og?title=Blog&subtitle=AI%20Customer%20Service%20Insights`],
   },
@@ -99,7 +99,7 @@ export default function BlogPage() {
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "Blog",
-            "name": "Flowter Blog",
+            "name": "Flowcore Blog",
             "description": "Insights on AI customer service, WhatsApp automation, and scaling business communication.",
             "url": `${siteUrl}/blog`,
             "blogPost": posts.map((post) => ({

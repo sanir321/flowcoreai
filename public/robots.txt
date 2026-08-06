@@ -1,4 +1,4 @@
-# Robots.txt for Flowter
+# Robots.txt for Flowcore
 User-agent: *
 Allow: /
 Disallow: /auth/

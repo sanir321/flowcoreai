@@ -84,7 +84,7 @@ export default function AgentToolsPage() {
               </div>
               <h1 className="text-3xl font-bold tracking-tight text-gray-900">Agent Tool Registry</h1>
               <p className="text-gray-500 text-sm max-w-2xl">
-                A comprehensive overview of the 10 specialized tools integrated into the Flowter engine. 
+                A comprehensive overview of the 10 specialized tools integrated into the Flowcore engine. 
                 Each tool is scoped to specific agent types — support, booking, or sales — and can interact with your database, calendar, and external services in real-time.
               </p>
             </div>

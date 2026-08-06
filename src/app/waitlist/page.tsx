@@ -50,7 +50,7 @@ export default function WaitlistPage() {
       {/* Sleek Header */}
       <header className="h-14 flex items-center justify-between px-6 lg:px-12 fixed top-0 left-0 right-0 z-50">
         <Link href="/" className="text-base font-medium tracking-tight text-[#e5e5e5]">
-          Flowter
+          Flowcore
         </Link>
       </header>
 
@@ -74,7 +74,7 @@ export default function WaitlistPage() {
               Join the <span style={{ color: "#f9510b" }}>Waitlist</span>
             </h1>
             <p className="text-[#a3a3a3] text-lg">
-              Get early access to Flowter&apos;s automated customer service agents before we open to the public.
+              Get early access to Flowcore&apos;s automated customer service agents before we open to the public.
             </p>
           </div>
 
