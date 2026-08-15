@@ -3,10 +3,13 @@
 import { useState, useEffect, useRef } from "react"
 import { 
   Palette, Code, Check, Copy, Eye, Loader2, Save, 
-  ShieldCheck, Settings, Upload, Trash2, Image
+  ShieldCheck, Settings, Upload, Trash2, Image,
+  MessageCircle, Mail, Headphones, Bot, MessageSquare
 } from "lucide-react"
+import { FaWhatsapp } from "react-icons/fa"
 import { Card } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
@@ -18,37 +21,13 @@ import WidgetPreview from "@/components/widget/preview"
 import type { WidgetConfig } from "@/components/widget/preview"
 import { cn } from "@/lib/utils"
 
-const LAUNCHER_ICONS: { key: string; label: string; svg: string }[] = [
-  {
-    key: "chat",
-    label: "Chat Bubble",
-    svg: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/></svg>`
-  },
-  {
-    key: "message",
-    label: "Message",
-    svg: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>`
-  },
-  {
-    key: "support",
-    label: "Headset",
-    svg: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-5Zm0 0a9 9 0 1 1 18 0m0 0v5a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3Z"/><path d="M21 16v2a4 4 0 0 1-4 4h-5"/></svg>`
-  },
-  {
-    key: "bot",
-    label: "Bot",
-    svg: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>`
-  },
-  {
-    key: "comment",
-    label: "Comment",
-    svg: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`
-  },
-  {
-    key: "whatsapp",
-    label: "WhatsApp",
-    svg: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 6.5a7 7 0 0 1-9.9 9.9l-2.1.7.7-2.1a7 7 0 0 1 9.9-9.9"/><path d="M12 2a10 10 0 0 1 10 10 10 10 0 0 1-10 10 10 10 0 0 1-8.5-4.9"/><path d="M8 11c.3-1 1-1.5 2-1.5s1.7.5 2 1.5c.3 1 .5 2 1 2.5s1.5 1 2.5 1"/><circle cx="9" cy="10" r=".5" fill="currentColor"/><circle cx="15" cy="10" r=".5" fill="currentColor"/></svg>`
-  }
+const LAUNCHER_ICONS: { key: string; label: string; Icon: React.ElementType }[] = [
+  { key: "chat", label: "Chat Bubble", Icon: MessageCircle },
+  { key: "message", label: "Message", Icon: Mail },
+  { key: "support", label: "Headset", Icon: Headphones },
+  { key: "bot", label: "Bot", Icon: Bot },
+  { key: "comment", label: "Comment", Icon: MessageSquare },
+  { key: "whatsapp", label: "WhatsApp", Icon: FaWhatsapp }
 ]
 
 export default function WidgetSettingsPage() {
@@ -244,14 +223,14 @@ export default function WidgetSettingsPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-gray-700 ml-1">Welcome Message</Label>
-                <textarea 
-                   value={config.greeting} 
-                   onChange={e => setConfig({...config, greeting: e.target.value})}
-                   rows={3} 
-                   className="w-full p-4 border border-gray-200 rounded-xl text-sm focus:border-gray-400 outline-none resize-none transition-all" 
-                />
-              </div>
+                 <Label className="text-xs font-semibold text-gray-700 ml-1">Welcome Message</Label>
+                 <Textarea
+                    value={config.greeting}
+                    onChange={(e) => setConfig({...config, greeting: e.target.value})}
+                    rows={3}
+                    className="rounded-xl border-gray-200 text-sm resize-none focus:border-gray-400 transition-all"
+                 />
+               </div>
 
               {/* Logo Upload */}
               <div className="space-y-3">
@@ -304,26 +283,30 @@ export default function WidgetSettingsPage() {
               <div className="space-y-3">
                 <Label className="text-xs font-semibold text-gray-700 ml-1">Launcher Icon</Label>
                 <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                  {LAUNCHER_ICONS.map(icon => (
-                    <button
-                      key={icon.key}
-                      type="button"
-                      onClick={() => setConfig({...config, launcher_icon: icon.key})}
-                      className={cn(
-                        "flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all",
-                        config.launcher_icon === icon.key
-                          ? "border-[#f9510b] bg-[#f9510b]/5"
-                          : "border-gray-100 hover:border-gray-200 bg-white"
-                      )}
-                    >
-                      <div
-                        className="w-8 h-8 rounded-lg flex items-center justify-center"
-                        style={{ color: config.launcher_icon === icon.key ? "#f9510b" : "#666" }}
-                        dangerouslySetInnerHTML={{ __html: icon.svg }}
-                      />
-                      <span className="text-[10px] font-semibold text-gray-500 leading-tight text-center">{icon.label}</span>
-                    </button>
-                  ))}
+                  {LAUNCHER_ICONS.map(icon => {
+                    const IconComp = icon.Icon
+                    return (
+                      <button
+                        key={icon.key}
+                        type="button"
+                        onClick={() => setConfig({...config, launcher_icon: icon.key})}
+                        className={cn(
+                          "flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all",
+                          config.launcher_icon === icon.key
+                            ? "border-[#f9510b] bg-[#f9510b]/5"
+                            : "border-gray-100 hover:border-gray-200 bg-white"
+                        )}
+                      >
+                        <div
+                          className="w-8 h-8 rounded-lg flex items-center justify-center"
+                          style={{ color: config.launcher_icon === icon.key ? "#f9510b" : "#666" }}
+                        >
+                          <IconComp className="w-5 h-5" />
+                        </div>
+                        <span className="text-[10px] font-semibold text-gray-500 leading-tight text-center">{icon.label}</span>
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
             </div>
