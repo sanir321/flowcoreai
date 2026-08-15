@@ -208,6 +208,20 @@ async function processSingle(supabase: any, workspace_id: string, source_id: str
 }
 
 async function processUrl(supabase: any, workspace_id: string, website_url: string): Promise<Response> {
+  // SSRF guard: reject non-HTTPS and private/loopback/metadata targets.
+  const safeUrl = validateSafeUrl(website_url)
+  if (safeUrl instanceof Error) {
+    return new Response(JSON.stringify({ skipped: true, reason: "invalid_url", detail: safeUrl.message }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } })
+  }
+  const url = safeUrl as URL
+
+  // DNS rebinding protection: resolve and reject any private address before fetching.
+  if (await resolveAndCheckPrivate(url.hostname)) {
+    return new Response(JSON.stringify({ skipped: true, reason: "blocked_host", detail: `Access to ${url.hostname} is not allowed` }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } })
+  }
+
   const { data: workspace, error: wsError } = await supabase
     .from("workspaces")
     .select("business_type, business_profile")
@@ -219,7 +233,7 @@ async function processUrl(supabase: any, workspace_id: string, website_url: stri
   const businessType = workspace?.business_type || "construction_company"
   const existingProfile = (workspace?.business_profile || {}) as Record<string, unknown>
 
-  const pageResp = await fetch(website_url, {
+  const pageResp = await fetchWithRedirectGuard(url, {
     headers: { "User-Agent": "FlowCore/1.0 (Business Profile Extractor)" },
     signal: AbortSignal.timeout(15000),
   })
@@ -419,4 +433,116 @@ function isEmpty(val: unknown): boolean {
   if (Array.isArray(val)) return val.length === 0
   if (typeof val === "object") return Object.values(val as Record<string, unknown>).every(v => isEmpty(v))
   return false
+}
+
+// --- SSRF guard (mirrors ingest-url) ---
+
+const PRIVATE_CIDRS = [
+  { prefix: [10], mask: 8 },
+  { prefix: [172, 16], mask: 12 },
+  { prefix: [192, 168], mask: 16 },
+  { prefix: [127], mask: 8 },
+  { prefix: [169, 254], mask: 16 },
+  { prefix: [0], mask: 8 },
+  { prefix: [100, 64], mask: 10 },
+]
+
+// IPv6 private/reserved ranges
+const PRIVATE_IPV6_PREFIXES = [
+  'fc', 'fd', // ULA
+  'fe80',     // Link-local
+  'ff',       // Multicast
+  '::1',      // Loopback
+  '::ffff:',  // IPv4-mapped IPv6
+  '0000:',    // Unspecified
+]
+
+function ipv4ToInt(parts: number[]): number {
+  return ((parts[0] << 24) >>> 0) + (parts[1] << 16) + (parts[2] << 8) + parts[3]
+}
+
+/**
+ * True CIDR match. `mask` is the network prefix length; only the first
+ * `mask` bits are compared. `172.20.0.1` correctly matches
+ * `172.16.0.0/12`, and `100.65.0.1` matches `100.64.0.0/10`.
+ */
+function isInCidr(ipInt: number, prefix: number[], mask: number): boolean {
+  const prefixInt = ipv4ToInt([...prefix, 0, 0, 0, 0].slice(0, 4))
+  if (mask >= 32) return ipInt === prefixInt
+  const shifted = 32 - mask
+  return (ipInt >>> shifted) === (prefixInt >>> shifted)
+}
+
+function isPrivateIP(hostname: string): boolean {
+  try {
+    const lower = hostname.toLowerCase()
+    for (const prefix of PRIVATE_IPV6_PREFIXES) {
+      if (lower.startsWith(prefix)) return true
+    }
+
+    const isIPv4 = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname)
+    if (!isIPv4) return false
+
+    const parts = hostname.split('.').map(Number)
+    if (parts.some(p => p < 0 || p > 255)) return true
+    const ipInt = ipv4ToInt(parts)
+    for (const cidr of PRIVATE_CIDRS) {
+      if (isInCidr(ipInt, cidr.prefix, cidr.mask)) return true
+    }
+    return false
+  } catch { return true }
+}
+
+// Resolve hostname and check all IP addresses (DNS rebinding guard)
+async function resolveAndCheckPrivate(hostname: string): Promise<boolean> {
+  let resolvedAny = false
+
+  try {
+    const addresses = await Deno.resolveDns(hostname, 'A')
+    if (addresses.length > 0) resolvedAny = true
+    for (const addr of addresses) {
+      if (isPrivateIP(addr)) return true
+    }
+  } catch { /* fall through to AAAA */ }
+
+  try {
+    const aaaaAddresses = await Deno.resolveDns(hostname, 'AAAA')
+    if (aaaaAddresses.length > 0) resolvedAny = true
+    for (const addr of aaaaAddresses) {
+      if (isPrivateIP(addr)) return true
+    }
+  } catch { /* normal for IPv4-only hosts */ }
+
+  return !resolvedAny
+}
+
+function validateSafeUrl(raw: string): URL | Error {
+  let url: URL
+  try { url = new URL(raw) } catch { return new Error('Invalid URL format') }
+  if (url.protocol !== 'https:') return new Error('Only HTTPS URLs are allowed')
+  if (isPrivateIP(url.hostname)) return new Error(`Access to ${url.hostname} is not allowed`)
+  return url
+}
+
+// Fetch with manual redirect handling so each hop is re-validated by the SSRF
+// guard. Default redirect: 'follow' would silently chase a 302 to a private
+// address, bypassing validateSafeUrl/resolveAndCheckPrivate entirely.
+const MAX_REDIRECTS = 5
+async function fetchWithRedirectGuard(initial: URL, init: RequestInit = {}): Promise<Response> {
+  let current = initial
+  for (let i = 0; i <= MAX_REDIRECTS; i++) {
+    const response = await fetch(current, { ...init, redirect: 'manual' })
+    if (response.status >= 300 && response.status < 400) {
+      const location = response.headers.get('location')
+      if (!location) return response
+      const next = new URL(location, current)
+      if (next.protocol !== 'https:') throw new Error('Only HTTPS redirects are allowed')
+      if (isPrivateIP(next.hostname)) throw new Error(`Access to ${next.hostname} is not allowed`)
+      if (await resolveAndCheckPrivate(next.hostname)) throw new Error(`Access to ${next.hostname} is not allowed`)
+      current = next
+      continue
+    }
+    return response
+  }
+  throw new Error('Too many redirects')
 }

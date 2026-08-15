@@ -81,7 +81,24 @@ export async function createWorkspace(input: unknown): Promise<ActionResponse<{ 
       .select("id")
       .single()
 
-    if (error) throw error
+    // M6: the partial unique index (idx_workspaces_active_owner) makes the
+    // create race-safe — if two requests slip past the pre-check, the loser
+    // hits a unique violation and we return the existing workspace instead.
+    if (error) {
+      const isUniqueViolation = (error as { code?: string }).code === "23505"
+      if (isUniqueViolation) {
+        const { data: winnerWs } = await supabase
+          .from("workspaces")
+          .select("id")
+          .eq("owner_id", user.id)
+          .is("deleted_at", null)
+          .maybeSingle()
+        if (winnerWs) {
+          return { data: { workspace_id: winnerWs.id }, error: null }
+        }
+      }
+      throw error
+    }
 
     // Set workspace_id in app_metadata — fire-and-forget because all dashboard pages
     // now have DB fallback (query by owner_id) if the JWT is stale
@@ -219,36 +236,6 @@ export async function updateWelcomeTemplate(workspace_id: string, template: stri
   } catch (err) {
     console.error(err)
     return { data: null, error: "Failed to update welcome template" }
-  }
-}
-
-export async function checkUserExists(email: string): Promise<ActionResponse<{ exists: boolean }>> {
-  try {
-    const emailResult = z.string().email().safeParse(email)
-    if (!emailResult.success) {
-      return { data: null, error: "Invalid email address" }
-    }
-
-    const supabase = createAdminClient()
-
-    // listUsers() no longer supports the `filters.email` param (supabase-js v2).
-    // Paginate over auth.users and match the email locally.
-    let page = 1
-    let exists = false
-    const pageSize = 200
-    while (!exists) {
-      const { data: { users }, error } = await supabase.auth.admin.listUsers({ page, perPage: pageSize })
-      if (error) throw error
-      if (users.length === 0) break
-      exists = users.some((u) => u.email?.toLowerCase() === emailResult.data.toLowerCase())
-      page += 1
-    }
-
-    return { data: { exists }, error: null }
-  } catch (err) {
-    console.error(err)
-    // Return generic error to prevent information leakage
-    return { data: null, error: "Failed to check user" }
   }
 }
 

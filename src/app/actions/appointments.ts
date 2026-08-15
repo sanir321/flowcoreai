@@ -25,6 +25,11 @@ export async function createAppointment(input: unknown): Promise<ActionResponse<
 
     const { workspace_id, customer_name, customer_phone, service, start_at, end_at } = result.data
 
+    // L6: validate time ordering — a booking must end after it starts.
+    if (!end_at || new Date(end_at).getTime() <= new Date(start_at).getTime()) {
+      return { data: null, error: "Appointment end time must be after the start time" }
+    }
+
     // IDOR Check: verify ownership via DB (not stale JWT app_metadata)
     const auth = await verifyWorkspaceOwnership(supabase, user.id, workspace_id)
     if (!auth.authorized) return { data: null, error: auth.error }
@@ -87,6 +92,11 @@ export async function rescheduleAppointment(input: unknown): Promise<ActionRespo
     }
 
     const { appointment_id, start_at, end_at } = result.data
+
+    // L6: validate time ordering — a booking must end after it starts.
+    if (!end_at || new Date(end_at).getTime() <= new Date(start_at).getTime()) {
+      return { data: null, error: "Appointment end time must be after the start time" }
+    }
 
     const { data: existing } = await supabase
       .from("appointments")

@@ -28,6 +28,22 @@ const PRIVATE_IPV6_PREFIXES = [
   '0000:',    // Unspecified
 ]
 
+function ipv4ToInt(parts: number[]): number {
+  return ((parts[0] << 24) >>> 0) + (parts[1] << 16) + (parts[2] << 8) + parts[3]
+}
+
+/**
+ * True CIDR match. `mask` is the network prefix length; only the first
+ * `mask` bits are compared. `172.20.0.1` now correctly matches
+ * `172.16.0.0/12`, and `100.65.0.1` matches `100.64.0.0/10`.
+ */
+function isInCidr(ipInt: number, prefix: number[], mask: number): boolean {
+  const prefixInt = ipv4ToInt([...prefix, 0, 0, 0, 0].slice(0, 4))
+  if (mask >= 32) return ipInt === prefixInt
+  const shifted = 32 - mask
+  return (ipInt >>> shifted) === (prefixInt >>> shifted)
+}
+
 function isPrivateIP(hostname: string): boolean {
   try {
     // Check IPv6 private ranges first
@@ -45,12 +61,9 @@ function isPrivateIP(hostname: string): boolean {
     }
     const parts = hostname.split('.').map(Number)
     if (parts.some(p => p < 0 || p > 255)) return true
+    const ipInt = ipv4ToInt(parts)
     for (const cidr of PRIVATE_CIDRS) {
-      let match = true
-      for (let i = 0; i < cidr.prefix.length; i++) {
-        if (parts[i] !== cidr.prefix[i]) { match = false; break }
-      }
-      if (match) return true
+      if (isInCidr(ipInt, cidr.prefix, cidr.mask)) return true
     }
     return false
   } catch { return true }
@@ -94,9 +107,33 @@ function validateUrl(raw: string): URL {
   return url
 }
 
+// Fetch with manual redirect handling so each hop is re-validated by the SSRF
+// guard. Default redirect: 'follow' would silently chase a 302 to a private
+// address, bypassing validateUrl/resolveAndCheckPrivate entirely.
+const MAX_REDIRECTS = 5
+async function fetchWithRedirectGuard(initial: URL, init: RequestInit = {}): Promise<Response> {
+  let current = initial
+  for (let i = 0; i <= MAX_REDIRECTS; i++) {
+    const response = await fetch(current, { ...init, redirect: 'manual' })
+    if (response.status >= 300 && response.status < 400) {
+      const location = response.headers.get('location')
+      if (!location) return response
+      const next = new URL(location, current)
+      if (next.protocol !== 'https:') throw new Error('Only HTTPS URLs are allowed')
+      if (isPrivateIP(next.hostname)) throw new Error(`Access to ${next.hostname} is not allowed`)
+      if (await resolveAndCheckPrivate(next.hostname)) throw new Error(`Access to ${next.hostname} is not allowed`)
+      current = next
+      continue
+    }
+    return response
+  }
+  throw new Error('Too many redirects')
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
+  let source_id: string | undefined
   try {
     const srk = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
     const serviceKey = Deno.env.get('SERVICE_KEY') || ''
@@ -104,18 +141,45 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get('Authorization') || ''
     const token = authHeader.replace('Bearer ', '')
     const validTokens = new Set([srk, serviceKey, internalSecret || ''].filter(Boolean))
+    let authedUserId: string | null = null
     if (!token || !validTokens.has(token)) {
       const verifyClient = createClient(Deno.env.get('SUPABASE_URL') ?? '', srk)
       const { data: { user }, error: authError } = await verifyClient.auth.getUser(token)
       if (authError || !user) {
         return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
       }
+      authedUserId = user.id
     }
 
     const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', srk)
     const opencodeKey = Deno.env.get('OPENCODE_ZEN_API_KEY')
 
-    const { workspace_id, source_id, url: rawUrl } = await req.json()
+    const body = await req.json()
+    source_id = body.source_id
+    let { workspace_id, url: rawUrl } = body as { workspace_id?: string; url?: string }
+
+    // H4: a user-JWT caller must only ingest into sources that belong to their
+    // own workspace; otherwise any logged-in user could write chunks into
+    // another tenant through the service-role client.
+    if (authedUserId) {
+      const { data: sourceWs } = await supabase
+        .from('kb_sources')
+        .select('workspace_id')
+        .eq('id', source_id)
+        .maybeSingle()
+      const { data: wsOwner } = sourceWs ? await supabase
+        .from('workspaces')
+        .select('id')
+        .eq('id', sourceWs.workspace_id)
+        .eq('owner_id', authedUserId)
+        .is('deleted_at', null)
+        .maybeSingle() : { data: null }
+      if (!wsOwner) {
+        return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      }
+      workspace_id = sourceWs.workspace_id
+    }
+
     const url = validateUrl(rawUrl)
 
     // DNS rebinding protection: resolve and check all IPs before fetching
@@ -127,11 +191,17 @@ Deno.serve(async (req) => {
 
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 15000)
-    const response = await fetch(url, { signal: controller.signal })
-    clearTimeout(timeout)
+    // redirect: 'manual' + explicit hop loop so every redirect target is
+    // re-validated by the SSRF guard — otherwise a 302 to 169.254.169.254 or
+    // an internal host would bypass resolveAndCheckPrivate entirely.
+    const response = await fetchWithRedirectGuard(url, { signal: controller.signal })
     if (!response.ok) throw new Error(`Failed to fetch URL: ${response.statusText}`)
 
+    const contentLength = Number(response.headers.get('content-length') || 0)
+    if (contentLength > 1000000) throw new Error("Page too large (>1MB). Use document upload instead.")
+
     const raw = await response.text()
+    clearTimeout(timeout)
     if (raw.length > 1000000) throw new Error("Page too large (>1MB). Use document upload instead.")
     const html = raw.slice(0, 100000)
 
@@ -188,13 +258,12 @@ Deno.serve(async (req) => {
 
   } catch (error: any) {
     console.error(error)
-    try {
-      const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '')
-      const { source_id } = await req.clone().json().catch(() => ({}))
-      if (source_id) {
+    if (source_id) {
+      try {
+        const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '')
         await supabase.from('kb_sources').update({ status: 'failed', error_message: "URL ingestion failed" }).eq('id', source_id)
-      }
-    } catch {}
+      } catch {}
+    }
     return new Response(JSON.stringify({ error: "URL ingestion failed" }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
   }
 })
@@ -278,7 +347,7 @@ function extractSocialUrls(html: string): string[] {
 function convertHtmlToText(html: string): string {
   html = html.replace(/<!--[\s\S]*?-->/g, '')
   html = html.replace(/\r\n/g, '\n')
-  html = html.replace(/<(script|style|svg|noscript|nav|header|aside|form|footer)[^>]*>[\s\S]*?<\/\1>/gi, '')
+  html = html.replace(/<(script|style|svg|noscript|nav|header|aside|form)[^>]*>[\s\S]*?<\/\1>/gi, '')
   html = html.replace(/<br\s*\/?>/gi, '\n')
   html = html.replace(/<\/p>/gi, '\n\n')
   html = html.replace(/<\/h([1-6])>/gi, '\n\n')

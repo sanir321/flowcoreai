@@ -134,6 +134,16 @@ export async function assignSkill(input: unknown): Promise<ActionResponse<{ succ
 
     if (!agent || agent.workspace_id !== workspaceId) return { data: null, error: "Unauthorized" }
 
+    // M2: the skill must belong to the same workspace as the agent; otherwise
+    // a user could attach another tenant's skill to their agent.
+    const { data: skill } = await (supabase as any)
+      .from("skills")
+      .select("workspace_id")
+      .eq("id", result.data.skill_id)
+      .single()
+
+    if (!skill || skill.workspace_id !== workspaceId) return { data: null, error: "Unauthorized" }
+
     const { error } = await (supabase as any)
       .from("agent_skill_assignments")
       .insert({ agent_id: result.data.agent_id, skill_id: result.data.skill_id })

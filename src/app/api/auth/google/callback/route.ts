@@ -25,12 +25,15 @@ export async function GET(req: NextRequest) {
   }
   const [workspaceId, nonce, signature] = parts as [string, string, string];
   
-  if (!process.env.INTERNAL_CRON_SECRET) {
+  // M8: dedicated secret for OAuth state signing — fall back to cron secret
+  // only for backward compatibility with previously-issued state values.
+  const stateSecret = process.env.OAUTH_STATE_SECRET || process.env.INTERNAL_CRON_SECRET;
+  if (!stateSecret) {
     return NextResponse.redirect(`${origin}/settings/integrations?error=Server configuration error`);
   }
   
   // Verify HMAC signature (includes nonce for CSRF binding)
-  const hmac = createHmac("sha256", process.env.INTERNAL_CRON_SECRET);
+  const hmac = createHmac("sha256", stateSecret);
   hmac.update(workspaceId + ':' + nonce);
   const expectedSig = hmac.digest("hex");
   // Constant-time comparison to prevent timing attack

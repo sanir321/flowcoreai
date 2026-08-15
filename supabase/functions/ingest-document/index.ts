@@ -21,6 +21,7 @@ async function getEmbeddingModel(): Promise<Supabase.ai.Session> {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
+  let source_id: string | undefined
   try {
     const srk = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
     const serviceKey = Deno.env.get('SERVICE_KEY') || ''
@@ -28,18 +29,46 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get('Authorization') || ''
     const token = authHeader.replace('Bearer ', '')
     const validTokens = new Set([srk, serviceKey, internalSecret || ''].filter(Boolean))
+    let authedUserId: string | null = null
     if (!token || !validTokens.has(token)) {
       const verifyClient = createClient(Deno.env.get('SUPABASE_URL') ?? '', srk)
       const { data: { user }, error: authError } = await verifyClient.auth.getUser(token)
       if (authError || !user) {
         return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
       }
+      authedUserId = user.id
     }
 
     const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', srk)
     const opencodeKey = Deno.env.get('OPENCODE_ZEN_API_KEY')
 
-    const { workspace_id, source_id, storage_path } = await req.json()
+    const body = await req.json()
+    source_id = body.source_id
+    const { storage_path } = body
+    let { workspace_id } = body
+
+    // H4: a user-JWT caller must only process sources that belong to their own
+    // workspace; otherwise any logged-in user could write into another tenant.
+    if (authedUserId) {
+      const { data: sourceWs } = await supabase
+        .from('kb_sources')
+        .select('workspace_id')
+        .eq('id', source_id)
+        .maybeSingle()
+      const { data: wsOwner } = sourceWs ? await supabase
+        .from('workspaces')
+        .select('id')
+        .eq('id', sourceWs.workspace_id)
+        .eq('owner_id', authedUserId)
+        .is('deleted_at', null)
+        .maybeSingle() : { data: null }
+      if (!wsOwner) {
+        return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      }
+      // Pin the workspace to the source's real owner so a spoofed body
+      // workspace_id can never write chunks into another tenant.
+      workspace_id = sourceWs.workspace_id
+    }
 
     await supabase.from('kb_sources').update({ status: 'processing', error_message: 'Downloading file...' }).eq('id', source_id)
 
@@ -128,13 +157,12 @@ Deno.serve(async (req) => {
 
   } catch (error: any) {
     console.error(error)
-    try {
-      const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '')
-      const { source_id } = await req.clone().json().catch(() => ({}))
-      if (source_id) {
+    if (source_id) {
+      try {
+        const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '')
         await supabase.from('kb_sources').update({ status: 'failed', error_message: "Document ingestion failed" }).eq('id', source_id)
-      }
-    } catch {}
+      } catch {}
+    }
     return new Response(JSON.stringify({ error: "Document ingestion failed" }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
   }
 })
@@ -179,6 +207,7 @@ async function cleanTextWithOpenCode(rawText: string, apiKey: string): Promise<s
   const response = await fetch(`${baseUrl}/chat/completions`, {
     method: "POST",
     headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    signal: AbortSignal.timeout(12000),
     body: JSON.stringify({
       model: "nemotron-3-ultra-free",
       messages: [

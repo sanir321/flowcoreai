@@ -5,6 +5,16 @@ const responseHeaders = {
   'Content-Type': 'application/json',
 }
 
+// L1: constant-time comparison to prevent timing attacks on secret checks.
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false
+  let result = 0
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i)
+  }
+  return result === 0
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { status: 204 })
 
@@ -15,13 +25,40 @@ Deno.serve(async (req) => {
     if (!cronSecret) {
       return new Response(JSON.stringify({ error: 'Server misconfigured' }), { status: 500, headers: responseHeaders })
     }
-    if (auth !== `Bearer ${cronSecret}`) {
+    const provided = auth.startsWith('Bearer ') ? auth.slice('Bearer '.length) : ''
+    // L1: constant-time comparison to prevent timing attacks.
+    if (!timingSafeEqual(provided, cronSecret)) {
       return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401, headers: responseHeaders })
     }
 
     const supaUrl = Deno.env.get('SUPABASE_URL')?.replace(/\/$/, '')
     const supaKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
     const supabase = createClient(supaUrl, supaKey)
+
+    // L2: advisory lock so concurrent cron invocations never double-send.
+    const LOCK_KEY = 795001
+    const { data: gotLock, error: lockErr } = await supabase.rpc('pg_try_advisory_lock', { key: LOCK_KEY })
+    if (lockErr) {
+      console.error('[sales-cron] Advisory lock error:', lockErr.message)
+      return new Response(JSON.stringify({ error: 'Lock acquisition failed' }), { headers: responseHeaders, status: 500 })
+    }
+    if (!gotLock) {
+      return new Response(JSON.stringify({ sent: 0, message: 'Concurrent run in progress' }), { headers: responseHeaders })
+    }
+
+    try {
+      return await runJob(supabase)
+    } finally {
+      await supabase.rpc('pg_advisory_unlock', { key: LOCK_KEY }).catch(() => {})
+    }
+  } catch (e: any) {
+    console.error("[sales-cron] Error:", e.message)
+    return new Response(JSON.stringify({ error: "Follow-up processing failed" }), { headers: responseHeaders, status: 500 })
+  }
+})
+
+async function runJob(supabase: any): Promise<Response> {
+    const responseHeaders = { 'Content-Type': 'application/json' }
     const gowaBase = Deno.env.get('GOWA_BASE_URL')?.replace(/\/$/, '')
     const gowaKey = Deno.env.get('GOWA_API_KEY')
     const gowaAuth = gowaKey ? btoa(gowaKey) : ''
@@ -131,8 +168,4 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ sent, failed, total: followUps.length, results }), {
       headers: responseHeaders,
     })
-  } catch (e: any) {
-    console.error("[sales-cron] Error:", e.message)
-    return new Response(JSON.stringify({ error: "Follow-up processing failed" }), { headers: responseHeaders, status: 500 })
-  }
-})
+}

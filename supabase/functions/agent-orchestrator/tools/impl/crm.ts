@@ -4,6 +4,11 @@ import { getGoogleConfig } from "./google.ts";
 const APP_URL = Deno.env.get("NEXT_PUBLIC_APP_URL") || "https://7flowcore.vercel.app";
 const CRON_SECRET = Deno.env.get("INTERNAL_CRON_SECRET") || "";
 
+// M3 fix: escape jid values interpolated into PostgREST filter strings.
+function postgrestEscape(value: unknown): string {
+  return encodeURIComponent(String(value ?? ""));
+}
+
 function potentialToScore(potential: string): number {
   switch (potential) {
     case "high": return 80;
@@ -25,7 +30,7 @@ export async function captureLead(
     .from("contacts")
     .select("id")
     .eq("workspace_id", ctx.payload.workspace_id)
-    .or(`whatsapp_jid.eq.${jid},session_token.eq.${jid}`)
+    .or(`whatsapp_jid.eq.${postgrestEscape(jid)},session_token.eq.${postgrestEscape(jid)}`)
     .maybeSingle();
   const updateData: Record<string, unknown> = {
     name: params.name, email: params.email, phone: params.phone,

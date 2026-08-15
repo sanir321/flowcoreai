@@ -13,13 +13,16 @@ const model = new Supabase.ai.Session('gte-small')
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
+  let source_id: string | undefined
   try {
     const authHeader = req.headers.get('Authorization') || ''
     const token = authHeader.replace('Bearer ', '')
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     const internalSecret = Deno.env.get('INTERNAL_CRON_SECRET')
-    const publishableKeys = (Deno.env.get('SUPABASE_PUBLISHABLE_KEYS') || '').split(',').filter(Boolean)
-    if (token && (token === serviceRoleKey || token === internalSecret || publishableKeys.includes(token))) {
+    // M4: SUPABASE_PUBLISHABLE_KEYS is public by design and must NOT be treated
+    // as a credential — only server-side secrets or an authenticated user JWT.
+    let authedUserId: string | null = null
+    if (token && (token === serviceRoleKey || token === internalSecret)) {
       // Authorized via key match
     } else {
       const { data: { user }, error: authError } = await createClient(
@@ -29,6 +32,7 @@ Deno.serve(async (req) => {
       if (authError || !user) {
         return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
       }
+      authedUserId = user.id
     }
 
     const supabase = createClient(
@@ -36,7 +40,34 @@ Deno.serve(async (req) => {
       serviceRoleKey ?? ''
     )
 
-    const { workspace_id, source_id, content, embed_batch, tag, _retry_count } = await req.json()
+    const body = await req.json()
+    source_id = body.source_id
+    let { workspace_id, content, embed_batch, tag, _retry_count } = body
+
+    // H4: a user-JWT caller must only act on sources in their own workspace.
+    if (authedUserId) {
+      const { data: sourceWs } = await supabase
+        .from('kb_sources')
+        .select('workspace_id')
+        .eq('id', source_id)
+        .maybeSingle()
+      if (!sourceWs) {
+        return new Response(JSON.stringify({ error: 'source_id not found' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      }
+      const { data: wsOwner } = await supabase
+        .from('workspaces')
+        .select('id')
+        .eq('id', sourceWs.workspace_id)
+        .eq('owner_id', authedUserId)
+        .is('deleted_at', null)
+        .maybeSingle()
+      if (!wsOwner) {
+        return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      }
+      // Pin the workspace to the source's real owner so a spoofed body
+      // workspace_id can never write chunks into another tenant.
+      workspace_id = sourceWs.workspace_id
+    }
 
     // ── Mode 2: embed a batch of pending (null-embedding) chunks ──
     // Each batch runs in its own worker invocation so the gte-small CPU budget
@@ -98,19 +129,18 @@ Deno.serve(async (req) => {
 
   } catch (error: any) {
     console.error(error)
-    try {
-      const supabase = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-      )
-      const { source_id } = await req.clone().json().catch(() => ({}))
-      if (source_id) {
+    if (source_id) {
+      try {
+        const supabase = createClient(
+          Deno.env.get('SUPABASE_URL') ?? '',
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+        )
         await supabase.from('kb_sources').update({
           status: 'failed',
           error_message: "Embedding failed"
         }).eq('id', source_id)
-      }
-    } catch {}
+      } catch {}
+    }
 
     return new Response(JSON.stringify({ error: 'Text embedding failed' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
   }

@@ -236,9 +236,15 @@ export async function createDocumentSource(input: unknown): Promise<ActionRespon
 
 export async function pasteKbText(input: { workspace_id: string; content: string; tag?: string }): Promise<ActionResponse<{ id: string }>> {
   try {
-    const { workspace_id, content, tag } = input
-    if (!content.trim()) return { data: null, error: "Content is required" }
-    if (content.length > 50000) return { data: null, error: "Content exceeds maximum length of 50,000 characters" }
+    // L7: full zod validation (bounded content, optional tag, uuid workspace).
+    const parsed = z.object({
+      workspace_id: z.string().uuid(),
+      content: z.string().min(1).max(50000),
+      tag: z.string().max(100).optional(),
+    }).safeParse(input)
+    if (!parsed.success) return { data: null, error: "Invalid pasted text data" }
+
+    const { workspace_id, content, tag } = parsed.data
 
     const supabase = await createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()

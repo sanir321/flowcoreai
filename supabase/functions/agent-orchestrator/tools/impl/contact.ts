@@ -1,11 +1,16 @@
 import { PipelineContext } from "../../lib/types.ts";
 
+// M3 fix: escape jid values interpolated into PostgREST filter strings.
+function postgrestEscape(value: unknown): string {
+  return encodeURIComponent(String(value ?? ""));
+}
+
 export async function getHistory(params: Record<string, unknown>, ctx: PipelineContext) {
   const { data: session } = await ctx.supabase.from("conversation_sessions").select("contact_id").eq("id", ctx.session.id).single();
   let contactId = session?.contact_id;
   if (!contactId) {
     const jid = ctx.payload.customer_jid || ctx.session.customer_jid;
-    const { data: found } = await ctx.supabase.from("contacts").select("id").eq("workspace_id", ctx.payload.workspace_id).or(`whatsapp_jid.eq.${jid},session_token.eq.${jid}`).maybeSingle();
+    const { data: found } = await ctx.supabase.from("contacts").select("id").eq("workspace_id", ctx.payload.workspace_id).or(`whatsapp_jid.eq.${postgrestEscape(jid)},session_token.eq.${postgrestEscape(jid)}`).maybeSingle();
     if (found) contactId = found.id;
   }
   if (!contactId) return { success: false, error: "Contact not found" };
@@ -29,7 +34,7 @@ export async function update(
   const { data: session } = await ctx.supabase.from("conversation_sessions").select("contact_id").eq("id", ctx.session.id).single();
   if (!session?.contact_id) {
     const jid = ctx.payload.customer_jid || ctx.session.customer_jid;
-    const { data: found } = await ctx.supabase.from("contacts").select("id").eq("workspace_id", ctx.payload.workspace_id).or(`whatsapp_jid.eq.${jid},session_token.eq.${jid}`).maybeSingle();
+    const { data: found } = await ctx.supabase.from("contacts").select("id").eq("workspace_id", ctx.payload.workspace_id).or(`whatsapp_jid.eq.${postgrestEscape(jid)},session_token.eq.${postgrestEscape(jid)}`).maybeSingle();
     if (!found) return { success: false, error: "Contact not found" };
     const { data: updated } = await ctx.supabase.from("contacts").update({
       name: params.name, email: params.email, phone: params.phone,

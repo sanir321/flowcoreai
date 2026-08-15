@@ -29,6 +29,16 @@ export async function sendManualMessage(input: unknown): Promise<ActionResponse<
     const auth = await verifyWorkspaceOwnership(supabase, user.id, workspace_id)
     if (!auth.authorized) return { data: null, error: auth.error }
 
+    // H3: the contact must belong to this workspace, otherwise an attacker
+    // could dispatch arbitrary WhatsApp messages against an unrelated contact.
+    const { data: contact } = await supabase
+      .from("contacts")
+      .select("id")
+      .eq("id", contact_id)
+      .eq("workspace_id", workspace_id)
+      .maybeSingle()
+    if (!contact) return { data: null, error: "Contact not found" }
+
     // 1. Send via GoWA
     await sendWhatsAppText(workspace_id, phone, message)
 

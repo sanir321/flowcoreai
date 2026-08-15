@@ -8,6 +8,16 @@ const corsHeaders = {
   "Vary": "Origin",
 }
 
+// L1: constant-time comparison to prevent timing attacks.
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false
+  let result = 0
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i)
+  }
+  return result === 0
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders })
 
@@ -16,7 +26,7 @@ Deno.serve(async (req) => {
     const token = authHeader.replace("Bearer ", "")
     const internalSecret = Deno.env.get("INTERNAL_CRON_SECRET") || ""
     
-    if (token !== internalSecret) {
+    if (!timingSafeEqual(token, internalSecret)) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" }
       })

@@ -191,7 +191,8 @@ Deno.serve(async (req) => {
             const gowaBaseUrl = Deno.env.get('GOWA_BASE_URL')?.replace(/\/$/, '') || ''
             const gowaKey = Deno.env.get('GOWA_API_KEY') || ''
             const gowaAuth = btoa(gowaKey)
-            const resp = await fetch(`${gowaBaseUrl}/user/info?phone=${phone}`, {
+            // L4: encode the phone in the query string.
+            const resp = await fetch(`${gowaBaseUrl}/user/info?phone=${encodeURIComponent(phone)}`, {
               headers: {
                 'Authorization': `Basic ${gowaAuth}`,
                 'X-Device-Id': deviceId,
