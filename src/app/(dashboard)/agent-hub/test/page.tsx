@@ -26,6 +26,10 @@ import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { motion, AnimatePresence } from "framer-motion"
 import { AssistantsSidebar } from "@/components/nav/assistants-sidebar"
+import { PromptInput, PromptInputTextarea, PromptInputActions, PromptInputAction } from "@/components/ui/prompt-input"
+import { ThinkingBar } from "@/components/ui/thinking-bar"
+import { ChatContainerRoot, ChatContainerContent, ChatContainerScrollAnchor } from "@/components/ui/chat-container"
+import { ScrollButton } from "@/components/ui/scroll-button"
 
 interface ToolCall {
   tool: string
@@ -265,151 +269,151 @@ export default function TestChatPage() {
           {/* Chat Panel */}
           <div className="flex flex-1 flex-col border border-gray-200 rounded-xl overflow-hidden bg-white min-w-0 shadow-sm">
             {/* Messages */}
-            <ScrollArea className="flex-1">
-              <div className="px-5 py-4 space-y-4">
-                <AnimatePresence initial={false}>
-                  {messages.length === 0 ? (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-16 text-center space-y-4">
-                      <div className="h-14 w-14 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center mx-auto">
-                        <Terminal className="h-6 w-6 text-gray-300" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <p className="text-sm font-semibold text-gray-900">Ready to test</p>
-                        <p className="text-xs text-gray-500">Send a message to simulate your {agentData.name.toLowerCase()} agent</p>
-                      </div>
-                      <div className="flex flex-wrap justify-center gap-1.5 pt-2">
-                        {agentData.suggestions.map(s => (
-                          <button
-                            key={s}
-                            onClick={() => { setInputText(s); inputRef.current?.focus() }}
-                            className="px-3 py-1.5 rounded-full bg-gray-50 border border-gray-100 text-[11px] font-medium text-gray-600 hover:bg-gray-100 transition-all"
-                          >
-                            {s}
-                          </button>
-                        ))}
-                      </div>
-                    </motion.div>
-                  ) : (
-                    messages.map((m) => (
-                      <motion.div
-                        key={m.id}
-                        initial={{ opacity: 0, y: 6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className={cn("flex flex-col", m.role === 'customer' ? "items-end" : "items-start")}
-                      >
-                        {/* Label row */}
-                        <div className="flex items-center gap-2 mb-1">
-                          {m.role === 'agent' ? (
-                            <div className="flex items-center gap-1.5">
-                              <div className={cn("h-5 w-5 rounded-lg flex items-center justify-center", agentData.bg)}>
-                                <agentData.icon className={cn("h-2.5 w-2.5", agentData.color)} />
-                              </div>
-                              <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
-                                {AGENT_TYPES.find(a => a.id === m.agentType)?.name || 'Agent'}
-                              </span>
-                              {m.pipelineTier && (
-                                <span className={cn(
-                                  "text-[9px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider",
-                                  TIER_LABELS[m.pipelineTier]?.color || "text-gray-500 bg-gray-50"
-                                )}>
-                                  {TIER_LABELS[m.pipelineTier]?.label || m.pipelineTier}
-                                </span>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">You</span>
-                          )}
-                          <span className="text-[10px] text-gray-300">
-                            {m.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                          {m.responseTime && m.role === 'agent' && (
-                            <span className="text-[10px] text-gray-400 font-medium">{m.responseTime}ms</span>
-                          )}
+            <ChatContainerRoot className="flex-1 bg-white min-h-0">
+              <ChatContainerContent>
+                <div className="px-5 py-4 space-y-4 w-full">
+                  <AnimatePresence initial={false}>
+                    {messages.length === 0 ? (
+                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-16 text-center space-y-4">
+                        <div className="h-14 w-14 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center mx-auto">
+                          <Terminal className="h-6 w-6 text-gray-300" />
                         </div>
-
-                        {/* Message bubble */}
-                        <div className="group relative max-w-[85%]">
-                          <div className={cn(
-                            "px-4 py-2.5 rounded-2xl text-[13px] leading-relaxed",
-                            m.role === 'customer'
-                              ? "bg-gray-900 text-white rounded-br-md"
-                              : m.error
-                                ? "bg-red-50 text-red-700 border border-red-100 rounded-bl-md"
-                                : "bg-gray-100 text-gray-900 rounded-bl-md"
-                          )}>
-                            {m.content}
-                          </div>
-                          {m.role === 'agent' && !m.error && (
+                        <div className="space-y-1.5">
+                          <p className="text-sm font-semibold text-gray-900">Ready to test</p>
+                          <p className="text-xs text-gray-500">Send a message to simulate your {agentData.name.toLowerCase()} agent</p>
+                        </div>
+                        <div className="flex flex-wrap justify-center gap-1.5 pt-2">
+                          {agentData.suggestions.map(s => (
                             <button
-                              onClick={() => handleCopy(m.content, m.id)}
-                              className="absolute -right-8 top-2 h-6 w-6 rounded-lg bg-white border border-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 opacity-0 group-hover:opacity-100 transition-all shadow-sm"
+                              key={s}
+                              onClick={() => { setInputText(s); inputRef.current?.focus() }}
+                              className="px-3 py-1.5 rounded-full bg-gray-50 border border-gray-100 text-[11px] font-medium text-gray-600 hover:bg-gray-100 transition-all"
                             >
-                              {copiedId === m.id ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3" />}
+                              {s}
+                            </button>
+                          ))}
+                        </div>
+                      </motion.div>
+                    ) : (
+                      messages.map((m) => (
+                        <motion.div
+                          key={m.id}
+                          initial={{ opacity: 0, y: 6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className={cn("flex flex-col", m.role === 'customer' ? "items-end" : "items-start")}
+                        >
+                          {/* Label row */}
+                          <div className="flex items-center gap-2 mb-1">
+                            {m.role === 'agent' ? (
+                              <div className="flex items-center gap-1.5">
+                                <div className={cn("h-5 w-5 rounded-lg flex items-center justify-center", agentData.bg)}>
+                                  <agentData.icon className={cn("h-2.5 w-2.5", agentData.color)} />
+                                </div>
+                                <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
+                                  {AGENT_TYPES.find(a => a.id === m.agentType)?.name || 'Agent'}
+                                </span>
+                                {m.pipelineTier && (
+                                  <span className={cn(
+                                    "text-[9px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider",
+                                    TIER_LABELS[m.pipelineTier]?.color || "text-gray-500 bg-gray-50"
+                                  )}>
+                                    {TIER_LABELS[m.pipelineTier]?.label || m.pipelineTier}
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">You</span>
+                            )}
+                            <span className="text-[10px] text-gray-300">
+                              {m.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                            {m.responseTime && m.role === 'agent' && (
+                              <span className="text-[10px] text-gray-400 font-medium">{m.responseTime}ms</span>
+                            )}
+                          </div>
+
+                          {/* Message bubble */}
+                          <div className="group relative max-w-[85%]">
+                            <div className={cn(
+                              "px-4 py-2.5 rounded-2xl text-[13px] leading-relaxed",
+                              m.role === 'customer'
+                                ? "bg-gray-900 text-white rounded-br-md"
+                                : m.error
+                                  ? "bg-red-50 text-red-700 border border-red-100 rounded-bl-md"
+                                  : "bg-gray-100 text-gray-900 rounded-bl-md"
+                            )}>
+                              {m.content}
+                            </div>
+                            {m.role === 'agent' && !m.error && (
+                              <button
+                                onClick={() => handleCopy(m.content, m.id)}
+                                className="absolute -right-8 top-2 h-6 w-6 rounded-lg bg-white border border-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 opacity-0 group-hover:opacity-100 transition-all shadow-sm"
+                              >
+                                {copiedId === m.id ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3" />}
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Tool calls indicator */}
+                          {m.role === 'agent' && m.toolCalls && m.toolCalls.length > 0 && (
+                            <button
+                              onClick={() => setSelectedDebugMsg(m.id === selectedDebugMsg ? null : m.id)}
+                              className={cn(
+                                "flex items-center gap-1 mt-1 px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-widest transition-all",
+                                selectedDebugMsg === m.id
+                                  ? "bg-amber-50 text-amber-600"
+                                  : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+                              )}
+                            >
+                              <Wrench className="h-2.5 w-2.5" />
+                              {m.toolCalls.length} tool{m.toolCalls.length > 1 ? 's' : ''}
                             </button>
                           )}
-                        </div>
+                        </motion.div>
+                      ))
+                    )}
+                  </AnimatePresence>
 
-                        {/* Tool calls indicator */}
-                        {m.role === 'agent' && m.toolCalls && m.toolCalls.length > 0 && (
-                          <button
-                            onClick={() => setSelectedDebugMsg(m.id === selectedDebugMsg ? null : m.id)}
-                            className={cn(
-                              "flex items-center gap-1 mt-1 px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-widest transition-all",
-                              selectedDebugMsg === m.id
-                                ? "bg-amber-50 text-amber-600"
-                                : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
-                            )}
-                          >
-                            <Wrench className="h-2.5 w-2.5" />
-                            {m.toolCalls.length} tool{m.toolCalls.length > 1 ? 's' : ''}
-                          </button>
-                        )}
-                      </motion.div>
-                    ))
-                  )}
-                </AnimatePresence>
-
-                {isSending && (
-                  <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="flex items-start">
-                    <div className="flex items-center gap-1 px-4 py-2.5 rounded-2xl rounded-bl-md bg-gray-100">
-                      <motion.div className="h-1.5 w-1.5 rounded-full bg-gray-400" animate={{ y: [0, -4, 0] }} transition={{ duration: 0.6, repeat: Infinity }} />
-                      <motion.div className="h-1.5 w-1.5 rounded-full bg-gray-400" animate={{ y: [0, -4, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }} />
-                      <motion.div className="h-1.5 w-1.5 rounded-full bg-gray-400" animate={{ y: [0, -4, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }} />
+                  {isSending && (
+                    <div className="flex items-start">
+                      <ThinkingBar text="Processing" className="px-4 py-2.5 rounded-2xl rounded-bl-md bg-gray-100 text-gray-500" />
                     </div>
-                  </motion.div>
-                )}
-                <div ref={scrollRef} />
-              </div>
-            </ScrollArea>
+                  )}
+                  <ChatContainerScrollAnchor />
+                </div>
+              </ChatContainerContent>
+              <ScrollButton className="absolute bottom-24 right-5 z-10" />
+            </ChatContainerRoot>
 
             {/* Input */}
             <div className="px-4 py-3 border-t border-gray-100 bg-white shrink-0">
-              <form onSubmit={handleSend} className="flex gap-2">
-                <input
-                  ref={inputRef}
-                  type="text"
+              <PromptInput
+                value={inputText}
+                onValueChange={setInputText}
+                onSubmit={handleSend}
+                isLoading={isSending}
+                maxHeight={160}
+                className="bg-gray-50 border-gray-200 rounded-xl shadow-none p-1"
+              >
+                <PromptInputTextarea
+                  ref={inputRef as any}
                   placeholder={`Message ${agentData.name.toLowerCase()} agent...`}
-                  value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
-                  className="flex-1 h-10 px-4 rounded-xl bg-gray-50 border border-gray-200 text-[13px] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-300 transition-all"
+                  className="min-h-[40px] h-10 text-[13px] font-medium text-gray-900 placeholder:text-gray-400 resize-none"
                   disabled={isSending}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault()
-                      handleSend()
-                    }
-                  }}
                 />
-                <Button
-                  type="submit"
-                  size="icon"
-                  className="h-10 w-10 rounded-xl bg-gray-900 text-white hover:bg-gray-800 transition-all shrink-0 disabled:opacity-50 shadow-sm"
-                  disabled={isSending || !inputText.trim()}
-                >
-                  {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                </Button>
-              </form>
+                <PromptInputActions>
+                  <PromptInputAction tooltip="Send">
+                    <Button
+                      onClick={() => handleSend()}
+                      disabled={isSending || !inputText.trim()}
+                      className="h-9 w-9 rounded-xl bg-gray-900 text-white hover:bg-gray-800 transition-all shrink-0 disabled:opacity-50 shadow-sm"
+                    >
+                      {isSending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                    </Button>
+                  </PromptInputAction>
+                </PromptInputActions>
+              </PromptInput>
             </div>
           </div>
 
