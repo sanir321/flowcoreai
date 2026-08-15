@@ -48,35 +48,36 @@
     .fc-widget {
       --fc-accent: #050505;
       --fc-accent-light: #F5F5F7;
-      --fc-bg: #fff;
+      --fc-bg: #ffffff;
       --fc-text: #050505;
-      position: fixed; bottom: 32px; right: 32px; z-index: 2147483647;
-      font-family: 'Inter', -apple-system, sans-serif; -webkit-font-smoothing: antialiased;
+      --fc-shadow: 0 24px 64px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.04);
+      position: fixed; bottom: 28px; right: 28px; z-index: 2147483647;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; -webkit-font-smoothing: antialiased;
     }
 
     .fc-fab {
       width: 56px; height: 56px; border-radius: 18px; cursor: pointer;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.12); display: flex; align-items: center;
+      box-shadow: 0 8px 28px rgba(0,0,0,0.18), 0 0 0 0 rgba(0,0,0,0.12); display: flex; align-items: center;
       justify-content: center; transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
       border: none; outline: none; background: var(--fc-accent); color: #fff;
     }
-    .fc-fab:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 12px 32px rgba(0,0,0,0.18); }
+    .fc-fab:hover { transform: translateY(-3px) scale(1.03); box-shadow: 0 14px 36px rgba(0,0,0,0.22); }
     .fc-fab:active { transform: scale(0.95); }
-    .fc-fab svg { width: 28px; height: 28px; transition: transform 0.4s ease; }
+    .fc-fab svg { width: 24px; height: 24px; transition: transform 0.4s ease; }
     .fc-fab.open svg { transform: rotate(90deg); }
 
     .fc-panel {
-      position: absolute; bottom: 84px; right: 0; width: 360px; height: 520px;
-      background: var(--fc-bg); border-radius: 28px; display: none; flex-direction: column;
-      overflow: hidden; box-shadow: 0 20px 48px rgba(0,0,0,0.15);
-      border: 1px solid rgba(0,0,0,0.04); transform-origin: bottom right;
+      position: absolute; bottom: 76px; right: 0; width: 380px; height: 560px;
+      background: var(--fc-bg); border-radius: 24px; display: none; flex-direction: column;
+      overflow: hidden; box-shadow: var(--fc-shadow);
+      border: 1px solid rgba(0,0,0,0.06); transform-origin: bottom right;
       animation: fc-slide-up 0.5s cubic-bezier(0.19, 1, 0.22, 1);
     }
     .fc-panel.open { display: flex; }
 
     @media (max-width: 480px) {
-      .fc-panel { width: calc(100vw - 32px); height: calc(100vh - 100px); right: -8px; }
-      .fc-widget { bottom: 16px; right: 16px; }
+      .fc-panel { width: calc(100vw - 24px); height: calc(100vh - 96px); right: -6px; bottom: 68px; }
+      .fc-widget { bottom: 14px; right: 14px; }
     }
 
     .fc-view { display: none; flex: 1; flex-direction: column; height: 100%; }
@@ -84,57 +85,66 @@
 
     /* Header */
     .fc-header {
-      padding: 24px; background: var(--fc-bg); border-bottom: 1px solid var(--fc-accent-light);
+      padding: 20px 24px; background: var(--fc-bg); border-bottom: 1px solid rgba(0,0,0,0.06);
       display: flex; align-items: center; gap: 12px;
     }
     .fc-avatar {
-      width: 40px; height: 40px; border-radius: 14px;
+      width: 42px; height: 42px; border-radius: 13px;
       background: var(--fc-accent); display: flex; align-items: center;
-      justify-content: center; color: #fff; font-weight: 700; font-family: 'Outfit';
-      overflow: hidden; flex-shrink: 0;
+      justify-content: center; color: #fff; font-weight: 700; font-family: 'Outfit', sans-serif;
+      overflow: hidden; flex-shrink: 0; box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     }
     .fc-avatar img { width: 100%; height: 100%; object-fit: cover; }
     .fc-header-info h3 {
-      margin: 0; font-family: 'Outfit'; font-size: 16px; font-weight: 600;
-      color: var(--fc-text); letter-spacing: -0.01em;
+      margin: 0; font-family: 'Outfit', sans-serif; font-size: 15px; font-weight: 700;
+      color: var(--fc-text); letter-spacing: -0.01em; line-height: 1.2;
     }
-    .fc-header-info p { margin: 4px 0 0; font-size: 12px; color: #888; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+    .fc-header-info p {
+      margin: 4px 0 0; font-size: 11px; color: #888; font-weight: 500;
+      text-transform: uppercase; letter-spacing: 0.08em;
+    }
 
     /* Form Styles */
     .fc-form { padding: 24px; flex: 1; display: flex; flex-direction: column; gap: 16px; }
     .fc-field { display: flex; flex-direction: column; gap: 8px; }
-    .fc-field label { font-size: 12px; font-weight: 600; color: #666; }
-    .fc-field input { padding: 12px 16px; border-radius: 12px; border: 1.5px solid var(--fc-accent-light); outline: none; font-size: 14px; }
-    .fc-field input:focus { border-color: var(--fc-accent); }
+    .fc-field label { font-size: 11px; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 0.06em; }
+    .fc-field input { padding: 12px 16px; border-radius: 14px; border: 1.5px solid #eee; outline: none; font-size: 14px; font-family: inherit; background: #fafafa; transition: all 0.2s; }
+    .fc-field input:focus { border-color: var(--fc-accent); background: #fff; box-shadow: 0 0 0 3px rgba(0,0,0,0.04); }
     .fc-submit {
       padding: 14px; border-radius: 14px; background: var(--fc-accent); color: #fff;
-      border: none; font-weight: 600; cursor: pointer; margin-top: 10px;
+      border: none; font-weight: 600; cursor: pointer; margin-top: 12px; font-size: 14px;
+      transition: all 0.2s; box-shadow: 0 4px 16px rgba(0,0,0,0.1);
     }
+    .fc-submit:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
 
     /* Chat Styles */
     .fc-messages {
       flex: 1; overflow-y: auto; padding: 20px; display: flex;
-      flex-direction: column; gap: 12px; background: var(--fc-bg);
+      flex-direction: column; gap: 10px; background: var(--fc-bg);
       scrollbar-width: thin; scroll-behavior: smooth;
     }
     .fc-bubble {
-      max-width: 82%; padding: 12px 16px; border-radius: 18px; font-size: 13px;
-      line-height: 1.5; animation: fc-fade-in 0.3s ease-out both;
+      max-width: 84%; padding: 11px 16px; border-radius: 18px; font-size: 13.5px;
+      line-height: 1.55; animation: fc-fade-in 0.35s ease-out both; word-wrap: break-word;
     }
-    .fc-bubble.ai { align-self: flex-start; background: var(--fc-accent-light); color: var(--fc-text); border-bottom-left-radius: 4px; }
-    .fc-bubble.user { align-self: flex-end; background: var(--fc-accent); color: #fff; border-bottom-right-radius: 4px; }
+    .fc-bubble.ai { align-self: flex-start; background: #f3f4f6; color: var(--fc-text); border-bottom-left-radius: 4px; }
+    .fc-bubble.user { align-self: flex-end; background: var(--fc-accent); color: #fff; border-bottom-right-radius: 4px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
 
-    .fc-typing { align-self: flex-start; background: var(--fc-accent-light); border-radius: 18px; border-bottom-left-radius: 4px; padding: 14px 20px; display: none; gap: 5px; align-items: center; }
+    .fc-typing { align-self: flex-start; background: #f3f4f6; border-radius: 18px; border-bottom-left-radius: 4px; padding: 14px 20px; display: none; gap: 5px; align-items: center; }
     .fc-typing.active { display: flex; }
     .fc-typing-dot { width: 7px; height: 7px; border-radius: 50%; background: #999; animation: fc-dot-pulse 1.2s ease-in-out infinite; }
     .fc-typing-dot:nth-child(2) { animation-delay: 0.15s; }
     .fc-typing-dot:nth-child(3) { animation-delay: 0.3s; }
 
-    .fc-input-area { padding: 16px; border-top: 1px solid var(--fc-accent-light); display: flex; gap: 10px; }
-    .fc-input { flex: 1; border: none; outline: none; font-size: 13px; font-family: inherit; background: transparent; }
-    .fc-send { color: var(--fc-accent); background: none; border: none; cursor: pointer; }
+    .fc-input-area { padding: 14px 16px; border-top: 1px solid #f3f4f6; display: flex; gap: 10px; align-items: flex-end; background: var(--fc-bg); }
+    .fc-input-wrapper { flex: 1; background: #fafafa; border: 1.5px solid #eee; border-radius: 20px; padding: 10px 16px; transition: all 0.2s; }
+    .fc-input-wrapper:focus-within { border-color: var(--fc-accent); background: #fff; box-shadow: 0 0 0 3px rgba(0,0,0,0.04); }
+    .fc-input { width: 100%; border: none; outline: none; font-size: 14px; font-family: inherit; background: transparent; resize: none; }
+    .fc-send { color: #fff; background: var(--fc-accent); border: none; cursor: pointer; padding: 8px; border-radius: 14px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+    .fc-send:hover { transform: scale(1.05); box-shadow: 0 4px 14px rgba(0,0,0,0.2); }
+    .fc-send svg { width: 18px; height: 18px; }
 
-    .fc-footer { text-align: center; font-size: 9px; color: #ccc; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; padding: 12px; }
+    .fc-footer { text-align: center; font-size: 10px; color: #bbb; font-weight: 500; letter-spacing: 0.04em; padding: 10px; }
   `;
   document.head.appendChild(style);
 
@@ -159,6 +169,7 @@
           <h3 id="fc-agent-name">Assistant</h3>
           <p id="fc-header-status">Support Specialist</p>
         </div>
+        <div style="margin-left:auto;width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,0.15);" title="Online"></div>
       </div>
 
       <!-- FORM VIEW -->
@@ -186,8 +197,10 @@
           </div>
         </div>
         <div class="fc-input-area">
-          <input type="text" class="fc-input" id="fc-input" placeholder="Type a message...">
-          <button class="fc-send" id="fc-send-msg">${Icons.send}</button>
+          <div class="fc-input-wrapper">
+            <input type="text" class="fc-input" id="fc-input" placeholder="Type a message..." autocomplete="off">
+          </div>
+          <button class="fc-send" id="fc-send-msg" aria-label="Send message">${Icons.send}</button>
         </div>
       </div>
 
