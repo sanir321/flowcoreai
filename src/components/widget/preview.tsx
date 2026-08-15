@@ -40,6 +40,12 @@ export default function WidgetPreview({ workspaceId, view = "chat", isOpen = tru
   const [msgs, setMsgs] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [dbConfig, setDbConfig] = useState<WidgetConfig | null>(null)
+  const [sending, setSending] = useState(false)
+  const sessionTokenRef = React.useRef<string>(crypto.randomUUID ? crypto.randomUUID() : "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0
+    const v = c === "x" ? r : (r & 0x3) | 0x8
+    return v.toString(16)
+  }))
 
   useEffect(() => {
     fetch("/api/widget/config?id=" + workspaceId)
@@ -62,15 +68,47 @@ export default function WidgetPreview({ workspaceId, view = "chat", isOpen = tru
     }
   }, [view, config.greeting, msgs.length])
 
-  const handleSubmit = () => {
-    if (!input.trim()) return
-    const userMsg: Message = { id: Date.now().toString(), role: "user", content: input.trim() }
+  const handleSubmit = async () => {
+    const text = input.trim()
+    if (!text || sending) return
+
+    const userMsg: Message = { id: Date.now().toString(), role: "user", content: text }
     setMsgs((prev) => [...prev, userMsg])
     setInput("")
+    setSending(true)
 
-    setTimeout(() => {
-      setMsgs((prev) => [...prev, { id: (Date.now() + 1).toString(), role: "assistant", content: "Thanks for your message! Our team will get back to you shortly." }])
-    }, 800)
+    try {
+      const res = await fetch("/api/widget/message", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-widget-token": sessionTokenRef.current,
+        },
+        body: JSON.stringify({
+          workspace_id: workspaceId,
+          session_token: sessionTokenRef.current,
+          message: text,
+          customer_name: "Preview User",
+          customer_email: "preview@example.com",
+        }),
+      })
+
+      if (res.status === 403) {
+        setMsgs((prev) => [...prev, { id: (Date.now() + 1).toString(), role: "assistant", content: "This chat is not available on this website." }])
+        return
+      }
+
+      if (!res.ok) {
+        throw new Error("Widget message failed")
+      }
+
+      const data = await res.json()
+      setMsgs((prev) => [...prev, { id: (Date.now() + 1).toString(), role: "assistant", content: data.reply }])
+    } catch {
+      setMsgs((prev) => [...prev, { id: (Date.now() + 1).toString(), role: "assistant", content: "Technical hiccup. Please try again." }])
+    } finally {
+      setSending(false)
+    }
   }
 
   const name = config.agent_name || "Assistant"
@@ -142,7 +180,7 @@ export default function WidgetPreview({ workspaceId, view = "chat", isOpen = tru
           input={input}
           handleInputChange={(e) => setInput(e.target.value)}
           handleSubmit={handleSubmit}
-          isGenerating={false}
+          isGenerating={sending}
           className="h-full"
         />
       </div>
