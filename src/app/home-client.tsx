@@ -12,6 +12,7 @@ import {
   Globe
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
+import { cn } from "@/lib/utils"
 
 const WhatsAppLogo = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" className={className} fill="currentColor">
@@ -581,31 +582,43 @@ export function LandingPage() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {[
                 {
                   title: "Booking Agent",
                   description: "Handles appointment scheduling end-to-end — checks availability, books slots, sends confirmations, and manages rescheduling without human intervention.",
                   icon: <Globe className="h-5 w-5" style={{ color: "#f9510b" }} />,
+                  className: "md:col-span-2",
                 },
                 {
                   title: "Sales Agent",
-                  description: "Responds to product inquiries instantly, searches your catalog, generates quotes, and guides customers through purchase decisions — all conversationally.",
+                  description: "Responds to product inquiries instantly, searches your catalog, generates quotes, and guides customers through purchase decisions.",
                   icon: <BarChart2 className="h-5 w-5" style={{ color: "#f9510b" }} />,
+                  className: "md:col-span-1",
                 },
                 {
                   title: "Support Agent",
                   description: "Answers questions from your knowledge base, handles complaints, explains policies, and seamlessly escalates complex issues to your team when needed.",
                   icon: <Inbox className="h-5 w-5" style={{ color: "#f9510b" }} />,
+                  className: "md:col-span-1",
+                },
+                {
+                  title: "Analytics",
+                  description: "Real-time insights into conversation volume, resolution rates, agent performance, and customer satisfaction trends.",
+                  icon: <BarChart2 className="h-5 w-5" style={{ color: "#f9510b" }} />,
+                  className: "md:col-span-2",
                 },
               ].map((feature, i) => (
-                <TiltCard key={feature.title}>
                 <motion.div
-                  initial={{ opacity: 0, y: 30 }}
+                  key={feature.title}
+                  initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.8, delay: i * 0.15, ease: [0.16, 1, 0.3, 1] as const }}
-                  className="p-6 rounded-2xl group transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
+                  transition={{ duration: 0.6, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] as const }}
+                  className={cn(
+                    "group relative p-6 rounded-2xl transition-all duration-300 hover:shadow-lg hover:-translate-y-1 overflow-hidden",
+                    feature.className
+                  )}
                   style={{ background: "#fafafa", border: "1px solid #e5e5e5" }}
                 >
                   <div className="h-10 w-10 rounded-xl flex items-center justify-center mb-4" style={{ background: "rgba(198, 95, 57, 0.08)" }}>
@@ -614,7 +627,6 @@ export function LandingPage() {
                   <h3 className="text-base font-normal mb-2" style={{ color: "#171717" }}>{feature.title}</h3>
                   <p className="text-sm leading-relaxed font-normal" style={{ color: "#737373" }}>{feature.description}</p>
                 </motion.div>
-                </TiltCard>
               ))}
             </div>
 
