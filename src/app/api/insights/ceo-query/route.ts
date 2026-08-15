@@ -115,10 +115,15 @@ GUIDELINES:
 1. Be direct and "CEO-level". Don't waste time on fluff.
 2. If WhatsApp is disconnected, flag it as a P0 priority.
 3. Use the performance trends to suggest improvements.
-4. Format with clean Markdown. Use bolding for key metrics.`;
+4. Format with clean Markdown. Use bolding for key metrics.
+5. Keep the Response CONCISE: under 400 words, max ~8 short bullets. Scannable, not a report. Do NOT repeat the input metrics back; focus only on insight and 2-4 prioritized recommendations.`;
 
     const opencodeApiKey = process.env.OPENCODE_ZEN_API_KEY;
     const opencodeBaseUrl = process.env.OPENCODE_ZEN_BASE_URL || 'https://opencode.ai/zen/v1';
+    if (!opencodeApiKey) throw new Error("OPENCODE_ZEN_API_KEY is not set");
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 55000);
 
     const response = await fetch(`${opencodeBaseUrl}/chat/completions`, {
       method: "POST",
@@ -133,9 +138,10 @@ GUIDELINES:
           { role: "user", content: message }
         ],
         temperature: 0.3,
-        max_tokens: 1500
-      })
-    });
+        max_tokens: 2000
+      }),
+      signal: controller.signal
+    }).finally(() => clearTimeout(timeout));
 
     if (!response.ok) throw new Error(`OpenCode AI Error: ${response.status}`);
 

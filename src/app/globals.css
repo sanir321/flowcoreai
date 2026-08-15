@@ -24,7 +24,7 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  
+
   --radius-sm: 3px;
   --radius-md: 6px;
   --radius-lg: 10px;
@@ -57,45 +57,45 @@
   /* FlowCore Base - Light Mode with brand accents */
   --background: #FFFFFF;
   --foreground: #000000;
-  
+
   --card: #FFFFFF;
   --card-foreground: #000000;
-  
+
   --popover: #FFFFFF;
   --popover-foreground: #000000;
-  
+
   --primary: #c65f39; /* FlowCore Brand Orange */
   --primary-foreground: #FFFFFF;
-  
+
   --secondary: #dd6b00; /* FlowCore Secondary Orange */
   --secondary-foreground: #FFFFFF;
-  
+
   --muted: #f5f5f5;
   --muted-foreground: #595859;
-  
+
   --accent: #c65f39;
   --accent-foreground: #FFFFFF;
-  
+
   --border: #f0f0f0;
   --input: #f0f0f0;
   --ring: #c65f39;
-  
+
   --radius: 12px;
 }
 
 .dark {
   --background: #050505; /* FlowCore Pure Dark */
   --foreground: #FFFFFF;
-  
+
   --card: #11100f;
   --card-foreground: #FFFFFF;
-  
+
   --primary: #c65f39;
   --primary-foreground: #FFFFFF;
-  
+
   --border: #222222;
   --input: #222222;
-  
+
   --muted: #11100f;
   --muted-foreground: #a1a1aa;
 }
@@ -130,7 +130,7 @@
     scroll-behavior: smooth;
     font-family: var(--font-sans);
   }
-  
+
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
     letter-spacing: -0.04em;

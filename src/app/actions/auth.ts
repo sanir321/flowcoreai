@@ -4,7 +4,7 @@ import { z } from "zod"
 import { headers } from "next/headers"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { checkUserExists } from "@/app/actions/workspace"
+import { userExistsByEmail } from "@/lib/user-exists"
 
 export interface SendOtpResult {
   error: string | null
@@ -24,8 +24,10 @@ async function getClientIp(): Promise<string> {
     const h = await headers()
     const forwarded = h.get("x-forwarded-for")
     if (forwarded) {
-      const first = forwarded.split(",")[0]
-      if (first) return first.trim()
+      // Take the LAST hop: trusted proxies (e.g. Vercel) append the real client
+      // IP at the end of the chain, while the first value is client-spoofable.
+      const parts = forwarded.split(",").map(p => p.trim()).filter(Boolean)
+      if (parts.length > 0) return parts[parts.length - 1]!
     }
     const real = h.get("x-real-ip")
     if (real) return real.trim()
@@ -74,8 +76,14 @@ export async function sendOtpAction(input: {
     }
 
     // Enforce terms acceptance for new sign-ups
-    const { data: existsData } = await checkUserExists(email)
-    const isNewUser = existsData ? !existsData.exists : true
+    let isNewUser = false
+    try {
+      isNewUser = !(await userExistsByEmail(email))
+    } catch (err) {
+      console.error("checkUserExists error:", err)
+      // Fail open (send the OTP) rather than leak existence or block login
+      isNewUser = false
+    }
     if (isNewUser && !acceptedTerms) {
       return { error: "You must accept the Privacy Policy and Terms & Conditions", isOtpSent: false }
     }
@@ -130,6 +138,16 @@ export async function verifyOtpAction(input: {
   const admin = createAdminClient()
 
   try {
+    // Server-side lockout check on the verify path too (brute-force guard)
+    const { data: verifyLockout, error: verifyLockoutError } = await admin.rpc("check_login_lockout", {
+      p_email: email,
+      p_ip: clientIp,
+    })
+    if (!verifyLockoutError && verifyLockout?.[0]?.locked) {
+      const secs = verifyLockout[0].lockout_seconds || 900
+      return { error: `Too many attempts. Try again in ${Math.ceil(secs / 60)} minutes.`, targetRoute: "" }
+    }
+
     const supabase = await createClient()
 
     const { error } = await supabase.auth.verifyOtp({

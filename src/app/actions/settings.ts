@@ -53,6 +53,10 @@ export async function updateNotifications(input: unknown): Promise<ActionRespons
 
 function sanitizeDomain(domain: string): string {
   let d = domain.trim();
+  // L8: reject control characters and any invalid hostname characters outright.
+  if (!/^[^\u0000-\u001f\u007f\s]+$/.test(d)) return '';
+  // Remove wildcard prefix (UI accepts "*.example.com" for subdomains; matching uses endsWith)
+  d = d.replace(/^\*\./, '');
   // Remove protocol
   d = d.replace(/^https?:\/\//i, '');
   // Remove path (everything after first /)
@@ -63,6 +67,10 @@ function sanitizeDomain(domain: string): string {
   d = d.toLowerCase();
   // Remove trailing dot
   d = d.replace(/\.$/, '');
+  // L8: final structural check — must look like a real hostname.
+  if (d.length > 253) return '';
+  if (!/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/.test(d)) return '';
+  if (d.split('.').some(part => part.length > 63)) return '';
   return d;
 }
 
@@ -119,12 +127,14 @@ export async function getGoogleAuthUrl(workspace_id: string): Promise<ActionResp
     );
 
     const { createHmac, randomBytes } = await import('node:crypto');
-    if (!process.env.INTERNAL_CRON_SECRET) {
+    // M8: dedicated secret for OAuth state signing — do not reuse the cron secret.
+    const stateSecret = process.env.OAUTH_STATE_SECRET || process.env.INTERNAL_CRON_SECRET;
+    if (!stateSecret) {
       return { data: null, error: "Server configuration error: missing secret" };
     }
 
     const nonce = randomBytes(16).toString('hex');
-    const hmac = createHmac('sha256', process.env.INTERNAL_CRON_SECRET);
+    const hmac = createHmac('sha256', stateSecret);
     hmac.update(result.data + ':' + nonce);
     const stateSig = hmac.digest('hex');
     const state = `${result.data}.${nonce}.${stateSig}`;
@@ -165,7 +175,7 @@ export async function updateGoogleConfig(input: unknown): Promise<ActionResponse
       const auth = await verifyWorkspaceOwnership(supabase, user.id, workspace_id)
       if (!auth.authorized) return { data: null, error: auth.error }
   
-      const { error } = await supabase
+      const { data: updated, error } = await supabase
         .from("google_oauth_tokens")
         .update({ 
           calendar_id: calendar_id || 'primary', 
@@ -174,9 +184,15 @@ export async function updateGoogleConfig(input: unknown): Promise<ActionResponse
           updated_at: new Date().toISOString() 
         })
         .eq("workspace_id", workspace_id)
-  
+        .select("id")
+        .maybeSingle()
+
       if (error) throw error
-  
+      // L5: if no row was updated, the workspace has no Google integration yet.
+      if (!updated) {
+        return { data: null, error: "No Google integration found — connect your Google account first" }
+      }
+
       revalidatePath("/settings/integrations")
       return { data: { success: true }, error: null }
   

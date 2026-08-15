@@ -43,31 +43,31 @@ export async function GET(req: NextRequest) {
     // 2. Validate allowed domains
     const origin = req.headers.get("origin") || req.headers.get("referer") || "";
     let allowedOrigin = "*";
-    
-    // Require allowed_domains to be configured
-    if (!config?.allowed_domains || config.allowed_domains.length === 0) {
-      return new Response("Widget not configured — no allowed domains set", { status: 403 });
-    }
-    
-    if (!origin) {
-      return new Response("Missing origin header", { status: 403 });
-    }
-    try {
-      const url = new URL(origin);
-      const hostname = url.hostname;
-      
-      // Bypass for local development and same-origin dashboard requests
-      const isLocal = (hostname === "localhost" || hostname === "127.0.0.1") && process.env.NODE_ENV !== "production";
-      const appHostname = process.env.NEXT_PUBLIC_APP_URL ? new URL(process.env.NEXT_PUBLIC_APP_URL).hostname : "";
-      const isSameOrigin = appHostname && (hostname === appHostname || hostname.endsWith("." + appHostname));
-      
-      const allowed = isLocal || isSameOrigin || config.allowed_domains.some((d: string) => hostname === d || hostname.endsWith("." + d));
-      if (!allowed) {
-        return new Response("Domain not allowed", { status: 403 });
+
+    // Empty allowed_domains = allow all origins (matches UI: "Leave blank for all")
+    const allowedDomains: string[] = config?.allowed_domains || [];
+
+    if (allowedDomains.length > 0) {
+      if (!origin) {
+        return new Response("Missing origin header", { status: 403 });
       }
-      allowedOrigin = origin;
-    } catch {
-      return new Response("Invalid origin", { status: 403 });
+      try {
+        const url = new URL(origin);
+        const hostname = url.hostname;
+
+        // Bypass for local development and same-origin dashboard requests
+        const isLocal = (hostname === "localhost" || hostname === "127.0.0.1") && process.env.NODE_ENV !== "production";
+        const appHostname = process.env.NEXT_PUBLIC_APP_URL ? new URL(process.env.NEXT_PUBLIC_APP_URL).hostname : "";
+        const isSameOrigin = appHostname && (hostname === appHostname || hostname.endsWith("." + appHostname));
+
+        const allowed = isLocal || isSameOrigin || allowedDomains.some((d: string) => hostname === d || hostname.endsWith("." + d));
+        if (!allowed) {
+          return new Response("Domain not allowed", { status: 403 });
+        }
+        allowedOrigin = origin;
+      } catch {
+        return new Response("Invalid origin", { status: 403 });
+      }
     }
 
     // 2. Fetch primary agent for name/avatar
@@ -81,7 +81,7 @@ export async function GET(req: NextRequest) {
 
     const responseData = {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      agent_name: (agent?.config as any)?.name || "Support AI",
+      agent_name: config?.agent_name || (agent?.config as any)?.name || "Support AI",
       accent_color: config?.accent_color || "#f9510b",
       greeting: config?.greeting || "Hi! How can I help you today?",
       header_text: config?.header_text || "Support Specialist",

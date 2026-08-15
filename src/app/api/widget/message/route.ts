@@ -83,23 +83,26 @@ export async function POST(req: NextRequest) {
     }
 
     const origin = req.headers.get("origin") || req.headers.get("referer") || "";
-    const allowedDomains = widgetInfo.allowed_domains as string[];
+    const allowedDomains = (widgetInfo.allowed_domains as string[]) || [];
     let allowedOrigin = "*";
 
-    if (!origin) {
-      return new Response("Missing origin header", { status: 403 });
-    }
-    try {
-      const originDomain = new URL(origin).hostname;
-      const allowed = allowedDomains.some(d =>
-        originDomain === d || originDomain.endsWith("." + d)
-      );
-      if (!allowed) {
-        return new Response("Domain not allowed", { status: 403 });
+    // Empty allowed_domains = allow all origins (matches UI: "Leave blank for all")
+    if (allowedDomains.length > 0) {
+      if (!origin) {
+        return new Response("Missing origin header", { status: 403 });
       }
-      allowedOrigin = origin;
-    } catch {
-      return new Response("Invalid origin", { status: 403 });
+      try {
+        const originDomain = new URL(origin).hostname;
+        const allowed = allowedDomains.some(d =>
+          originDomain === d || originDomain.endsWith("." + d)
+        );
+        if (!allowed) {
+          return new Response("Domain not allowed", { status: 403 });
+        }
+        allowedOrigin = origin;
+      } catch {
+        return new Response("Invalid origin", { status: 403 });
+      }
     }
 
     // 1. All DB operations via SECURITY DEFINER function
@@ -179,22 +182,25 @@ export async function GET(req: NextRequest) {
 
     const origin = req.headers.get("origin") || req.headers.get("referer") || "";
     let allowedOrigin = "*";
+    const allowedDomains = (widgetInfo.allowed_domains as string[]) || [];
 
-    if (!origin) {
-      return new Response("Missing origin header", { status: 403 });
-    }
-    try {
-      const originDomain = new URL(origin).hostname;
-      const allowedDomains = widgetInfo.allowed_domains as string[];
-      const allowed = allowedDomains.some(d =>
-        originDomain === d || originDomain.endsWith("." + d)
-      );
-      if (!allowed) {
-        return new Response("Domain not allowed", { status: 403 });
+    // Empty allowed_domains = allow all origins (matches UI: "Leave blank for all")
+    if (allowedDomains.length > 0) {
+      if (!origin) {
+        return new Response("Missing origin header", { status: 403 });
       }
-      allowedOrigin = origin;
-    } catch {
-      return new Response("Invalid origin", { status: 403 });
+      try {
+        const originDomain = new URL(origin).hostname;
+        const allowed = allowedDomains.some(d =>
+          originDomain === d || originDomain.endsWith("." + d)
+        );
+        if (!allowed) {
+          return new Response("Domain not allowed", { status: 403 });
+        }
+        allowedOrigin = origin;
+      } catch {
+        return new Response("Invalid origin", { status: 403 });
+      }
     }
 
     const sinceTimestamp = since ? (() => {

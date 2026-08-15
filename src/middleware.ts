@@ -10,14 +10,9 @@ export async function middleware(request: NextRequest) {
   const headerSize = JSON.stringify([...requestHeaders.entries()]).length
 
   if (headerSize > 12000) {
-    const response = NextResponse.redirect(new URL('/login', request.url))
-    const allCookies = request.cookies.getAll()
-    allCookies.forEach(cookie => {
-      if (!cookie.name.includes("sb-")) {
-        response.cookies.set(cookie.name, '', { maxAge: 0, path: '/' })
-      }
-    })
-    return response
+    // L10: reject oversized requests outright — do NOT clear cookies (that
+    // would wipe OAuth nonce cookies like google_oauth_nonce and break flows).
+    return NextResponse.json({ error: "Request headers too large" }, { status: 413 })
   }
 
   const url = request.nextUrl.clone()

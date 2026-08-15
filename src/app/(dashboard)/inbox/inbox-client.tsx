@@ -37,6 +37,11 @@ import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { motion } from "framer-motion"
 import { useMemo } from "react"
+import { PromptInput, PromptInputTextarea, PromptInputActions, PromptInputAction } from "@/components/ui/prompt-input"
+import { ThinkingBar } from "@/components/ui/thinking-bar"
+import { FeedbackBar } from "@/components/ui/feedback-bar"
+import { ChatContainerRoot, ChatContainerContent, ChatContainerScrollAnchor } from "@/components/ui/chat-container"
+import { ScrollButton } from "@/components/ui/scroll-button"
 
 interface Contact {
   id: string
@@ -96,6 +101,7 @@ export function InboxClient({
   const [welcomeTemplate, setWelcomeTemplate] = useState(initialWelcomeTemplate)
   const [isSavingTemplate, setIsSavingTemplate] = useState(false)
   const [contactSearch, setContactSearch] = useState("")
+  const [ratedIds, setRatedIds] = useState<Set<string>>(new Set())
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const selectedSession = sessions.find(s => s.id === selectedSessionId)
@@ -220,8 +226,8 @@ export function InboxClient({
     if (scrollRef.current) scrollRef.current.scrollIntoView({ behavior: "smooth" })
   }, [messages])
 
-  const handleSend = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSend = async (e?: React.FormEvent) => {
+    e?.preventDefault()
     if (!inputText.trim() || isSending || !selectedSessionId || !workspaceId) return
     
     const text = inputText.trim()
@@ -520,16 +526,18 @@ export function InboxClient({
                   </div>
                )}
 
-               <ScrollArea className="flex-1 bg-white min-h-0">
-                  <div className="max-w-3xl mx-auto space-y-6 py-8 px-4 md:px-6">
-                     {messages.map((m) => (
-                       <div key={m.id} className={cn("flex flex-col gap-1.5", m.role === 'customer' ? "items-start" : "items-end")}>
-                           <div className={cn(
-                             "px-4 py-2.5 rounded-xl text-sm font-normal leading-relaxed max-w-[88%]",
-                             m.role === 'customer' 
-                               ? "bg-[#F5F5F5] text-gray-900" 
-                               : "bg-white border border-gray-100 text-gray-900 shadow-sm"
-                           )}>
+                <div className="flex-1 bg-white min-h-0 relative">
+                  <ChatContainerRoot className="flex-1 bg-white min-h-0">
+                    <ChatContainerContent>
+                      <div className="max-w-3xl mx-auto space-y-6 py-8 px-4 md:px-6 w-full">
+                        {messages.map((m) => (
+                          <div key={m.id} className={cn("flex flex-col gap-1.5", m.role === 'customer' ? "items-start" : "items-end")}>
+                            <div className={cn(
+                              "px-4 py-2.5 rounded-xl text-sm font-normal leading-relaxed max-w-[88%]",
+                              m.role === 'customer' 
+                                ? "bg-[#F5F5F5] text-gray-900" 
+                                : "bg-white border border-gray-100 text-gray-900 shadow-sm"
+                            )}>
                               {m.metadata?.media_path ? (
                                 <div className="flex flex-col gap-1.5">
                                   {(m.metadata.media_mime as string)?.startsWith('image') ? (
@@ -547,61 +555,76 @@ export function InboxClient({
                               ) : (
                                 m.content
                               )}
-                           </div>
-                          
-                           <div className="flex items-center gap-2 px-1 text-gray-500 font-semibold">
+                            </div>
+
+                            {m.role === 'agent' && !ratedIds.has(m.id) && (
+                              <div className="self-end">
+                                <FeedbackBar
+                                  title="Was this helpful?"
+                                  onHelpful={() => { setRatedIds(prev => new Set(prev).add(m.id)); toast.success("Thanks for your feedback!") }}
+                                  onNotHelpful={() => { setRatedIds(prev => new Set(prev).add(m.id)); toast.success("Thanks for your feedback!") }}
+                                  onClose={() => setRatedIds(prev => new Set(prev).add(m.id))}
+                                  className="text-[10px]"
+                                />
+                              </div>
+                            )}
+
+                            <div className="flex items-center gap-2 px-1 text-gray-500 font-semibold">
                               <span className="text-[8px]">{m.role === 'customer' ? 'Customer' : 'Assistant'}</span>
                               {m.role !== 'customer' && m.agent_type && m.agent_type !== 'customer_support' && (
                                 <span className="text-[7px] uppercase tracking-wider text-[#f9510b] font-bold">{formatAgentType(m.agent_type)}</span>
                               )}
-                           </div>
-                       </div>
-                     ))}
+                            </div>
+                          </div>
+                        ))}
 
-                     {/* AI Typing Indicator */}
-                     {selectedSession.status === 'active' && selectedSession.typing_status && selectedSession.typing_status !== 'idle' && (
-                        <motion.div 
-                           initial={{ opacity: 0, y: 5 }}
-                           animate={{ opacity: 1, y: 0 }}
-                           className="flex flex-col gap-2 items-end"
-                        >
-                           <div className="bg-white border border-gray-100 p-3 rounded-xl shadow-sm flex items-center gap-2">
-                              <div className="flex gap-1">
-                                 <div className="h-1 w-1 bg-[#f9510b] rounded-full animate-bounce [animation-delay:-0.3s]" />
-                                 <div className="h-1 w-1 bg-[#f9510b] rounded-full animate-bounce [animation-delay:-0.15s]" />
-                                 <div className="h-1 w-1 bg-[#f9510b] rounded-full animate-bounce" />
-                              </div>
-                              <span className="text-[9px] font-bold text-gray-400 capitalize">
-                                 {selectedSession.typing_status.replace(/_/g, ' ')}...
-                              </span>
-                           </div>
-                        </motion.div>
-                     )}
-                     <div ref={scrollRef} />
-                  </div>
-               </ScrollArea>
+                        {/* AI Typing Indicator */}
+                        {selectedSession.status === 'active' && selectedSession.typing_status && selectedSession.typing_status !== 'idle' && (
+                          <div className="flex flex-col items-end">
+                            <ThinkingBar
+                              text={selectedSession.typing_status.replace(/_/g, ' ')}
+                            />
+                          </div>
+                        )}
+                        <ChatContainerScrollAnchor />
+                      </div>
+                    </ChatContainerContent>
+                    <ScrollButton className="absolute bottom-20 right-6 z-10" />
+                  </ChatContainerRoot>
+                  <div ref={scrollRef} />
+                </div>
 
-               {/* Reply Box */}
-               <div className="p-4 md:p-5 bg-white border-t border-gray-50 shrink-0">
-                  <form onSubmit={handleSend} className="max-w-3xl mx-auto flex gap-2">
-                     <div className="relative flex-1">
-                        <Input 
-                          placeholder={selectedSession.status === 'escalated' ? "Type a message..." : "Assistant is active..."} 
-                          value={inputText}
-                          onChange={(e) => setInputText(e.target.value)}
-                          disabled={selectedSession.status !== 'escalated' || isSending}
-                          className="h-10 pl-4 pr-10 bg-gray-50 border-gray-100 rounded-lg focus:bg-white focus:border-gray-200 transition-all text-xs font-normal disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-gray-500 text-gray-900"
-                        />
-                     </div>
-                     <Button 
-                        type="submit" 
-                        disabled={selectedSession.status !== 'escalated' || isSending || !inputText.trim()}
-                        className="h-10 px-4 rounded-lg bg-black text-white hover:bg-gray-800 flex items-center justify-center shrink-0 active:scale-95 transition-all gap-1.5"
-                     >
-                        {isSending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <><span className="text-[10px] font-semibold hidden sm:inline">Send</span><Send className="h-3.5 w-3.5" /></>}
-                     </Button>
-                  </form>
-               </div>
+                {/* Reply Box */}
+                <div className="p-4 md:p-5 bg-white border-t border-gray-50 shrink-0">
+                   <div className="max-w-3xl mx-auto">
+                    <PromptInput
+                      value={inputText}
+                      onValueChange={setInputText}
+                      onSubmit={handleSend}
+                      isLoading={isSending}
+                      maxHeight={160}
+                      disabled={selectedSession.status !== 'escalated' || isSending}
+                      className="bg-gray-50 border-gray-100 rounded-xl shadow-none focus-within:bg-white focus-within:border-gray-200"
+                    >
+                      <PromptInputTextarea
+                        placeholder={selectedSession.status === 'escalated' ? "Type a message..." : "Assistant is active..."}
+                        className="min-h-[40px] h-10 text-xs font-normal text-gray-900 placeholder:text-gray-500 resize-none"
+                        disabled={selectedSession.status !== 'escalated' || isSending}
+                      />
+                      <PromptInputActions>
+                        <PromptInputAction tooltip="Send">
+                          <Button 
+                            onClick={() => handleSend()}
+                            disabled={selectedSession.status !== 'escalated' || isSending || !inputText.trim()}
+                            className="h-9 w-9 rounded-lg bg-black text-white hover:bg-gray-800 flex items-center justify-center shrink-0 active:scale-95 transition-all"
+                          >
+                            {isSending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                          </Button>
+                        </PromptInputAction>
+                      </PromptInputActions>
+                    </PromptInput>
+                   </div>
+                </div>
              </>
            ) : (
              <div className="flex-1 flex flex-col items-center justify-center p-10 text-center space-y-4 text-gray-900">

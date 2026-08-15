@@ -1,13 +1,17 @@
 "use client"
 
 import React, { useState, useRef, useEffect } from "react"
-import { Send, TrendingUp, Zap, Loader2, BarChart3, Target, ChevronDown, ChevronUp, Brain, Users, AlertCircle, Quote, Lightbulb, Clipboard, Check } from "lucide-react"
+import { Send, TrendingUp, Zap, Loader2, BarChart3, Target, ChevronDown, ChevronUp, Brain, Users, AlertCircle, Lightbulb, Clipboard, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { motion, AnimatePresence } from "framer-motion"
 import { AssistantsSidebar } from "@/components/nav/assistants-sidebar"
+import { PromptInput, PromptInputTextarea, PromptInputActions, PromptInputAction } from "@/components/ui/prompt-input"
+import { ThinkingBar } from "@/components/ui/thinking-bar"
+import { FeedbackBar } from "@/components/ui/feedback-bar"
+import { Markdown } from "@/components/ui/markdown"
 
 interface Message {
   role: 'user' | 'assistant'
@@ -120,154 +124,13 @@ const ThinkingIndicator = () => {
   )
 }
 
-const CopyButton = ({ text }: { text: string }) => {
-  const [copied, setCopied] = useState(false)
-  return (
-    <button
-      onClick={() => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000) }}
-      className="absolute top-2 right-2 h-7 w-7 rounded-lg bg-white/80 backdrop-blur-sm border border-gray-100 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-white hover:shadow-sm"
-    >
-      {copied ? <Check size={11} className="text-emerald-500" /> : <Clipboard size={11} className="text-gray-400" />}
-    </button>
-  )
-}
 
-const StructuredContent = ({ content }: { content: string }) => {
-  const lines = content.split('\n')
-  const elements: React.ReactNode[] = []
-  let inList = false
-  let inCodeBlock = false
-  let codeContent = ''
-  let codeLang = ''
-
-  const flushCodeBlock = (key: string) => {
-    if (!codeContent) return
-    elements.push(
-      <div key={key} className="relative group my-3">
-        <div className="flex items-center justify-between px-4 py-1.5 bg-gray-900 text-gray-400 text-[10px] font-mono rounded-t-xl border-b border-gray-800">
-          <span>{codeLang || 'code'}</span>
-        </div>
-        <pre className="p-4 bg-gray-900 text-gray-100 text-[12px] leading-relaxed font-mono overflow-x-auto rounded-b-xl">
-          <code>{codeContent}</code>
-        </pre>
-        <CopyButton text={codeContent} />
-      </div>
-    )
-    codeContent = ''
-    codeLang = ''
-  }
-
-  lines.forEach((line, i) => {
-    const key = `l-${i}`
-
-    if (line.startsWith('```')) {
-      if (inCodeBlock) {
-        flushCodeBlock(key)
-        inCodeBlock = false
-        return
-      }
-      inCodeBlock = true
-      codeLang = line.slice(3).trim()
-      codeContent = ''
-      return
-    }
-
-    if (inCodeBlock) {
-      codeContent += (codeContent ? '\n' : '') + line
-      return
-    }
-
-    if (!line.trim()) {
-      if (inList) { inList = false; elements.push(<div key={`sp-${i}`} className="h-2" />) }
-      else { elements.push(<div key={`sp-${i}`} className="h-3" />) }
-      return
-    }
-
-    if (line.startsWith('### ')) {
-      if (inList) { inList = false }
-      elements.push(<h3 key={key} className="text-sm font-bold text-gray-900 mt-5 mb-2 flex items-center gap-2"><span className="h-4 w-1 rounded-full bg-[#f9510b]" />{line.slice(4)}</h3>)
-      return
-    }
-    if (line.startsWith('## ')) {
-      if (inList) { inList = false }
-      elements.push(<h2 key={key} className="text-base font-bold text-gray-900 mt-6 mb-3">{line.slice(3)}</h2>)
-      return
-    }
-    if (line.startsWith('# ')) {
-      if (inList) { inList = false }
-      elements.push(<h1 key={key} className="text-lg font-bold text-gray-900 mt-6 mb-3">{line.slice(2)}</h1>)
-      return
-    }
-
-    if (line.startsWith('> ')) {
-      if (inList) { inList = false }
-      elements.push(
-        <div key={key} className="flex gap-2 my-2 pl-3 border-l-2 border-[#f9510b]/30">
-          <Quote size={12} className="text-[#f9510b]/50 mt-0.5 shrink-0" />
-          <p className="text-[12px] text-gray-500 italic leading-relaxed">{renderInline(line.slice(2))}</p>
-        </div>
-      )
-      return
-    }
-
-    if (line.startsWith('- ') || line.startsWith('* ')) {
-      if (!inList) { inList = true; elements.push(<ul key={`ul-${i}`} className="space-y-1.5 my-1" />) }
-      elements.push(
-        <li key={key} className="flex items-start gap-2.5 text-[13px] text-gray-700 pl-1">
-          <span className="h-1.5 w-1.5 rounded-full bg-[#f9510b]/60 mt-2 shrink-0" />
-          <span className="flex-1">{renderInline(line.slice(2))}</span>
-        </li>
-      )
-      return
-    }
-    if (inList) { inList = false; elements.push(<div key={`el-${i}`} className="h-1" />) }
-
-    const numberedMatch = line.match(/^(\d+)\.\s+(.+)/)
-    if (numberedMatch) {
-      elements.push(
-        <div key={key} className="flex items-start gap-3 text-[13px] text-gray-700 my-1.5">
-          <div className="h-5 w-5 rounded-lg bg-gradient-to-br from-[#f9510b]/10 to-[#f9510b]/5 border border-[#f9510b]/20 text-[#f9510b] text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">{numberedMatch[1]}</div>
-          <span className="flex-1 pt-0.5">{renderInline(numberedMatch[2] ?? "")}</span>
-        </div>
-      )
-      return
-    }
-
-    elements.push(
-      <p key={key} className="text-[13px] text-gray-700 leading-relaxed my-1">{renderInline(line)}</p>
-    )
-  })
-
-  if (inCodeBlock) { flushCodeBlock('end-code') }
-
-  return <div className="space-y-0.5">{elements}</div>
-}
-
-const renderInline = (text: string) => {
-  const parts = text.split(/(\*\*.*?\*\*|`.*?`|https?:\/\/\S+)/g)
-  return parts.map((part, i) => {
-    if (part.startsWith('**') && part.endsWith('**')) {
-      return <strong key={i} className="font-semibold text-gray-900">{part.slice(2, -2)}</strong>
-    }
-    if (part.startsWith('`') && part.endsWith('`')) {
-      return <code key={i} className="px-1.5 py-0.5 rounded-md bg-gray-100 text-[#f9510b] text-[11px] font-mono">{part.slice(1, -1)}</code>
-    }
-    if (part.startsWith('http')) {
-      try {
-        const u = new URL(part);
-        if (u.protocol === 'https:' || u.protocol === 'http:') {
-          return <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="text-[#f9510b] underline underline-offset-2 decoration-[#f9510b]/30 hover:decoration-[#f9510b] transition-all">{part}</a>
-        }
-      } catch {}
-    }
-    return part
-  })
-}
 
 export default function CEOAnalystPage() {
   const [prompt, setPrompt] = useState("")
   const [isSending, setIsSending] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
+  const [ratedIds, setRatedIds] = useState<Set<string>>(new Set())
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -430,10 +293,23 @@ export default function CEOAnalystPage() {
                           {m.role === 'user' ? (
                             <p className="text-[13px]">{m.content}</p>
                           ) : (
-                            <StructuredContent content={m.content} />
+                            <Markdown className="text-[13px] leading-relaxed text-gray-800 [&_h1]:text-lg [&_h1]:font-bold [&_h1]:text-gray-900 [&_h1]:mt-4 [&_h1]:mb-2 [&_h2]:text-base [&_h2]:font-bold [&_h2]:text-gray-900 [&_h2]:mt-4 [&_h2]:mb-2 [&_h3]:text-sm [&_h3]:font-bold [&_h3]:text-gray-900 [&_h3]:mt-3 [&_h3]:mb-1.5 [&_ul]:space-y-1 [&_ul]:my-2 [&_ol]:space-y-1 [&_ol]:my-2 [&_li]:text-[13px] [&_li]:text-gray-700 [&_p]:text-[13px] [&_p]:text-gray-700 [&_p]:leading-relaxed [&_p]:my-1 [&_blockquote]:border-l-2 [&_blockquote]:border-[#f9510b]/30 [&_blockquote]:pl-3 [&_blockquote]:my-2 [&_blockquote]:text-gray-500 [&_blockquote]:italic [&_code]:bg-gray-100 [&_code]:text-[#f9510b] [&_code]:text-[11px] [&_code]:font-mono [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded-md">
+                              {m.content}
+                            </Markdown>
                           )}
                         </div>
                       </div>
+                      {m.role === 'assistant' && !ratedIds.has(m.id) && (
+                        <div className="mt-1">
+                          <FeedbackBar
+                            title="Was this helpful?"
+                            onHelpful={() => { setRatedIds(prev => new Set(prev).add(m.id)); toast.success("Thanks for your feedback!") }}
+                            onNotHelpful={() => { setRatedIds(prev => new Set(prev).add(m.id)); toast.success("Thanks for your feedback!") }}
+                            onClose={() => setRatedIds(prev => new Set(prev).add(m.id))}
+                            className="text-[11px]"
+                          />
+                        </div>
+                      )}
                       <div className="flex items-center gap-2 px-1">
                         <div className={cn(
                           "h-4 w-4 rounded-md flex items-center justify-center",
@@ -471,35 +347,37 @@ export default function CEOAnalystPage() {
         {/* Input */}
         <div className="px-5 py-4 border-t border-gray-100 bg-white shrink-0">
           <div className="max-w-2xl mx-auto">
-            <div className="flex items-center gap-2 bg-white border border-gray-200 px-4 py-2 rounded-2xl transition-all focus-within:border-gray-300 focus-within:shadow-sm focus-within:bg-gray-50/50">
-              <input
-                ref={inputRef}
-                type="text"
+            <PromptInput
+              value={prompt}
+              onValueChange={setPrompt}
+              onSubmit={() => handleSend()}
+              isLoading={isSending}
+              maxHeight={180}
+              className="bg-white border-gray-200 rounded-2xl shadow-none p-1"
+            >
+              <PromptInputTextarea
+                ref={inputRef as any}
                 placeholder="Ask about your business..."
-                className="flex-1 bg-transparent border-none focus:ring-0 text-[13px] font-medium text-gray-900 placeholder:text-gray-400 outline-none h-9"
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
+                className="min-h-[36px] h-9 text-[13px] font-medium text-gray-900 placeholder:text-gray-400 resize-none"
                 disabled={isSending}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault()
-                    handleSend()
-                  }
-                }}
               />
-              <Button
-                onClick={() => handleSend()}
-                disabled={!prompt.trim() || isSending}
-                className={cn(
-                  "h-9 w-9 rounded-xl transition-all duration-200 active:scale-90 flex items-center justify-center shrink-0",
-                  prompt.trim() && !isSending
-                    ? "bg-gray-900 text-white hover:bg-gray-800 shadow-sm"
-                    : "bg-gray-50 text-gray-300"
-                )}
-              >
-                {isSending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-              </Button>
-            </div>
+              <PromptInputActions>
+                <PromptInputAction tooltip="Send">
+                  <Button
+                    onClick={() => handleSend()}
+                    disabled={!prompt.trim() || isSending}
+                    className={cn(
+                      "h-8 w-8 rounded-lg transition-all duration-200 active:scale-90 flex items-center justify-center shrink-0",
+                      prompt.trim() && !isSending
+                        ? "bg-gray-900 text-white hover:bg-gray-800 shadow-sm"
+                        : "bg-gray-50 text-gray-300"
+                    )}
+                  >
+                    {isSending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                  </Button>
+                </PromptInputAction>
+              </PromptInputActions>
+            </PromptInput>
             <p className="text-[9px] text-gray-300 text-center mt-2 font-medium">
               AI-powered analysis of your workspace performance data
             </p>

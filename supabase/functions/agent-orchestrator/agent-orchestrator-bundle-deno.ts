@@ -12157,19 +12157,17 @@ Deno.serve(async (req) => {
   const isServiceRole = timingSafeEqual(token, serviceRoleKey) || serviceKey && timingSafeEqual(token, serviceKey);
   const isInternal = internalSecret && timingSafeEqual(token, internalSecret);
   if (!isServiceRole && !isInternal) {
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
-    const isAnon = anonKey && timingSafeEqual(token, anonKey);
-    if (!isAnon) {
-      const fallbackClient = ye2(Deno.env.get("SUPABASE_URL") ?? "", serviceRoleKey);
-      const { data: { user }, error: authError } = await fallbackClient.auth.getUser(token);
-      if (authError || !user) {
-        return new Response(JSON.stringify({
-          error: "Unauthorized"
-        }), {
-          status: 401,
-          headers: responseHeaders
-        });
-      }
+    // H5: anon-key acceptance removed — only service_role, SERVICE_KEY,
+    // INTERNAL_CRON_SECRET, or a valid user JWT can invoke this function.
+    const fallbackClient = ye2(Deno.env.get("SUPABASE_URL") ?? "", serviceRoleKey);
+    const { data: { user }, error: authError } = await fallbackClient.auth.getUser(token);
+    if (authError || !user) {
+      return new Response(JSON.stringify({
+        error: "Unauthorized"
+      }), {
+        status: 401,
+        headers: responseHeaders
+      });
     }
   }
   let payload = null;

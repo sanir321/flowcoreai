@@ -50,9 +50,6 @@ begin
   if v_widget_config.is_active = false then
     return jsonb_build_object('error', 'Widget is disabled');
   end if;
-  if v_widget_config.allowed_domains is null or array_length(v_widget_config.allowed_domains, 1) = 0 then
-    return jsonb_build_object('error', 'No allowed domains configured');
-  end if;
 
   -- 3. Find existing session
   select * into v_session
@@ -232,14 +229,10 @@ begin
     return jsonb_build_object('error', 'Widget not configured');
   end if;
 
-  if v_config.allowed_domains is null or array_length(v_config.allowed_domains, 1) = 0 then
-    return jsonb_build_object('error', 'No allowed domains configured');
-  end if;
-
   return jsonb_build_object(
     'workspace_id', v_workspace.id,
     'ai_enabled', v_workspace.is_ai_enabled,
-    'allowed_domains', to_jsonb(v_config.allowed_domains)
+    'allowed_domains', coalesce(v_config.allowed_domains, array[]::text[])
   );
 end;
 $$;

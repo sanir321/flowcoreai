@@ -18,8 +18,22 @@ export async function GET(req: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    // 1. Refresh GoWA Statuses
-    const devices = await getDevices();
+    // M9: idempotency guard — only one instance may run this job at a time.
+    // pg_try_advisory_lock is non-blocking and service_role-only.
+    const LOCK_KEY = 797001; // arbitrary fixed key for gowa-health
+    const { data: gotLock, error: lockError } = await supabaseAdmin.rpc("pg_try_advisory_lock", {
+      key: LOCK_KEY,
+    });
+    if (lockError) {
+      console.error("[GOWA_HEALTH] Failed to acquire advisory lock:", lockError.message);
+      return new Response("Lock acquisition failed", { status: 500 });
+    }
+    if (!gotLock) {
+      return NextResponse.json({ success: true, skipped: "concurrent_run_in_progress" });
+    }
+    try {
+      // 1. Refresh GoWA Statuses
+      const devices = await getDevices();
     for (const device of devices) {
       await supabaseAdmin
         .from("gowa_sessions")
@@ -153,8 +167,11 @@ export async function GET(req: NextRequest) {
             }
         }
     }
-
     return NextResponse.json({ success: true, devices_checked: devices.length });
+    } finally {
+      // Release the advisory lock so the next cron run can proceed.
+      await supabaseAdmin.rpc("pg_advisory_unlock", { key: LOCK_KEY });
+    }
 
   } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
     console.error("Cron Health Error:", error);

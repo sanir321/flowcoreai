@@ -196,17 +196,23 @@ export async function initiateQRLogin(workspaceId: string, storedDeviceId?: stri
  * Logout Session
  */
 export async function logoutSession(deviceId: string): Promise<void> {
-  const res = await fetch(`${GOWA_BASE_URL}/devices/${deviceId}/logout`, {
+  const res = await fetch(`${GOWA_BASE_URL}/devices/${encodeURIComponent(deviceId)}/logout`, {
     method: 'POST',
     headers: gowaHeaders
   });
-  if (!res.ok) console.error("[GOWA] logoutSession failed:", res.status, res.statusText);
+  // L9: surface failures instead of silently swallowing them.
+  if (!res.ok) {
+    throw new Error(`[GOWA] logoutSession failed: ${res.status} ${res.statusText}`);
+  }
 }
 
 export async function deleteDevice(deviceId: string): Promise<void> {
-  const res = await fetch(`${GOWA_BASE_URL}/devices/${deviceId}`, {
+  const res = await fetch(`${GOWA_BASE_URL}/devices/${encodeURIComponent(deviceId)}`, {
     method: 'DELETE',
     headers: gowaHeaders
   });
-  if (!res.ok) console.error("[GOWA] deleteDevice failed:", res.status, res.statusText);
+  // L9: surface failures instead of silently swallowing them.
+  if (!res.ok) {
+    throw new Error(`[GOWA] deleteDevice failed: ${res.status} ${res.statusText}`);
+  }
 }
