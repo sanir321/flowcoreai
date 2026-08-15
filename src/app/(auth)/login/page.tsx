@@ -257,123 +257,41 @@ export default function LoginPage() {
           <div className="absolute w-[1000px] h-[1000px] rounded-full bg-[#D95E46]/5 blur-[160px] animate-pulse" />
           <div className="absolute w-[600px] h-[600px] rounded-full bg-white/5 blur-[100px]" />
           
-          <div className="relative z-10">
-            <svg width="600" height="600" viewBox="0 0 600 600" fill="none" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-2xl">
-              <defs>
-                <linearGradient id="metal-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="rgba(255,255,255,0.01)" />
-                  <stop offset="50%" stopColor="rgba(255,255,255,0.2)" />
-                  <stop offset="100%" stopColor="rgba(255,255,255,0.01)" />
-                </linearGradient>
-                <linearGradient id="glow-sweep" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#D95E46" stopOpacity="0" />
-                  <stop offset="50%" stopColor="#D95E46" stopOpacity="1" />
-                  <stop offset="100%" stopColor="#D95E46" stopOpacity="0" />
-                </linearGradient>
-                <filter id="neon-glow">
-                  <feGaussianBlur stdDeviation="2" result="blur" />
-                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                </filter>
-              </defs>
-
-              {/* Concentric Metal Rings with Multi-layered Animations */}
-              {[
-                { r: 240, duration: 120, direction: 1, opacity: 0.15, dash: "2 12" },
-                { r: 180, duration: 100, direction: -1, opacity: 0.1, dash: "1 15" },
-                { r: 120, duration: 80, direction: 1, opacity: 0.2, dash: "4 8" },
-              ].map((ring, i) => (
-                <g key={i} style={{ transformOrigin: '300px 300px' }}>
-                  {/* The Base Metal Ring */}
-                  <motion.circle 
-                    cx="300" cy="300" r={ring.r} 
-                    stroke="url(#metal-gradient)" 
-                    strokeWidth="1.5" 
-                    strokeDasharray={ring.dash}
-                    opacity={ring.opacity}
-                    animate={{ rotate: ring.direction * 360 }}
-                    transition={{ duration: ring.duration, repeat: Infinity, ease: "linear" }}
-                  />
-
-                  {/* High-Speed Reflection Sweep - Now significantly slowed down */}
-                  <motion.circle
-                    cx="300" cy="300" r={ring.r}
-                    stroke="url(#glow-sweep)"
-                    strokeWidth="2"
-                    strokeDasharray="40 300"
-                    strokeLinecap="round"
-                    filter="url(#neon-glow)"
-                    animate={{ rotate: ring.direction * 360 * 2 }}
-                    transition={{ duration: ring.duration / 2, repeat: Infinity, ease: "linear" }}
-                    opacity={0.3}
-                  />
-
-                  {/* Data Node Cluster */}
-                  <motion.g
-                    animate={{ rotate: ring.direction * 360 }}
-                    transition={{ duration: ring.duration * 2, repeat: Infinity, ease: "linear" }}
-                    style={{ transformOrigin: '300px 300px' }}
-                  >
-                    <motion.circle
-                      cx={300 + ring.r} cy="300" r="5"
-                      fill={i === 0 ? "#D95E46" : "white"}
-                      style={{ filter: `blur(${i === 0 ? '1.5px' : '0px'})`, boxShadow: `0 0 15px ${i === 0 ? '#D95E46' : '#fff'}` }}
-                      animate={{ scale: [1, 1.3, 1], opacity: [0.5, 1, 0.5] }}
-                      transition={{ duration: 4 + i, repeat: Infinity }}
-                    />
-                    {/* Trailing Arc */}
-                    <path 
-                      d={`M ${300 + ring.r} 300 A ${ring.r} ${ring.r} 0 0 1 ${300 + ring.r - 30} ${300 - 30}`}
-                      stroke={i === 0 ? "#D95E46" : "white"}
-                      strokeWidth="1.5"
-                      opacity="0.15"
-                      fill="none"
-                    />
-                  </motion.g>
-                </g>
-              ))}
-
-              {/* Reactor Core Housing */}
-              <g filter="url(#neon-glow)">
-                <circle cx="300" cy="300" r={65} stroke="#D95E46" strokeOpacity="0.1" strokeWidth="0.5" />
-                <motion.circle 
-                   cx="300" cy="300" r={45} 
-                   stroke="#D95E46" 
-                   strokeWidth="1.5" 
-                   strokeDasharray="5 5"
-                   animate={{ rotate: 360, scale: [0.98, 1.02, 0.98] }}
-                   transition={{ rotate: { duration: 20, repeat: Infinity, ease: "linear" }, scale: { duration: 6, repeat: Infinity, ease: "easeInOut" } }}
-                   style={{ transformOrigin: '300px 300px' }}
-                />
-              </g>
-
-              {/* Intermittent Data Bursts (Unique Arcs) */}
-              {[0, 120, 240].map((angle, idx) => (
-                <motion.path
-                  key={`burst-${idx}`}
-                  d="M300 100 A 200 200 0 0 1 450 250"
-                  stroke="#D95E46"
-                  strokeWidth="1"
-                  strokeDasharray="2 10"
-                  opacity="0"
-                  animate={{ opacity: [0, 0.3, 0], pathLength: [0, 1] }}
-                  transition={{ duration: 8, repeat: Infinity, delay: idx * 3 }}
-                  style={{ transformOrigin: '300px 300px', transform: `rotate(${angle}deg)` }}
-                />
-              ))}
-            </svg>
-
-            {/* Core Neural Node */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-               <motion.div 
-                 animate={{ scale: [1, 1.2, 1], boxShadow: ["0 0 20px rgba(255,255,255,0.2)", "0 0 40px rgba(217,94,70,0.4)", "0 0 20px rgba(255,255,255,0.2)"] }}
-                 transition={{ duration: 4, repeat: Infinity }}
-                 className="h-2 w-2 rounded-full bg-white relative z-20" 
-               />
-               <motion.div 
-                 animate={{ scale: [1, 3, 1], opacity: [0.3, 0, 0.3] }}
-                 transition={{ duration: 3, repeat: Infinity }}
-                 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-8 rounded-full border border-[#D95E46]/30" 
-               />
+          <div className="relative z-10 flex items-center justify-center">
+            <div className="relative w-[300px] h-[300px]">
+              {/* Outer rotating ring */}
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+                className="absolute inset-0 rounded-full border border-white/10"
+              />
+              {/* Middle counter-rotating ring */}
+              <motion.div
+                animate={{ rotate: -360 }}
+                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                className="absolute inset-4 rounded-full border border-[#D95E46]/20"
+              />
+              {/* Inner pulsing ring */}
+              <motion.div
+                animate={{ scale: [0.95, 1.05, 0.95], opacity: [0.3, 0.6, 0.3] }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute inset-12 rounded-full border border-white/20"
+              />
+              {/* Core glow */}
+              <motion.div
+                animate={{ scale: [1, 1.2, 1], opacity: [0.4, 0.8, 0.4] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-[#D95E46] shadow-[0_0_20px_rgba(217,94,70,0.5)]"
+              />
+              {/* Orbiting dot */}
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+                className="absolute inset-0"
+                style={{ transformOrigin: 'center' }}
+              >
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-white/60" />
+              </motion.div>
             </div>
           </div>
         </div>

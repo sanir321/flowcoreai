@@ -39,18 +39,12 @@ const AGENTS = [
 ]
 
 interface Particle {
-  x: number;
-  y: number;
-  targetX: number;
-  targetY: number;
-  baseTargetX: number;
-  baseTargetY: number;
-  vx: number;
-  vy: number;
-  size: number;
-  angle: number;
-  speed: number;
-  color: string;
+  x: number
+  y: number
+  angle: number
+  speed: number
+  size: number
+  color: string
 }
 
 function ParticleRing() {
@@ -62,70 +56,57 @@ function ParticleRing() {
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    let particles: Particle[] = []
-    let animationFrameId: number
-    const mouse = { x: -1000, y: -1000, radius: 120 }
+    const dpr = Math.min(window.devicePixelRatio || 1, 2)
+    const size = 800
+    canvas.width = size * dpr
+    canvas.height = size * dpr
+    canvas.style.width = `${size}px`
+    canvas.style.height = `${size}px`
+    ctx.scale(dpr, dpr)
 
-    const init = () => {
-      canvas.width = 800
-      canvas.height = 800
-      particles = []
-      const numParticles = 1200
-      const centerX = canvas.width / 2
-      const centerY = canvas.height / 2
-      const radius = 250
+    const centerX = size / 2
+    const centerY = size / 2
+    const ringRadius = 220
+    const ringSpread = 60
+    const particleCount = 260
+    const mouse = { x: -9999, y: -9999, radius: 130 }
 
-      for (let i = 0; i < numParticles; i++) {
-        const angle = Math.random() * Math.PI * 2
-        const r = radius + (Math.random() - 0.5) * 80
-        const targetX = centerX + Math.cos(angle) * r
-        const targetY = centerY + Math.sin(angle) * r
-
-        particles.push({
-          x: centerX + (Math.random() - 0.5) * 1500, // start far away
-          y: centerY + (Math.random() - 0.5) * 1500,
-          targetX,
-          targetY,
-          baseTargetX: targetX,
-          baseTargetY: targetY,
-          vx: 0,
-          vy: 0,
-          size: Math.random() * 1.5 + 0.5,
-          angle: angle,
-          speed: Math.random() * 0.01 + 0.005,
-          color: Math.random() > 0.8 ? 'rgba(217, 94, 70, 0.6)' : 'rgba(255, 255, 255, 0.3)'
-        })
-      }
+    const particles: Particle[] = []
+    for (let i = 0; i < particleCount; i++) {
+      const angle = Math.random() * Math.PI * 2
+      const isAccent = Math.random() > 0.82
+      particles.push({
+        x: centerX + (Math.random() - 0.5) * 800,
+        y: centerY + (Math.random() - 0.5) * 800,
+        angle,
+        speed: 0.004 + Math.random() * 0.012,
+        size: 0.8 + Math.random() * 1.4,
+        color: isAccent ? 'rgba(217,94,70,0.85)' : 'rgba(255,255,255,0.45)',
+      })
     }
 
+    let raf = 0
+
     const animate = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      ctx.clearRect(0, 0, size, size)
 
       particles.forEach(p => {
-        // Orbit motion
         p.angle += p.speed
-        const r = 250 + Math.sin(p.angle * 3) * 20
-        p.baseTargetX = canvas.width / 2 + Math.cos(p.angle) * r
-        p.baseTargetY = canvas.height / 2 + Math.sin(p.angle) * r
+        const breathe = Math.sin(p.angle * 2.5) * 18
+        const targetX = centerX + Math.cos(p.angle) * (ringRadius + breathe)
+        const targetY = centerY + Math.sin(p.angle) * (ringRadius + breathe)
 
         const dx = mouse.x - p.x
         const dy = mouse.y - p.y
-        const distance = Math.sqrt(dx * dx + dy * dy)
+        const dist = Math.sqrt(dx * dx + dy * dy)
 
-        // Mouse interaction
-        if (distance < mouse.radius) {
-          const forceDirectionX = dx / distance
-          const forceDirectionY = dy / distance
-          const force = (mouse.radius - distance) / mouse.radius
-          const directionX = forceDirectionX * force * 15
-          const directionY = forceDirectionY * force * 15
-          
-          p.x -= directionX
-          p.y -= directionY
+        if (dist < mouse.radius && dist > 0) {
+          const push = (mouse.radius - dist) / mouse.radius
+          p.x -= (dx / dist) * push * 12
+          p.y -= (dy / dist) * push * 12
         } else {
-          // Return to target
-          p.x += (p.baseTargetX - p.x) * 0.05
-          p.y += (p.baseTargetY - p.y) * 0.05
+          p.x += (targetX - p.x) * 0.06
+          p.y += (targetY - p.y) * 0.06
         }
 
         ctx.beginPath()
@@ -134,41 +115,36 @@ function ParticleRing() {
         ctx.fill()
       })
 
-      animationFrameId = requestAnimationFrame(animate)
+      raf = requestAnimationFrame(animate)
     }
 
-    init()
     animate()
 
-    const handleMouseMove = (e: MouseEvent) => {
+    const onMove = (e: MouseEvent) => {
       const rect = canvas.getBoundingClientRect()
-      // Adjust mouse coordinates based on canvas scale vs internal resolution
-      const scaleX = canvas.width / rect.width
-      const scaleY = canvas.height / rect.height
-      mouse.x = (e.clientX - rect.left) * scaleX
-      mouse.y = (e.clientY - rect.top) * scaleY
+      mouse.x = (e.clientX - rect.left) * (size / rect.width)
+      mouse.y = (e.clientY - rect.top) * (size / rect.height)
+    }
+    const onLeave = () => {
+      mouse.x = -9999
+      mouse.y = -9999
     }
 
-    const handleMouseLeave = () => {
-      mouse.x = -1000
-      mouse.y = -1000
-    }
-
-    canvas.addEventListener('mousemove', handleMouseMove)
-    canvas.addEventListener('mouseleave', handleMouseLeave)
+    canvas.addEventListener('mousemove', onMove)
+    canvas.addEventListener('mouseleave', onLeave)
 
     return () => {
-      cancelAnimationFrame(animationFrameId)
-      canvas.removeEventListener('mousemove', handleMouseMove)
-      canvas.removeEventListener('mouseleave', handleMouseLeave)
+      cancelAnimationFrame(raf)
+      canvas.removeEventListener('mousemove', onMove)
+      canvas.removeEventListener('mouseleave', onLeave)
     }
   }, [])
 
   return (
-    <canvas 
-      ref={canvasRef} 
-      className="w-[800px] h-[800px] max-w-[100vw] max-h-[100vw]" 
-      style={{ touchAction: 'none' }} 
+    <canvas
+      ref={canvasRef}
+      className="w-[800px] h-[800px] max-w-[100vw] max-h-[100vw]"
+      style={{ touchAction: 'none' }}
     />
   )
 }
