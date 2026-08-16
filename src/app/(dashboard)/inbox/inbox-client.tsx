@@ -234,6 +234,14 @@ export function InboxClient({
     setInputText("")
     setIsSending(true)
 
+    // If the AI was in control, pause it so the manual reply sticks
+    if (selectedSession?.status === 'active') {
+      const takenOver = await takeOverSession({ session_id: selectedSessionId })
+      if (!takenOver.error) {
+        setSessions(prev => prev.map(s => s.id === selectedSessionId ? { ...s, status: 'escalated' } : s))
+      }
+    }
+
     // Optimistic Update
     const optimisticMsg = {
       id: `temp-${crypto.randomUUID()}`,
@@ -603,19 +611,17 @@ export function InboxClient({
                       onSubmit={handleSend}
                       isLoading={isSending}
                       maxHeight={160}
-                      disabled={selectedSession.status !== 'escalated' || isSending}
                       className="bg-gray-50 border-gray-100 rounded-xl shadow-none focus-within:bg-white focus-within:border-gray-200"
                     >
                       <PromptInputTextarea
-                        placeholder={selectedSession.status === 'escalated' ? "Type a message..." : "Assistant is active..."}
+                        placeholder={selectedSession.status === 'escalated' ? "Type a message..." : "Type a message... You'll take over from the assistant"}
                         className="min-h-[40px] h-10 text-xs font-normal text-gray-900 placeholder:text-gray-500 resize-none"
-                        disabled={selectedSession.status !== 'escalated' || isSending}
                       />
                       <PromptInputActions>
                         <PromptInputAction tooltip="Send">
                           <Button 
                             onClick={() => handleSend()}
-                            disabled={selectedSession.status !== 'escalated' || isSending || !inputText.trim()}
+                            disabled={isSending || !inputText.trim()}
                             className="h-9 w-9 rounded-lg bg-black text-white hover:bg-gray-800 flex items-center justify-center shrink-0 active:scale-95 transition-all"
                           >
                             {isSending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}

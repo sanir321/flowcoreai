@@ -5,8 +5,8 @@ const OPENCODE_ZEN_BASE_URL = (Deno.env.get("OPENCODE_ZEN_BASE_URL") || "https:/
 
 export const DEFAULT_FALLBACK_MESSAGE = "I'm not sure about that. Please contact us directly for more information.";
 
-export const FALLBACK_MODEL = "nemotron-3-ultra-free";
-const DEFAULT_PRIMARY = "deepseek-v4-flash-free";
+export const FALLBACK_MODEL = "hy3-free";
+const DEFAULT_PRIMARY = "nemotron-3-ultra-free";
 
 const noToolChoiceModels = new Set<string>();
 

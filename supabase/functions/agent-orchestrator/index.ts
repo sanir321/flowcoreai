@@ -8985,10 +8985,11 @@ async function runT1(ctx) {
 var OPENCODE_ZEN_API_KEY = Deno.env.get("OPENCODE_ZEN_API_KEY");
 var OPENCODE_ZEN_BASE_URL = (Deno.env.get("OPENCODE_ZEN_BASE_URL") || "https://opencode.ai/zen/v1").replace(/\/+$/, "");
 var DEFAULT_FALLBACK_MESSAGE = "I'm not sure about that. Please contact us directly for more information.";
-var FALLBACK_MODEL = "nemotron-3-ultra-free";
-var DEFAULT_PRIMARY = "deepseek-v4-flash-free";
+var FALLBACK_MODEL = "hy3-free";
+var DEFAULT_PRIMARY = "nemotron-3-ultra-free";
 var REASONING_MODELS = [
-  "deepseek"
+  "deepseek",
+  "hy3"
 ];
 function stripReasoning(text) {
   if (!text || text.length < 20) return text;
