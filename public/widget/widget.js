@@ -147,7 +147,10 @@
     .fc-send:hover { transform: scale(1.05); box-shadow: 0 4px 14px rgba(0,0,0,0.2); }
     .fc-send svg { width: 18px; height: 18px; }
 
-    .fc-footer { text-align: center; font-size: 10px; color: var(--fc-text); opacity: 0.4; font-weight: 500; letter-spacing: 0.04em; padding: 10px; }
+    .fc-footer { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 10px; font-weight: 700; color: var(--fc-text); opacity: 0.4; text-transform: uppercase; letter-spacing: 0.05em; padding: 12px; transition: opacity 0.2s; cursor: default; }
+    .fc-footer:hover { opacity: 1; }
+    .fc-footer svg { filter: grayscale(100%) opacity(0.8); transition: filter 0.2s; }
+    .fc-footer:hover svg { filter: none; }
   `;
   document.head.appendChild(style);
 
@@ -207,7 +210,22 @@
         </div>
       </div>
 
-      <div class="fc-footer">Powered by <span>FlowCore</span></div>
+      <div class="fc-footer">
+        <span>Powered by</span>
+        <svg width="60" height="15" viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="fc-brand-widget" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#c65f39"/>
+              <stop offset="100%" stop-color="#a84a2a"/>
+            </linearGradient>
+          </defs>
+          <rect x="10" y="22" width="56" height="56" rx="14" fill="url(#fc-brand-widget)"/>
+          <path d="M24 32h28v5H29v5h16v5H29v10h5v5H24V32z" fill="#fff"/>
+          <text x="80" y="62" font-family="sans-serif" font-size="38" fill="var(--fc-text)">
+            <tspan font-weight="700">Flow</tspan><tspan font-weight="300" opacity="0.6">Core</tspan>
+          </text>
+        </svg>
+      </div>
     </div>
     <button class="fc-fab" id="fc-fab">${Icons.chat}</button>
   `;

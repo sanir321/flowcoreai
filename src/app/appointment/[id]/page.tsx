@@ -63,7 +63,7 @@ export default async function PublicAppointmentPage({ params }: { params: Promis
   return (
     <div className="min-h-screen bg-[#fafafa] flex items-center justify-center p-4 sm:p-6 font-sans relative overflow-hidden">
       {/* Subtle Background Elements */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-gradient-to-br from-[#f9510b]/10 to-transparent rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-gradient-to-br from-[#c65f39]/15 to-transparent rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-gradient-to-tl from-emerald-500/10 to-transparent rounded-full blur-3xl pointer-events-none" />
 
       <div className="max-w-[420px] w-full animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out z-10">
@@ -108,8 +108,8 @@ export default async function PublicAppointmentPage({ params }: { params: Promis
               <div>
                 <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Service</p>
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-orange-50 flex items-center justify-center">
-                    <Building2 className="w-4 h-4 text-[#f9510b]" />
+                  <div className="w-8 h-8 rounded-full bg-[#c65f39]/10 flex items-center justify-center">
+                    <Building2 className="w-4 h-4 text-[#c65f39]" />
                   </div>
                   <p className="text-base font-medium text-slate-900">{appt.service || "Consultation"}</p>
                 </div>
@@ -169,11 +169,23 @@ export default async function PublicAppointmentPage({ params }: { params: Promis
           </div>
         </Card>
         
-        <div className="mt-8 text-center opacity-40 hover:opacity-100 transition-opacity">
-          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] flex items-center justify-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-slate-400" />
-            Powered by Flowcore AI
-          </p>
+        <div className="mt-8 flex justify-center opacity-40 hover:opacity-100 transition-opacity">
+          <div className="flex items-center gap-2 grayscale hover:grayscale-0 transition-all">
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em]">Powered by</span>
+            <svg width="84" height="21" viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="brand" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor="#c65f39"/>
+                  <stop offset="100%" stopColor="#a84a2a"/>
+                </linearGradient>
+              </defs>
+              <rect x="10" y="22" width="56" height="56" rx="14" fill="url(#brand)"/>
+              <path d="M24 32h28v5H29v5h16v5H29v10h5v5H24V32z" fill="#fff"/>
+              <text x="80" y="62" fontFamily="sans-serif" fontSize="38" fill="#1a1a1a">
+                <tspan fontWeight="700">Flow</tspan><tspan fontWeight="300" fill="#555">Core</tspan>
+              </text>
+            </svg>
+          </div>
         </div>
       </div>
     </div>

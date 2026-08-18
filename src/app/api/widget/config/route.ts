@@ -82,7 +82,7 @@ export async function GET(req: NextRequest) {
     const responseData = {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       agent_name: config?.agent_name || (agent?.config as any)?.name || "Support AI",
-      accent_color: config?.accent_color || "#f9510b",
+      accent_color: config?.accent_color || "#c65f39",
       greeting: config?.greeting || "Hi! How can I help you today?",
       header_text: config?.header_text || "Support Specialist",
       post_form_message: config?.post_form_message || "Thank you! How can I help you today?",
