@@ -471,11 +471,11 @@ export function InboxClient({
                         </div>
                         <div className="flex items-center gap-1">
                            <Badge variant="outline" className="text-[8px] font-semibold px-1 h-3.5 border-gray-200 text-gray-500 bg-white">{s.channel}</Badge>
-                           <Badge variant="outline" className="text-[8px] font-semibold px-1 h-3.5 border-[#c65f39]/20 text-[#c65f39] bg-[#c65f39]/5 tracking-tight">
+                           <Badge variant="outline" className="text-[8px] font-semibold px-1 h-3.5 border-[#f9510b]/20 text-[#f9510b] bg-[#f9510b]/5 tracking-tight">
                               {formatAgentType(s.agent_type)}
                            </Badge>
                         </div>
-                        {selectedSessionId === s.id && <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-[#c65f39] rounded-r-full" />}
+                        {selectedSessionId === s.id && <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-[#f9510b]" />}
                      </button>
                    ))
                  )}
@@ -502,7 +502,7 @@ export function InboxClient({
                      <div className="flex flex-col text-gray-900">
                         <div className="flex items-center gap-2">
                            <span className="text-sm font-semibold tracking-tight">{selectedSession.contacts?.name || "Anonymous contact"}</span>
-                           <Badge className="bg-[#c65f39]/10 text-[#c65f39] border-none text-[8px] font-semibold px-1.5 h-4">
+                           <Badge className="bg-[#f9510b]/10 text-[#f9510b] border-none text-[8px] font-semibold px-1.5 h-4">
                               {formatAgentType(selectedSession.agent_type)}
                            </Badge>
                         </div>
@@ -526,7 +526,7 @@ export function InboxClient({
                         <Button 
                           onClick={handleResolve}
                           disabled={isUpdatingStatus}
-                          className="h-8 px-4 rounded-lg bg-[#c65f39] hover:bg-[#a84a2a] text-white text-[9px] font-semibold transition-all active:scale-95 gap-1.5"
+                          className="h-8 px-4 rounded-lg bg-[#f9510b] hover:bg-[#b05432] text-white text-[9px] font-semibold transition-all active:scale-95 gap-1.5"
                         >
                            {isUpdatingStatus ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
                            Resume AI
@@ -544,8 +544,8 @@ export function InboxClient({
                   </div>
                )}
 
-                <div className="flex-1 bg-white min-h-0 relative flex flex-col">
-                  <ChatContainerRoot className="flex-1 min-h-0 h-full w-full">
+                <div className="flex-1 bg-white min-h-0 relative">
+                  <ChatContainerRoot className="flex-1 bg-white min-h-0">
                     <ChatContainerContent>
                       <div className="max-w-3xl mx-auto space-y-6 py-8 px-4 md:px-6 w-full">
                         {messages.map((m) => (
@@ -566,7 +566,7 @@ export function InboxClient({
                                   ) : (m.metadata.media_mime as string)?.startsWith('audio') ? (
                                     <audio src={m.metadata.media_path as string} controls className="w-full" />
                                   ) : (
-                                    <a href={m.metadata.media_path as string} target="_blank" rel="noopener noreferrer" className="underline">View file</a>
+                                    <a href={m.metadata.media_path as string} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">View file</a>
                                   )}
                                   {m.content && !m.content.startsWith('[') && <span>{m.content}</span>}
                                 </div>
@@ -576,9 +576,9 @@ export function InboxClient({
                             </div>
 
                             <div className="flex items-center gap-2 px-1 text-gray-500 font-semibold">
-                              <span className="text-[8px] opacity-70">{m.role === 'customer' ? 'Customer' : 'Assistant'}</span>
+                              <span className="text-[8px]">{m.role === 'customer' ? 'Customer' : 'Assistant'}</span>
                               {m.role !== 'customer' && m.agent_type && m.agent_type !== 'customer_support' && (
-                                <span className="text-[7px] uppercase tracking-wider text-[#c65f39] font-bold">{formatAgentType(m.agent_type)}</span>
+                                <span className="text-[7px] uppercase tracking-wider text-[#f9510b] font-bold">{formatAgentType(m.agent_type)}</span>
                               )}
                             </div>
                           </div>
