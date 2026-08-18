@@ -1,10 +1,11 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
-import { Bell, RefreshCw, Zap, Megaphone, Lightbulb, BellRing, ExternalLink, CheckCheck } from "lucide-react"
+import { Bell, RefreshCw, Zap, Megaphone, Lightbulb, BellRing, ExternalLink, Bot, Check, AlertCircle, Info, CalendarCheck, UserPlus, ShieldAlert } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import Link from "next/link"
 
 interface Notification {
   id: string
@@ -16,15 +17,16 @@ interface Notification {
   is_read: boolean
 }
 
+// Map old types to the new card styling. "ai" types vs "system" types.
 const typeConfig: Record<Notification['type'], { icon: React.ElementType; color: string; bg: string }> = {
-  update:       { icon: RefreshCw, color: "text-blue-500", bg: "bg-blue-50/50" },
-  credit:       { icon: Zap,       color: "text-amber-500", bg: "bg-amber-50/50" },
-  announcement: { icon: Megaphone, color: "text-purple-500", bg: "bg-purple-50/50" },
-  tip:          { icon: Lightbulb, color: "text-emerald-500", bg: "bg-emerald-50/50" },
-  warning:      { icon: Zap,       color: "text-red-500",   bg: "bg-red-50/50" },
-  booking:      { icon: BellRing,  color: "text-green-500", bg: "bg-green-50/50" },
-  lead:         { icon: BellRing,  color: "text-blue-500",  bg: "bg-blue-50/50" },
-  escalation:   { icon: BellRing,  color: "text-rose-500",  bg: "bg-rose-50/50" },
+  update:       { icon: Info, color: "text-[#00B4D8]", bg: "bg-[#00B4D8]/10" },
+  credit:       { icon: Zap, color: "text-[#f59e0b]", bg: "bg-[#f59e0b]/10" },
+  announcement: { icon: Megaphone, color: "text-[#8b5cf6]", bg: "bg-[#8b5cf6]/10" },
+  tip:          { icon: Lightbulb, color: "text-[#10b981]", bg: "bg-[#10b981]/10" },
+  warning:      { icon: AlertCircle, color: "text-[#ef4444]", bg: "bg-[#ef4444]/10" },
+  booking:      { icon: CalendarCheck, color: "text-[#10b981]", bg: "bg-[#10b981]/10" },
+  lead:         { icon: UserPlus, color: "text-[#3b82f6]", bg: "bg-[#3b82f6]/10" },
+  escalation:   { icon: ShieldAlert, color: "text-[#ef4444]", bg: "bg-[#ef4444]/10" },
 }
 
 function timeAgo(date: string) {
@@ -43,10 +45,14 @@ export function NotificationBell() {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [open, setOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState<"all" | "ai" | "system">("all")
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  
   const panelRef = useRef<HTMLDivElement>(null)
   const btnRef = useRef<HTMLButtonElement>(null)
 
   const fetchNotifications = useCallback(async () => {
+    setIsRefreshing(true)
     try {
       const res = await fetch("/api/notifications")
       if (!res.ok) return
@@ -57,6 +63,8 @@ export function NotificationBell() {
       }
     } catch {
       // silently fail
+    } finally {
+      setTimeout(() => setIsRefreshing(false), 500)
     }
   }, [])
 
@@ -117,6 +125,17 @@ export function NotificationBell() {
     setOpen(false)
   }
 
+  const isAiType = (type: string) => ['booking', 'lead', 'escalation'].includes(type)
+  const aiCount = notifications.filter(n => isAiType(n.type)).length
+  const sysCount = notifications.filter(n => !isAiType(n.type)).length
+
+  const filteredNotifications = notifications.filter(n => {
+    if (activeTab === 'all') return true
+    if (activeTab === 'ai') return isAiType(n.type)
+    if (activeTab === 'system') return !isAiType(n.type)
+    return true
+  })
+
   return (
     <div className="relative">
       <button
@@ -144,80 +163,111 @@ export function NotificationBell() {
             exit={{ opacity: 0, y: 10, scale: 0.98 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
             style={{ transformOrigin: "bottom left" }}
-            className="fixed left-[72px] bottom-6 w-[380px] overflow-hidden rounded-[24px] bg-white border border-gray-200/60 shadow-[0_8px_40px_-12px_rgba(0,0,0,0.12)] z-[200]"
+            className="fixed left-[72px] bottom-6 w-[420px] overflow-hidden rounded-[24px] bg-[#f8f9fa] border border-gray-200 shadow-2xl z-[200] flex flex-col font-sans"
           >
-            <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4 bg-gray-50/50">
-              <h3 className="text-[15px] font-semibold text-gray-900 tracking-tight">Notifications</h3>
-              {unreadCount > 0 && (
-                <button
-                  onClick={markAllAsRead}
-                  className="group flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-200/50 transition-colors"
-                >
-                  <CheckCheck className="h-3.5 w-3.5" />
-                  <span>Mark all read</span>
-                </button>
-              )}
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 pt-5 pb-3 bg-white">
+              <h3 className="text-[17px] font-semibold text-[#1a1a1a] tracking-tight">Notifications</h3>
+              <button onClick={fetchNotifications} className="text-gray-400 hover:text-gray-700 transition-colors">
+                <RefreshCw className={cn("w-4 h-4", isRefreshing && "animate-spin")} />
+              </button>
             </div>
 
-            {notifications.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-50 border border-gray-100 mb-3">
-                  <Bell className="h-5 w-5 text-gray-400" />
+            {/* Tabs */}
+            <div className="px-5 pb-4 bg-white border-b border-gray-100">
+              <div className="flex items-center p-1 bg-gray-100/80 rounded-xl gap-1">
+                <button 
+                  onClick={() => setActiveTab("all")} 
+                  className={cn("flex-1 py-1.5 px-3 rounded-lg text-[13px] font-medium transition-all flex items-center justify-center gap-1.5", 
+                    activeTab === "all" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                  )}
+                >
+                  All <span className={cn("text-[11px] px-1.5 rounded-full", activeTab === 'all' ? "bg-gray-100 text-gray-600" : "text-gray-400")}>{notifications.length}</span>
+                </button>
+                <button 
+                  onClick={() => setActiveTab("ai")} 
+                  className={cn("flex-1 py-1.5 px-3 rounded-lg text-[13px] font-medium transition-all flex items-center justify-center gap-1.5", 
+                    activeTab === "ai" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                  )}
+                >
+                  Flowcore AI <span className={cn("text-[11px] px-1.5 rounded-full", activeTab === 'ai' ? "bg-gray-100 text-gray-600" : "text-gray-400")}>{aiCount}</span>
+                </button>
+                <button 
+                  onClick={() => setActiveTab("system")} 
+                  className={cn("flex-1 py-1.5 px-3 rounded-lg text-[13px] font-medium transition-all flex items-center justify-center gap-1.5", 
+                    activeTab === "system" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                  )}
+                >
+                  System <span className={cn("text-[11px] px-1.5 rounded-full", activeTab === 'system' ? "bg-gray-100 text-gray-600" : "text-gray-400")}>{sysCount}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Body */}
+            {filteredNotifications.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 px-6 text-center bg-[#f8f9fa]">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm border border-gray-100 mb-3">
+                  <Bell className="h-5 w-5 text-gray-300" />
                 </div>
                 <p className="text-[14px] font-medium text-gray-900">You're all caught up</p>
-                <p className="text-[13px] text-gray-500 mt-1 max-w-[200px] leading-relaxed">
-                  There are no new notifications right now.
-                </p>
+                <p className="text-[13px] text-gray-500 mt-1">No notifications in this view.</p>
               </div>
             ) : (
-              <ScrollArea className="max-h-[440px]">
-                <div className="p-2 space-y-1">
-                  {notifications.map((n, idx) => {
+              <ScrollArea className="max-h-[420px] bg-[#f8f9fa]">
+                <div className="p-4 space-y-3">
+                  {filteredNotifications.map((n, idx) => {
                     const cfg = typeConfig[n.type]!
-                    const Icon = cfg.icon
+                    const Icon = activeTab === 'ai' || isAiType(n.type) ? Bot : cfg.icon
+                    const isAi = isAiType(n.type)
+                    
                     return (
                       <motion.div
                         key={n.id}
                         initial={{ opacity: 0, y: 4 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: idx * 0.04, duration: 0.2 }}
-                        onClick={() => handleNotificationClick(n)}
-                        className={cn(
-                          "group relative flex items-start gap-4 rounded-2xl p-3 transition-colors cursor-pointer",
-                          n.is_read
-                            ? "hover:bg-gray-50"
-                            : "bg-blue-50/30 hover:bg-blue-50/60"
-                        )}
+                        className="bg-white border border-gray-100/80 shadow-[0_2px_12px_rgba(0,0,0,0.02)] rounded-[16px] p-4 relative"
                       >
-                        <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-gray-100/50", cfg.bg)}>
-                          <Icon className={cn("h-4 w-4", cfg.color)} />
-                        </div>
-
-                        <div className="flex-1 space-y-1 pt-0.5 min-w-0">
-                          <div className="flex items-start justify-between gap-2">
-                            <p className={cn("text-[14px] font-medium leading-snug truncate", n.is_read ? "text-gray-700" : "text-gray-900")}>
-                              {n.title}
-                            </p>
-                            <span className="text-[11px] font-medium text-gray-400 shrink-0">
-                              {timeAgo(n.created_at)}
-                            </span>
+                        {!n.is_read && (
+                          <div className="absolute top-4 right-4 h-2 w-2 rounded-full bg-blue-500" />
+                        )}
+                        <div className="flex items-start gap-3">
+                          {/* Avatar/Icon */}
+                          <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-full", isAi ? "bg-[#c65f39]/10 text-[#c65f39]" : cfg.bg + " " + cfg.color)}>
+                            {isAi ? <Bot className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
                           </div>
                           
-                          <p className={cn("text-[13px] leading-relaxed line-clamp-2", n.is_read ? "text-gray-500" : "text-gray-600")}>
-                            {n.message}
-                          </p>
-                          
-                          {n.link && (
-                            <div className="flex items-center gap-1 pt-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <span className="text-[12px] font-medium text-blue-600">View details</span>
-                              <ExternalLink className="h-3 w-3 text-blue-600" />
-                            </div>
-                          )}
-                        </div>
+                          {/* Content */}
+                          <div className="flex-1 min-w-0 pt-0.5">
+                            <p className={cn("text-[14px] leading-snug", n.is_read ? "text-gray-700" : "text-gray-900 font-medium")}>
+                              {isAi ? (
+                                <span>
+                                  <span className="font-semibold text-gray-900">Flowcore AI</span> {n.title}
+                                </span>
+                              ) : (
+                                n.title
+                              )}
+                            </p>
+                            
+                            <p className="text-[13px] text-gray-500 mt-1 leading-relaxed">
+                              {n.message}
+                            </p>
 
-                        {!n.is_read && (
-                          <div className="absolute top-[18px] -left-1 h-1.5 w-1.5 rounded-full bg-blue-600" />
-                        )}
+                            <div className="mt-2.5 flex items-center justify-between">
+                              <span className="text-[12px] text-gray-400 font-medium">{timeAgo(n.created_at)}</span>
+                              
+                              {n.link && (
+                                <Link 
+                                  href={n.link} 
+                                  onClick={() => handleNotificationClick(n)}
+                                  className="text-[12px] font-medium text-[#c65f39] bg-[#c65f39]/5 px-2 py-1 rounded-md hover:bg-[#c65f39]/10 transition-colors"
+                                >
+                                  View details
+                                </Link>
+                              )}
+                            </div>
+                          </div>
+                        </div>
                       </motion.div>
                     )
                   })}
@@ -225,13 +275,24 @@ export function NotificationBell() {
               </ScrollArea>
             )}
 
-            {notifications.length > 0 && (
-              <div className="border-t border-gray-100 bg-gray-50/50 p-3 flex justify-center">
-                <a href="/settings/notifications" onClick={() => setOpen(false)} className="text-[13px] font-medium text-gray-600 hover:text-gray-900 transition-colors">
-                  View all notifications
-                </a>
-              </div>
-            )}
+            {/* Footer */}
+            <div className="bg-white border-t border-gray-100 p-4 flex items-center justify-between shadow-[0_-4px_12px_rgba(0,0,0,0.02)] z-10">
+              <button 
+                onClick={markAllAsRead} 
+                disabled={unreadCount === 0}
+                className="text-[13px] font-semibold text-gray-900 hover:text-black underline underline-offset-4 disabled:opacity-40 disabled:hover:text-gray-900 transition-colors"
+              >
+                Mark all as read
+              </button>
+              
+              <Link 
+                href="/settings/notifications" 
+                onClick={() => setOpen(false)}
+                className="text-[13px] font-medium text-gray-600 bg-gray-50 border border-gray-200 px-4 py-2 rounded-xl hover:bg-gray-100 transition-colors shadow-sm"
+              >
+                Go to notification center
+              </Link>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
