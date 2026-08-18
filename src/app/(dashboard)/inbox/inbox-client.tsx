@@ -544,17 +544,17 @@ export function InboxClient({
                   </div>
                )}
 
-                <div className="flex-1 bg-gray-50/50 min-h-0 relative flex flex-col">
+                <div className="flex-1 bg-white min-h-0 relative flex flex-col">
                   <ChatContainerRoot className="flex-1 min-h-0 h-full w-full">
                     <ChatContainerContent>
                       <div className="max-w-3xl mx-auto space-y-6 py-8 px-4 md:px-6 w-full">
                         {messages.map((m) => (
                           <div key={m.id} className={cn("flex flex-col gap-1.5", m.role === 'customer' ? "items-start" : "items-end")}>
                             <div className={cn(
-                              "px-4 py-2.5 rounded-2xl text-sm font-normal leading-relaxed max-w-[88%]",
+                              "px-4 py-2.5 rounded-xl text-sm font-normal leading-relaxed max-w-[88%]",
                               m.role === 'customer' 
-                                ? "bg-white border border-gray-100 text-gray-900 shadow-sm rounded-tl-sm" 
-                                : "bg-[#c65f39] text-white shadow-sm rounded-tr-sm"
+                                ? "bg-[#F5F5F5] text-gray-900" 
+                                : "bg-white border border-gray-100 text-gray-900 shadow-sm"
                             )}>
                               {m.metadata?.media_path ? (
                                 <div className="flex flex-col gap-1.5">
@@ -576,9 +576,9 @@ export function InboxClient({
                             </div>
 
                             <div className="flex items-center gap-2 px-1 text-gray-500 font-semibold">
-                              <span className="text-[9px] opacity-70">{m.role === 'customer' ? 'Customer' : 'Assistant'}</span>
+                              <span className="text-[8px] opacity-70">{m.role === 'customer' ? 'Customer' : 'Assistant'}</span>
                               {m.role !== 'customer' && m.agent_type && m.agent_type !== 'customer_support' && (
-                                <span className="text-[8px] uppercase tracking-wider text-[#c65f39] font-bold">{formatAgentType(m.agent_type)}</span>
+                                <span className="text-[7px] uppercase tracking-wider text-[#c65f39] font-bold">{formatAgentType(m.agent_type)}</span>
                               )}
                             </div>
                           </div>
