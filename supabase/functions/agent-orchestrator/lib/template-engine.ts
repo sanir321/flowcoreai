@@ -40,33 +40,11 @@ function buildBusinessProfileText(ctx: PipelineContext): string {
   const parts: string[] = [];
 
   if (profile.description) parts.push(`About: ${profile.description}`);
-  if (profile.contact?.phone) parts.push(`Phone: ${profile.contact.phone}`);
-  if (profile.contact?.email) parts.push(`Email: ${profile.contact.email}`);
-  if (profile.contact?.address) parts.push(`Address: ${profile.contact.address}`);
-
-  if (profile.hours?.daily) {
-    const openDays = Object.entries(profile.hours.daily)
-      .filter(([, d]: [string, any]) => !d.closed)
-      .map(([day, d]: [string, any]) => `${day.charAt(0).toUpperCase() + day.slice(1)}: ${d.open}-${d.close}`);
-    const closedDays = Object.entries(profile.hours.daily)
-      .filter(([, d]: [string, any]) => d.closed)
-      .map(([day]: [string, any]) => day.charAt(0).toUpperCase() + day.slice(1));
-    if (openDays.length) parts.push(`Business Hours: ${openDays.join(', ')}`);
-    if (closedDays.length) parts.push(`Closed on: ${closedDays.join(', ')}`);
-  }
-
-  if (profile.pricing?.description) parts.push(`Pricing: ${profile.pricing.description}`);
   if (workspace.services_offered) parts.push(`Services: ${workspace.services_offered}`);
-  if (profile.amenities?.length) parts.push(`Amenities: ${profile.amenities.join(', ')}`);
 
-  if (profile.policies) {
-    const entries = Object.entries(profile.policies).filter(([, v]) => v);
-    if (entries.length) parts.push(`Policies: ${entries.map(([k, v]) => `${k}: ${v}`).join(' | ')}`);
-  }
+  parts.push(`[SYSTEM NOTE: Full business profile details (hours, contact, policies, pricing, amenities) are NOT injected here. You MUST use the \`get_business_info\` tool to fetch them if needed to answer a customer query.]`);
 
-  return parts.length > 0
-    ? parts.join('\n')
-    : 'No profile data yet. Call get_business_info for details.';
+  return parts.join('\n');
 }
 
 function buildPersonaInstructions(traits: any): string {

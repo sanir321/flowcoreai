@@ -264,7 +264,7 @@ export default function NotificationsPage() {
             <Button
               onClick={saveWhatsAppNumber}
               disabled={savingWhatsapp}
-              className="h-11 px-6 rounded-xl bg-black text-white hover:bg-gray-800 flex items-center gap-2 text-[11px] font-bold transition-all active:scale-95"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-md rounded-xl h-11 px-8 text-sm font-semibold transition-all active:scale-[0.98] gap-2"
             >
               {savingWhatsapp ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               Save

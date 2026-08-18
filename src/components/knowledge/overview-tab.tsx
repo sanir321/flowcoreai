@@ -178,21 +178,35 @@ export function OverviewTab({ businessProfile, sources, templates, usedTags, onN
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-          <h3 className="text-sm font-semibold text-gray-900 mb-2">Why this matters</h3>
-          <p className="text-xs text-gray-500 leading-relaxed">
-            Your business profile and knowledge base feed directly into your AI agents.
-            Completing both ensures accurate answers, bookings, and support.
+        <div className="bg-white rounded-2xl border border-red-100 p-6 shadow-sm flex flex-col h-full">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="h-8 w-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
+              <svg className="h-4 w-4 text-red-500" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            </div>
+            <h2 className="text-sm font-semibold text-gray-900">Knowledge Gap Map</h2>
+          </div>
+          <p className="text-xs text-gray-500 leading-relaxed mb-4">
+            The AI currently lacks information about the following critical areas. It will not be able to answer customer questions regarding these topics until they are filled.
           </p>
-          <div className="flex gap-2 mt-4">
-            <button onClick={() => onNavigate("profile")}
-              className="text-xs font-semibold px-4 py-2 rounded-xl bg-[#f9510b] text-white hover:bg-[#b55533] transition-all">
-              Edit Profile
-            </button>
-            <button onClick={() => onNavigate("sources")}
-              className="text-xs font-semibold px-4 py-2 rounded-xl border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition-all">
-              Manage Sources
-            </button>
+          <div className="space-y-3 flex-1 overflow-y-auto max-h-[300px] pr-2">
+            {items.filter(i => i.status === "empty").map(item => (
+              <div key={item.id} className="flex items-center justify-between bg-red-50/50 p-3 rounded-xl border border-red-100">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-red-700">{item.label}</span>
+                  <span className="text-[10px] bg-white border border-red-100 text-red-600 px-2 py-0.5 rounded-full capitalize shadow-sm">{item.section === "business_profile" ? "Profile" : "KB Document"}</span>
+                </div>
+                <button onClick={() => onNavigate(item.section === "business_profile" ? "profile" : "sources")} className="text-[10px] font-bold text-red-600 hover:text-red-800 uppercase tracking-wider shrink-0 transition-colors">
+                  Fix gap
+                </button>
+              </div>
+            ))}
+            {items.filter(i => i.status === "empty").length === 0 && (
+              <div className="flex items-center justify-center h-full min-h-[100px] bg-emerald-50 rounded-xl border border-emerald-100 p-4">
+                <p className="text-xs font-medium text-emerald-700 text-center flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4" /> No knowledge gaps! The AI is fully equipped.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>

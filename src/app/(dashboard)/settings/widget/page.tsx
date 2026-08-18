@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { 
   Palette, Code, Check, Copy, Eye, Loader2, Save, 
   ShieldCheck, Settings, Upload, Trash2, Image,
-  MessageCircle, Mail, Headphones, Bot, MessageSquare
+  MessageCircle, Mail, Headphones, MessageSquare
 } from "lucide-react"
 import { FaWhatsapp } from "react-icons/fa"
 import { Card } from "@/components/ui/card"
@@ -25,7 +25,6 @@ const LAUNCHER_ICONS: { key: string; label: string; Icon: React.ElementType }[] 
   { key: "chat", label: "Chat Bubble", Icon: MessageCircle },
   { key: "message", label: "Message", Icon: Mail },
   { key: "support", label: "Headset", Icon: Headphones },
-  { key: "bot", label: "Bot", Icon: Bot },
   { key: "comment", label: "Comment", Icon: MessageSquare },
   { key: "whatsapp", label: "WhatsApp", Icon: FaWhatsapp }
 ]
@@ -158,7 +157,7 @@ export default function WidgetSettingsPage() {
            <Button variant="outline" className="h-9 rounded-lg text-xs font-medium gap-2 border-gray-100" onClick={() => setPreviewOpen(!previewOpen)}>
               <Eye className="h-4 w-4" /> {previewOpen ? "Hide Preview" : "Show Preview"}
            </Button>
-           <Button onClick={handleSave} disabled={saving || !workspaceId} className="h-9 rounded-lg text-xs font-bold gap-2 bg-[#f9510b] hover:bg-[#d8430a] text-white">
+           <Button onClick={handleSave} disabled={saving || !workspaceId} className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-md rounded-xl h-10 px-6 text-sm font-semibold transition-all active:scale-[0.98] gap-2">
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               Save Configuration
            </Button>

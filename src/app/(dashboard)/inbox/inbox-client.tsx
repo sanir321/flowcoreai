@@ -39,7 +39,6 @@ import { motion } from "framer-motion"
 import { useMemo } from "react"
 import { PromptInput, PromptInputTextarea, PromptInputActions, PromptInputAction } from "@/components/ui/prompt-input"
 import { ThinkingBar } from "@/components/ui/thinking-bar"
-import { FeedbackBar } from "@/components/ui/feedback-bar"
 import { ChatContainerRoot, ChatContainerContent, ChatContainerScrollAnchor } from "@/components/ui/chat-container"
 import { ScrollButton } from "@/components/ui/scroll-button"
 
@@ -101,7 +100,6 @@ export function InboxClient({
   const [welcomeTemplate, setWelcomeTemplate] = useState(initialWelcomeTemplate)
   const [isSavingTemplate, setIsSavingTemplate] = useState(false)
   const [contactSearch, setContactSearch] = useState("")
-  const [ratedIds, setRatedIds] = useState<Set<string>>(new Set())
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const selectedSession = sessions.find(s => s.id === selectedSessionId)
@@ -234,15 +232,7 @@ export function InboxClient({
     setInputText("")
     setIsSending(true)
 
-    // If the AI was in control, pause it so the manual reply sticks
-    if (selectedSession?.status === 'active') {
-      const takenOver = await takeOverSession({ session_id: selectedSessionId })
-      if (!takenOver.error) {
-        setSessions(prev => prev.map(s => s.id === selectedSessionId ? { ...s, status: 'escalated' } : s))
-      }
-    }
-
-    // Optimistic Update
+    // Optimistic Update First for faster UI feedback
     const optimisticMsg = {
       id: `temp-${crypto.randomUUID()}`,
       content: text,
@@ -254,6 +244,18 @@ export function InboxClient({
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     setMessages(prev => [...prev, optimisticMsg as any])
+
+    // If the AI was in control, pause it so the manual reply sticks
+    if (selectedSession?.status === 'active') {
+      // Optimistic session state update
+      setSessions(prev => prev.map(s => s.id === selectedSessionId ? { ...s, status: 'escalated' } : s))
+      takeOverSession({ session_id: selectedSessionId }).then(takenOver => {
+        if (takenOver.error) {
+          toast.error("Failed to pause AI.")
+          setSessions(prev => prev.map(s => s.id === selectedSessionId ? { ...s, status: 'active' } : s))
+        }
+      })
+    }
 
     const result = await sendManualReply({ session_id: selectedSessionId, content: text })
     if (result.error) {
@@ -301,17 +303,20 @@ export function InboxClient({
     }
     setIsSavingTemplate(false)
   }
-
   const handleTakeOver = async () => {
     if (!selectedSessionId) return
     setIsUpdatingStatus(true)
+    // Optimistic Update First
+    setSessions(prev => prev.map(s => s.id === selectedSessionId ? { ...s, status: 'escalated' } : s))
+    setActiveTab("todo")
+    
     const result = await takeOverSession({ session_id: selectedSessionId })
     if (result.error) {
       toast.error(result.error)
+      // Revert Optimistic Update
+      setSessions(prev => prev.map(s => s.id === selectedSessionId ? { ...s, status: 'active' } : s))
     } else {
       toast.success("Assistant Paused. You have control.")
-      setSessions(prev => prev.map(s => s.id === selectedSessionId ? { ...s, status: 'escalated' } : s))
-      setActiveTab("todo")
     }
     setIsUpdatingStatus(false)
   }
@@ -319,6 +324,10 @@ export function InboxClient({
   const handleResolve = async () => {
     if (!selectedSessionId) return
     setIsUpdatingStatus(true)
+    // Optimistic Update First
+    setSessions(prev => prev.map(s => s.id === selectedSessionId ? { ...s, status: 'active' } : s))
+    setActiveTab("handling")
+
     const { data: log } = await supabase
         .from("escalation_logs")
         .select("id")
@@ -337,14 +346,15 @@ export function InboxClient({
             .update({ status: 'active' })
             .eq("id", selectedSessionId)
         
-        if (error) toast.error(error.message)
+        if (error) toast.error("Failed to unpause")
         else success = true
     }
 
     if (success) {
-      toast.success("Automation resumed.")
-      setSessions(prev => prev.map(s => s.id === selectedSessionId ? { ...s, status: 'active' } : s))
-      setActiveTab("handling")
+      toast.success("Assistant Unpaused. AI is back in control.")
+    } else {
+      // Revert Optimistic Update
+      setSessions(prev => prev.map(s => s.id === selectedSessionId ? { ...s, status: 'escalated' } : s))
     }
     setIsUpdatingStatus(false)
   }
@@ -565,18 +575,6 @@ export function InboxClient({
                               )}
                             </div>
 
-                            {m.role === 'agent' && !ratedIds.has(m.id) && (
-                              <div className="self-end">
-                                <FeedbackBar
-                                  title="Was this helpful?"
-                                  onHelpful={() => { setRatedIds(prev => new Set(prev).add(m.id)); toast.success("Thanks for your feedback!") }}
-                                  onNotHelpful={() => { setRatedIds(prev => new Set(prev).add(m.id)); toast.success("Thanks for your feedback!") }}
-                                  onClose={() => setRatedIds(prev => new Set(prev).add(m.id))}
-                                  className="text-[10px]"
-                                />
-                              </div>
-                            )}
-
                             <div className="flex items-center gap-2 px-1 text-gray-500 font-semibold">
                               <span className="text-[8px]">{m.role === 'customer' ? 'Customer' : 'Assistant'}</span>
                               {m.role !== 'customer' && m.agent_type && m.agent_type !== 'customer_support' && (
@@ -749,9 +747,10 @@ export function InboxClient({
                 <Button 
                     onClick={handleSaveTemplate}
                     disabled={isSavingTemplate}
-                    className="w-full h-12 bg-black hover:bg-gray-800 text-white rounded-xl font-semibold text-xs shadow-lg active:scale-95 transition-all gap-2"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-md rounded-xl w-full h-12 px-8 text-sm font-semibold transition-all active:scale-[0.98] gap-2"
                 >
-                    {isSavingTemplate ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save Template"}
+                    {isSavingTemplate ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                    Save Template
                 </Button>
             </div>
         </DialogContent>

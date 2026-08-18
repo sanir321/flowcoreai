@@ -149,6 +149,7 @@ Deno.serve(async (req) => {
 
     if (opencodeKey && chunks.length > 0) {
       fireAndForget(supabase, "extract-business-profile", { workspace_id, source_id })
+      fireAndForget(supabase, "extract-graphrag", { workspace_id, source_id })
     }
 
     return new Response(JSON.stringify({ success: true, chunks: chunks.length }), {

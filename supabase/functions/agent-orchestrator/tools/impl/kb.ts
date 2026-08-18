@@ -8,7 +8,7 @@ const DEFAULT_KB_CONFIG = {
   noise_stripping: true,
 };
 
-export async function matchChunks(params: { query: string; match_threshold?: number }, ctx: PipelineContext) {
+export async function matchChunks(params: { query: string; match_threshold?: number, tag?: string }, ctx: PipelineContext) {
   // Reuse the speculative search started in T2 when the query is the raw message.
   if (ctx.kbSearchPromise && params.query.trim().toLowerCase() === ctx.payload.message.trim().toLowerCase()) {
     return ctx.kbSearchPromise;
@@ -38,13 +38,22 @@ export async function matchChunks(params: { query: string; match_threshold?: num
     match_count: kbConfig.match_count ?? DEFAULT_KB_CONFIG.match_count,
     p_workspace_id: ctx.payload.workspace_id,
     p_query_text: params.query,
+    p_tag: params.tag // for metadata filtering
+  });
+
+  const { data: graph_nodes, error: graph_error } = await ctx.supabase.rpc("match_kb_graph", {
+    query_embedding: embedding,
+    match_threshold: matchThreshold,
+    match_count: 5,
+    p_workspace_id: ctx.payload.workspace_id,
+    p_tag: params.tag
   });
 
   if (error) {
     console.error("[KB] match_kb_chunks RPC error:", error.message);
-    return { success: true, chunks: [], kb_chunks: [] };
+    return { success: true, chunks: [], kb_chunks: [], graph_nodes: [] };
   }
 
   const chunks = kb || [];
-  return { success: true, chunks, kb_chunks: chunks };
+  return { success: true, chunks, kb_chunks: chunks, graph_nodes: graph_nodes || [] };
 }

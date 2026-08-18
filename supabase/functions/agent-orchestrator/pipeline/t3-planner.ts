@@ -169,47 +169,49 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
 
   for (let attempt = 0; attempt <= 1; attempt++) {
     try {
+      const isWidget = ctx.payload.channel === "widget";
       const llmOpts: any = {
         agentType,
         max_tokens: 800,
         temperature: 0.3,
-        system: systemPrompt,
+        system: systemPrompt + "\n\nIf you need to call a tool, output exactly: <action>tool_name|{params_json}</action>. Otherwise, just reply to the user.",
         messages,
-        tools: [SUBMIT_PLAN_TOOL],
+        stream: false // we stream only on pass 2 or if no tools
       };
-      if (attempt < 1) {
-        llmOpts.tool_choice = { type: "function", function: { name: "submit_plan" } };
-      }
+      
       llmResponse = await callLLM(llmOpts);
 
-      const toolCall = llmResponse.choices?.[0]?.message?.tool_calls?.[0];
-      if (toolCall && toolCall.function.name === "submit_plan") {
-        parsedPlan = JSON.parse(toolCall.function.arguments);
-        lastError = null;
-        break;
-      }
-
-      // Accept any other tool call as an action wrap
-      if (toolCall) {
-        parsedPlan = {
-          response: "",
-          actions: [{ tool: toolCall.function.name, params: JSON.parse(toolCall.function.arguments || "{}") }]
-        };
-        needsPass2 = true;
-        lastError = null;
-        break;
-      }
-
-      // Accept content-only response
+      // Accept content-only response or XML tags
       const msg0 = llmResponse.choices?.[0]?.message;
       const content = (msg0?.content || msg0?.reasoning_content || "").trim();
+      
       if (content && content.length > 0) {
+        // Check for XML action tags
+        const actionMatch = content.match(/<action>([\s\S]*?)<\/action>/);
+        if (actionMatch) {
+          try {
+            const [toolName, paramsStr] = actionMatch[1].split('|');
+            parsedPlan = {
+              response: content.replace(actionMatch[0], '').trim(),
+              actions: [{ tool: toolName.trim(), params: JSON.parse(paramsStr || "{}") }]
+            };
+            needsPass2 = true;
+            lastError = null;
+            break;
+          } catch (e) {
+            console.error("Failed to parse action tag:", actionMatch[1]);
+          }
+        }
+        
         parsedPlan = { response: content, actions: [] };
         lastError = null;
+        
+        // If it's a widget and no actions needed, we can just return early or proceed to stream?
+        // Wait, if we didn't stream pass 1, we already have the text!
         break;
       }
 
-      throw new Error("LLM did not call submit_plan");
+      throw new Error("LLM did not return a valid response");
     } catch (e: any) {
       lastError = e;
       console.error(`[T3] Plan attempt ${attempt + 1} error:`, e.message);
@@ -316,25 +318,48 @@ export async function runT3(ctx: PipelineContext): Promise<TierResult> {
       try {
         const pass2System = buildPass2System(ctx, agentType);
         const toolContext = buildToolContext(parsedPlan.actions, toolResults);
-        const toolCalls = llmResponse?.choices?.[0]?.message?.tool_calls;
-        if (toolCalls && toolCalls.length > 0) {
-          const secondPassResponse = await callLLM({
-            agentType, max_tokens: 600, temperature: 0.3,
-            system: pass2System,
-            messages: [
-              ...messages,
-              { role: "assistant", content: "", tool_calls: toolCalls },
-              { role: "tool", tool_call_id: toolCalls[0].id, content: toolContext }
-            ]
-          });
-          finalResponse = secondPassResponse.choices?.[0]?.message?.content || parsedPlan.fallback || "";
+        const toolCalls = llmResponse?.choices?.[0]?.message?.tool_calls || [];
+        
+        // If we didn't use native tool_calls (widget mode with XML tags), we fake the tool context
+        const pass2Messages = [
+          ...messages,
+          toolCalls.length > 0 ? { role: "assistant", content: "", tool_calls: toolCalls } : { role: "assistant", content: `I need to use ${parsedPlan.actions[0].tool}.` },
+          toolCalls.length > 0 ? { role: "tool", tool_call_id: toolCalls[0].id, content: toolContext } : { role: "user", content: `Tool result: ${toolContext}` }
+        ];
+
+        const isWidget = ctx.payload.channel === "widget";
+        const secondPassResponse = await callLLM({
+          agentType, max_tokens: 600, temperature: 0.3,
+          system: pass2System,
+          messages: pass2Messages as any,
+          stream: isWidget
+        });
+
+        if (isWidget && secondPassResponse instanceof Response) {
+          return secondPassResponse; // Return stream directly!
         }
+        
+        finalResponse = secondPassResponse.choices?.[0]?.message?.content || parsedPlan.fallback || "";
       } catch (e: any) {
         console.error("[T3] Second pass error:", e.message);
       }
     }
+  }
 
-
+  // If we didn't need Pass 2, but we need to stream Pass 1's text (and it didn't stream yet)
+  if (ctx.payload.channel === "widget" && !needsPass2 && parsedPlan.response) {
+    // We didn't stream Pass 1 to check for XML tags. Now we can just echo it back as a stream.
+    const stream = new ReadableStream({
+      start(controller) {
+        const encoder = new TextEncoder();
+        // Send fake SSE
+        const sse = `data: ${JSON.stringify({ choices: [{ delta: { content: parsedPlan.response } }] })}\n\n`;
+        controller.enqueue(encoder.encode(sse));
+        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+        controller.close();
+      }
+    });
+    return new Response(stream, { headers: { "Content-Type": "text/event-stream" } });
   }
 
   for (let i = 0; i < parsedPlan.actions.length; i++) {

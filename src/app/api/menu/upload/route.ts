@@ -20,7 +20,12 @@ export async function POST(req: NextRequest) {
     const workspaceId = await getUserWorkspaceId(supabase, user.id);
     if (!workspaceId) return NextResponse.json({ error: "No workspace" }, { status: 400 });
 
-    const formData = await req.formData();
+    let formData: FormData;
+    try {
+      formData = await req.formData();
+    } catch {
+      return NextResponse.json({ error: "No file provided" }, { status: 400 });
+    }
     const file = formData.get("file") as File | null;
     if (!file) return NextResponse.json({ error: "No file provided" }, { status: 400 });
     if (file.size > 10 * 1024 * 1024) return NextResponse.json({ error: "File too large (max 10MB)" }, { status: 413 });

@@ -165,9 +165,10 @@ export function ContactsClient({ initialContacts, workspaceId }: ContactsClientP
                     <Button 
                         type="submit" 
                         disabled={isSubmitting}
-                        className="w-full h-12 bg-black hover:bg-gray-800 text-white rounded-xl font-bold text-xs shadow-lg active:scale-95 transition-all gap-2"
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-md rounded-xl w-full h-12 px-8 text-sm font-semibold transition-all active:scale-[0.98] gap-2"
                     >
-                        {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save Identity"}
+                        {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                        Save Identity
                     </Button>
                 </form>
             </DialogContent>

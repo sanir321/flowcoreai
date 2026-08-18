@@ -11,7 +11,9 @@ import { render } from "@react-email/components"
 import { WelcomeEmail } from "@/components/emails/welcome"
 import * as React from "react"
 import { getUserWorkspaceId } from "@/lib/workspace-auth"
-import { CreateWorkspaceSchema } from "@/lib/schemas/workspace"
+import { CreateWorkspaceSchema, UpdateWorkspaceConfigSchema } from "@/lib/schemas/workspace"
+import { headers } from "next/headers"
+import { rateLimit } from "@/lib/rate-limit"
 
 export interface Workspace {
   id: string
@@ -43,6 +45,21 @@ export type ActionResponse<T = unknown> = {
 
 export async function createWorkspace(input: unknown): Promise<ActionResponse<{ workspace_id: string }>> {
   try {
+    const h = await headers();
+    const forwarded = h.get("x-forwarded-for");
+    let ip = "127.0.0.1";
+    if (forwarded) {
+      const parts = forwarded.split(",").map(p => p.trim()).filter(Boolean);
+      if (parts.length > 0) ip = parts[parts.length - 1]!;
+    } else {
+      ip = h.get("x-real-ip")?.trim() || "127.0.0.1";
+    }
+
+    const { success: isAllowed } = await rateLimit(`create_ws_${ip}`);
+    if (!isAllowed) {
+      return { data: null, error: "Too many requests. Please try again later." };
+    }
+
     const result = CreateWorkspaceSchema.safeParse(input)
 
     if (!result.success) {
@@ -60,9 +77,9 @@ export async function createWorkspace(input: unknown): Promise<ActionResponse<{ 
       .select("id")
       .eq("owner_id", user.id)
       .is("deleted_at", null)
-      .maybeSingle()
-    if (existingWs) {
-      return { data: { workspace_id: existingWs.id }, error: null }
+      .limit(1)
+    if (existingWs && existingWs.length > 0 && existingWs[0]) {
+      return { data: { workspace_id: existingWs[0].id }, error: null }
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -92,18 +109,32 @@ export async function createWorkspace(input: unknown): Promise<ActionResponse<{ 
           .select("id")
           .eq("owner_id", user.id)
           .is("deleted_at", null)
-          .maybeSingle()
-        if (winnerWs) {
-          return { data: { workspace_id: winnerWs.id }, error: null }
+          .limit(1)
+        if (winnerWs && winnerWs.length > 0 && winnerWs[0]) {
+          return { data: { workspace_id: winnerWs[0].id }, error: null }
         }
       }
       throw error
     }
 
-    // Set workspace_id in app_metadata — fire-and-forget because all dashboard pages
-    // now have DB fallback (query by owner_id) if the JWT is stale
+    // Atomic provisioning of defaults
+    await Promise.all([
+      supabase.from("workspace_agents").insert({
+        workspace_id: data.id,
+        agent_type: "customer_support",
+        status: "paused"
+      }),
+      supabase.from("workspace_notifications").insert({
+        workspace_id: data.id
+      }),
+      supabase.from("widget_config").insert({
+        workspace_id: data.id
+      })
+    ]).catch(e => console.error("[WORKSPACE_DEFAULTS_PROVISION_FAILED]", e));
+
+    // Set workspace_id in app_metadata — now awaited to synchronize state
     const admin = createAdminClient()
-    admin.auth.admin.updateUserById(user.id, {
+    await admin.auth.admin.updateUserById(user.id, {
       app_metadata: { workspace_id: data.id }
     }).catch(e => console.error("[WORKSPACE_METADATA_UPDATE_FAILED]", e))
 
@@ -252,12 +283,14 @@ export async function deleteWorkspace(): Promise<ActionResponse<{ success: true 
     const errors: string[] = []
 
     // 1. Cleanup GoWA session (best-effort — external API)
-    const { data: gowaSession } = await supabase
+    const { data: gowaSessions } = await supabase
       .from("gowa_sessions")
       .select("gowa_session_id")
       .eq("workspace_id", workspaceId)
       .is("deleted_at", null)
-      .maybeSingle()
+      .limit(1)
+
+    const gowaSession = gowaSessions?.[0]
 
     if (gowaSession?.gowa_session_id) {
       const logoutErr = await logoutSession(gowaSession.gowa_session_id).catch(e => e)

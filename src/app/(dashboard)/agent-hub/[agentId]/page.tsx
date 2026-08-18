@@ -16,11 +16,8 @@ import {
   Shield,
   Database,
   CheckCircle2,
-  Wand2,
   Plus,
-  Pencil,
-  Brain,
-  Lightbulb
+  Pencil
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -333,9 +330,9 @@ export default function AgentConfigurePage() {
                      <Button 
                        type="submit"
                        disabled={isSaving}
-                       className="bg-black text-white hover:bg-gray-800 rounded-xl px-8 py-2 text-[11px] font-semibold transition-all active:scale-95 shadow-lg"
+                       className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-md rounded-xl h-10 px-8 text-sm font-semibold transition-all active:scale-[0.98] gap-2"
                      >
-                       {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                       {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                        Save Changes
                      </Button>
                   </div>
@@ -377,7 +374,7 @@ export default function AgentConfigurePage() {
                       {skills.filter(s => assignedSkillIds.has(s.id)).length === 0 ? (
                         <div className="py-16 flex flex-col items-center justify-center text-center space-y-4 border-2 border-dashed border-gray-100 rounded-2xl">
                           <div className="h-16 w-16 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-200">
-                            <Brain className="h-6 w-6" />
+                            <Database className="h-6 w-6" />
                           </div>
                           <div className="space-y-1">
                             <p className="text-sm font-semibold text-gray-900">No Skills Assigned</p>
@@ -701,13 +698,13 @@ function SkillCard({ skill, isAssigned, onToggle, onEdit, onDelete }: {
   return (
     <Card className="p-5 border-[#f9510b]/20 transition-all duration-300 relative overflow-hidden group rounded-2xl bg-white shadow-md ring-1 ring-[#f9510b]/5 hover:shadow-lg">
       <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-        <Wand2 className="h-14 w-14 text-[#f9510b]" />
+        <Globe className="h-14 w-14 text-[#f9510b]" />
       </div>
 
       <div className="flex items-start justify-between relative z-10">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl flex items-center justify-center shadow-sm border bg-[#f9510b] border-[#f9510b] text-white">
-            <Lightbulb className="h-5 w-5" />
+            <Shield className="h-5 w-5" />
           </div>
           <div>
             <h3 className="text-sm font-semibold text-gray-900 tracking-tight">{skill.name}</h3>

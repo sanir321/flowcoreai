@@ -113,8 +113,8 @@ export async function middleware(request: NextRequest) {
       .select("id")
       .eq("owner_id", user.id)
       .is("deleted_at", null)
-      .maybeSingle()
-    const workspaceId = ws?.id
+      .limit(1)
+    const workspaceId = ws?.[0]?.id
 
     if (isDashboardRoute && !workspaceId) {
       const onboardingUrl = new URL("/onboarding", request.url)

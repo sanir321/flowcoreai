@@ -34,6 +34,11 @@ export default function LoginPage() {
   // when email clients prefetch magic links while the OTP form is visible.
 
   const handleGoogleLogin = async () => {
+    setTermsError("")
+    if (!acceptedTerms) {
+      setTermsError("You must accept the Privacy Policy and Terms & Conditions")
+      return
+    }
     setIsLoading(true)
 
     const { error } = await supabase.auth.signInWithOAuth({

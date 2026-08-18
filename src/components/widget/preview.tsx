@@ -102,8 +102,38 @@ export default function WidgetPreview({ workspaceId, view = "chat", isOpen = tru
         throw new Error("Widget message failed")
       }
 
-      const data = await res.json()
-      setMsgs((prev) => [...prev, { id: (Date.now() + 1).toString(), role: "assistant", content: data.reply }])
+      const reader = res.body?.getReader()
+      if (!reader) throw new Error("No reader available")
+      const decoder = new TextDecoder("utf-8")
+      
+      const msgId = (Date.now() + 1).toString()
+      setMsgs((prev) => [...prev, { id: msgId, role: "assistant", content: "" }])
+
+      let buffer = ""
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        
+        const lines = buffer.split("\n")
+        buffer = lines.pop() || ""
+        
+        for (const line of lines) {
+          if (line.startsWith("data: ") && line !== "data: [DONE]") {
+            try {
+              const data = JSON.parse(line.slice(6))
+              const content = data.choices?.[0]?.delta?.content
+              if (content) {
+                setMsgs((prev) => prev.map(m => 
+                  m.id === msgId ? { ...m, content: m.content + content } : m
+                ))
+              }
+            } catch (e) {
+              // ignore
+            }
+          }
+        }
+      }
     } catch {
       setMsgs((prev) => [...prev, { id: (Date.now() + 1).toString(), role: "assistant", content: "Technical hiccup. Please try again." }])
     } finally {
@@ -124,9 +154,14 @@ export default function WidgetPreview({ workspaceId, view = "chat", isOpen = tru
 
   if (view === "form") {
     return (
-      <div className="w-[360px] h-[520px] bg-white rounded-[28px] shadow-2xl border border-gray-100 flex flex-col overflow-hidden font-sans">
-        <div className="p-6 border-b border-gray-100 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-[14px] flex items-center justify-center text-white font-bold font-outfit overflow-hidden" style={{ background: accent }}>
+      <div 
+        className="w-[360px] h-[520px] bg-white rounded-[28px] shadow-2xl border border-gray-100 flex flex-col overflow-hidden font-sans relative"
+        style={{ '--widget-accent': accent } as React.CSSProperties}
+      >
+        <div className="absolute top-0 left-0 right-0 h-32 opacity-10" style={{ background: `linear-gradient(135deg, ${accent}, transparent)` }} />
+        
+        <div className="p-6 flex items-center gap-4 relative z-10" style={{ background: accent }}>
+          <div className="w-12 h-12 rounded-full flex items-center justify-center text-gray-900 bg-white font-bold text-xl font-outfit overflow-hidden shadow-sm">
             {logoUrl ? (
               <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
             ) : (
@@ -134,25 +169,28 @@ export default function WidgetPreview({ workspaceId, view = "chat", isOpen = tru
             )}
           </div>
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-gray-900 leading-none">{name}</h3>
-            <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest mt-1.5">Active & Online</p>
+            <h3 className="text-[17px] font-bold text-white leading-tight tracking-tight">{name}</h3>
+            <div className="flex items-center gap-1.5 mt-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
+              <p className="text-[11px] text-white/90 font-medium tracking-wide">We reply instantly</p>
+            </div>
           </div>
         </div>
-        <div className="p-6 space-y-4">
+        <div className="flex-1 bg-gray-50/50 relative z-10 p-6 space-y-5">
            <div className="space-y-1">
-              <h2 className="text-lg font-bold text-gray-900">Let&apos;s get some basic info</h2>
-              <p className="text-xs text-gray-400">This will help us know who you are</p>
+              <h2 className="text-[20px] font-bold text-gray-900 tracking-tight">Let&apos;s get some basic info</h2>
+              <p className="text-[13px] text-gray-500 font-medium">This will help us know who you are</p>
            </div>
-           <div className="space-y-3 pt-2">
+           <div className="space-y-4 pt-2">
               <div className="space-y-1.5">
-                 <label className="text-xs font-bold text-gray-600">Full Name</label>
-                 <input disabled placeholder="John Doe" className="w-full h-11 border border-gray-100 bg-gray-50 rounded-lg px-4 text-sm" />
+                 <label className="text-xs font-bold text-gray-700">Full Name</label>
+                 <input disabled placeholder="John Doe" className="w-full h-[46px] border border-gray-200 bg-white rounded-xl px-4 text-[14px] shadow-sm outline-none" />
               </div>
               <div className="space-y-1.5">
-                 <label className="text-xs font-bold text-gray-600">Email Address</label>
-                 <input disabled placeholder="john@example.com" className="w-full h-11 border border-gray-100 bg-gray-50 rounded-lg px-4 text-sm" />
+                 <label className="text-xs font-bold text-gray-700">Email Address</label>
+                 <input disabled placeholder="john@example.com" className="w-full h-[46px] border border-gray-200 bg-white rounded-xl px-4 text-[14px] shadow-sm outline-none" />
               </div>
-              <button className="w-full h-11 text-white rounded-lg font-bold text-sm mt-4" style={{ background: accent }}>Start Chat</button>
+              <button className="w-full h-[46px] text-white rounded-xl font-bold text-[14px] mt-4 shadow-md transition-opacity hover:opacity-90 active:scale-[0.98]" style={{ background: accent }}>Start Chat</button>
            </div>
         </div>
       </div>
@@ -160,9 +198,12 @@ export default function WidgetPreview({ workspaceId, view = "chat", isOpen = tru
   }
 
   return (
-    <div className="w-[360px] h-[520px] bg-white rounded-[28px] shadow-2xl border border-gray-100 flex flex-col overflow-hidden font-sans">
-      <div className="p-4 border-b border-gray-100 flex items-center gap-3">
-        <div className="w-9 h-9 rounded-[12px] flex items-center justify-center text-white font-bold font-outfit overflow-hidden" style={{ background: accent }}>
+    <div 
+      className="w-[360px] h-[520px] bg-white rounded-[28px] shadow-2xl border border-gray-100 flex flex-col overflow-hidden font-sans relative"
+      style={{ '--widget-accent': accent } as React.CSSProperties}
+    >
+      <div className="p-5 flex items-center gap-4 relative z-10" style={{ background: accent }}>
+        <div className="w-11 h-11 rounded-full flex items-center justify-center text-gray-900 bg-white font-bold font-outfit overflow-hidden shadow-sm">
           {logoUrl ? (
             <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
           ) : (
@@ -170,21 +211,24 @@ export default function WidgetPreview({ workspaceId, view = "chat", isOpen = tru
           )}
         </div>
         <div className="flex-1">
-          <h3 className="text-sm font-semibold text-gray-900 leading-none">{name}</h3>
-          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Active & Online</p>
+          <h3 className="text-base font-bold text-white leading-none tracking-tight">{name}</h3>
+          <div className="flex items-center gap-1.5 mt-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
+            <p className="text-[11px] text-white/90 font-medium tracking-wide">We reply instantly</p>
+          </div>
         </div>
       </div>
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 bg-gray-50/50 flex flex-col relative z-10">
         <Chat
           messages={msgs}
           input={input}
           handleInputChange={(e) => setInput(e.target.value)}
           handleSubmit={handleSubmit}
           isGenerating={sending}
-          className="h-full"
+          className="h-full px-4 pt-4 pb-2"
         />
       </div>
-      <div className="p-2 text-center border-t border-gray-50 text-[9px] font-bold text-gray-300 uppercase tracking-widest">
+      <div className="py-2.5 text-center bg-white border-t border-gray-50 text-[10px] font-bold text-gray-300 uppercase tracking-widest z-10">
          Powered by <span className="text-gray-900">Flowcore</span>
       </div>
     </div>

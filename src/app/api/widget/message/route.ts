@@ -119,8 +119,13 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Invoke AI Orchestrator (still service_role — outbound edge function call)
-    const { data: aiResponse, error: aiError } = await supabaseAdmin.functions.invoke("agent-orchestrator", {
-      body: {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/agent-orchestrator`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
         workspace_id,
         customer_jid: session_token,
         customer_name: customer_name || sessionResult.customer_name || "Widget User",
@@ -129,19 +134,22 @@ export async function POST(req: NextRequest) {
         channel: "widget",
         agent_type: "customer_support",
         is_test: false,
-      },
+      }),
     });
 
-    if (aiError || !aiResponse) {
-      throw new Error(aiError?.message || "AI Agent failed to respond");
+    if (!response.ok) {
+      const errText = await response.text().catch(() => "");
+      throw new Error(`AI Agent failed to respond: ${response.status} ${errText}`);
     }
 
-    // 3. Extract AI response
-    const reply = aiResponse.response || "I apologize, but I am unable to respond at the moment.";
-
-    // Return the combined reply for the widget UI
-    return NextResponse.json({ reply }, {
-      headers: getCorsHeaders(allowedOrigin),
+    // Ensure we are returning a proper streaming response
+    return new Response(response.body, {
+      headers: {
+        ...getCorsHeaders(allowedOrigin),
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache, no-transform",
+        "Connection": "keep-alive"
+      }
     });
 
   } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any

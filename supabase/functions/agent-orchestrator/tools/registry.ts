@@ -113,7 +113,8 @@ export const ALL_TOOLS: Record<string, ToolDefinition> = {
     parameters: {
       type: "object",
       properties: {
-        query: { type: "string", description: "The search query based on the user's question." }
+        query: { type: "string", description: "The search query based on the user's question." },
+        tag: { type: "string", description: "Optional metadata tag to filter by (e.g. 'public', 'internal'). Default is to search all if omitted." }
       },
       required: ["query"],
       additionalProperties: false

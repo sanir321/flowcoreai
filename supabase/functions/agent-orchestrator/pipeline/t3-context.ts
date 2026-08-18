@@ -1,6 +1,18 @@
 import { PipelineContext, TierResult } from "../lib/types.ts";
 import { matchChunks } from "../tools/impl/kb.ts";
 
+function isSimpleGreetingOrAck(msg: string): boolean {
+  const normalized = msg.toLowerCase().trim().replace(/[.,!?;]+$/, '');
+  const simplePatterns = [
+    /^(hi|hello|hey|greetings|good\s*(morning|afternoon|evening))$/i,
+    /^(thanks|thank\s*you|thx|ty)$/i,
+    /^(ok|okay|k|cool|awesome|got\s*it|understood|perfect|great)$/i,
+    /^(yes|yeah|yep|no|nope|sure|definitely|absolutely|maybe|not\s*really)$/i,
+    /^(bye|goodbye|cya|see\s*ya|catch\s*you\s*later)$/i
+  ];
+  return simplePatterns.some(p => p.test(normalized)) || normalized.length <= 2;
+}
+
 export async function runT3(ctx: PipelineContext, requeryContext?: { previous_empty?: boolean; previous_query?: string }): Promise<TierResult> {
   const agentType = ctx.agentType || "customer_support";
 
@@ -9,14 +21,20 @@ export async function runT3(ctx: PipelineContext, requeryContext?: { previous_em
   if (agentType === "customer_support" || agentType === "sales") {
     const query = requeryContext?.previous_query || ctx.payload.message;
     const matchThreshold = requeryContext?.previous_empty ? 0.25 : undefined;
-    promises.push(
-      matchChunks({ query, match_threshold: matchThreshold }, ctx).then(result => {
-        ctx._kbChunks = result?.chunks || result?.kb_chunks || result?.results || [];
-      }).catch((e) => {
-        console.error("[T3] KB chunk fetch error:", e?.message || e);
-        ctx._kbChunks = [];
-      })
-    );
+    
+    // Phase 1 Optimization: Skip KB injection for simple greetings or acknowledgments
+    if (isSimpleGreetingOrAck(query) && !requeryContext) {
+      ctx._kbChunks = [];
+    } else {
+      promises.push(
+        matchChunks({ query, match_threshold: matchThreshold }, ctx).then(result => {
+          ctx._kbChunks = result?.chunks || result?.kb_chunks || result?.results || [];
+        }).catch((e) => {
+          console.error("[T3] KB chunk fetch error:", e?.message || e);
+          ctx._kbChunks = [];
+        })
+      );
+    }
   }
 
   if (agentType === "appointment_booking") {

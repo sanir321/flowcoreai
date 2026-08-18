@@ -29,15 +29,18 @@ export async function finalizeOnboarding(input: unknown): Promise<ActionResponse
       .eq("id", workspace_id)
       .eq("owner_id", user.id)
       .is("deleted_at", null)
-      .maybeSingle()
-    if (!ws) return { data: null, error: "Workspace not found" }
+      .limit(1)
+    
+    // Check if WS exists (limit returns array, so grab first element)
+    if (!ws || ws.length === 0) return { data: null, error: "Workspace not found" }
 
-    // Idempotent: if agents already exist for this workspace, return success
+    // Idempotent: if ACTIVE agents already exist for this workspace, return success
     // (handles duplicate calls, re-onboarding after page refresh, etc.)
     const { data: existingAgents } = await supabase
       .from("workspace_agents")
       .select("id")
       .eq("workspace_id", workspace_id)
+      .eq("status", "active")
       .is("deleted_at", null)
       .limit(1)
     if (existingAgents && existingAgents.length > 0) {
@@ -53,7 +56,7 @@ export async function finalizeOnboarding(input: unknown): Promise<ActionResponse
 
     const { error: agentError } = await supabase
       .from("workspace_agents")
-      .insert(agentsToInsert)
+      .upsert(agentsToInsert, { onConflict: 'workspace_id, agent_type' })
 
     if (agentError) throw agentError
 

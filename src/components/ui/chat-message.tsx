@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import React, { useMemo, useState } from "react"
 import { cva, type VariantProps } from "class-variance-authority"
@@ -14,12 +14,12 @@ import {
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer"
 
 const chatBubbleVariants = cva(
-  "group/message relative break-words rounded-lg p-3 text-sm sm:max-w-[70%]",
+  "group/message relative break-words [word-break:break-word] p-3.5 text-[14px] leading-relaxed shadow-sm",
   {
     variants: {
       isUser: {
-        true: "bg-primary text-primary-foreground",
-        false: "bg-muted text-foreground",
+        true: "rounded-[24px] rounded-br-[6px] ml-12",
+        false: "bg-white text-gray-900 border border-gray-100 rounded-[24px] rounded-bl-[6px] mr-12 shadow-sm",
       },
       animation: {
         none: "",
@@ -157,9 +157,12 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
   if (isUser) {
     return (
       <div
-        className={cn("flex flex-col", isUser ? "items-end" : "items-start")}
+        className={cn("flex flex-col items-end mb-4")}
       >
-        <div className={cn(chatBubbleVariants({ isUser, animation }))}>
+        <div 
+           className={cn(chatBubbleVariants({ isUser, animation }))}
+           style={{ background: 'var(--widget-accent, #111)', color: '#fff' }}
+        >
           <MarkdownRenderer>{content}</MarkdownRenderer>
         </div>
 
@@ -167,7 +170,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
           <time
             dateTime={createdAt.toISOString()}
             className={cn(
-              "mt-1 block px-1 text-xs opacity-50",
+              "mt-1.5 block px-1 text-[10px] text-gray-400 font-medium",
               animation !== "none" && "duration-500 animate-in fade-in-0"
             )}
           >
@@ -183,13 +186,13 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
       if (part.type === "text") {
         return (
           <div
-            className={cn(
-              "flex flex-col",
-              isUser ? "items-end" : "items-start"
-            )}
+            className={cn("flex flex-col mb-4", isUser ? "items-end" : "items-start")}
             key={`text-${index}`}
           >
-            <div className={cn(chatBubbleVariants({ isUser, animation }))}>
+            <div 
+               className={cn(chatBubbleVariants({ isUser, animation }))}
+               style={isUser ? { background: 'var(--widget-accent, #111)', color: '#fff' } : undefined}
+            >
               <MarkdownRenderer>{part.text}</MarkdownRenderer>
               {actions ? (
                 <div className="absolute -bottom-4 right-2 flex space-x-1 rounded-lg border bg-background p-1 text-foreground opacity-0 transition-opacity group-hover/message:opacity-100">
@@ -230,8 +233,11 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
   }
 
   return (
-    <div className={cn("flex flex-col", isUser ? "items-end" : "items-start")}>
-      <div className={cn(chatBubbleVariants({ isUser, animation }))}>
+    <div className={cn("flex flex-col mb-4", isUser ? "items-end" : "items-start")}>
+      <div 
+         className={cn(chatBubbleVariants({ isUser, animation }))}
+         style={isUser ? { background: 'var(--widget-accent, #111)', color: '#fff' } : undefined}
+      >
         <MarkdownRenderer>{content}</MarkdownRenderer>
         {actions ? (
           <div className="absolute -bottom-4 right-2 flex space-x-1 rounded-lg border bg-background p-1 text-foreground opacity-0 transition-opacity group-hover/message:opacity-100">

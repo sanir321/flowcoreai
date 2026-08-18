@@ -53,8 +53,8 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
     const getParsed = MenuGetSchema.safeParse({
-      category: searchParams.get("category"),
-      type: searchParams.get("type"),
+      category: searchParams.get("category") ?? undefined,
+      type: searchParams.get("type") ?? undefined,
     });
     if (!getParsed.success) {
       return NextResponse.json({ error: getParsed.error.flatten() }, { status: 400 });
@@ -183,10 +183,11 @@ export async function DELETE(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
     const deleteParsed = MenuDeleteSchema.safeParse({
-      id: searchParams.get("id"),
-      type: searchParams.get("type"),
+      id: searchParams.get("id") ?? undefined,
+      type: searchParams.get("type") ?? undefined,
     });
     if (!deleteParsed.success) {
+      console.log("DELETE PARSE ERROR", deleteParsed.error.flatten());
       return NextResponse.json({ error: deleteParsed.error.flatten() }, { status: 400 });
     }
     const { id, type } = deleteParsed.data;

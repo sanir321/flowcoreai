@@ -180,19 +180,24 @@ export default function OnboardingPage() {
         .select("id")
         .eq("owner_id", user.id)
         .is("deleted_at", null)
-        .maybeSingle()
-      if (ws) {
-        // Check if agents exist — only redirect to inbox if onboarding is complete
+        .limit(1)
+      const workspace = ws?.[0]
+      if (workspace) {
+        // Check if ACTIVE agents exist — only redirect to inbox if onboarding is complete
         const { data: agents } = await supabase
           .from("workspace_agents")
           .select("id")
-          .eq("workspace_id", ws.id)
+          .eq("workspace_id", workspace.id)
+          .eq("status", "active")
           .is("deleted_at", null)
           .limit(1)
         if (agents && agents.length > 0) {
           router.push('/inbox')
+        } else {
+          // If workspace exists but no ACTIVE agents, stay on onboarding to complete setup
+          setWorkspaceId(workspace.id)
+          setStep(2)
         }
-        // If workspace exists but no agents, stay on onboarding to complete setup
       }
     })
   }, [router])
@@ -262,8 +267,7 @@ export default function OnboardingPage() {
 
   const handleSkip = async () => {
     if (!workspaceId) {
-      // No workspace created yet — just advance (shouldn't happen in normal flow)
-      setStep(3)
+      toast.error("Workspace not found. Please create a workspace first.")
       return
     }
     setIsLoading(true)

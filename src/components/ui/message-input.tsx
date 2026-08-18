@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import React, { useRef, useState } from "react"
 import { ArrowUp, Square } from "lucide-react"
@@ -46,7 +46,7 @@ export function MessageInput({
   }
 
   return (
-    <div className={cn("relative flex w-full items-end gap-2", className)}>
+    <div className={cn("relative flex w-full items-end gap-2 bg-white rounded-[20px] shadow-sm border border-gray-100 p-1.5 focus-within:border-gray-300 transition-colors", className)}>
       <textarea
         aria-label="Write your message"
         placeholder={placeholder}
@@ -55,25 +55,27 @@ export function MessageInput({
         onChange={onChange}
         onKeyDown={handleKeyDown}
         rows={1}
-        className="w-full resize-none rounded-2xl border border-input bg-background px-4 py-3 text-sm ring-offset-background transition-colors placeholder:text-muted-foreground focus-visible:border-primary focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-        style={{ minHeight: "44px", maxHeight: "200px" }}
+        className="w-full resize-none bg-transparent px-3 py-2 text-[14px] outline-none disabled:cursor-not-allowed disabled:opacity-50 placeholder:text-gray-400 font-sans"
+        style={{ minHeight: "36px", maxHeight: "120px" }}
       />
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 pb-0.5">
         {isGenerating && stop ? (
           <Button
             type="button"
             size="icon"
-            className="h-9 w-9 rounded-full"
+            className="h-9 w-9 rounded-full shrink-0"
+            style={{ background: 'var(--widget-accent, #111)', color: '#fff' }}
             aria-label="Stop generating"
             onClick={stop}
           >
-            <Square className="h-3.5 w-3.5 animate-pulse" fill="currentColor" />
+            <Square className="h-4 w-4 animate-pulse" fill="currentColor" />
           </Button>
         ) : (
           <Button
             type="submit"
             size="icon"
-            className="h-9 w-9 rounded-full"
+            className={cn("h-9 w-9 rounded-full shrink-0 transition-opacity", !value.trim() || isGenerating ? "opacity-50" : "opacity-100")}
+            style={{ background: 'var(--widget-accent, #111)', color: '#fff' }}
             aria-label="Send message"
             disabled={!value.trim() || isGenerating}
           >

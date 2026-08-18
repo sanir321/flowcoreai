@@ -316,9 +316,38 @@
         addMessage("This chat is not available on this website.", 'ai');
         return;
       }
-      const data = await res.json();
+      
       hideTyping();
-      addMessage(data.reply, 'ai');
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      
+      const bubble = document.createElement('div');
+      bubble.className = `fc-bubble ai`;
+      messages.insertBefore(bubble, typingEl);
+      if (isNearBottom()) scrollToBottom(false);
+
+      let buffer = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        
+        const lines = buffer.split('\n');
+        buffer = lines.pop(); // keep the last incomplete line
+        
+        for (const line of lines) {
+          if (line.startsWith('data: ') && line !== 'data: [DONE]') {
+            try {
+              const data = JSON.parse(line.slice(6));
+              const content = data.choices?.[0]?.delta?.content;
+              if (content) {
+                bubble.innerText += content;
+                if (isNearBottom()) scrollToBottom(false);
+              }
+            } catch (e) {}
+          }
+        }
+      }
     } catch (e) {
       hideTyping();
       addMessage("Technical hiccup. Please try again.", 'ai');

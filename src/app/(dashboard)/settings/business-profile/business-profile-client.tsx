@@ -198,14 +198,77 @@ export function BusinessProfileClient({ workspaceId, initialProfile, businessTyp
         <Button 
           onClick={handleSave} 
           disabled={isSaving}
-          className="bg-[#f9510b] hover:bg-[#b55533] text-white rounded-xl h-11 px-8 font-semibold shadow-lg shadow-[#f9510b]/20 transition-all active:scale-95"
+          className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-md rounded-xl h-10 px-8 text-sm font-semibold transition-all active:scale-[0.98] gap-2"
         >
-          {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save Changes"}
+          {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+          Save Changes
         </Button>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
         <div className="space-y-8">
+          
+          {/* Smart Setup AI */}
+          <Card className="p-8 border-[#f9510b]/20 bg-gradient-to-br from-white to-orange-50/30 rounded-[2rem] shadow-sm space-y-6 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-[#f9510b]/5 rounded-bl-full -z-10 blur-2xl" />
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-[#f9510b]/10 flex items-center justify-center text-[#f9510b]">
+                <Sparkles className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 tracking-tight">Smart Setup AI</h2>
+                <p className="text-xs text-gray-500 mt-0.5">Paste your business details and let AI fill the form.</p>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <Textarea 
+                id="smart-setup-input"
+                placeholder="e.g. We are FlowCore, a software agency in New York. Open Mon-Fri 9-5. We build custom websites. Contact at hello@flowcore.ai"
+                className="min-h-[100px] rounded-xl bg-white/50 border-gray-200 focus:bg-white focus:border-[#f9510b] focus:ring-1 focus:ring-[#f9510b]/10 transition-all resize-none text-sm"
+              />
+              <Button
+                type="button"
+                onClick={async () => {
+                  const text = (document.getElementById('smart-setup-input') as HTMLTextAreaElement).value;
+                  if (!text || text.length < 10) return toast.error("Please enter more details");
+                  
+                  const toastId = toast.loading("AI is reading your business details...");
+                  try {
+                    const res = await fetch("/api/business-profile/extract", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ text, businessType })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error);
+                    
+                    const newProfile = { ...profile };
+                    // Merge recursively
+                    const mergeObj = (target: any, source: any) => {
+                      for (const key in source) {
+                        if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+                          if (!target[key]) target[key] = {};
+                          mergeObj(target[key], source[key]);
+                        } else if (source[key] !== "" && source[key] !== null) {
+                          target[key] = source[key];
+                        }
+                      }
+                    };
+                    mergeObj(newProfile, data.extracted);
+                    setProfile(newProfile);
+                    toast.success("Form populated! Please review and save.", { id: toastId });
+                  } catch (e: any) {
+                    toast.error("Failed to extract: " + e.message, { id: toastId });
+                  }
+                }}
+                className="w-full h-11 rounded-xl bg-gray-900 hover:bg-gray-800 text-white font-semibold text-sm transition-all"
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                Auto-Fill Form
+              </Button>
+            </div>
+          </Card>
+
           {/* Contact Information */}
           <Card className="p-8 border-gray-100 rounded-[2rem] shadow-sm space-y-6">
             <div className="flex items-center gap-3">

@@ -553,9 +553,9 @@ export function MenuClient({
               <Button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex-1 bg-[#f9510b] hover:bg-[#b85432] text-white rounded-xl h-10 text-xs font-bold gap-2"
+                className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground shadow-md rounded-xl h-10 px-8 text-sm font-semibold transition-all active:scale-[0.98] gap-2"
               >
-                {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                 {editingId ? "Save Changes" : "Add Item"}
               </Button>
             </div>

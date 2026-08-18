@@ -19,13 +19,13 @@ export async function verifyWorkspaceOwnership(
     .eq("id", workspaceId)
     .eq("owner_id", userId)
     .is("deleted_at", null)
-    .maybeSingle();
+    .limit(1);
 
-  if (error || !data) {
+  if (error || !data || data.length === 0 || !data[0]) {
     return { authorized: false, error: "Workspace not found or unauthorized" };
   }
 
-  return { authorized: true, workspaceId: data.id };
+  return { authorized: true, workspaceId: data[0].id };
 }
 
 /**
@@ -45,8 +45,7 @@ export async function getUserWorkspaceId(
     .eq("owner_id", userId)
     .is("deleted_at", null)
     .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
+    .limit(1);
 
-  return data?.id ?? null;
+  return data?.[0]?.id ?? null;
 }

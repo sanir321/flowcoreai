@@ -160,9 +160,9 @@ export function SettingsClient({ initialWorkspace }: SettingsClientProps) {
          <Button 
             onClick={handleSave} 
             disabled={isSaving} 
-            className="bg-black text-white hover:bg-gray-800 rounded-xl px-10 h-12 text-xs font-bold transition-all shadow-lg active:scale-95"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-md rounded-xl h-10 px-8 text-sm font-semibold transition-all active:scale-[0.98] gap-2"
          >
-            {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
             Save Changes
          </Button>
       </div>

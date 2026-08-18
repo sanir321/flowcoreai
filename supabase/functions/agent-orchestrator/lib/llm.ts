@@ -10,7 +10,7 @@ const DEFAULT_PRIMARY = "nemotron-3-ultra-free";
 
 const noToolChoiceModels = new Set<string>();
 
-export async function callLLM(payload: AgentPayload & { agentType?: string }) {
+export async function callLLM(payload: AgentPayload & { agentType?: string, stream?: boolean }) {
   const modelChain = payload.model
     ? [payload.model, FALLBACK_MODEL]
     : [DEFAULT_PRIMARY, FALLBACK_MODEL];
@@ -26,7 +26,7 @@ export async function callLLM(payload: AgentPayload & { agentType?: string }) {
   throw lastError || new Error("ALL_MODELS_FAILED");
 }
 
-async function callZen(payload: AgentPayload & { model: string }) {
+async function callZen(payload: AgentPayload & { model: string, stream?: boolean }) {
   if (!OPENCODE_ZEN_API_KEY) throw new Error("OPENCODE_ZEN_API_KEY is not set");
 
   let systemMsg = payload.system || "";
@@ -41,7 +41,7 @@ async function callZen(payload: AgentPayload & { model: string }) {
       : payload.messages,
     max_tokens: payload.max_tokens ?? 800,
     temperature: payload.temperature ?? 0.3,
-    stream: false,
+    stream: payload.stream ?? false,
   };
   if (payload.response_format) body.response_format = payload.response_format;
   if (payload.tools) body.tools = payload.tools;
@@ -49,7 +49,7 @@ async function callZen(payload: AgentPayload & { model: string }) {
 
   const doFetch = async (b: Record<string, unknown>): Promise<any> => {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), payload.max_tokens && payload.max_tokens <= 100 ? 5000 : 10000);
+    const timeout = setTimeout(() => controller.abort(), payload.max_tokens && payload.max_tokens <= 100 ? 5000 : 25000);
     try {
       const res = await fetch(`${OPENCODE_ZEN_BASE_URL}/chat/completions`, {
         method: "POST",
@@ -68,6 +68,9 @@ async function callZen(payload: AgentPayload & { model: string }) {
         (e as any)._raw = errBody;
         throw e;
       }
+      if (b.stream) {
+        return res; // Return raw response for streaming
+      }
       return await res.json();
     } finally {
       clearTimeout(timeout);
@@ -75,22 +78,24 @@ async function callZen(payload: AgentPayload & { model: string }) {
   };
 
   try {
-    const json = await doFetch(body);
-    const msg = json?.choices?.[0]?.message;
+    const jsonOrRes = await doFetch(body);
+    if (payload.stream) return jsonOrRes;
+    const msg = jsonOrRes?.choices?.[0]?.message;
     if (msg && (!msg.content || msg.content === "")) {
       msg.content = msg.reasoning_content || "";
     }
-    return json;
+    return jsonOrRes;
   } catch (e: any) {
     if (e._raw?.error?.message?.includes("tool_choice") && body.tool_choice) {
       noToolChoiceModels.add(payload.model);
       delete body.tool_choice;
-      const json = await doFetch(body);
-      const msg = json?.choices?.[0]?.message;
+      const jsonOrRes = await doFetch(body);
+      if (payload.stream) return jsonOrRes;
+      const msg = jsonOrRes?.choices?.[0]?.message;
       if (msg && (!msg.content || msg.content === "")) {
         msg.content = msg.reasoning_content || "";
       }
-      return json;
+      return jsonOrRes;
     }
     throw e;
   }

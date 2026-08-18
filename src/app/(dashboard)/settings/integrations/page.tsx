@@ -316,7 +316,7 @@ export default function IntegrationsPage() {
                                 <Button 
                                     onClick={handleSaveConfig}
                                     disabled={isSaving}
-                                    className="h-12 px-8 rounded-xl bg-black text-white hover:bg-gray-800 flex items-center gap-3 text-[11px] font-bold transition-all active:scale-95"
+                                    className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-md rounded-xl h-10 px-8 text-sm font-semibold transition-all active:scale-[0.98] gap-2 mt-1"
                                 >
                                     {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                                     Sync Configuration
@@ -330,7 +330,7 @@ export default function IntegrationsPage() {
                               <div className="flex gap-4 items-center">
                                  <a
                                     href="/api/sheets/download"
-                                    className="inline-flex h-12 px-8 rounded-xl bg-black text-white hover:bg-gray-800 items-center gap-3 text-[11px] font-bold transition-all active:scale-95 no-underline"
+                                    className="inline-flex bg-primary hover:bg-primary/90 text-primary-foreground shadow-md rounded-xl h-10 px-8 text-sm font-semibold transition-all active:scale-[0.98] gap-2 items-center justify-center no-underline"
                                  >
                                     <Save className="h-4 w-4" />
                                     Download as CSV
