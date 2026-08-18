@@ -160,93 +160,109 @@ export function InsightsClient({ allData }: {
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        <div className="p-6 space-y-5">
+        <div className="p-4 md:p-8 space-y-6 max-w-[1600px] mx-auto">
+          {/* Top Section: KPIs */}
           <motion.div
-            className="grid grid-cols-2 lg:grid-cols-4 gap-3"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
             initial="hidden" animate="visible"
-            variants={{ visible: { transition: { staggerChildren: 0.04 } } }}
+            variants={{ visible: { transition: { staggerChildren: 0.05 } } }}
           >
             {kpiCards.map((card) => (
               <motion.div key={card.label}
-                variants={{ hidden: { opacity: 0, y: 12 }, visible: { opacity: 1, y: 0 } }}
-                className="relative p-5 rounded-2xl bg-white border border-gray-100/80 shadow-sm overflow-hidden"
+                variants={{ hidden: { opacity: 0, scale: 0.95 }, visible: { opacity: 1, scale: 1 } }}
+                className="relative p-5 rounded-[24px] bg-white border border-gray-200/60 shadow-sm overflow-hidden group hover:shadow-md transition-shadow"
               >
-                <div className="flex items-center justify-between mb-3">
-                  <div className={cn("h-8 w-8 rounded-xl flex items-center justify-center", card.label === "Messages" ? "bg-violet-50" : card.label === "Contacts" ? "bg-cyan-50" : card.label === "Sessions" ? "bg-amber-50" : "bg-emerald-50")}>
-                    <card.icon size={15} className={cn(card.label === "Messages" ? "text-violet-500" : card.label === "Contacts" ? "text-cyan-500" : card.label === "Sessions" ? "text-amber-500" : "text-emerald-500")} />
+                <div className="flex items-start justify-between mb-4">
+                  <div className={cn("h-10 w-10 rounded-[14px] flex items-center justify-center transition-transform group-hover:scale-105", card.label === "Messages" ? "bg-violet-50 text-violet-600" : card.label === "Contacts" ? "bg-cyan-50 text-cyan-600" : card.label === "Sessions" ? "bg-amber-50 text-amber-600" : "bg-emerald-50 text-emerald-600")}>
+                    <card.icon size={18} />
                   </div>
                   {card.change !== null && <TrendBadge value={card.change} />}
                 </div>
-                <p className="text-2xl font-bold tracking-tight text-gray-900">{card.value}</p>
-                <p className="text-[11px] text-gray-500 font-medium mt-0.5">{card.label}</p>
-                <div className="mt-2 -mx-1">
+                <div>
+                  <p className="text-[13px] text-gray-500 font-semibold mb-1">{card.label}</p>
+                  <p className="text-3xl font-bold tracking-tight text-gray-900">{card.value}</p>
+                </div>
+                <div className="mt-4 -mx-1 opacity-70 group-hover:opacity-100 transition-opacity">
                   <Sparkline data={chartSparkData} color={card.sparkColor} />
                 </div>
               </motion.div>
             ))}
           </motion.div>
 
-          <motion.div
-            className="p-5 rounded-2xl bg-white border border-gray-100/80 shadow-sm"
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900">Message Volume</h3>
-                <p className="text-[11px] text-gray-500 font-medium">Daily inbound vs outbound</p>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-1.5">
-                  <div className="h-2.5 w-2.5 rounded-full bg-violet-500" />
-                  <span className="text-[10px] font-medium text-gray-500">Inbound</span>
+          {/* Middle Section: Main Chart & Secondary KPIs */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <motion.div
+              className="lg:col-span-2 p-6 rounded-[24px] bg-white border border-gray-200/60 shadow-sm flex flex-col"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-base font-bold text-gray-900">Message Volume</h3>
+                  <p className="text-[13px] text-gray-500 font-medium mt-0.5">Daily inbound vs outbound interactions</p>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="h-2.5 w-2.5 rounded-full bg-cyan-400" />
-                  <span className="text-[10px] font-medium text-gray-500">Outbound</span>
-                </div>
-              </div>
-            </div>
-            <InsightsChart data={chartData} />
-          </motion.div>
-
-          <motion.div
-            className="grid grid-cols-2 lg:grid-cols-4 gap-3"
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            {secondaryCards.map(card => (
-              <div key={card.label} className="p-4 rounded-2xl bg-white border border-gray-100/80 shadow-sm">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className={cn("h-6 w-6 rounded-lg flex items-center justify-center", card.bg)}>
-                    <card.icon size={12} className={card.color} />
-                  </div>
-                  <span className="text-[11px] text-gray-500 font-medium">{card.label}</span>
-                </div>
-                <p className={cn("text-lg font-bold tracking-tight", card.color)}>{card.value}</p>
-              </div>
-            ))}
-          </motion.div>
-
-          <motion.div
-            className="p-4 rounded-2xl bg-white border border-gray-100/80 shadow-sm"
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35 }}
-          >
-            <h3 className="text-xs font-semibold text-gray-900 mb-3">Integrations</h3>
-            <div className="grid grid-cols-3 gap-3">
-              {integrations.map(s => (
-                <div key={s.label} className="flex items-center justify-between p-3 rounded-xl bg-gray-50/50">
+                <div className="flex items-center gap-5">
                   <div className="flex items-center gap-2">
-                    <s.icon size={13} className={s.connected ? "text-emerald-500" : "text-gray-300"} />
-                    <span className="text-[11px] text-gray-600 font-medium">{s.label}</span>
+                    <div className="h-3 w-3 rounded-md bg-violet-500" />
+                    <span className="text-[12px] font-semibold text-gray-600">Inbound</span>
                   </div>
-                  <span className={cn("text-[10px] font-semibold", s.connected ? "text-emerald-600" : "text-gray-400")}>
-                    {s.connected ? "Active" : "Off"}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <div className="h-3 w-3 rounded-md bg-cyan-400" />
+                    <span className="text-[12px] font-semibold text-gray-600">Outbound</span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex-1 min-h-[300px]">
+                <InsightsChart data={chartData} />
+              </div>
+            </motion.div>
+
+            <motion.div
+              className="flex flex-col gap-4"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              {secondaryCards.map(card => (
+                <div key={card.label} className="p-5 flex-1 rounded-[24px] bg-white border border-gray-200/60 shadow-sm flex items-center justify-between group hover:border-gray-300/80 transition-colors">
+                  <div className="flex items-center gap-4">
+                    <div className={cn("h-12 w-12 rounded-[16px] flex items-center justify-center transition-transform group-hover:scale-105", card.bg)}>
+                      <card.icon size={20} className={card.color} />
+                    </div>
+                    <div>
+                      <p className="text-[13px] text-gray-500 font-semibold mb-0.5">{card.label}</p>
+                      <p className={cn("text-xl font-bold tracking-tight", card.color)}>{card.value}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </motion.div>
+          </div>
+
+          {/* Bottom Section: Integrations & Health */}
+          <motion.div
+            className="p-6 rounded-[24px] bg-white border border-gray-200/60 shadow-sm"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <div className="mb-5">
+              <h3 className="text-base font-bold text-gray-900">System Integrations</h3>
+              <p className="text-[13px] text-gray-500 font-medium mt-0.5">Live status of your connected services</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {integrations.map(s => (
+                <div key={s.label} className="flex items-center justify-between p-4 rounded-[18px] bg-gray-50/80 border border-gray-100 group hover:bg-gray-100/80 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className={cn("p-2 rounded-xl bg-white shadow-sm", s.connected ? "text-emerald-500" : "text-gray-400")}>
+                      <s.icon size={18} />
+                    </div>
+                    <span className="text-[14px] text-gray-700 font-semibold">{s.label}</span>
+                  </div>
+                  <div className={cn("px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider", s.connected ? "bg-emerald-100/50 text-emerald-700" : "bg-gray-200/50 text-gray-500")}>
+                    {s.connected ? "Active" : "Offline"}
+                  </div>
                 </div>
               ))}
             </div>
