@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
-import { Heart, Zap, Lightbulb, RefreshCw, Megaphone, CheckCheck, ExternalLink, BellRing, type LucideIcon } from "lucide-react"
+import { Bell, RefreshCw, Zap, Megaphone, Lightbulb, BellRing, ExternalLink, CheckCheck } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -16,27 +16,27 @@ interface Notification {
   is_read: boolean
 }
 
-const typeConfig: Record<Notification['type'], { icon: LucideIcon; color: string; bg: string }> = {
-  update:       { icon: RefreshCw, color: "text-blue-600", bg: "bg-blue-50" },
-  credit:       { icon: Zap,       color: "text-amber-600", bg: "bg-amber-50" },
-  announcement: { icon: Megaphone, color: "text-purple-600", bg: "bg-purple-50" },
-  tip:          { icon: Lightbulb, color: "text-emerald-600", bg: "bg-emerald-50" },
-  warning:      { icon: Zap,       color: "text-red-600",   bg: "bg-red-50" },
-  booking:      { icon: BellRing,  color: "text-green-600", bg: "bg-green-50" },
-  lead:         { icon: BellRing,  color: "text-blue-600",  bg: "bg-blue-50" },
-  escalation:   { icon: BellRing,  color: "text-orange-600",bg: "bg-orange-50" },
+const typeConfig: Record<Notification['type'], { icon: React.ElementType; color: string; bg: string }> = {
+  update:       { icon: RefreshCw, color: "text-blue-500", bg: "bg-blue-50/50" },
+  credit:       { icon: Zap,       color: "text-amber-500", bg: "bg-amber-50/50" },
+  announcement: { icon: Megaphone, color: "text-purple-500", bg: "bg-purple-50/50" },
+  tip:          { icon: Lightbulb, color: "text-emerald-500", bg: "bg-emerald-50/50" },
+  warning:      { icon: Zap,       color: "text-red-500",   bg: "bg-red-50/50" },
+  booking:      { icon: BellRing,  color: "text-green-500", bg: "bg-green-50/50" },
+  lead:         { icon: BellRing,  color: "text-blue-500",  bg: "bg-blue-50/50" },
+  escalation:   { icon: BellRing,  color: "text-rose-500",  bg: "bg-rose-50/50" },
 }
 
 function timeAgo(date: string) {
   const diff = Date.now() - new Date(date).getTime()
   const mins = Math.floor(diff / 60000)
-  if (mins < 1) return "just now"
+  if (mins < 1) return "Just now"
   if (mins < 60) return `${mins}m ago`
   const hours = Math.floor(mins / 60)
   if (hours < 24) return `${hours}h ago`
   const days = Math.floor(hours / 24)
   if (days < 30) return `${days}d ago`
-  return new Date(date).toLocaleDateString("en-IN", { day: "numeric", month: "short" })
+  return new Date(date).toLocaleDateString("en-US", { day: "numeric", month: "short" })
 }
 
 export function NotificationBell() {
@@ -111,6 +111,9 @@ export function NotificationBell() {
 
   const handleNotificationClick = async (n: Notification) => {
     if (!n.is_read) await markAsRead(n.id)
+    if (n.link) {
+      window.location.href = n.link
+    }
     setOpen(false)
   }
 
@@ -120,26 +123,15 @@ export function NotificationBell() {
         ref={btnRef}
         onClick={() => setOpen((o) => !o)}
         className={cn(
-          "relative h-9 w-9 flex items-center justify-center rounded-lg transition-all duration-300",
+          "relative flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-200",
           open
-            ? "bg-[#f9510b]/10 text-[#f9510b]"
-            : "text-gray-500 hover:text-gray-900 hover:bg-gray-100/50"
+            ? "bg-gray-900 text-white shadow-md"
+            : "text-gray-500 hover:bg-gray-100 hover:text-gray-900"
         )}
       >
-        <Heart
-          className={cn(
-            "h-4 w-4 transition-transform duration-300 hover:scale-110",
-            unreadCount > 0 && "fill-[#f9510b] text-[#f9510b]"
-          )}
-        />
+        <Bell className="h-5 w-5" strokeWidth={2} />
         {unreadCount > 0 && (
-          <motion.span
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            className="absolute -top-0.5 -right-0.5 h-4 min-w-4 flex items-center justify-center rounded-full bg-rose-500 text-white text-[8px] font-black px-1 shadow-lg"
-          >
-            {unreadCount > 9 ? "9+" : unreadCount}
-          </motion.span>
+          <span className="absolute top-2 right-2.5 flex h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white" />
         )}
       </button>
 
@@ -147,104 +139,85 @@ export function NotificationBell() {
         {open && (
           <motion.div
             ref={panelRef}
-            initial={{ opacity: 0, y: 6, scale: 0.96 }}
+            initial={{ opacity: 0, y: 10, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 6, scale: 0.96 }}
-            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+            exit={{ opacity: 0, y: 10, scale: 0.98 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
             style={{ transformOrigin: "bottom left" }}
-            className="fixed left-[66px] bottom-24 w-[400px] bg-white rounded-3xl border border-gray-100/80 shadow-2xl shadow-black/10 z-[200] overflow-hidden"
+            className="fixed left-[72px] bottom-6 w-[380px] overflow-hidden rounded-[24px] bg-white border border-gray-200/60 shadow-[0_8px_40px_-12px_rgba(0,0,0,0.12)] z-[200]"
           >
-            <div className="absolute -left-1.5 bottom-6 h-3 w-3 rotate-45 bg-white border-l border-b border-gray-100" />
-
-            <div className="bg-gradient-to-r from-[#f9510b]/5 to-[#f9510b]/10 px-5 py-3.5 border-b border-[#f9510b]/10">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="h-7 w-7 rounded-lg bg-white/80 flex items-center justify-center shadow-sm shadow-[#f9510b]/5">
-                    <BellRing className="h-3.5 w-3.5 text-[#f9510b]" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-gray-900 -mt-0.5">Notifications</h3>
-                    <p className="text-[9px] text-gray-400 font-medium -mt-0.5">
-                      {unreadCount > 0
-                        ? `${unreadCount} unread · ${notifications.length} total`
-                        : "You're all caught up"}
-                    </p>
-                  </div>
-                </div>
-                {unreadCount > 0 && (
-                  <button
-                    onClick={markAllAsRead}
-                    className="flex items-center gap-1 h-7 px-2.5 rounded-lg text-[10px] font-bold text-gray-500 hover:text-gray-700 hover:bg-white/60 transition-all"
-                  >
-                    <CheckCheck className="h-3 w-3" />
-                    Mark read
-                  </button>
-                )}
-              </div>
+            <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4 bg-gray-50/50">
+              <h3 className="text-[15px] font-semibold text-gray-900 tracking-tight">Notifications</h3>
+              {unreadCount > 0 && (
+                <button
+                  onClick={markAllAsRead}
+                  className="group flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-200/50 transition-colors"
+                >
+                  <CheckCheck className="h-3.5 w-3.5" />
+                  <span>Mark all read</span>
+                </button>
+              )}
             </div>
 
-            {}
             {notifications.length === 0 ? (
-              <div className="text-center py-12 px-6">
-                <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-rose-50 to-amber-50 border border-rose-100/50 flex items-center justify-center mx-auto mb-4">
-                  <Heart className="h-5 w-5 text-rose-400" />
+              <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-50 border border-gray-100 mb-3">
+                  <Bell className="h-5 w-5 text-gray-400" />
                 </div>
-                <p className="text-sm font-bold text-gray-900">All clear</p>
-                <p className="text-xs text-gray-400 mt-1 max-w-40 mx-auto leading-relaxed">
-                  No new notifications. We'll let you know when something needs your attention.
+                <p className="text-[14px] font-medium text-gray-900">You're all caught up</p>
+                <p className="text-[13px] text-gray-500 mt-1 max-w-[200px] leading-relaxed">
+                  There are no new notifications right now.
                 </p>
               </div>
             ) : (
-              <ScrollArea className="max-h-[500px]">
-                <div className="py-1.5">
+              <ScrollArea className="max-h-[440px]">
+                <div className="p-2 space-y-1">
                   {notifications.map((n, idx) => {
                     const cfg = typeConfig[n.type]!
                     const Icon = cfg.icon
                     return (
                       <motion.div
                         key={n.id}
-                        initial={{ opacity: 0, x: -8 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: idx * 0.03, duration: 0.2 }}
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: idx * 0.04, duration: 0.2 }}
                         onClick={() => handleNotificationClick(n)}
                         className={cn(
-                          "flex items-start gap-3.5 mx-2 px-3.5 py-3 rounded-xl cursor-pointer transition-all",
+                          "group relative flex items-start gap-4 rounded-2xl p-3 transition-colors cursor-pointer",
                           n.is_read
                             ? "hover:bg-gray-50"
-                            : "bg-gradient-to-r from-[#f9510b]/[0.03] to-transparent hover:from-[#f9510b]/[0.06]"
+                            : "bg-blue-50/30 hover:bg-blue-50/60"
                         )}
                       >
-                        {}
-                        <div className={cn("h-9 w-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5 shadow-sm ring-1 ring-black/[0.02]", cfg.bg)}>
+                        <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-gray-100/50", cfg.bg)}>
                           <Icon className={cn("h-4 w-4", cfg.color)} />
                         </div>
 
-                        {}
-                        <div className="min-w-0 flex-1">
+                        <div className="flex-1 space-y-1 pt-0.5 min-w-0">
                           <div className="flex items-start justify-between gap-2">
-                            <p className={cn("text-xs leading-snug", n.is_read ? "text-gray-800" : "text-gray-900 font-semibold")}>
+                            <p className={cn("text-[14px] font-medium leading-snug truncate", n.is_read ? "text-gray-700" : "text-gray-900")}>
                               {n.title}
                             </p>
-                            {!n.is_read && (
-                              <span className="h-2 w-2 rounded-full bg-[#f9510b] shrink-0 mt-1.5 shadow-sm shadow-[#f9510b]/30" />
-                            )}
+                            <span className="text-[11px] font-medium text-gray-400 shrink-0">
+                              {timeAgo(n.created_at)}
+                            </span>
                           </div>
-                          <p className={cn(
-                            "text-[11px] mt-0.5 line-clamp-2 leading-relaxed",
-                            n.is_read ? "text-gray-400" : "text-gray-500"
-                          )}>
+                          
+                          <p className={cn("text-[13px] leading-relaxed line-clamp-2", n.is_read ? "text-gray-500" : "text-gray-600")}>
                             {n.message}
                           </p>
-                          <div className="flex items-center gap-3 mt-1.5">
-                            <span className="text-[9px] text-gray-400 font-medium">{timeAgo(n.created_at)}</span>
-                            {n.link && (
-                              <span className="flex items-center gap-0.5 text-[9px] font-semibold text-[#f9510b] hover:text-[#a84d2e] transition-colors">
-                                <ExternalLink className="h-2.5 w-2.5" />
-                                View details
-                              </span>
-                            )}
-                          </div>
+                          
+                          {n.link && (
+                            <div className="flex items-center gap-1 pt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <span className="text-[12px] font-medium text-blue-600">View details</span>
+                              <ExternalLink className="h-3 w-3 text-blue-600" />
+                            </div>
+                          )}
                         </div>
+
+                        {!n.is_read && (
+                          <div className="absolute top-[18px] -left-1 h-1.5 w-1.5 rounded-full bg-blue-600" />
+                        )}
                       </motion.div>
                     )
                   })}
@@ -252,14 +225,10 @@ export function NotificationBell() {
               </ScrollArea>
             )}
 
-            {}
             {notifications.length > 0 && (
-              <div className="px-5 py-2.5 border-t border-gray-50 bg-gradient-to-t from-white to-transparent flex items-center justify-between">
-                <p className="text-[9px] text-gray-400 font-medium">
-                  {notifications.length} total
-                </p>
-                <a href="/settings/notifications" onClick={() => setOpen(false)} className="text-[9px] font-semibold text-[#f9510b] hover:text-[#a84d2e] transition-colors">
-                  View all
+              <div className="border-t border-gray-100 bg-gray-50/50 p-3 flex justify-center">
+                <a href="/settings/notifications" onClick={() => setOpen(false)} className="text-[13px] font-medium text-gray-600 hover:text-gray-900 transition-colors">
+                  View all notifications
                 </a>
               </div>
             )}
