@@ -151,7 +151,7 @@ export function NotificationBell() {
             exit={{ opacity: 0, y: 10, scale: 0.98 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
             style={{ transformOrigin: "bottom left" }}
-            className="fixed left-[72px] bottom-6 w-[400px] overflow-hidden rounded-[24px] bg-white border border-gray-200 shadow-2xl z-[200] flex flex-col font-sans"
+            className="fixed left-[76px] bottom-14 w-[400px] overflow-hidden rounded-[24px] bg-white border border-gray-200 shadow-2xl z-[200] flex flex-col font-sans"
           >
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-5 bg-white border-b border-gray-100">
@@ -181,7 +181,7 @@ export function NotificationBell() {
 
             {/* Body */}
             {notifications.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-[100px] px-6 text-center bg-gray-50/50 min-h-[360px]">
+              <div className="flex flex-col items-center justify-center py-[120px] px-6 text-center bg-gray-50/50 min-h-[420px]">
                 <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-sm border border-gray-100 mb-4">
                   <Bell className="h-6 w-6 text-gray-300" />
                 </div>
