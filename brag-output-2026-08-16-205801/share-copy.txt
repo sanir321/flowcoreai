@@ -1,5 +1,0 @@
-Introducing Flowcore — AI agents that handle booking, sales, and support, so you never answer the same question 30 times a day.
-
-One thread, 2:00 AM: it replied, booked the appointment, and left it Resolved before you woke up.
-
-flowcore.works

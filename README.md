@@ -19,13 +19,14 @@ Live app: [https://7flowcore.vercel.app](https://7flowcore.vercel.app)
 
 ## Features
 
-- **3 Specialized AI Agents** — Booking (appointment scheduling), Sales (catalog + quotes), Support (KB Q&A + escalation)
+- **3 Specialized AI Agents** — Booking (appointment scheduling), Sales (catalog + CRM), Support (KB Q&A + escalation)
 - **Multi-channel** — WhatsApp (GoWA self-hosted gateway) + Webchat widget
 - **Automatic website scraper** — Extracts business profile + ingests content into KB on signup
 - **Agent handoff** — AI recognizes when it's out of depth, hands off to human agents
-- **Real-time indicators** — Typing indicators (Supabase Broadcast) + active connections (Presence)
+- **Real-time indicators** — Native WhatsApp typing indicators + active connections (Presence)
 - **Knowledge base** — Semantic search with pgvector, configurable per workspace (threshold, match count, chunk truncation)
 - **Appointment booking** — Google Calendar sync with proactive token refresh (pg_cron every 30 min)
+- **CRM Sync** — Google Sheets direct lead capture and appending via Sales agent
 - **Google OAuth** — Re-authorized with mutex-based token refresh
 - **AI CEO analyst** — Business intelligence chat with structured insights
 - **Rate limiting** — 30 req/min per IP (fail-closed, service_role)
