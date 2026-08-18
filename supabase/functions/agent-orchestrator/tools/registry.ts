@@ -165,9 +165,6 @@ export const ALL_TOOLS: Record<string, ToolDefinition> = {
 };
 
 export const AGENT_TOOLS: Record<string, string[]> = {
-  customer_support: [
-    "search_kb", "manage_contact", "get_business_info", "transfer_agent", "escalate"
-  ],
   appointment_booking: [
     "manage_appointment", "manage_contact", "get_business_info", "transfer_agent", "escalate"
   ],
@@ -176,8 +173,7 @@ export const AGENT_TOOLS: Record<string, string[]> = {
     "place_order", "get_order", "track_order", "search_kb", "transfer_agent", "escalate"
   ],
   customer_support: [
-    "search_kb", "manage_contact", "get_business_info", "transfer_agent", "escalate",
-    "track_order"
+    "search_kb", "manage_contact", "get_business_info", "transfer_agent", "track_order"
   ]
 };
 
