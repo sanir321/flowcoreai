@@ -219,6 +219,26 @@ Deno.serve(async (req) => {
           }
         }
 
+        try {
+          const phone = normalizedFrom.replace('@s.whatsapp.net', '')
+          const gowaBaseUrl = Deno.env.get('GOWA_BASE_URL')?.replace(/\/$/, '') || ''
+          const gowaKey = Deno.env.get('GOWA_API_KEY') || ''
+          if (deviceId && gowaBaseUrl && gowaKey) {
+            await fetch(`${gowaBaseUrl}/send/chat-presence`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Basic ${btoa(gowaKey)}`,
+                'Content-Type': 'application/json',
+                'X-Device-Id': deviceId,
+              },
+              body: JSON.stringify({ phone, action: 'start' }),
+              signal: AbortSignal.timeout(3000),
+            }).catch(() => {})
+          }
+        } catch (e) {
+          // ignore typing error
+        }
+
         const aiClient = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '')
         const { error: aiError } = await aiClient.functions.invoke('agent-orchestrator', {
           body: {
