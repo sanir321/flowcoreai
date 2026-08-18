@@ -181,12 +181,14 @@ export function NotificationBell() {
 
             {/* Body */}
             {notifications.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 px-6 text-center bg-gray-50/50">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm border border-gray-100 mb-3">
-                  <Bell className="h-5 w-5 text-gray-300" />
+              <div className="flex flex-col items-center justify-center py-[100px] px-6 text-center bg-gray-50/50 min-h-[360px]">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-sm border border-gray-100 mb-4">
+                  <Bell className="h-6 w-6 text-gray-300" />
                 </div>
-                <p className="text-[15px] font-medium text-gray-900">You're all caught up</p>
-                <p className="text-[13px] text-gray-500 mt-1 max-w-[220px] mx-auto">When your AI captures leads, books appointments, or escalates chats, they will appear here.</p>
+                <p className="text-[16px] font-medium text-gray-900">You're all caught up</p>
+                <p className="text-[14px] text-gray-500 mt-2 max-w-[240px] mx-auto leading-relaxed">
+                  When your AI captures leads, books appointments, or escalates chats, they will appear here.
+                </p>
               </div>
             ) : (
               <ScrollArea className="max-h-[440px] bg-gray-50/30">
