@@ -50,7 +50,7 @@ const faqs = [
   },
   {
     q: "What AI model does Flowcore use?",
-    a: "We use Groq AI (llama-3.3-70b-versatile) for fast, reliable inference. Temperature is set to 0.3 for consistent professional responses, with a 300-token limit per reply.",
+    a: "We use enterprise-grade large language models tuned for fast, reliable customer support inference. Temperature is calibrated for consistent, professional responses with automatic safety guardrails.",
   },
   {
     q: "Can a human take over a conversation?",
