@@ -23,10 +23,25 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/legal/data-deletion", priority: "0.3", changefreq: "yearly" },
   ]
 
-  return staticRoutes.map((route) => ({
+  const blogSlugs = [
+    "automate-whatsapp-without-meta-cloud-api",
+    "ai-vs-human-escalation-strategy",
+    "building-knowledge-base-for-ai",
+  ]
+
+  const blogRoutes = blogSlugs.map((slug) => ({
+    url: `${siteUrl}/blog/${slug}`,
+    lastModified: now,
+    changeFrequency: "monthly" as const,
+    priority: 0.6,
+  }))
+
+  const staticEntries = staticRoutes.map((route) => ({
     url: `${siteUrl}${route.path}`,
     lastModified: now,
     changeFrequency: route.changefreq as MetadataRoute.Sitemap[number]["changeFrequency"],
     priority: parseFloat(route.priority),
   }))
+
+  return [...staticEntries, ...blogRoutes]
 }
