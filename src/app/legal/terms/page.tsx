@@ -93,7 +93,7 @@ You are solely responsible for obtaining customer consent before messaging them 
 
 ## 6. AI-Generated Content
 
-Flowcore uses large language models (via Groq AI — llama-3.3-70b-versatile) to generate automated responses on your behalf.
+Flowcore uses enterprise-grade large language models to generate automated responses on your behalf.
 
 - You acknowledge that AI responses may occasionally be inaccurate, incomplete, or inappropriate.
 - You are solely responsible for reviewing and configuring AI agent behaviour.

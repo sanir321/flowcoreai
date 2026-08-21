@@ -68,7 +68,7 @@ Disabling essential cookies may prevent the dashboard from functioning correctly
 
 ## 5. Third-Party Services
 
-Some third-party services we use (Supabase, Groq AI, Razorpay) may set their own cookies. These are governed by their respective privacy policies and are not under our control.
+Some third-party services we use (Supabase, AI service providers, Razorpay) may set their own cookies. These are governed by their respective privacy policies and are not under our control.
 
 ---
 

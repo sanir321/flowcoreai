@@ -102,7 +102,7 @@ We use the following sub-processors:
 |---|---|---|
 | **Supabase** | Database, auth, storage | All app data |
 | **GOWA (Railway)** | WhatsApp Business API gateway | Message content |
-| **Groq AI** | AI model inference (llama-3.3-70b-versatile) | Message content (anonymised prompts) |
+| **Enterprise AI Providers** | Secure AI model inference | Message content (anonymised prompts) |
 | **Razorpay** | Payment processing | Billing info |
 | **WhatsApp Business API (Meta)** | Message delivery | Phone numbers, messages |
 

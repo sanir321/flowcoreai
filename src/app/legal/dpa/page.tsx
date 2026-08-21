@@ -73,7 +73,7 @@ The Controller authorises the following sub-processors:
 |---|---|---|
 | **Supabase Inc.** | Database, Auth, Storage | US (multi-region) |
 | **Railway Corp.** | GoWA WhatsApp hosting | US |
-| **Groq Inc.** | AI model inference | US |
+| **Enterprise AI Model Providers** | Secure AI model inference | US / Global |
 | **Razorpay Software Pvt Ltd** | Payment processing | India |
 
 The Processor will notify the Controller at least **30 days** before adding or replacing any sub-processor.

@@ -59,8 +59,8 @@ const changes = [
     version: "0.6.0",
     date: "May 11, 2026",
     items: [
-      "Migrated AI from Kilo Gateway to Groq (llama-3.3-70b-versatile)",
-      "Added circuit breaker for Groq API calls",
+      "Upgraded core AI engine for low-latency inference and high reliability",
+      "Added circuit breaker and automated fallback handling for AI API calls",
       "Fixed WhatsApp message deduplication in queue worker",
       "Added conversation deduplication for burst messages",
       "Knowledge Base truncation at 1000 chars per item",
