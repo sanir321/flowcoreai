@@ -33,18 +33,44 @@ import { CreateWorkspaceSchema } from "@/lib/schemas/workspace"
 import { z } from "zod"
 
 const AGENTS = [
-  { id: 'customer_support', name: 'Support Hero', desc: 'Resolves complex technical inquiries.', type: 'Customer Success' },
-  { id: 'appointment_booking', name: 'Appointment Booker', desc: 'Schedule appointments and manage bookings.', type: 'Logistics' },
-  { id: 'sales', name: 'Sales Closer', desc: 'Qualifies leads and books meetings.', type: 'Revenue Growth' },
+  { 
+    id: 'customer_support', 
+    name: 'Support Hero', 
+    desc: 'Resolves complex technical inquiries & answers customer questions 24/7.', 
+    type: 'Customer Success',
+    badge: 'Core Agent · Included by Default',
+    isCore: true,
+  },
+  { 
+    id: 'appointment_booking', 
+    name: 'Appointment Booker', 
+    desc: 'Schedule appointments, manage bookings, and send reminders.', 
+    type: 'Logistics',
+    badge: '+ Adds to Support Hero',
+    isCore: false,
+  },
+  { 
+    id: 'sales', 
+    name: 'Sales Closer', 
+    desc: 'Qualifies incoming leads, pitches services, and books meetings.', 
+    type: 'Revenue Growth',
+    badge: '+ Adds to Support Hero',
+    isCore: false,
+  },
 ]
 
-interface Particle {
+interface Particle3D {
   x: number
   y: number
+  z: number
+  baseRadius: number
   angle: number
   speed: number
+  orbitTilt: number
   size: number
   color: string
+  glowColor: string
+  isAccent: boolean
 }
 
 function ParticleRing() {
@@ -57,7 +83,7 @@ function ParticleRing() {
     if (!ctx) return
 
     const dpr = Math.min(window.devicePixelRatio || 1, 2)
-    const size = 800
+    const size = 900
     canvas.width = size * dpr
     canvas.height = size * dpr
     canvas.style.width = `${size}px`
@@ -66,53 +92,160 @@ function ParticleRing() {
 
     const centerX = size / 2
     const centerY = size / 2
-    const ringRadius = 220
-    const ringSpread = 60
-    const particleCount = 260
-    const mouse = { x: -9999, y: -9999, radius: 130 }
+    const baseRadius = 240
+    const particleCount = 220
+    const mouse = { x: -9999, y: -9999, radius: 160 }
+    let rotX = 0.25
+    let rotY = 0
+    let shockwaveRadius = 0
+    let shockwaveAlpha = 0
 
-    const particles: Particle[] = []
+    const particles: Particle3D[] = []
     for (let i = 0; i < particleCount; i++) {
-      const angle = Math.random() * Math.PI * 2
-      const isAccent = Math.random() > 0.82
+      const angle = (i / particleCount) * Math.PI * 2 + (Math.random() - 0.5) * 0.4
+      const orbitTilt = (Math.random() - 0.5) * 0.9
+      const radiusOffset = (Math.random() - 0.5) * 90
+      const isAccent = Math.random() > 0.65
+      const isGold = !isAccent && Math.random() > 0.7
+
       particles.push({
-        x: centerX + (Math.random() - 0.5) * 800,
-        y: centerY + (Math.random() - 0.5) * 800,
+        x: 0,
+        y: 0,
+        z: 0,
+        baseRadius: baseRadius + radiusOffset,
         angle,
-        speed: 0.004 + Math.random() * 0.012,
-        size: 0.8 + Math.random() * 1.4,
-        color: isAccent ? 'rgba(217,94,70,0.85)' : 'rgba(255,255,255,0.45)',
+        speed: 0.005 + Math.random() * 0.008,
+        orbitTilt,
+        size: isAccent ? 1.8 + Math.random() * 1.6 : 1.0 + Math.random() * 1.2,
+        color: isAccent 
+          ? 'rgba(217, 94, 70, 0.95)' 
+          : isGold 
+          ? 'rgba(245, 166, 35, 0.85)' 
+          : 'rgba(255, 255, 255, 0.75)',
+        glowColor: isAccent ? 'rgba(217, 94, 70, 0.6)' : 'rgba(255, 255, 255, 0.3)',
+        isAccent,
       })
     }
 
     let raf = 0
+    let t = 0
 
     const animate = () => {
       ctx.clearRect(0, 0, size, size)
+      t += 0.015
+      rotY += 0.003
+
+      // Center atmospheric core glow
+      const coreGradient = ctx.createRadialGradient(centerX, centerY, 10, centerX, centerY, 320)
+      coreGradient.addColorStop(0, 'rgba(217, 94, 70, 0.08)')
+      coreGradient.addColorStop(0.5, 'rgba(217, 94, 70, 0.02)')
+      coreGradient.addColorStop(1, 'rgba(31, 26, 26, 0)')
+      ctx.fillStyle = coreGradient
+      ctx.beginPath()
+      ctx.arc(centerX, centerY, 320, 0, Math.PI * 2)
+      ctx.fill()
+
+      // Calculate 3D positions with breathing physics & rotation
+      const projected: Array<{ p: Particle3D; px: number; py: number; pz: number; scale: number; alpha: number }> = []
 
       particles.forEach(p => {
         p.angle += p.speed
-        const breathe = Math.sin(p.angle * 2.5) * 18
-        const targetX = centerX + Math.cos(p.angle) * (ringRadius + breathe)
-        const targetY = centerY + Math.sin(p.angle) * (ringRadius + breathe)
+        const breathe = Math.sin(t * 1.5 + p.angle * 3) * 16
+        const currentRadius = p.baseRadius + breathe
 
-        const dx = mouse.x - p.x
-        const dy = mouse.y - p.y
+        // 3D coordinates on tilted orbital torus
+        const ox = Math.cos(p.angle) * currentRadius
+        const oy = Math.sin(p.angle) * Math.sin(p.orbitTilt) * (currentRadius * 0.45)
+        const oz = Math.sin(p.angle) * Math.cos(p.orbitTilt) * currentRadius
+
+        // Rotate around X and Y axes
+        const cosY = Math.cos(rotY)
+        const sinY = Math.sin(rotY)
+        const cosX = Math.cos(rotX)
+        const sinX = Math.sin(rotX)
+
+        const x1 = ox * cosY - oz * sinY
+        const z1 = ox * sinY + oz * cosY
+        const y2 = oy * cosX - z1 * sinX
+        const z2 = oy * sinX + z1 * cosX
+
+        // Interactive mouse displacement in 2D projected space
+        let px = centerX + x1
+        let py = centerY + y2
+        const pz = z2
+
+        const dx = mouse.x - px
+        const dy = mouse.y - py
         const dist = Math.sqrt(dx * dx + dy * dy)
 
         if (dist < mouse.radius && dist > 0) {
           const push = (mouse.radius - dist) / mouse.radius
-          p.x -= (dx / dist) * push * 12
-          p.y -= (dy / dist) * push * 12
-        } else {
-          p.x += (targetX - p.x) * 0.06
-          p.y += (targetY - p.y) * 0.06
+          px -= (dx / dist) * push * 20
+          py -= (dy / dist) * push * 20
+        }
+
+        // Perspective depth scale
+        const fov = 600
+        const scale = fov / (fov + pz * 0.4)
+        const alpha = Math.max(0.2, Math.min(1, (pz + 300) / 500))
+
+        projected.push({ p, px, py, pz, scale, alpha })
+      })
+
+      // Sort by depth (painter's algorithm)
+      projected.sort((a, b) => a.pz - b.pz)
+
+      // Draw constellation lines between nearby particles
+      for (let i = 0; i < projected.length; i++) {
+        for (let j = i + 1; j < Math.min(i + 8, projected.length); j++) {
+          const p1 = projected[i]
+          const p2 = projected[j]
+          if (!p1 || !p2) continue
+          const dx = p1.px - p2.px
+          const dy = p1.py - p2.py
+          const distSq = dx * dx + dy * dy
+
+          if (distSq < 3200) { // Distance < ~56px
+            const lineAlpha = (1 - distSq / 3200) * 0.18 * ((p1.alpha + p2.alpha) / 2)
+            ctx.beginPath()
+            ctx.moveTo(p1.px, p1.py)
+            ctx.lineTo(p2.px, p2.py)
+            ctx.strokeStyle = p1.p.isAccent || p2.p.isAccent
+              ? `rgba(217, 94, 70, ${lineAlpha * 1.5})`
+              : `rgba(255, 255, 255, ${lineAlpha})`
+            ctx.lineWidth = 0.8 * ((p1.scale + p2.scale) / 2)
+            ctx.stroke()
+          }
+        }
+      }
+
+      // Draw shockwave ring if active
+      if (shockwaveAlpha > 0.01) {
+        ctx.beginPath()
+        ctx.arc(centerX, centerY, shockwaveRadius, 0, Math.PI * 2)
+        ctx.strokeStyle = `rgba(217, 94, 70, ${shockwaveAlpha * 0.4})`
+        ctx.lineWidth = 2
+        ctx.stroke()
+        shockwaveRadius += 6
+        shockwaveAlpha *= 0.94
+      }
+
+      // Render glowing 3D particles
+      projected.forEach(({ p, px, py, scale, alpha }) => {
+        const radius = Math.max(0.6, p.size * scale)
+        ctx.save()
+        ctx.globalAlpha = alpha
+
+        if (p.isAccent && scale > 0.95) {
+          ctx.shadowBlur = 12 * scale
+          ctx.shadowColor = p.glowColor
         }
 
         ctx.beginPath()
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2)
+        ctx.arc(px, py, radius, 0, Math.PI * 2)
         ctx.fillStyle = p.color
         ctx.fill()
+        ctx.restore()
       })
 
       raf = requestAnimationFrame(animate)
@@ -120,30 +253,45 @@ function ParticleRing() {
 
     animate()
 
-    const onMove = (e: MouseEvent) => {
+    const updateMouse = (clientX: number, clientY: number) => {
       const rect = canvas.getBoundingClientRect()
-      mouse.x = (e.clientX - rect.left) * (size / rect.width)
-      mouse.y = (e.clientY - rect.top) * (size / rect.height)
+      mouse.x = (clientX - rect.left) * (size / rect.width)
+      mouse.y = (clientY - rect.top) * (size / rect.height)
+    }
+
+    const onMove = (e: MouseEvent) => updateMouse(e.clientX, e.clientY)
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.touches[0]) updateMouse(e.touches[0].clientX, e.touches[0].clientY)
     }
     const onLeave = () => {
       mouse.x = -9999
       mouse.y = -9999
     }
+    const onClick = () => {
+      shockwaveRadius = 20
+      shockwaveAlpha = 1
+    }
 
     canvas.addEventListener('mousemove', onMove)
+    canvas.addEventListener('touchmove', onTouchMove, { passive: true })
     canvas.addEventListener('mouseleave', onLeave)
+    canvas.addEventListener('touchend', onLeave)
+    canvas.addEventListener('click', onClick)
 
     return () => {
       cancelAnimationFrame(raf)
       canvas.removeEventListener('mousemove', onMove)
+      canvas.removeEventListener('touchmove', onTouchMove)
       canvas.removeEventListener('mouseleave', onLeave)
+      canvas.removeEventListener('touchend', onLeave)
+      canvas.removeEventListener('click', onClick)
     }
   }, [])
 
   return (
     <canvas
       ref={canvasRef}
-      className="w-[800px] h-[800px] max-w-[100vw] max-h-[100vw]"
+      className="w-[900px] h-[900px] max-w-[100vw] max-h-[100vw] select-none"
       style={{ touchAction: 'none' }}
     />
   )
@@ -423,21 +571,27 @@ export default function OnboardingPage() {
                className="flex flex-col items-center gap-8 lg:gap-10 py-4"
             >
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center w-full max-w-5xl">
-                 <div className="space-y-4 text-center lg:text-left text-gray-900">
+                 <div className="space-y-4 text-center lg:text-left">
                      <h2 className="text-4xl lg:text-5xl font-bold tracking-tight text-white leading-tight">Your first agent</h2>
-                     <p className="text-lg text-neutral-500 font-medium leading-relaxed max-w-sm mx-auto lg:mx-0">Choose the primary objective for your AI employee.</p>
+                     <p className="text-lg text-neutral-400 font-medium leading-relaxed max-w-sm mx-auto lg:mx-0">
+                       <span className="text-white font-semibold">Support Hero</span> is included by default. Choose your team&apos;s primary focus.
+                     </p>
                  </div>
 
-                 <div className="relative flex items-center justify-center scale-90 lg:scale-100 origin-center text-gray-900">
+                 <div className="relative flex items-center justify-center scale-90 lg:scale-100 origin-center">
                     <button 
-                      onClick={() => setSelectedAgentIndex(prev => Math.max(0, prev - 1))}
+                      type="button"
+                      aria-label="Previous agent"
+                      onClick={() => setSelectedAgentIndex(prev => (prev === 0 ? AGENTS.length - 1 : prev - 1))}
                       className="absolute left-[-20px] lg:left-0 z-20 h-10 w-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white hover:bg-white/10 transition-all active:scale-90"
                     >
                       <ChevronLeft className="h-5 w-5" />
                     </button>
                     
                     <button 
-                      onClick={() => setSelectedAgentIndex(prev => Math.min(AGENTS.length - 1, prev + 1))}
+                      type="button"
+                      aria-label="Next agent"
+                      onClick={() => setSelectedAgentIndex(prev => (prev === AGENTS.length - 1 ? 0 : prev + 1))}
                       className="absolute right-[-20px] lg:right-0 z-20 h-10 w-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white hover:bg-white/10 transition-all active:scale-90"
                     >
                       <ChevronRight className="h-5 w-5" />
@@ -461,17 +615,29 @@ export default function OnboardingPage() {
                                   borderColor: "rgba(217, 94, 70, 0.5)"
                                 }}
                                 transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                                 className="w-[300px] lg:w-[340px] h-[440px] bg-[#2D2A2A] rounded-2xl border border-white/5 shadow-2xl relative overflow-hidden group cursor-pointer flex flex-col items-center p-10 text-center transition-colors duration-500"
+                                onClick={() => setSelectedAgentIndex(prev => (prev === AGENTS.length - 1 ? 0 : prev + 1))}
+                                className="w-[300px] lg:w-[340px] h-[440px] bg-[#2D2A2A] rounded-2xl border border-white/5 shadow-2xl relative overflow-hidden group cursor-pointer flex flex-col items-center p-8 text-center transition-colors duration-500 select-none"
                               >
                                  <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, #fff 1px, transparent 0)', backgroundSize: '16px 16px' }} />
-                                 <div className="h-16 w-16 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mb-8 shadow-[0_0_30px_-5px_rgba(16,185,129,0.3)]">
-                                     <CheckCircle2 className="h-8 w-8 stroke-[2.5]" />
+                                 
+                                 {/* Status / Core Badge */}
+                                 <div className={cn(
+                                   "px-3 py-1 rounded-full text-[11px] font-semibold mb-4 border transition-all",
+                                   currentAgent.isCore 
+                                     ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30" 
+                                     : "bg-[#D95E46]/10 text-[#D95E46] border-[#D95E46]/30"
+                                 )}>
+                                   {currentAgent.badge}
                                  </div>
-                                 <div className="space-y-3">
+
+                                 <div className="h-14 w-14 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mb-6 shadow-[0_0_30px_-5px_rgba(16,185,129,0.3)]">
+                                     <CheckCircle2 className="h-7 w-7 stroke-[2.5]" />
+                                 </div>
+                                 <div className="space-y-2">
                                     <h3 className="text-2xl font-bold text-white tracking-tight">{currentAgent.name}</h3>
-                                    <p className="text-neutral-400 font-medium text-[14px] leading-relaxed">{currentAgent.desc}</p>
+                                    <p className="text-neutral-400 font-medium text-[13px] leading-relaxed">{currentAgent.desc}</p>
                                  </div>
-                                 <div className="mt-auto pt-8 border-t border-white/5 w-full flex flex-col items-start gap-1">
+                                 <div className="mt-auto pt-6 border-t border-white/5 w-full flex flex-col items-start gap-1">
                                     <span className="text-[9px] font-bold text-[#D95E46]">Specialization</span>
                                     <span className="text-[11px] font-bold text-white/40 tracking-tight">{currentAgent.type}</span>
                                  </div>
@@ -498,9 +664,18 @@ export default function OnboardingPage() {
                 >
                   {isLoading ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : "Skip for now"}
                 </Button>
-                <div className="flex gap-2 justify-center text-gray-900">
-                   {AGENTS.map((_, i) => (
-                     <div key={i} className={cn("h-1 w-4 rounded-full transition-all duration-500", selectedAgentIndex === i ? "bg-white" : "bg-white/10")} />
+                <div className="flex gap-2 justify-center py-2">
+                   {AGENTS.map((agent, i) => (
+                     <button
+                       key={agent.id}
+                       type="button"
+                       aria-label={`Select ${agent.name}`}
+                       onClick={() => setSelectedAgentIndex(i)}
+                       className={cn(
+                         "h-2 rounded-full transition-all duration-300 cursor-pointer",
+                         selectedAgentIndex === i ? "w-6 bg-white" : "w-2 bg-white/20 hover:bg-white/40"
+                       )}
+                     />
                    ))}
                 </div>
               </div>
