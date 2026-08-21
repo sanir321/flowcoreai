@@ -21,6 +21,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/legal/dpa", priority: "0.3", changefreq: "yearly" },
     { path: "/legal/aup", priority: "0.3", changefreq: "yearly" },
     { path: "/legal/data-deletion", priority: "0.3", changefreq: "yearly" },
+    { path: "/vs/manychat", priority: "0.8", changefreq: "monthly" },
+    { path: "/vs/wati", priority: "0.8", changefreq: "monthly" },
   ]
 
   const blogSlugs = [

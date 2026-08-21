@@ -10,6 +10,10 @@
 - Blog: /blog
 - Case Studies: /case-studies
 
+## Comparisons
+- Flowcore vs ManyChat: /vs/manychat
+- Flowcore vs Wati: /vs/wati
+
 ## Legal
 - Privacy Policy: /legal/privacy-policy
 - Terms of Service: /legal/terms
